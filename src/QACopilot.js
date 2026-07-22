@@ -5,67 +5,132 @@ import TestScenarioGenerator from "./generators/TestScenarioGenerator.js";
 import TestCaseGenerator from "./generators/TestCaseGenerator.js";
 import OutputManager from "./managers/OutputManager.js";
 
+import RequirementIntelligenceEngine from "./engines/RequirementIntelligenceEngine.js";
+import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
+
+
 class QACopilot {
 
+
     constructor() {
+
 
         this.loader =
             new RequirementLoader();
 
+
         this.parser =
             new MarkdownParser();
+
 
         this.aiEngine =
             new AIAnalysisEngine();
 
+
+        this.intelligenceEngine =
+            new RequirementIntelligenceEngine();
+
+
+        this.scenarioRecommendationEngine =
+            new ScenarioRecommendationEngine();
+
+
         this.scenarioGenerator =
             new TestScenarioGenerator();
+
 
         this.testCaseGenerator =
             new TestCaseGenerator();
 
+
         this.outputManager =
             new OutputManager();
 
+
     }
 
+
+
     run(requirementFile) {
+
 
         console.log("\n=================================");
         console.log(" QA COPILOT PIPELINE");
         console.log("=================================\n");
 
-        console.log("[1/6] Loading Requirement...");
+
+
+        console.log("[1/7] Loading Requirement...");
+
 
         const markdown =
             this.loader.load(requirementFile);
+
 
         console.log("✓ Requirement loaded");
 
 
 
-        console.log("\n[2/6] Parsing Requirement...");
+        console.log("\n[2/7] Parsing Requirement...");
+
 
         const requirement =
             this.parser.parse(markdown);
+
 
         console.log("✓ Requirement parsed");
 
 
 
-        console.log("\n[3/6] AI Analysis...");
+        console.log("\n[3/7] AI Analysis...");
+
 
         const aiResult =
             this.aiEngine.analyze(requirement);
+
 
         console.log("✓ AI analysis completed");
 
 
 
-        console.log("\n[4/6] Generating Scenarios...");
+        console.log("\n[4/7] Building Requirement Intelligence...");
+
+
+        const knowledge =
+            this.intelligenceEngine.analyze(
+                requirement
+            );
+
+
+        console.log(
+            "✓ Requirement intelligence completed"
+        );
+
+
+
+        console.log("\nGenerating Recommended Scenarios...");
+
+
+        const recommendedScenarios =
+            this.scenarioRecommendationEngine.generate(
+                knowledge
+            );
+
+
+        console.log(
+            `✓ ${recommendedScenarios.length} scenarios recommended`
+        );
+
+
+
+        console.log("\n[5/7] Generating Scenarios...");
+
 
         const scenarios =
-            this.scenarioGenerator.generate(aiResult);
+            this.scenarioGenerator.generate(
+                aiResult
+            );
+
 
         console.log(
             `✓ ${scenarios.length} scenarios generated`
@@ -73,10 +138,14 @@ class QACopilot {
 
 
 
-        console.log("\n[5/6] Generating TestCases...");
+        console.log("\n[6/7] Generating TestCases...");
+
 
         const testCases =
-            this.testCaseGenerator.generate(scenarios);
+            this.testCaseGenerator.generate(
+                scenarios
+            );
+
 
         console.log(
             `✓ ${testCases.length} testcases generated`
@@ -84,7 +153,8 @@ class QACopilot {
 
 
 
-        console.log("\n[6/6] Exporting JSON...");
+        console.log("\n[7/7] Exporting JSON...");
+
 
         const output =
             this.outputManager.export(
@@ -93,28 +163,50 @@ class QACopilot {
                 requirement.feature
             );
 
-        console.log(`✓ Output: ${output}`);
+
+        console.log(
+            `✓ Output: ${output}`
+        );
+
+
 
         console.log("\n=================================");
         console.log(" PIPELINE COMPLETED");
         console.log("=================================\n");
 
+
+
         return {
+
 
             requirement,
 
+
             aiResult,
+
+
+            knowledge,
+
+
+            recommendedScenarios,
+
 
             scenarios,
 
+
             testCases,
+
 
             output
 
+
         };
+
 
     }
 
+
 }
+
 
 export default QACopilot;
