@@ -1,0 +1,964 @@
+[
+  {
+    "id": "TC001",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Thiết bị với dữ liệu hợp lệ",
+    "type": "POSITIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Thiết bị với dữ liệu hợp lệ",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Dữ liệu được xử lý thành công"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "POSITIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC002",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Hiển thị thông báo \"Thêm thiết bị thành công\".",
+    "type": "POSITIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Hiển thị thông báo \"Thêm thiết bị thành công\".",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Dữ liệu được xử lý thành công"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "POSITIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC003",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Thiết bị mới hiển thị trong danh sách.",
+    "type": "POSITIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Thiết bị mới hiển thị trong danh sách.",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Dữ liệu được xử lý thành công"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "POSITIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC004",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị không được trùng.",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị không được trùng.",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC005",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Không được bỏ trống các trường bắt buộc.",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Không được bỏ trống các trường bắt buộc.",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC006",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị không được để trống",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC007",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị không được để trống",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC008",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị không được để trống",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC009",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị bị trùng",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị bị trùng",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC010",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC011",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị vượt quá độ dài tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC012",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC013",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị lớn hơn giá trị tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC014",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC015",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị vượt quá độ dài tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC016",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC017",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị lớn hơn giá trị tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC018",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC019",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị vượt quá độ dài tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC020",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC021",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị lớn hơn giá trị tối đa",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC022",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị đã tồn tại.",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị đã tồn tại.",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC023",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Thiếu thông tin bắt buộc.",
+    "type": "NEGATIVE",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Thiếu thông tin bắt buộc.",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối dữ liệu không hợp lệ"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "NEGATIVE",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC024",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC025",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị vượt quá độ dài tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC026",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC027",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị lớn hơn giá trị tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC028",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC029",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị vượt quá độ dài tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC030",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC031",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Tên thiết bị lớn hơn giá trị tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Tên thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC032",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị nhỏ hơn độ dài tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị nhỏ hơn độ dài tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC033",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị vượt quá độ dài tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị vượt quá độ dài tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC034",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị nhỏ hơn giá trị tối thiểu",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị nhỏ hơn giá trị tối thiểu",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC035",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Loại thiết bị lớn hơn giá trị tối đa",
+    "type": "BOUNDARY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Loại thiết bị lớn hơn giá trị tối đa",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống kiểm tra đúng giới hạn dữ liệu"
+    ],
+    "severity": "Medium",
+    "priority": "MEDIUM",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "BOUNDARY",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC036",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra User không có quyền không được truy cập chức năng",
+    "type": "PERMISSION",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: User không có quyền không được truy cập chức năng",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Kết quả đúng theo yêu cầu"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "PERMISSION",
+    "requirementReference": ""
+  },
+  {
+    "id": "TC037",
+    "feature": "Thiết bị",
+    "title": "Kiểm tra Mã thiết bị bị trùng",
+    "type": "DATA_INTEGRITY",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thao tác"
+    ],
+    "testData": null,
+    "steps": [
+      "Mở chức năng Thiết bị",
+      "Thực hiện tình huống: Mã thiết bị bị trùng",
+      "Kiểm tra kết quả xử lý"
+    ],
+    "expectedResults": [
+      "Hệ thống đảm bảo tính toàn vẹn dữ liệu"
+    ],
+    "severity": "High",
+    "priority": "HIGH",
+    "automationCandidate": true,
+    "source": "Requirement Intelligence",
+    "reason": "",
+    "riskCategory": "DATA_INTEGRITY",
+    "requirementReference": ""
+  }
+]

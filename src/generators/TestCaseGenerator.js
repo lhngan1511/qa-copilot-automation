@@ -1,170 +1,83 @@
 import TestCase from "../models/TestCase.js";
-
+import TestData from "../models/TestData.js";
 
 class TestCaseGenerator {
 
-
-    constructor(){
+    constructor() {
 
         this.counter = 1;
 
     }
 
+    generate(scenarios) {
 
+        if (!Array.isArray(scenarios)) {
 
-    generate(scenarios){
-
-
-        const testCases = [];
-
-
-
-        if(
-            !scenarios ||
-            !Array.isArray(scenarios)
-        ){
-
-            return testCases;
+            return [];
 
         }
 
+        return scenarios.map(scenario => {
 
+            const testCase = new TestCase();
 
-        scenarios.forEach(
-            scenario => {
+            testCase.id =
+                `TC${String(this.counter++).padStart(3, "0")}`;
 
+            testCase.scenarioId =
+                scenario.id;
 
-                const testCase =
-                    new TestCase();
+            testCase.feature =
+                scenario.feature;
 
+            testCase.title =
+                scenario.title;
 
+            testCase.type =
+                scenario.type;
 
-                testCase.id =
-                    this.generateId();
+            testCase.requirementReference =
+                scenario.requirementReference;
 
+            testCase.preconditions =
+                scenario.preconditions || [];
 
+            testCase.testData =
+                new TestData();
 
-                testCase.feature =
-                    scenario.feature;
+            testCase.steps =
+                scenario.steps || [];
 
+            testCase.expectedResults =
+                scenario.expectedResults || [];
 
+            testCase.severity =
+                scenario.severity;
 
-                testCase.title =
-                    this.generateTitle(
-                        scenario
-                    );
+            testCase.priority =
+                scenario.priority;
 
+            testCase.automationCandidate =
+                scenario.automationCandidate;
 
+            testCase.automation.candidate =
+                scenario.automationCandidate;
 
-                testCase.type =
-                    scenario.type;
+            testCase.source =
+                "AI";
 
+            testCase.reason =
+                scenario.reason;
 
+            testCase.riskCategory =
+                scenario.riskCategory;
 
-                testCase.preconditions =
-                    scenario.preconditions;
+            return testCase;
 
-
-
-                testCase.testData =
-                    scenario.testData;
-
-
-
-                testCase.steps =
-                    this.generateSteps(
-                        scenario
-                    );
-
-
-
-                testCase.expectedResults =
-                    scenario.expectedResults;
-
-
-
-                testCase.severity =
-                    scenario.severity;
-
-
-
-                testCase.priority =
-                    scenario.priority;
-
-
-
-                testCase.automationCandidate =
-                    scenario.automationCandidate;
-
-
-
-                testCases.push(
-                    testCase
-                );
-
-
-            }
-        );
-
-
-        return testCases;
-
+        });
 
     }
-
-
-
-
-
-    generateId(){
-
-
-        const id =
-            String(this.counter)
-            .padStart(3,"0");
-
-
-        this.counter++;
-
-
-        return `TC${id}`;
-
-    }
-
-
-
-
-
-    generateTitle(scenario){
-
-
-        return `Kiểm tra ${scenario.title}`;
-
-    }
-
-
-
-
-
-    generateSteps(scenario){
-
-
-        return [
-
-            "Mở chức năng " + scenario.feature,
-
-            "Thực hiện tình huống: "
-                + scenario.title,
-
-            "Kiểm tra kết quả xử lý"
-
-        ];
-
-
-    }
-
 
 }
-
 
 export default TestCaseGenerator;

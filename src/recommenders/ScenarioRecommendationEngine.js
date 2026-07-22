@@ -1,5 +1,4 @@
-import RecommendedScenario
-from "../models/RecommendedScenario.js";
+import RecommendedScenario from "../models/RecommendedScenario.js";
 
 
 class ScenarioRecommendationEngine {
@@ -21,6 +20,7 @@ class ScenarioRecommendationEngine {
             return [];
 
         }
+
 
 
         const scenarios = [];
@@ -83,6 +83,7 @@ class ScenarioRecommendationEngine {
 
         return scenarios;
 
+
     }
 
 
@@ -98,7 +99,11 @@ class ScenarioRecommendationEngine {
     ){
 
 
-        if(!list || list.length === 0){
+
+        if(
+            !list ||
+            list.length === 0
+        ){
 
             return;
 
@@ -106,32 +111,60 @@ class ScenarioRecommendationEngine {
 
 
 
+
+
         list.forEach(
             item => {
 
 
-                scenarios.push(
-
+                const scenario =
                     new RecommendedScenario({
 
                         id:
                         `SC${String(this.counter++)
                         .padStart(3,"0")}`,
 
+
+
                         title:item,
+
+
 
                         type,
 
+
+
                         priority,
+
+
 
                         reason:
                         `${type} risk detected`,
 
+
+
                         source:
-                        "Requirement Intelligence"
+                        "Requirement Intelligence",
 
-                    })
 
+
+                        // Sprint 15.5 Traceability
+
+                        requirementReference:
+                        item,
+
+
+
+                        riskCategory:
+                        type
+
+
+                    });
+
+
+
+                scenarios.push(
+                    scenario
                 );
 
 

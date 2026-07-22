@@ -1,7 +1,7 @@
-import TestScenario from "../models/TestScenario.js";
+import TestCase from "../models/TestCase.js";
 
 
-class TestScenarioGenerator {
+class TestCaseGenerator {
 
 
     constructor(){
@@ -12,85 +12,87 @@ class TestScenarioGenerator {
 
 
 
-    generate(aiResult){
+
+    generate(scenarios){
 
 
-        const scenarios = [];
-
-
-
-        if(
-            !aiResult ||
-            !aiResult.suggestedScenarios
-        ){
-
-            return scenarios;
-
-        }
+        const testCases = [];
 
 
 
-        aiResult.suggestedScenarios.forEach(
-            item => {
+        scenarios.forEach(
+            scenario => {
 
 
-                const scenario =
-                    new TestScenario();
+                const testCase =
+                    new TestCase();
 
 
 
-                scenario.id =
+                testCase.id =
                     this.generateId();
 
 
 
-                scenario.feature =
-                    aiResult.featureUnderstanding;
+                testCase.scenarioId =
+                    scenario.id;
 
 
 
-                scenario.title =
-                    item;
+                testCase.feature =
+                    scenario.feature;
 
 
 
-                scenario.type =
-                    this.detectType(item);
+                testCase.title =
+                    scenario.title;
 
 
 
-                scenario.riskAreas =
-                    aiResult.riskAreas;
+                testCase.type =
+                    scenario.type;
 
 
 
-                scenario.expectedResults = [
-
-                    "Hệ thống xử lý đúng theo yêu cầu"
-
-                ];
+                testCase.severity =
+                    scenario.severity;
 
 
 
-                scenario.severity =
-                    this.detectSeverity(
-                        scenario.type
+                testCase.priority =
+                    scenario.priority;
+
+
+
+                testCase.preconditions =
+                    scenario.preconditions;
+
+
+
+                testCase.steps =
+                    this.generateSteps(
+                        scenario
                     );
 
 
 
-                scenario.priority =
-                    "Medium";
+                testCase.expectedResults =
+                    scenario.expectedResults;
 
 
 
-                scenario.automationCandidate =
-                    true;
+                testCase.automationCandidate =
+                    scenario.automationCandidate;
 
 
 
-                scenarios.push(
-                    scenario
+                testCase.requirementReference =
+                    scenario.requirementReference;
+
+
+
+                testCases.push(
+                    testCase
                 );
 
 
@@ -98,10 +100,82 @@ class TestScenarioGenerator {
         );
 
 
-        return scenarios;
+
+        return testCases;
 
 
     }
+
+
+
+
+
+
+    generateSteps(scenario){
+
+
+        if(
+            scenario.type === "NEGATIVE"
+        ){
+
+
+            return [
+
+                {
+                    order:1,
+                    action:"Mở chức năng",
+                    expected:"Màn hình hiển thị"
+                },
+
+
+                {
+                    order:2,
+                    action:`Nhập dữ liệu lỗi: ${scenario.title}`,
+                    expected:"Hệ thống kiểm tra dữ liệu"
+                },
+
+
+                {
+                    order:3,
+                    action:"Thực hiện lưu",
+                    expected:"Hệ thống từ chối dữ liệu"
+                }
+
+            ];
+
+
+        }
+
+
+
+
+        return [
+
+            {
+                order:1,
+                action:"Mở chức năng",
+                expected:"Màn hình hiển thị"
+            },
+
+
+            {
+                order:2,
+                action:`Thực hiện ${scenario.title}`,
+                expected:"Dữ liệu được xử lý"
+            },
+
+
+            {
+                order:3,
+                action:"Kiểm tra kết quả",
+                expected:"Kết quả đúng yêu cầu"
+            }
+
+        ];
+
+
+    }
+
 
 
 
@@ -110,77 +184,8 @@ class TestScenarioGenerator {
     generateId(){
 
 
-        const id =
-            String(this.counter)
-            .padStart(3,"0");
-
-
-        this.counter++;
-
-
-        return `SC${id}`;
-
-
-    }
-
-
-
-
-
-    detectType(title){
-
-
-        const negativeKeywords = [
-
-            "trùng",
-
-            "thiếu",
-
-            "không",
-
-            "sai",
-
-            "tồn tại"
-
-        ];
-
-
-
-        const lower =
-            title.toLowerCase();
-
-
-
-        const isNegative =
-            negativeKeywords.some(
-                keyword =>
-                lower.includes(keyword)
-            );
-
-
-
-        return isNegative
-            ? "NEGATIVE"
-            : "POSITIVE";
-
-
-    }
-
-
-
-
-
-    detectSeverity(type){
-
-
-        if(type === "NEGATIVE"){
-
-            return "High";
-
-        }
-
-
-        return "Medium";
+        return `TC${String(this.counter++)
+        .padStart(3,"0")}`;
 
 
     }
@@ -189,4 +194,4 @@ class TestScenarioGenerator {
 }
 
 
-export default TestScenarioGenerator;
+export default TestCaseGenerator;

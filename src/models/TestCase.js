@@ -2,58 +2,84 @@ class TestCase {
 
     constructor() {
 
-        // Mã định danh testcase
-        // Ví dụ: TC001
+        // ==========================
+        // Identity
+        // ==========================
+
         this.id = "";
 
+        this.scenarioId = "";
 
-        // Chức năng được kiểm thử
-        // Ví dụ: Thêm thiết bị
+        // ==========================
+        // Requirement Information
+        // ==========================
+
         this.feature = "";
 
-
-        // Tên mô tả testcase
-        // Ví dụ: Thêm thiết bị với dữ liệu hợp lệ
         this.title = "";
 
-
-        // Loại testcase
-        // Positive / Negative / Boundary
         this.type = "";
 
+        this.requirementReference = "";
 
-        // Điều kiện trước khi chạy test
+        // ==========================
+        // Test Execution
+        // ==========================
+
         this.preconditions = [];
 
+        this.testData = {
+            inputs: {},
+            expected: {},
+            invalid: {}
+        };
 
-        // Dữ liệu sử dụng trong testcase
-        this.testData = null;
-
-
-        // Các bước thực hiện
         this.steps = [];
 
-
-        // Kết quả mong đợi
         this.expectedResults = [];
 
+        // ==========================
+        // Test Management
+        // ==========================
 
-        // Mức độ ảnh hưởng
-        // High / Medium / Low
         this.severity = "Medium";
 
-
-        // Mức độ ưu tiên
-        // High / Medium / Low
         this.priority = "Medium";
 
+        // ==========================
+        // Automation
+        // ==========================
 
-        // Có thể tự động hóa bằng Playwright không
         this.automationCandidate = false;
+
+        this.automation = {
+            candidate: false,
+            framework: "",
+            pageObject: "",
+            locatorStrategy: "",
+            tags: []
+        };
+
+        // ==========================
+        // Intelligence Metadata
+        // ==========================
+
+        this.source = "";
+
+        this.reason = "";
+
+        this.riskCategory = "";
+
+        // ==========================
+        // Version
+        // ==========================
+
+        this.createdBy = "QA-Copilot";
+
+        this.version = "1.0";
 
     }
 
 }
-
 
 export default TestCase;

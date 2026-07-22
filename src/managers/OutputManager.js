@@ -1,79 +1,61 @@
-import fs from "fs";
-
-import JsonExporter from "../exporters/JsonExporter.js";
-import MarkdownExporter from "../exporters/MarkdownExporter.js";
-import ExcelExporter from "../exporters/ExcelExporter.js";
-
-import FileNameGenerator from "../utils/FileNameGenerator.js";
-
 class OutputManager {
 
     constructor() {
 
-        this.exporters = {
-
-            json: new JsonExporter(),
-
-            markdown: new MarkdownExporter(),
-
-            excel: new ExcelExporter()
-
-        };
-
-        this.fileNameGenerator =
-            new FileNameGenerator();
+        this.exporters = new Map();
 
     }
 
-    export(
-        testCases,
-        format,
-        feature
-    ) {
+    registerExporter(format, exporter) {
+
+        if (!format || !exporter) {
+
+            throw new Error(
+                "Format và Exporter không được để trống."
+            );
+
+        }
+
+        this.exporters.set(
+            format.toLowerCase(),
+            exporter
+        );
+
+    }
+
+    getExporter(format) {
+
+        return this.exporters.get(
+            format.toLowerCase()
+        );
+
+    }
+
+    export(data, format, outputPath) {
 
         const exporter =
-            this.exporters[format];
+            this.getExporter(format);
 
         if (!exporter) {
 
             throw new Error(
-                `Unsupported format: ${format}`
+                `Exporter '${format}' chưa được đăng ký.`
             );
 
         }
 
-        if (!fs.existsSync("./output")) {
-
-            fs.mkdirSync("./output");
-
-        }
-
-        const extension = {
-
-            json: "json",
-
-            markdown: "md",
-
-            excel: "xlsx"
-
-        };
-
-        const fileName =
-            this.fileNameGenerator.generate(
-                feature,
-                "testcases",
-                extension[format]
-            );
-
-        const outputPath =
-            `./output/${fileName}`;
-
-        exporter.export(
-            testCases,
+        return exporter.export(
+            data,
             outputPath
         );
 
-        return outputPath;
+    }
+
+    getSupportedFormats() {
+
+        return Array.from(
+            this.exporters.keys()
+        );
 
     }
 

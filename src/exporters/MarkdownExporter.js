@@ -4,21 +4,34 @@ class MarkdownExporter {
 
     export(testCases, outputPath) {
 
-        let markdown = "# Test Cases\n\n";
+        let markdown = "";
+
+        markdown += "# QA COPILOT - TEST CASES\n\n";
+
+        markdown += `Tổng số Test Case: ${testCases.length}\n\n`;
 
         testCases.forEach(testCase => {
 
+            markdown += "---\n\n";
+
             markdown += `## ${testCase.id} - ${testCase.title}\n\n`;
 
-            markdown += `**Chức năng**\n\n`;
-            markdown += `${testCase.feature}\n\n`;
+            markdown += `| Thuộc tính | Giá trị |\n`;
+            markdown += `|------------|---------|\n`;
+            markdown += `| Feature | ${testCase.feature} |\n`;
+            markdown += `| Type | ${testCase.type} |\n`;
+            markdown += `| Severity | ${testCase.severity} |\n`;
+            markdown += `| Priority | ${testCase.priority} |\n`;
+            markdown += `| Automation | ${testCase.automationCandidate} |\n`;
 
-            markdown += `**Loại**\n\n`;
-            markdown += `${testCase.type}\n\n`;
+            markdown += "\n";
 
-            markdown += `### Điều kiện\n\n`;
+            markdown += "### Preconditions\n\n";
 
-            if (testCase.preconditions.length > 0) {
+            if (
+                testCase.preconditions &&
+                testCase.preconditions.length > 0
+            ) {
 
                 testCase.preconditions.forEach(item => {
 
@@ -26,7 +39,8 @@ class MarkdownExporter {
 
                 });
 
-            } else {
+            }
+            else {
 
                 markdown += "- Không có\n";
 
@@ -34,25 +48,28 @@ class MarkdownExporter {
 
             markdown += "\n";
 
-            markdown += "### Các bước\n\n";
+            markdown += "### Test Steps\n\n";
 
-            testCase.steps.forEach((step, index) => {
+            markdown += "| Bước | Action | Expected |\n";
+            markdown += "|------|--------|----------|\n";
 
-                markdown += `${index + 1}. ${step}\n`;
+            testCase.steps.forEach(step => {
+
+                markdown += `| ${step.order} | ${step.action} | ${step.expected} |\n`;
 
             });
 
             markdown += "\n";
 
-            markdown += "### Kết quả mong đợi\n\n";
+            markdown += "### Expected Results\n\n";
 
-            testCase.expectedResults.forEach(item => {
+            testCase.expectedResults.forEach(result => {
 
-                markdown += `- ${item}\n`;
+                markdown += `- ${result}\n`;
 
             });
 
-            markdown += "\n---\n\n";
+            markdown += "\n";
 
         });
 

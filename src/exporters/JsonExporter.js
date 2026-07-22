@@ -4,12 +4,11 @@ class JsonExporter {
 
     export(testCases, outputPath) {
 
-        const json =
-            JSON.stringify(
-                testCases,
-                null,
-                2
-            );
+        const json = JSON.stringify(
+            testCases,
+            null,
+            2
+        );
 
         fs.writeFileSync(
             outputPath,

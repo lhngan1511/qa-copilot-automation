@@ -2,59 +2,45 @@ class TestData {
 
     constructor() {
 
-        // Tên trường dữ liệu
-        // Ví dụ: Mã thiết bị, Captcha, Email
-        this.field = "";
+        // ==========================
+        // Input Data
+        // ==========================
 
+        this.inputs = {};
 
-        // Loại dữ liệu
-        // STATIC
-        // AUTO_GENERATED
-        // RANDOM
-        // CURRENT_DATE
-        // USER_INPUT
-        // SYSTEM_VALUE
-        // NOT_AUTOMATABLE
-        this.type = "STATIC";
-
-
-        // Giá trị dữ liệu cụ thể
         // Ví dụ:
-        // TB001
-        // Laptop Dell
-        this.value = "";
+        // {
+        //     deviceCode: "TB001",
+        //     deviceName: "Laptop Dell",
+        //     category: "Laptop"
+        // }
 
+        // ==========================
+        // Expected Data
+        // ==========================
 
-        // Quy tắc sinh dữ liệu
+        this.expected = {};
+
         // Ví dụ:
-        // DEVICE_CODE_GENERATOR
-        // EMAIL_GENERATOR
-        this.generator = "";
+        // {
+        //     message: "Thêm thiết bị thành công"
+        // }
 
+        // ==========================
+        // Invalid Data
+        // ==========================
 
-        // Nguồn dữ liệu
-        // USER
-        // SYSTEM
-        // DATABASE
-        // API
-        // CONFIG
-        this.source = "USER";
+        this.invalid = {};
 
-
-        // Ghi chú xử lý đặc biệt
         // Ví dụ:
-        // Captcha cho phép nhập bất kỳ giá trị
-        // OTP không automation
-        this.note = "";
-
-
-        // Có cho phép automation hay không
-        // Dùng để hỗ trợ Playwright Generator sau này
-        this.automationAllowed = true;
+        // {
+        //     deviceCode: "",
+        //     email: "abc",
+        //     quantity: -1
+        // }
 
     }
 
 }
-
 
 export default TestData;

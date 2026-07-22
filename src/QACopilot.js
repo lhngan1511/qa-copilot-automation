@@ -1,12 +1,21 @@
 import RequirementLoader from "./loaders/RequirementLoader.js";
 import MarkdownParser from "./parsers/MarkdownParser.js";
 import AIAnalysisEngine from "./engines/AIAnalysisEngine.js";
-import TestScenarioGenerator from "./generators/TestScenarioGenerator.js";
-import TestCaseGenerator from "./generators/TestCaseGenerator.js";
-import OutputManager from "./managers/OutputManager.js";
 
-import RequirementIntelligenceEngine from "./engines/RequirementIntelligenceEngine.js";
-import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
+import RequirementIntelligenceEngine 
+    from "./engines/RequirementIntelligenceEngine.js";
+
+import ScenarioRecommendationEngine 
+    from "./recommenders/ScenarioRecommendationEngine.js";
+
+import IntelligenceScenarioGenerator 
+    from "./generators/IntelligenceScenarioGenerator.js";
+
+import TestCaseGenerator 
+    from "./generators/TestCaseGenerator.js";
+
+import OutputManager 
+    from "./managers/OutputManager.js";
 
 
 class QACopilot {
@@ -19,35 +28,43 @@ class QACopilot {
             new RequirementLoader();
 
 
+
         this.parser =
             new MarkdownParser();
+
 
 
         this.aiEngine =
             new AIAnalysisEngine();
 
 
+
         this.intelligenceEngine =
             new RequirementIntelligenceEngine();
+
 
 
         this.scenarioRecommendationEngine =
             new ScenarioRecommendationEngine();
 
 
-        this.scenarioGenerator =
-            new TestScenarioGenerator();
+
+        this.intelligenceScenarioGenerator =
+            new IntelligenceScenarioGenerator();
+
 
 
         this.testCaseGenerator =
             new TestCaseGenerator();
 
 
+
         this.outputManager =
             new OutputManager();
 
-
     }
+
+
 
 
 
@@ -71,6 +88,8 @@ class QACopilot {
 
 
 
+
+
         console.log("\n[2/7] Parsing Requirement...");
 
 
@@ -82,6 +101,8 @@ class QACopilot {
 
 
 
+
+
         console.log("\n[3/7] AI Analysis...");
 
 
@@ -90,6 +111,8 @@ class QACopilot {
 
 
         console.log("✓ AI analysis completed");
+
+
 
 
 
@@ -108,6 +131,8 @@ class QACopilot {
 
 
 
+
+
         console.log("\nGenerating Recommended Scenarios...");
 
 
@@ -123,18 +148,23 @@ class QACopilot {
 
 
 
-        console.log("\n[5/7] Generating Scenarios...");
+
+
+        console.log("\n[5/7] Generating Intelligence Scenarios...");
 
 
         const scenarios =
-            this.scenarioGenerator.generate(
-                aiResult
+            this.intelligenceScenarioGenerator.generate(
+                recommendedScenarios,
+                requirement
             );
 
 
         console.log(
-            `✓ ${scenarios.length} scenarios generated`
+            `✓ ${scenarios.length} intelligence scenarios generated`
         );
+
+
 
 
 
@@ -150,6 +180,8 @@ class QACopilot {
         console.log(
             `✓ ${testCases.length} testcases generated`
         );
+
+
 
 
 
@@ -170,35 +202,31 @@ class QACopilot {
 
 
 
+
+
         console.log("\n=================================");
         console.log(" PIPELINE COMPLETED");
         console.log("=================================\n");
 
 
 
-        return {
 
+
+        return {
 
             requirement,
 
-
             aiResult,
-
 
             knowledge,
 
-
             recommendedScenarios,
-
 
             scenarios,
 
-
             testCases,
 
-
             output
-
 
         };
 
