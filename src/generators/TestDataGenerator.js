@@ -5,7 +5,7 @@ class TestDataGenerator {
 
 
     generate(
-        inputDefinitions,
+        inputDefinitions = [],
         scenario = {}
     ) {
 
@@ -15,7 +15,9 @@ class TestDataGenerator {
 
 
 
-        if (!Array.isArray(inputDefinitions)) {
+        if(
+            !Array.isArray(inputDefinitions)
+        ) {
 
             return testData;
 
@@ -35,33 +37,36 @@ class TestDataGenerator {
 
 
 
+
         inputDefinitions.forEach(
             input => {
 
 
                 const name =
-                    input.name;
+                    this.resolveName(input);
 
 
 
-                /*
-                 * Default valid data
-                 */
+                if(!name){
+
+                    return;
+
+                }
+
+
+
 
                 testData.inputs[name] =
                     this.generateValidValue(
-                        input
+                        input,
+                        name
                     );
 
 
 
 
 
-                /*
-                 * Negative case
-                 */
-
-                if (
+                if(
                     type === "NEGATIVE"
                 ) {
 
@@ -69,7 +74,8 @@ class TestDataGenerator {
                     testData.invalid[name] =
                         this.generateInvalidValue(
                             input,
-                            title
+                            title,
+                            name
                         );
 
 
@@ -79,11 +85,7 @@ class TestDataGenerator {
 
 
 
-                /*
-                 * Boundary case
-                 */
-
-                if (
+                if(
                     type === "BOUNDARY"
                 ) {
 
@@ -96,7 +98,6 @@ class TestDataGenerator {
 
 
                 }
-
 
 
             }
@@ -117,12 +118,69 @@ class TestDataGenerator {
 
 
 
-    generateValidValue(input) {
+    resolveName(input){
 
 
-        switch(
+        return (
+            input.name
+            ||
+            input.field
+            ||
+            input.label
+            ||
+            input.controlName
+            ||
+            input.key
+            ||
+            null
+        );
+
+
+    }
+
+
+
+
+
+
+
+
+
+    getDataType(input){
+
+
+        return (
             input.dataType
-        ) {
+            ||
+            input.type
+            ||
+            "STRING"
+        )
+        .toUpperCase();
+
+
+    }
+
+
+
+
+
+
+
+
+
+    generateValidValue(
+        input,
+        name
+    ){
+
+
+        const type =
+            this.getDataType(input);
+
+
+
+        switch(type){
 
 
             case "NUMBER":
@@ -145,7 +203,8 @@ class TestDataGenerator {
 
             default:
 
-                return `${input.name}_TEST`;
+                return `${name}_TEST`;
+
 
         }
 
@@ -162,23 +221,25 @@ class TestDataGenerator {
 
     generateInvalidValue(
         input,
-        title
-    ) {
+        title,
+        name
+    ){
 
 
 
         /*
-         * Duplicate data
-         */
+         Duplicate
+        */
 
-        if (
-            title.includes("trùng") ||
+        if(
+            title.includes("trùng")
+            ||
             title.includes("tồn tại")
-        ) {
+            ||
+            title.includes("đã tồn tại")
+        ){
 
-
-            return `${input.name}_EXISTED`;
-
+            return `${name}_EXISTED`;
 
         }
 
@@ -186,52 +247,34 @@ class TestDataGenerator {
 
 
 
+
         /*
-         * Required validation
-         */
+          Required
+        */
 
-        if (
-            title.includes("thiếu") ||
-            title.includes("bắt buộc") ||
-            title.includes("trống") ||
-            title.includes("không được để trống")
-        ) {
-
+        if(
+            title.includes("trống")
+            ||
+            title.includes("bắt buộc")
+            ||
+            title.includes("thiếu")
+        ){
 
             return "";
 
-
         }
 
 
 
 
 
-        /*
-         * Dropdown invalid
-         */
 
-        if (
-            input.controlType === "Dropdown"
-        ) {
-
-
-            return "INVALID_OPTION";
-
-
-        }
+        const type =
+            this.getDataType(input);
 
 
 
-
-
-        /*
-         * Default invalid
-         */
-
-        switch(
-            input.dataType
-        ) {
+        switch(type){
 
 
             case "NUMBER":
@@ -242,13 +285,14 @@ class TestDataGenerator {
 
             case "EMAIL":
 
-                return "abc";
+                return "invalid";
 
 
 
             default:
 
                 return "";
+
 
         }
 
@@ -266,39 +310,28 @@ class TestDataGenerator {
     generateBoundaryValue(
         input,
         title
-    ) {
+    ){
 
 
-
-        if (
+        if(
             title.includes("nhỏ hơn")
-        ) {
+        ){
 
-
-            return this.getMinValue(
-                input
-            );
-
+            return this.getMinValue(input);
 
         }
 
 
 
-
-
-        if (
-            title.includes("vượt quá") ||
+        if(
             title.includes("lớn hơn")
-        ) {
+            ||
+            title.includes("vượt quá")
+        ){
 
-
-            return this.getMaxValue(
-                input
-            );
-
+            return this.getMaxValue(input);
 
         }
-
 
 
 
@@ -315,38 +348,27 @@ class TestDataGenerator {
 
 
 
-    getMinValue(input) {
+    getMinValue(input){
 
 
-        if (
-            input.dataType === "NUMBER"
-        ) {
-
+        if(
+            this.getDataType(input)
+            ===
+            "NUMBER"
+        ){
 
             return (
-                input.validation.minValue ?? 0
+                input.validation?.minValue
+                ??
+                0
             );
-
-
-        }
-
-
-
-        if (
-            input.validation.minLength
-        ) {
-
-
-            return "X".repeat(
-                input.validation.minLength - 1
-            );
-
 
         }
 
 
 
         return "";
+
 
     }
 
@@ -358,40 +380,27 @@ class TestDataGenerator {
 
 
 
-    getMaxValue(input) {
+    getMaxValue(input){
 
 
-        if (
-            input.dataType === "NUMBER"
-        ) {
-
+        if(
+            this.getDataType(input)
+            ===
+            "NUMBER"
+        ){
 
             return (
-                input.validation.maxValue ?? 999999
+                input.validation?.maxValue
+                ??
+                999999
             );
-
-
-        }
-
-
-
-
-
-        if (
-            input.validation.maxLength
-        ) {
-
-
-            return "X".repeat(
-                input.validation.maxLength + 1
-            );
-
 
         }
 
 
 
         return "";
+
 
     }
 

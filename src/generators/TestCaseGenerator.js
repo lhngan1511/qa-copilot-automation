@@ -16,10 +16,14 @@ class TestCaseGenerator {
 
 
 
-    generate(scenarios) {
 
 
-        if (!Array.isArray(scenarios)) {
+    generate(scenarios = []) {
+
+
+        if(
+            !Array.isArray(scenarios)
+        ){
 
             return [];
 
@@ -27,113 +31,170 @@ class TestCaseGenerator {
 
 
 
-        return scenarios.map(
-            scenario => {
+        const testCases =
+            scenarios.map(
+                scenario => {
 
 
-                const testCase =
-                    new TestCase();
-
-
-
-                testCase.id =
-                    `TC${String(this.counter++)
-                    .padStart(3, "0")}`;
+                    const testCase =
+                        new TestCase();
 
 
 
-                testCase.scenarioId =
-                    scenario.id;
+
+                    testCase.id =
+                        `TC${String(this.counter++)
+                        .padStart(3,"0")}`;
 
 
 
-                testCase.feature =
-                    scenario.feature;
+
+                    testCase.scenarioId =
+                        scenario.id || "";
 
 
 
-                testCase.title =
-                    scenario.title;
+                    testCase.feature =
+                        scenario.feature || "";
 
 
 
-                testCase.type =
-                    scenario.type;
+                    testCase.title =
+                        scenario.title || "";
 
 
 
-                testCase.requirementReference =
-                    scenario.requirementReference;
+                    testCase.type =
+                        scenario.type || "";
 
 
 
-                testCase.preconditions =
-                    scenario.preconditions || [];
+                    testCase.requirementReference =
+                        scenario.requirementReference
+                        ||
+                        scenario.title
+                        ||
+                        "";
 
 
 
-                /*
-                 * Generate Test Data
-                 */
 
-                testCase.testData =
-                    this.testDataGenerator.generate(
-                        scenario.inputDefinitions || [],
-                        scenario
-                    );
+                    testCase.preconditions =
+                        scenario.preconditions
+                        ||
+                        [];
 
 
 
-                testCase.steps =
-                    scenario.steps || [];
 
 
 
-                testCase.expectedResults =
-                    scenario.expectedResults || [];
+                    /*
+                     * Generate Test Data
+                     */
+
+                    testCase.testData =
+                        this.testDataGenerator.generate(
+                            scenario.inputDefinitions
+                            ||
+                            scenario.inputs
+                            ||
+                            [],
+                            scenario
+                        );
 
 
 
-                testCase.severity =
-                    scenario.severity;
 
 
 
-                testCase.priority =
-                    scenario.priority;
+
+                    testCase.steps =
+                        scenario.steps
+                        ||
+                        [];
 
 
 
-                testCase.automationCandidate =
-                    scenario.automationCandidate;
 
 
 
-                testCase.automation.candidate =
-                    scenario.automationCandidate;
+                    testCase.expectedResults =
+                        scenario.expectedResults
+                        ||
+                        [];
 
 
 
-                testCase.source =
-                    "Rule Engine";
+
+
+                    testCase.severity =
+                        scenario.severity
+                        ||
+                        "MEDIUM";
 
 
 
-                testCase.reason =
-                    scenario.reason;
+                    testCase.priority =
+                        scenario.priority
+                        ||
+                        "MEDIUM";
 
 
 
-                testCase.riskCategory =
-                    scenario.riskCategory;
+
+
+                    testCase.automationCandidate =
+                        scenario.automationCandidate
+                        ??
+                        false;
 
 
 
-                return testCase;
 
 
-            }
-        );
+                    if(
+                        testCase.automation
+                    ){
+
+                        testCase.automation.candidate =
+                            testCase.automationCandidate;
+
+                    }
+
+
+
+
+
+                    testCase.source =
+                        "Rule Engine";
+
+
+
+                    testCase.reason =
+                        scenario.reason
+                        ||
+                        "";
+
+
+
+                    testCase.riskCategory =
+                        scenario.riskCategory
+                        ||
+                        "";
+
+
+
+
+                    return testCase;
+
+
+                }
+            );
+
+
+
+        return testCases;
 
 
     }
