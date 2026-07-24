@@ -4,131 +4,252 @@ class RequirementObject {
     constructor() {
 
 
-        // ==========================
+        // =====================================
         // Requirement Identity
-        // ==========================
+        // =====================================
 
-        // Tên chức năng / module
+        this.id = "";
 
+
+
+        // =====================================
+        // Module Information
+        // Ví dụ: Thiết bị
+        // =====================================
+
+        this.module = "";
+
+
+
+        // Giữ tương thích tạm thời với code cũ.
+        // Giá trị này sẽ bằng module.
         this.feature = "";
 
 
-        // Mục đích chức năng
+
+        // =====================================
+        // General Information
+        // =====================================
 
         this.purpose = "";
 
-
-
-        // ==========================
-        // Business Understanding
-        // ==========================
-
-        // Các đối tượng nghiệp vụ
-
-        // Ví dụ:
-        // Thiết bị
-        // Nhân viên
-        // Phiếu nhập
-
-        this.entities = [];
+        this.description = "";
 
 
 
-        // Các hành động người dùng
+        // =====================================
+        // Module-level Permissions
+        // =====================================
 
-        // Ví dụ:
-        // thêm
-        // sửa
-        // xóa
-        // tìm kiếm
-
-        this.actions = [];
+        this.permissions = [];
 
 
 
-        // ==========================
-        // Input Intelligence
-        // ==========================
+        // =====================================
+        // Shared Data Definitions
+        // Dữ liệu dùng chung cho các tính năng
+        // =====================================
 
-        // Danh sách input đơn giản
-
-        this.inputs = [];
-
+        this.commonInputs = [];
 
 
-        // Chi tiết định nghĩa input
 
-        // {
-        //   name,
-        //   type,
-        //   required,
-        //   format,
-        //   validation
-        // }
-
+        // Giữ tương thích với pipeline cũ.
+        // Sau khi parse, inputDefinitions sẽ trỏ
+        // đến cùng dữ liệu với commonInputs.
         this.inputDefinitions = [];
 
 
 
-        // ==========================
-        // Business Rules
-        // ==========================
+        // =====================================
+        // Data Relationships
+        // =====================================
+
+        this.relationships = [];
+
+
+
+        // =====================================
+        // Features
+        // Ví dụ:
+        // - Thêm thiết bị
+        // - Sửa thiết bị
+        // - Xóa thiết bị
+        // - Tìm kiếm thiết bị
+        // =====================================
+
+        this.features = [];
+
+
+
+        // =====================================
+        // Compatibility Fields
+        // Các field này được tổng hợp từ features
+        // để những analyzer cũ vẫn có thể hoạt động.
+        // =====================================
+
+        this.actions = [];
+
+        this.businessRules = [];
+
+        this.expectedResults = [];
+
+        this.edgeCases = [];
 
         this.conditions = [];
 
 
-        this.businessRules = [];
 
-
-
-        // ==========================
-        // Expected Behavior
-        // ==========================
-
-        this.expectedResults = [];
-
-
-
-        // ==========================
-        // Risk Analysis
-        // ==========================
-
-        // Các trường hợp biên
-
-        this.edgeCases = [];
-
-
-        // Các câu hỏi cần AI làm rõ
+        // =====================================
+        // Intelligence Metadata
+        // =====================================
 
         this.questions = [];
-
-
-
-        // ==========================
-        // Traceability
-        // ==========================
-
-        // Module bị ảnh hưởng
-
-        this.affectedModules = [];
-
-
-
-        // ==========================
-        // Metadata
-        // ==========================
 
         this.notes = [];
 
 
-        // Requirement version
 
-        this.version = "1.0";
+        // =====================================
+        // Version
+        // =====================================
+
+        this.version = "2.0";
 
 
-        // Source document
+    }
 
-        this.source = "";
+
+
+    addFeature(feature) {
+
+
+        if (!feature) {
+
+            return;
+
+        }
+
+
+        this.features.push(feature);
+
+
+        if (
+            feature.name
+            &&
+            !this.actions.includes(feature.name)
+        ) {
+
+            this.actions.push(feature.name);
+
+        }
+
+
+        this.mergeUnique(
+            this.businessRules,
+            feature.businessRules
+        );
+
+
+        this.mergeUnique(
+            this.expectedResults,
+            feature.expectedResults
+        );
+
+
+        this.mergeUnique(
+            this.edgeCases,
+            feature.exceptions
+        );
+
+
+        this.mergeUnique(
+            this.conditions,
+            feature.preconditions
+        );
+
+
+    }
+
+
+
+    addCommonInput(input) {
+
+
+        if (!input) {
+
+            return;
+
+        }
+
+
+        this.commonInputs.push(input);
+
+
+        // Giữ đồng bộ cho code cũ.
+        this.inputDefinitions =
+            this.commonInputs;
+
+
+    }
+
+
+
+    addRelationship(relationship) {
+
+
+        if (!relationship) {
+
+            return;
+
+        }
+
+
+        this.relationships.push(
+            relationship
+        );
+
+
+    }
+
+
+
+    mergeUnique(
+        target,
+        source
+    ) {
+
+
+        if (
+            !Array.isArray(target)
+            ||
+            !Array.isArray(source)
+        ) {
+
+            return;
+
+        }
+
+
+        source.forEach(item => {
+
+
+            if (
+                item !== undefined
+                &&
+                item !== null
+                &&
+                item !== ""
+                &&
+                !target.includes(item)
+            ) {
+
+                target.push(item);
+
+            }
+
+
+        });
 
 
     }

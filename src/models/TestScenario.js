@@ -1,39 +1,39 @@
 class TestScenario {
 
 
-    constructor() {
+    constructor(){
 
-
-        // Identity
 
         this.id = "";
 
 
-
-        // Requirement information
+        // Module
 
         this.feature = "";
 
+
+
+        // Scenario information
+
         this.title = "";
-
-
-
-        // Scenario type
-
-        // POSITIVE
-        // NEGATIVE
-        // BOUNDARY
-        // BUSINESS_RULE
-        // SECURITY
-        // PERMISSION
-        // DATA_INTEGRITY
-        // PERFORMANCE
 
         this.type = "POSITIVE";
 
 
+        this.priority = "MEDIUM";
 
-        // Traceability
+        this.severity = "MEDIUM";
+
+
+
+        this.reason = "";
+
+        this.riskCategory = "";
+
+
+
+
+        // Requirement trace
 
         this.requirementReference = "";
 
@@ -41,47 +41,60 @@ class TestScenario {
 
 
 
-        // Intelligence information
 
-        this.reason = "";
+        // Test preparation
 
-        this.riskLevel = "MEDIUM";
-
-        this.riskCategory = "";
-
-        this.intelligence = null;
+        this.preconditions = [];
 
 
 
-        // Requirement inputs
+        // Input data definition
 
         this.inputDefinitions = [];
 
 
 
-        // Execution
+        // Generated test data
 
-        this.preconditions = [];
+        this.testData = {
 
-        this.testData = null;
+            valid: {},
+
+            invalid: {}
+
+        };
+
+
+
+
+
+        // Test execution steps
 
         this.steps = [];
+
+
+
+
+
+        // Expected business results
 
         this.expectedResults = [];
 
 
 
-        // Management
-
-        this.severity = "MEDIUM";
-
-        this.priority = "MEDIUM";
 
 
-
-        // Automation
+        // Automation information
 
         this.automationCandidate = false;
+
+
+
+
+
+        // Intelligence information
+
+        this.intelligence = null;
 
 
     }

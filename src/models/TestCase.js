@@ -4,38 +4,44 @@ class TestCase {
     constructor() {
 
 
-        // ==========================
-        // Identity
-        // ==========================
-
         this.id = "";
 
         this.scenarioId = "";
 
 
+        // Module / Feature
 
-        // ==========================
-        // Requirement Information
-        // ==========================
+        this.module = "";
 
         this.feature = "";
 
+
+
+        // Nội dung testcase
+
         this.title = "";
+
+        this.testScenario = "";
 
         this.type = "";
 
+        this.testObjective = "";
+
+
+
+        // Trace requirement
+
         this.requirementReference = "";
 
-        this.requirementType = "";
 
 
-
-        // ==========================
-        // Test Execution
-        // ==========================
+        // Preconditions
 
         this.preconditions = [];
 
+
+
+        // Test data
 
         this.testData = {
 
@@ -48,53 +54,86 @@ class TestCase {
         };
 
 
+
+        // Steps chuẩn QA
+
         this.steps = [];
+
+
+
+        // Expected Result
 
         this.expectedResults = [];
 
 
 
-        // ==========================
-        // Test Management
-        // ==========================
+        // Execution
 
-        this.severity = "MEDIUM";
+        this.actualResult = "";
+
+        this.status = "Not Tested";
+
+
+
+        // Priority
 
         this.priority = "MEDIUM";
 
+        this.severity = "MEDIUM";
 
 
-        // ==========================
+
         // Automation
-        // ==========================
-
-        this.automationCandidate = false;
-
 
         this.automation = {
 
+
             candidate: false,
 
-            framework: "",
+
+            framework: "Playwright",
+
 
             pageObject: "",
 
+
             locatorStrategy: "",
 
+
+            locator: "",
+
+
             tags: []
+
 
         };
 
 
 
-        // ==========================
-        // Requirement Intelligence
-        // ==========================
+        // AI Intelligence
 
         this.intelligence = null;
 
 
-        this.source = "";
+
+        // Traceability
+
+        this.traceability = {
+
+
+            requirementId: "",
+
+
+            scenarioId: ""
+
+
+        };
+
+
+
+        // Metadata
+
+        this.source = "QA-Copilot";
 
 
         this.reason = "";
@@ -103,12 +142,8 @@ class TestCase {
         this.riskCategory = "";
 
 
-
-        // ==========================
-        // Metadata
-        // ==========================
-
         this.createdBy = "QA-Copilot";
+
 
         this.version = "1.0";
 

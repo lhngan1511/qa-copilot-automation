@@ -1,5 +1,4 @@
 import TestCase from "../models/TestCase.js";
-import TestDataGenerator from "./TestDataGenerator.js";
 
 
 class TestCaseGenerator {
@@ -9,21 +8,22 @@ class TestCaseGenerator {
 
         this.counter = 1;
 
-        this.testDataGenerator =
-            new TestDataGenerator();
-
     }
 
 
 
 
 
-    generate(scenarios = []) {
+
+    generate(
+        scenarios = []
+    ) {
 
 
-        if (
+
+        if(
             !Array.isArray(scenarios)
-        ) {
+        ){
 
             return [];
 
@@ -33,202 +33,367 @@ class TestCaseGenerator {
 
 
 
-        return scenarios.map(scenario => {
+
+        return scenarios.map(
+            scenario => {
 
 
-
-            const testCase =
-                new TestCase();
-
-
-
-
-
-            testCase.id =
-                `TC${String(this.counter++)
-                    .padStart(3, "0")}`;
+                const testCase =
+                    new TestCase();
 
 
 
 
 
-            testCase.scenarioId =
-                scenario.id
-                ||
-                "";
+                testCase.id =
+                    `TC${String(this.counter++)
+                    .padStart(3,"0")}`;
 
 
 
 
 
-            testCase.feature =
-                scenario.feature
-                ||
-                "";
+
+                testCase.scenarioId =
+                    scenario.id || "";
 
 
 
 
 
-            testCase.title =
-                scenario.title
-                ||
-                "";
+
+
+                testCase.module =
+                    scenario.feature || "";
 
 
 
 
 
-            testCase.type =
-                scenario.type
-                ||
-                "";
+                testCase.feature =
+                    scenario.feature || "";
 
 
 
 
 
-            testCase.requirementReference =
-                scenario.requirementReference
-                ||
-                scenario.title
-                ||
-                "";
+
+
+                testCase.title =
+                    scenario.title || "";
 
 
 
 
 
-            testCase.preconditions =
-                scenario.preconditions
-                ||
-                [];
+
+                testCase.testScenario =
+                    scenario.title || "";
 
 
 
 
 
-            testCase.testData =
-                this.testDataGenerator.generate(
 
-                    scenario.inputDefinitions
+
+                testCase.type =
+                    scenario.type || "";
+
+
+
+
+
+
+
+                testCase.testObjective =
+                    this.buildObjective(
+                        scenario
+                    );
+
+
+
+
+
+
+
+
+                testCase.requirementReference =
+                    scenario.requirementReference
                     ||
-                    scenario.inputs
+                    "";
+
+
+
+
+
+
+
+                testCase.preconditions =
+                    scenario.preconditions
                     ||
-                    [],
-
-                    scenario
-
-                );
+                    [];
 
 
 
 
 
-            testCase.steps =
-                scenario.steps
-                ||
-                [];
+
+
+
+                testCase.testData =
+                    scenario.testData
+                    ||
+                    {
+
+                        valid:{},
+
+                        invalid:{}
+
+                    };
 
 
 
 
 
-            testCase.expectedResults =
-                scenario.expectedResults
-                ||
-                [];
+
+
+                testCase.steps =
+                    scenario.steps
+                    ||
+                    [];
 
 
 
 
 
-            testCase.severity =
-                scenario.severity
-                ||
-                "MEDIUM";
+
+
+                testCase.expectedResults =
+                    scenario.expectedResults
+                    ||
+                    [];
 
 
 
 
 
-            testCase.priority =
-                scenario.priority
-                ||
-                "MEDIUM";
+
+
+                testCase.actualResult =
+                    "";
 
 
 
 
 
-            testCase.automationCandidate =
-                scenario.automationCandidate
-                ??
-                false;
+
+
+                testCase.status =
+                    "Not Tested";
 
 
 
 
 
-            if (
-                testCase.automation
-            ) {
 
 
-                testCase.automation.candidate =
-                    testCase.automationCandidate;
+                testCase.priority =
+                    scenario.priority
+                    ||
+                    "MEDIUM";
+
+
+
+
+
+
+
+                testCase.severity =
+                    scenario.severity
+                    ||
+                    "MEDIUM";
+
+
+
+
+
+
+
+                testCase.automation = {
+
+
+                    candidate:
+                        scenario.automationCandidate
+                        ??
+                        false,
+
+
+                    framework:
+                        "Playwright",
+
+
+                    pageObject:
+                        "",
+
+
+                    locatorStrategy:
+                        "",
+
+
+                    locator:
+                        "",
+
+
+                    tags:
+                        [
+                            scenario.type
+                        ]
+
+                };
+
+
+
+
+
+
+
+
+                testCase.intelligence =
+                    scenario.intelligence
+                    ||
+                    null;
+
+
+
+
+
+
+
+                testCase.traceability = {
+
+
+                    requirementId:
+                        scenario.requirementReference
+                        ||
+                        "",
+
+
+                    scenarioId:
+                        scenario.id
+                        ||
+                        ""
+
+                };
+
+
+
+
+
+
+
+
+                testCase.source =
+                    "Requirement Intelligence Engine";
+
+
+
+
+
+
+
+                testCase.reason =
+                    scenario.reason
+                    ||
+                    "";
+
+
+
+
+
+
+
+                testCase.riskCategory =
+                    scenario.riskCategory
+                    ||
+                    "";
+
+
+
+
+
+
+
+                return testCase;
+
 
 
             }
-
-
-
-
-
-
-            testCase.source =
-                "Requirement Intelligence Engine";
-
-
-
-
-
-            testCase.reason =
-                scenario.reason
-                ||
-                "";
-
-
-
-
-
-            testCase.riskCategory =
-                scenario.riskCategory
-                ||
-                "";
-
-
-
-
-
-            testCase.intelligence =
-                scenario.intelligence
-                ||
-                null;
-
-
-
-
-
-            return testCase;
-
-
-
-        });
+        );
 
 
 
     }
+
+
+
+
+
+
+
+
+
+    buildObjective(
+        scenario
+    ){
+
+
+
+        switch(
+            scenario.type
+        ){
+
+
+
+            case "NEGATIVE":
+
+                return "Kiểm tra xử lý dữ liệu không hợp lệ";
+
+
+
+            case "BOUNDARY":
+
+                return "Kiểm tra giới hạn dữ liệu";
+
+
+
+            case "PERMISSION":
+
+                return "Kiểm tra quyền truy cập chức năng";
+
+
+
+            case "SECURITY":
+
+                return "Kiểm tra yêu cầu bảo mật";
+
+
+
+            case "DATA_INTEGRITY":
+
+                return "Kiểm tra tính toàn vẹn dữ liệu";
+
+
+
+            default:
+
+                return "Kiểm tra chức năng hoạt động đúng theo yêu cầu";
+
+
+        }
+
+
+    }
+
 
 
 }

@@ -1,268 +1,172 @@
 import RequirementLoader from "./loaders/RequirementLoader.js";
 import MarkdownParser from "./parsers/MarkdownParser.js";
+
 import AIAnalysisEngine from "./engines/AIAnalysisEngine.js";
 
-import RequirementIntelligenceEngine
-    from "./engines/RequirementIntelligenceEngine.js";
+import RequirementIntelligenceEngine from "./engines/RequirementIntelligenceEngine.js";
 
-import ScenarioRecommendationEngine
-    from "./recommenders/ScenarioRecommendationEngine.js";
+import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
 
-import IntelligenceScenarioGenerator
-    from "./generators/IntelligenceScenarioGenerator.js";
+import IntelligenceScenarioGenerator from "./generators/IntelligenceScenarioGenerator.js";
 
-import TestCaseGenerator
-    from "./generators/TestCaseGenerator.js";
+import TestCaseGenerator from "./generators/TestCaseGenerator.js";
 
-import OutputManager
-    from "./managers/OutputManager.js";
+import OutputManager from "./managers/OutputManager.js";
 
-import JsonExporter
-    from "./exporters/JsonExporter.js";
+import JsonExporter from "./exporters/JsonExporter.js";
 
+import MarkdownExporter from "./exporters/MarkdownExporter.js";
+
+import ExcelExporter from "./exporters/ExcelExporter.js";
+
+import CsvExporter from "./exporters/CsvExporter.js";
+
+import FileNameGenerator from "./utils/FileNameGenerator.js";
 
 class QACopilot {
-
-
     constructor() {
+        this.loader = new RequirementLoader();
 
+        this.parser = new MarkdownParser();
 
-        this.loader =
-            new RequirementLoader();
+        this.aiEngine = new AIAnalysisEngine();
 
+        this.intelligenceEngine = new RequirementIntelligenceEngine();
 
-        this.parser =
-            new MarkdownParser();
+        this.scenarioRecommendationEngine = new ScenarioRecommendationEngine();
 
+        this.intelligenceScenarioGenerator = new IntelligenceScenarioGenerator();
 
-        this.aiEngine =
-            new AIAnalysisEngine();
+        this.testCaseGenerator = new TestCaseGenerator();
 
+        this.outputManager = new OutputManager();
 
-        this.intelligenceEngine =
-            new RequirementIntelligenceEngine();
+        this.fileNameGenerator = new FileNameGenerator();
 
+        /*
+            Register Output Exporters
+        */
 
-        this.scenarioRecommendationEngine =
-            new ScenarioRecommendationEngine();
+        this.outputManager.registerExporter("json", new JsonExporter());
 
+        this.outputManager.registerExporter("markdown", new MarkdownExporter());
 
-        this.intelligenceScenarioGenerator =
-            new IntelligenceScenarioGenerator();
+        this.outputManager.registerExporter("excel", new ExcelExporter());
 
-
-        this.testCaseGenerator =
-            new TestCaseGenerator();
-
-
-        this.outputManager =
-            new OutputManager();
-
-
-        this.outputManager.registerExporter(
-            "json",
-            new JsonExporter()
-        );
-
-
+        this.outputManager.registerExporter("csv", new CsvExporter());
     }
 
-
-
-
-
     async run(requirementFile) {
-
-
         console.log("\n=================================");
         console.log(" QA COPILOT PIPELINE");
         console.log("=================================\n");
 
-
-
         console.log("[1/7] Loading Requirement...");
 
-
-        const markdown =
-            this.loader.load(
-                requirementFile
-            );
-
+        const markdown = this.loader.load(requirementFile);
 
         console.log("✓ Requirement loaded");
 
-
-
         console.log("\n[2/7] Parsing Requirement...");
 
+        const requirement = this.parser.parse(markdown);
 
-        const requirement =
-            this.parser.parse(
-                markdown
-            );
-
+        console.log("\n========== REQUIREMENT ==========");
+        console.log(JSON.stringify(requirement, null, 2));
+        console.log("================================\n");
 
         console.log("✓ Requirement parsed");
 
-
-
         console.log("\n[3/7] AI Analysis...");
-
 
         let aiResult = null;
 
+        if (process.env.ENABLE_AI === "true") {
+            aiResult = await this.aiEngine.analyze(requirement);
 
-        if (
-            process.env.ENABLE_AI === "true"
-        ) {
-
-
-            aiResult =
-                await this.aiEngine.analyze(
-                    requirement
-                );
-
-
-            console.log(
-                "✓ AI analysis completed"
-            );
-
-
+            console.log("✓ AI analysis completed");
+        } else {
+            console.log("✓ AI skipped - Rule Engine mode");
         }
-        else {
-
-
-            console.log(
-                "✓ AI skipped - Rule Engine mode"
-            );
-
-
-        }
-
-
-
-
 
         console.log("\n[4/7] Building Requirement Intelligence...");
 
+        const knowledge = this.intelligenceEngine.analyze(requirement);
 
-        const knowledge =
-            this.intelligenceEngine.analyze(
-                requirement
-            );
+        console.log("✓ Requirement intelligence completed");
 
-
-        console.log(
-            "✓ Requirement intelligence completed"
+        const recommendedScenarios = this.scenarioRecommendationEngine.generate(
+            knowledge,
+            requirement
         );
 
-
-
-
-
-        console.log("\nGenerating Recommended Scenarios...");
-
-
-        const recommendedScenarios =
-            this.scenarioRecommendationEngine.generate(
-                knowledge
-            );
-
-
-        console.log(
-            `✓ ${recommendedScenarios.length} scenarios recommended`
-        );
-
-
-
-
+        console.log(`✓ ${recommendedScenarios.length} scenarios recommended`);
 
         console.log("\n[5/7] Generating Intelligence Scenarios...");
 
-
-        const scenarios =
-            this.intelligenceScenarioGenerator.generate(
-                recommendedScenarios,
-                requirement,
-                knowledge
-            );
-
-
-        console.log(
-            `✓ ${scenarios.length} scenarios generated`
+        const scenarios = this.intelligenceScenarioGenerator.generate(
+            recommendedScenarios,
+            requirement
         );
 
-
-
-
+        console.log(`✓ ${scenarios.length} scenarios generated`);
 
         console.log("\n[6/7] Generating TestCases...");
 
+        const testCases = this.testCaseGenerator.generate(scenarios);
 
-        const testCases =
-            this.testCaseGenerator.generate(
-                scenarios
-            );
+        console.log(`✓ ${testCases.length} testcases generated`);
 
+        console.log("\n[7/7] Exporting Outputs...");
 
-        console.log(
-            `✓ ${testCases.length} testcases generated`
+        const featureName = requirement.feature || "testcases";
+
+        const safeFeature = featureName.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_");
+
+        const timestamp = this.fileNameGenerator.getTimestamp();
+
+        const baseName = `${safeFeature}_testcases_${timestamp}`;
+
+        const outputs = {};
+
+        outputs.json = this.outputManager.export(
+            testCases,
+            "json",
+            `outputs/json/${baseName}.json`
         );
 
-
-
-
-
-        console.log("\n[7/7] Exporting JSON...");
-
-
-        const output =
-            this.outputManager.export(
-                testCases,
-                "json",
-                requirement.feature
-            );
-
-
-        console.log(
-            `✓ Output: ${output}`
+        outputs.markdown = this.outputManager.export(
+            testCases,
+            "markdown",
+            `outputs/markdown/${baseName}.md`
         );
 
+        outputs.excel = this.outputManager.export(
+            testCases,
+            "excel",
+            `outputs/excel/${baseName}.xlsx`
+        );
 
+        outputs.csv = this.outputManager.export(testCases, "csv", `outputs/csv/${baseName}.csv`);
 
-
+        console.log("✓ All outputs exported");
 
         return {
-
-
             requirement,
-
 
             aiResult,
 
-
             knowledge,
-
 
             recommendedScenarios,
 
-
             scenarios,
-
 
             testCases,
 
-
-            output
-
-
+            outputs
         };
-
-
     }
-
-
 }
-
 
 export default QACopilot;

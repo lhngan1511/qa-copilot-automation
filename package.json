@@ -4,63 +4,32 @@
   "description": "AI QA Copilot - Test Case Generation Framework",
   "main": "src/index.js",
   "type": "module",
-
   "scripts": {
-
     "test": "node tests/pipeline-test.js",
-
     "test:foundation": "node tests/foundation-test.js",
-
     "test:parser": "node tests/parser-test.js",
-
     "test:data": "node tests/data-definition-test.js",
-
     "test:scenario": "node tests/scenario-generator-test.js",
-
     "test:testcase": "node tests/testcase-generator-test.js",
-
     "test:export": "node tests/excel-exporter-test.js",
-
     "test:pipeline": "node tests/pipeline-test.js",
-
     "test:ai": "node tests/ai-engine-test.js",
-
     "test:ollama": "node tests/ollama.test.js",
-
     "test:provider": "node tests/provider.test.js"
-
   },
-
-
   "dependencies": {
-
     "dotenv": "^17.4.2",
-
     "openai": "^6.48.0",
-
     "xlsx": "^0.18.5"
-
   },
-
-
   "devDependencies": {
-
-    "nodemon": "^3.1.14"
-
+    "nodemon": "^3.1.14",
+    "prettier": "^3.9.6"
   },
-
-
   "directories": {
-
     "test": "tests"
-
   },
-
-
   "keywords": [],
-
   "author": "",
-
   "license": "ISC"
-
 }

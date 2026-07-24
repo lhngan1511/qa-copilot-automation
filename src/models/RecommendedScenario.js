@@ -7,6 +7,14 @@ class RecommendedScenario {
 
         title = "",
 
+
+        // Module / Feature Context
+
+        module = "",
+
+        feature = "",
+
+
         type = "",
 
         priority = "",
@@ -40,6 +48,27 @@ class RecommendedScenario {
         // ==========================
 
         this.title = title;
+
+
+        /*
+            Module cấp cao
+
+            Ví dụ:
+            Thiết bị
+        */
+
+        this.module = module;
+
+
+
+        /*
+            Chức năng thực tế
+
+            Ví dụ:
+            Thêm thiết bị
+        */
+
+        this.feature = feature;
 
 
 
@@ -79,8 +108,6 @@ class RecommendedScenario {
         // ==========================
         // Traceability
         // ==========================
-
-        // Requirement tạo ra scenario
 
         this.requirementReference =
             requirementReference;

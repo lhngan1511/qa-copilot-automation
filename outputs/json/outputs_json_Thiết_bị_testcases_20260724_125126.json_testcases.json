@@ -1,0 +1,938 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị với dữ liệu hợp lệ",
+    "testScenario": "Thiết bị với dữ liệu hợp lệ",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Thiết bị với dữ liệu hợp lệ",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống xử lý thành công yêu cầu; Dữ liệu được lưu và hiển thị đúng"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống xử lý thành công yêu cầu",
+      "Dữ liệu được lưu và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị với dữ liệu hợp lệ",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "POSITIVE risk detected",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+    "testScenario": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống xử lý thành công yêu cầu; Dữ liệu được lưu và hiển thị đúng"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống xử lý thành công yêu cầu",
+      "Dữ liệu được lưu và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "POSITIVE risk detected",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị mới hiển thị trong danh sách.",
+    "testScenario": "Thiết bị mới hiển thị trong danh sách.",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Thiết bị mới hiển thị trong danh sách.",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống xử lý thành công yêu cầu; Dữ liệu được lưu và hiển thị đúng"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống xử lý thành công yêu cầu",
+      "Dữ liệu được lưu và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị mới hiển thị trong danh sách.",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "POSITIVE risk detected",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC004",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị không được trùng.",
+    "testScenario": "Mã thiết bị không được trùng.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị không được trùng.",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị không được trùng.",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC005",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Không được bỏ trống các trường bắt buộc.",
+    "testScenario": "Không được bỏ trống các trường bắt buộc.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Không được bỏ trống các trường bắt buộc.",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không được bỏ trống các trường bắt buộc.",
+      "scenarioId": "SC005"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC006",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị không được để trống",
+    "testScenario": "Mã thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị không được để trống",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC007",
+    "scenarioId": "SC007",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Tên thiết bị không được để trống",
+    "testScenario": "Tên thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Tên thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tên thiết bị không được để trống",
+      "scenarioId": "SC007"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC008",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Loại thiết bị không được để trống",
+    "testScenario": "Loại thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Loại thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Loại thiết bị không được để trống",
+      "scenarioId": "SC008"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC009",
+    "scenarioId": "SC009",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị bị trùng",
+    "testScenario": "Mã thiết bị bị trùng",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị bị trùng",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị bị trùng",
+      "scenarioId": "SC009"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC010",
+    "scenarioId": "SC010",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị đã tồn tại.",
+    "testScenario": "Mã thiết bị đã tồn tại.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị đã tồn tại.",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị đã tồn tại.",
+      "scenarioId": "SC010"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC011",
+    "scenarioId": "SC011",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiếu thông tin bắt buộc.",
+    "testScenario": "Thiếu thông tin bắt buộc.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiếu thông tin bắt buộc.",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống không cho phép lưu dữ liệu; Hiển thị thông báo lỗi phù hợp"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống không cho phép lưu dữ liệu",
+      "Hiển thị thông báo lỗi phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiếu thông tin bắt buộc.",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC012",
+    "scenarioId": "SC012",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "User không có quyền không được truy cập chức năng",
+    "testScenario": "User không có quyền không được truy cập chức năng",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "User không có quyền không được truy cập chức năng",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Hệ thống từ chối truy cập; Hiển thị thông báo không có quyền"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống từ chối truy cập",
+      "Hiển thị thông báo không có quyền"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "User không có quyền không được truy cập chức năng",
+      "scenarioId": "SC012"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  },
+  {
+    "id": "TC013",
+    "scenarioId": "SC013",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị bị trùng",
+    "testScenario": "Mã thiết bị bị trùng",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Mã thiết bị bị trùng",
+    "preconditions": [
+      "Người dùng đã đăng nhập hệ thống"
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Nhập dữ liệu kiểm tra",
+        "expected": "Hệ thống tiếp nhận dữ liệu"
+      },
+      {
+        "order": 3,
+        "actionType": "CLICK",
+        "action": "Thực hiện thao tác lưu",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả",
+        "expected": "Dữ liệu không được tạo trùng; Hệ thống bảo toàn dữ liệu"
+      }
+    ],
+    "expectedResults": [
+      "Dữ liệu không được tạo trùng",
+      "Hệ thống bảo toàn dữ liệu"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "DATA_INTEGRITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị bị trùng",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY risk detected",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.0"
+  }
+]
