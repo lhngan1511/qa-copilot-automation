@@ -1,6 +1,8 @@
 class TestCase {
 
+
     constructor() {
+
 
         // ==========================
         // Identity
@@ -9,6 +11,8 @@ class TestCase {
         this.id = "";
 
         this.scenarioId = "";
+
+
 
         // ==========================
         // Requirement Information
@@ -22,29 +26,43 @@ class TestCase {
 
         this.requirementReference = "";
 
+        this.requirementType = "";
+
+
+
         // ==========================
         // Test Execution
         // ==========================
 
         this.preconditions = [];
 
+
         this.testData = {
+
             inputs: {},
+
             expected: {},
+
             invalid: {}
+
         };
+
 
         this.steps = [];
 
         this.expectedResults = [];
 
+
+
         // ==========================
         // Test Management
         // ==========================
 
-        this.severity = "Medium";
+        this.severity = "MEDIUM";
 
-        this.priority = "Medium";
+        this.priority = "MEDIUM";
+
+
 
         // ==========================
         // Automation
@@ -52,34 +70,53 @@ class TestCase {
 
         this.automationCandidate = false;
 
+
         this.automation = {
+
             candidate: false,
+
             framework: "",
+
             pageObject: "",
+
             locatorStrategy: "",
+
             tags: []
+
         };
 
+
+
         // ==========================
-        // Intelligence Metadata
+        // Requirement Intelligence
         // ==========================
+
+        this.intelligence = null;
+
 
         this.source = "";
 
+
         this.reason = "";
+
 
         this.riskCategory = "";
 
+
+
         // ==========================
-        // Version
+        // Metadata
         // ==========================
 
         this.createdBy = "QA-Copilot";
 
         this.version = "1.0";
 
+
     }
 
+
 }
+
 
 export default TestCase;

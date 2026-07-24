@@ -1,42 +1,116 @@
 class RequirementKnowledge {
 
+
     constructor() {
 
-        // Những quy tắc kiểm tra suy luận được
+
+        // ==========================
+        // Validation Intelligence
+        // ==========================
+
+        // Các rule kiểm tra suy luận được
+
         this.validationRules = [];
 
-        // Những rủi ro nghiệp vụ
+
+
+        // ==========================
+        // Risk Intelligence
+        // ==========================
+
+        // Nhóm rủi ro nghiệp vụ
+
         this.riskAreas = [];
 
-        // Boundary cần kiểm tra
+
+
+        // ==========================
+        // Test Intelligence Cases
+        // ==========================
+
+
+        // Boundary cases
+
         this.boundaryCases = [];
 
-        // Negative cần kiểm tra
+
+
+        // Negative cases
+
         this.negativeCases = [];
 
-        // Positive cần kiểm tra
+
+
+        // Positive cases
+
         this.positiveCases = [];
 
-        // Security
+
+
+        // Security cases
+
         this.securityCases = [];
 
-        // Permission
+
+
+        // Permission cases
+
         this.permissionCases = [];
 
-        // Data Integrity
+
+
+        // Data Integrity cases
+
         this.dataIntegrityCases = [];
 
-        // Scenario AI gợi ý
+
+
+        // ==========================
+        // AI Recommendation
+        // ==========================
+
+
+        // Scenario AI đề xuất
+
         this.suggestedScenarios = [];
 
-        // Thiếu thông tin gì?
+
+
+        // ==========================
+        // Requirement Gap Analysis
+        // ==========================
+
+
+        // Thông tin còn thiếu
+
         this.questions = [];
 
-        // Độ tin cậy
+
+
+        // ==========================
+        // Intelligence Confidence
+        // ==========================
+
+
+        // Độ tin cậy phân tích
+
         this.confidence = 0;
+
+
+
+        // ==========================
+        // Metadata
+        // ==========================
+
+        this.source = "Requirement Intelligence Engine";
+
+        this.version = "1.0";
+
 
     }
 
+
 }
+
 
 export default RequirementKnowledge;

@@ -6,6 +6,7 @@
     "title": "Thiết bị với dữ liệu hợp lệ",
     "type": "POSITIVE",
     "requirementReference": "Thiết bị với dữ liệu hợp lệ",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -48,7 +49,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "POSITIVE risk detected",
     "riskCategory": "POSITIVE",
     "createdBy": "QA-Copilot",
@@ -61,6 +97,7 @@
     "title": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
     "type": "POSITIVE",
     "requirementReference": "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -103,7 +140,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "POSITIVE risk detected",
     "riskCategory": "POSITIVE",
     "createdBy": "QA-Copilot",
@@ -116,6 +188,7 @@
     "title": "Thiết bị mới hiển thị trong danh sách.",
     "type": "POSITIVE",
     "requirementReference": "Thiết bị mới hiển thị trong danh sách.",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -158,7 +231,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "POSITIVE risk detected",
     "riskCategory": "POSITIVE",
     "createdBy": "QA-Copilot",
@@ -171,6 +279,7 @@
     "title": "Mã thiết bị không được trùng.",
     "type": "NEGATIVE",
     "requirementReference": "Mã thiết bị không được trùng.",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -195,17 +304,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Mã thiết bị không được trùng.",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Mã thiết bị không được trùng.",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -217,7 +326,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -230,6 +374,7 @@
     "title": "Không được bỏ trống các trường bắt buộc.",
     "type": "NEGATIVE",
     "requirementReference": "Không được bỏ trống các trường bắt buộc.",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -254,17 +399,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Không được bỏ trống các trường bắt buộc.",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Không được bỏ trống các trường bắt buộc.",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -276,7 +421,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -289,6 +469,7 @@
     "title": "Mã thiết bị không được để trống",
     "type": "NEGATIVE",
     "requirementReference": "Mã thiết bị không được để trống",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -313,17 +494,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Mã thiết bị không được để trống",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Mã thiết bị không được để trống",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -335,7 +516,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -348,6 +564,7 @@
     "title": "Tên thiết bị không được để trống",
     "type": "NEGATIVE",
     "requirementReference": "Tên thiết bị không được để trống",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -372,17 +589,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Tên thiết bị không được để trống",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Tên thiết bị không được để trống",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -394,7 +611,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -407,6 +659,7 @@
     "title": "Loại thiết bị không được để trống",
     "type": "NEGATIVE",
     "requirementReference": "Loại thiết bị không được để trống",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -431,17 +684,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Loại thiết bị không được để trống",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Loại thiết bị không được để trống",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -453,7 +706,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -466,6 +754,7 @@
     "title": "Mã thiết bị bị trùng",
     "type": "NEGATIVE",
     "requirementReference": "Mã thiết bị bị trùng",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -490,17 +779,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Mã thiết bị bị trùng",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Mã thiết bị bị trùng",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -512,7 +801,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -525,6 +849,7 @@
     "title": "Mã thiết bị đã tồn tại.",
     "type": "NEGATIVE",
     "requirementReference": "Mã thiết bị đã tồn tại.",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -549,17 +874,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Mã thiết bị đã tồn tại.",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Mã thiết bị đã tồn tại.",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -571,7 +896,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -584,6 +944,7 @@
     "title": "Thiếu thông tin bắt buộc.",
     "type": "NEGATIVE",
     "requirementReference": "Thiếu thông tin bắt buộc.",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -608,17 +969,17 @@
       },
       {
         "order": 2,
-        "action": "Nhập dữ liệu không hợp lệ: Thiếu thông tin bắt buộc.",
-        "expected": "Hệ thống kiểm tra dữ liệu"
+        "action": "Nhập dữ liệu kiểm tra: Thiếu thông tin bắt buộc.",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Thực hiện lưu",
-        "expected": "Hệ thống từ chối dữ liệu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống từ chối dữ liệu không hợp lệ"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -630,7 +991,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "NEGATIVE risk detected",
     "riskCategory": "NEGATIVE",
     "createdBy": "QA-Copilot",
@@ -643,6 +1039,7 @@
     "title": "User không có quyền không được truy cập chức năng",
     "type": "PERMISSION",
     "requirementReference": "User không có quyền không được truy cập chức năng",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -653,7 +1050,11 @@
         "Loại thiết bị": "Loại thiết bị_TEST"
       },
       "expected": {},
-      "invalid": {}
+      "invalid": {
+        "Mã thiết bị": "",
+        "Tên thiết bị": "",
+        "Loại thiết bị": ""
+      }
     },
     "steps": [
       {
@@ -663,17 +1064,17 @@
       },
       {
         "order": 2,
-        "action": "User không có quyền không được truy cập chức năng",
-        "expected": "Dữ liệu được xử lý"
+        "action": "Nhập dữ liệu kiểm tra: User không có quyền không được truy cập chức năng",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Kiểm tra kết quả",
-        "expected": "Kết quả đúng yêu cầu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống xử lý thành công"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -685,7 +1086,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "PERMISSION risk detected",
     "riskCategory": "PERMISSION",
     "createdBy": "QA-Copilot",
@@ -698,6 +1134,7 @@
     "title": "Mã thiết bị bị trùng",
     "type": "DATA_INTEGRITY",
     "requirementReference": "Mã thiết bị bị trùng",
+    "requirementType": "",
     "preconditions": [
       "Người dùng đã đăng nhập"
     ],
@@ -708,7 +1145,11 @@
         "Loại thiết bị": "Loại thiết bị_TEST"
       },
       "expected": {},
-      "invalid": {}
+      "invalid": {
+        "Mã thiết bị": "Mã thiết bị_EXISTED",
+        "Tên thiết bị": "Tên thiết bị_EXISTED",
+        "Loại thiết bị": "Loại thiết bị_EXISTED"
+      }
     },
     "steps": [
       {
@@ -718,17 +1159,17 @@
       },
       {
         "order": 2,
-        "action": "Mã thiết bị bị trùng",
-        "expected": "Dữ liệu được xử lý"
+        "action": "Nhập dữ liệu kiểm tra: Mã thiết bị bị trùng",
+        "expected": "Hệ thống thực hiện kiểm tra"
       },
       {
         "order": 3,
-        "action": "Kiểm tra kết quả",
-        "expected": "Kết quả đúng yêu cầu"
+        "action": "Thực hiện thao tác",
+        "expected": "Hệ thống xử lý đúng theo yêu cầu"
       }
     ],
     "expectedResults": [
-      "Hệ thống xử lý thành công"
+      "Hệ thống xử lý đúng theo quy tắc kiểm tra"
     ],
     "severity": "HIGH",
     "priority": "HIGH",
@@ -740,7 +1181,42 @@
       "locatorStrategy": "",
       "tags": []
     },
-    "source": "Rule Engine",
+    "intelligence": {
+      "confidence": 85,
+      "validationRules": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Mã thiết bị phải duy nhất",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Loại thiết bị phải chọn giá trị hợp lệ"
+      ],
+      "boundaryCases": [],
+      "negativeCases": [
+        "Mã thiết bị không được trùng.",
+        "Không được bỏ trống các trường bắt buộc.",
+        "Mã thiết bị không được để trống",
+        "Tên thiết bị không được để trống",
+        "Loại thiết bị không được để trống",
+        "Mã thiết bị bị trùng",
+        "Mã thiết bị đã tồn tại.",
+        "Thiếu thông tin bắt buộc."
+      ],
+      "positiveCases": [
+        "Thiết bị với dữ liệu hợp lệ",
+        "Hiển thị thông báo \"Thêm thiết bị thành công\".",
+        "Thiết bị mới hiển thị trong danh sách."
+      ],
+      "securityCases": [],
+      "permissionCases": [
+        "User không có quyền không được truy cập chức năng"
+      ],
+      "dataIntegrityCases": [
+        "Mã thiết bị bị trùng"
+      ]
+    },
+    "source": "Requirement Intelligence Engine",
     "reason": "DATA_INTEGRITY risk detected",
     "riskCategory": "DATA_INTEGRITY",
     "createdBy": "QA-Copilot",

@@ -1,62 +1,138 @@
 class RequirementObject {
 
+
     constructor() {
 
+
+        // ==========================
+        // Requirement Identity
+        // ==========================
+
         // Tên chức năng / module
+
         this.feature = "";
 
 
-        // Mục đích của chức năng
+        // Mục đích chức năng
+
         this.purpose = "";
 
 
+
+        // ==========================
+        // Business Understanding
+        // ==========================
+
         // Các đối tượng nghiệp vụ
-        // Ví dụ: Thiết bị, Nhân viên, Phiếu nhập
+
+        // Ví dụ:
+        // Thiết bị
+        // Nhân viên
+        // Phiếu nhập
+
         this.entities = [];
 
 
-        // Các hành động người dùng có thể thực hiện
-        // Ví dụ: thêm, sửa, xóa, tìm kiếm
+
+        // Các hành động người dùng
+
+        // Ví dụ:
+        // thêm
+        // sửa
+        // xóa
+        // tìm kiếm
+
         this.actions = [];
 
 
-        // Danh sách dữ liệu đầu vào
+
+        // ==========================
+        // Input Intelligence
+        // ==========================
+
+        // Danh sách input đơn giản
+
         this.inputs = [];
 
 
-        // Định nghĩa chi tiết input
-        // Ví dụ: required, type, format
+
+        // Chi tiết định nghĩa input
+
+        // {
+        //   name,
+        //   type,
+        //   required,
+        //   format,
+        //   validation
+        // }
+
         this.inputDefinitions = [];
 
 
-        // Điều kiện trước khi thực hiện
+
+        // ==========================
+        // Business Rules
+        // ==========================
+
         this.conditions = [];
 
 
-        // Quy tắc nghiệp vụ
         this.businessRules = [];
 
 
-        // Kết quả mong đợi
+
+        // ==========================
+        // Expected Behavior
+        // ==========================
+
         this.expectedResults = [];
 
 
-        // Các trường hợp ngoại lệ
+
+        // ==========================
+        // Risk Analysis
+        // ==========================
+
+        // Các trường hợp biên
+
         this.edgeCases = [];
 
 
-        // Module bị ảnh hưởng
-        this.affectedModules = [];
+        // Các câu hỏi cần AI làm rõ
 
-
-        // Các câu hỏi AI cần làm rõ
         this.questions = [];
 
 
-        // Ghi chú bổ sung
+
+        // ==========================
+        // Traceability
+        // ==========================
+
+        // Module bị ảnh hưởng
+
+        this.affectedModules = [];
+
+
+
+        // ==========================
+        // Metadata
+        // ==========================
+
         this.notes = [];
 
+
+        // Requirement version
+
+        this.version = "1.0";
+
+
+        // Source document
+
+        this.source = "";
+
+
     }
+
 
 }
 

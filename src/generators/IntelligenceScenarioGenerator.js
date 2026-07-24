@@ -1,6 +1,8 @@
 import TestScenario from "../models/TestScenario.js";
 
+
 class IntelligenceScenarioGenerator {
+
 
     constructor() {
 
@@ -9,7 +11,13 @@ class IntelligenceScenarioGenerator {
     }
 
 
-    generate(recommendedScenarios, requirement) {
+
+    generate(
+        recommendedScenarios,
+        requirement,
+        knowledge = null
+    ) {
+
 
         if (
             !Array.isArray(recommendedScenarios)
@@ -20,10 +28,13 @@ class IntelligenceScenarioGenerator {
         }
 
 
+
         return recommendedScenarios.map(item => {
+
 
             const scenario =
                 new TestScenario();
+
 
 
             scenario.id =
@@ -31,41 +42,59 @@ class IntelligenceScenarioGenerator {
                     .padStart(3, "0")}`;
 
 
+
             scenario.feature =
-                requirement.feature;
+                requirement.feature || "";
+
 
 
             scenario.title =
-                item.title;
+                item.title || "";
+
 
 
             scenario.type =
-                item.type;
+                item.type || "POSITIVE";
+
 
 
             scenario.priority =
-                item.priority;
+                item.priority || "MEDIUM";
+
 
 
             scenario.reason =
-                item.reason;
+                item.reason || "";
+
 
 
             scenario.riskCategory =
-                item.riskCategory;
+                item.riskCategory
+                ||
+                item.type
+                ||
+                "";
+
 
 
             scenario.requirementReference =
-                item.requirementReference;
+                item.requirementReference
+                ||
+                item.title
+                ||
+                "";
+
 
 
             scenario.requirementType =
-                item.type;
+                item.type || "";
 
 
-            // Truyền input definition từ Requirement xuống Scenario
+
             scenario.inputDefinitions =
-                requirement.inputDefinitions || [];
+                requirement.inputDefinitions
+                ||
+                [];
 
 
 
@@ -75,10 +104,12 @@ class IntelligenceScenarioGenerator {
                 ];
 
 
+
             scenario.steps =
                 this.generateSteps(
                     scenario
                 );
+
 
 
             scenario.expectedResults =
@@ -89,77 +120,220 @@ class IntelligenceScenarioGenerator {
                 ];
 
 
+
             scenario.testData =
                 null;
 
 
+
             scenario.severity =
-                item.priority;
+                item.priority
+                ||
+                "MEDIUM";
+
 
 
             scenario.automationCandidate =
                 true;
 
 
+
+
+            if (knowledge) {
+
+
+                scenario.intelligence = {
+
+
+                    confidence:
+                        knowledge.confidence
+                        ||
+                        0,
+
+
+                    validationRules:
+                        knowledge.validationRules
+                        ||
+                        [],
+
+
+                    boundaryCases:
+                        knowledge.boundaryCases
+                        ||
+                        [],
+
+
+                    negativeCases:
+                        knowledge.negativeCases
+                        ||
+                        [],
+
+
+                    positiveCases:
+                        knowledge.positiveCases
+                        ||
+                        [],
+
+
+                    securityCases:
+                        knowledge.securityCases
+                        ||
+                        [],
+
+
+                    permissionCases:
+                        knowledge.permissionCases
+                        ||
+                        [],
+
+
+                    dataIntegrityCases:
+                        knowledge.dataIntegrityCases
+                        ||
+                        []
+
+
+                };
+
+
+            }
+
+
+
             return scenario;
+
 
         });
 
+
     }
+
+
+
+
 
 
 
     generateSteps(scenario) {
 
 
+
+        const negativeTypes = [
+
+            "NEGATIVE",
+
+            "SECURITY",
+
+            "PERMISSION",
+
+            "DATA_INTEGRITY",
+
+            "BOUNDARY"
+
+        ];
+
+
+
         if (
-            scenario.type === "NEGATIVE"
+            negativeTypes.includes(
+                scenario.type
+            )
         ) {
+
+
 
             return [
 
+
                 {
+
                     order: 1,
-                    action: "Mở chức năng",
-                    expected: "Màn hình hiển thị"
+
+                    action:
+                        "Mở chức năng",
+
+                    expected:
+                        "Màn hình hiển thị"
+
                 },
 
+
                 {
+
                     order: 2,
-                    action: `Nhập dữ liệu không hợp lệ: ${scenario.title}`,
-                    expected: "Hệ thống kiểm tra dữ liệu"
+
+                    action:
+                        `Nhập dữ liệu kiểm tra: ${scenario.title}`,
+
+                    expected:
+                        "Hệ thống thực hiện kiểm tra"
+
                 },
 
+
                 {
+
                     order: 3,
-                    action: "Thực hiện lưu",
-                    expected: "Hệ thống từ chối dữ liệu"
+
+                    action:
+                        "Thực hiện thao tác",
+
+                    expected:
+                        "Hệ thống xử lý đúng theo yêu cầu"
+
                 }
 
+
             ];
+
 
         }
 
 
+
+
+
         return [
 
+
             {
+
                 order: 1,
-                action: "Mở chức năng",
-                expected: "Màn hình hiển thị"
+
+                action:
+                    "Mở chức năng",
+
+                expected:
+                    "Màn hình hiển thị"
+
             },
 
+
             {
+
                 order: 2,
-                action: scenario.title,
-                expected: "Dữ liệu được xử lý"
+
+                action:
+                    scenario.title,
+
+                expected:
+                    "Dữ liệu được xử lý"
+
             },
 
+
             {
+
                 order: 3,
-                action: "Kiểm tra kết quả",
-                expected: "Kết quả đúng yêu cầu"
+
+                action:
+                    "Kiểm tra kết quả",
+
+                expected:
+                    "Kết quả đúng yêu cầu"
+
             }
+
 
         ];
 
@@ -167,16 +341,43 @@ class IntelligenceScenarioGenerator {
 
 
 
+
+
+
+
+
     generateExpectedResult(scenario) {
 
 
+
+        const negativeTypes = [
+
+            "NEGATIVE",
+
+            "SECURITY",
+
+            "PERMISSION",
+
+            "DATA_INTEGRITY",
+
+            "BOUNDARY"
+
+        ];
+
+
+
         if (
-            scenario.type === "NEGATIVE"
+            negativeTypes.includes(
+                scenario.type
+            )
         ) {
 
-            return "Hệ thống từ chối dữ liệu không hợp lệ";
+
+            return "Hệ thống xử lý đúng theo quy tắc kiểm tra";
+
 
         }
+
 
 
         return "Hệ thống xử lý thành công";

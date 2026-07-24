@@ -21,9 +21,9 @@ class TestCaseGenerator {
     generate(scenarios = []) {
 
 
-        if(
+        if (
             !Array.isArray(scenarios)
-        ){
+        ) {
 
             return [];
 
@@ -31,170 +31,201 @@ class TestCaseGenerator {
 
 
 
-        const testCases =
-            scenarios.map(
-                scenario => {
 
 
-                    const testCase =
-                        new TestCase();
+        return scenarios.map(scenario => {
 
 
 
+            const testCase =
+                new TestCase();
 
-                    testCase.id =
-                        `TC${String(this.counter++)
-                        .padStart(3,"0")}`;
 
 
 
 
-                    testCase.scenarioId =
-                        scenario.id || "";
+            testCase.id =
+                `TC${String(this.counter++)
+                    .padStart(3, "0")}`;
 
 
 
-                    testCase.feature =
-                        scenario.feature || "";
 
 
+            testCase.scenarioId =
+                scenario.id
+                ||
+                "";
 
-                    testCase.title =
-                        scenario.title || "";
 
 
 
-                    testCase.type =
-                        scenario.type || "";
 
+            testCase.feature =
+                scenario.feature
+                ||
+                "";
 
 
-                    testCase.requirementReference =
-                        scenario.requirementReference
-                        ||
-                        scenario.title
-                        ||
-                        "";
 
 
 
+            testCase.title =
+                scenario.title
+                ||
+                "";
 
-                    testCase.preconditions =
-                        scenario.preconditions
-                        ||
-                        [];
 
 
 
 
+            testCase.type =
+                scenario.type
+                ||
+                "";
 
 
-                    /*
-                     * Generate Test Data
-                     */
 
-                    testCase.testData =
-                        this.testDataGenerator.generate(
-                            scenario.inputDefinitions
-                            ||
-                            scenario.inputs
-                            ||
-                            [],
-                            scenario
-                        );
 
 
+            testCase.requirementReference =
+                scenario.requirementReference
+                ||
+                scenario.title
+                ||
+                "";
 
 
 
 
 
-                    testCase.steps =
-                        scenario.steps
-                        ||
-                        [];
+            testCase.preconditions =
+                scenario.preconditions
+                ||
+                [];
 
 
 
 
 
+            testCase.testData =
+                this.testDataGenerator.generate(
 
-                    testCase.expectedResults =
-                        scenario.expectedResults
-                        ||
-                        [];
+                    scenario.inputDefinitions
+                    ||
+                    scenario.inputs
+                    ||
+                    [],
 
+                    scenario
 
+                );
 
 
 
-                    testCase.severity =
-                        scenario.severity
-                        ||
-                        "MEDIUM";
 
 
+            testCase.steps =
+                scenario.steps
+                ||
+                [];
 
-                    testCase.priority =
-                        scenario.priority
-                        ||
-                        "MEDIUM";
 
 
 
 
+            testCase.expectedResults =
+                scenario.expectedResults
+                ||
+                [];
 
-                    testCase.automationCandidate =
-                        scenario.automationCandidate
-                        ??
-                        false;
 
 
 
 
+            testCase.severity =
+                scenario.severity
+                ||
+                "MEDIUM";
 
-                    if(
-                        testCase.automation
-                    ){
 
-                        testCase.automation.candidate =
-                            testCase.automationCandidate;
 
-                    }
 
 
+            testCase.priority =
+                scenario.priority
+                ||
+                "MEDIUM";
 
 
 
-                    testCase.source =
-                        "Rule Engine";
 
 
+            testCase.automationCandidate =
+                scenario.automationCandidate
+                ??
+                false;
 
-                    testCase.reason =
-                        scenario.reason
-                        ||
-                        "";
 
 
 
-                    testCase.riskCategory =
-                        scenario.riskCategory
-                        ||
-                        "";
 
+            if (
+                testCase.automation
+            ) {
 
 
+                testCase.automation.candidate =
+                    testCase.automationCandidate;
 
-                    return testCase;
 
+            }
 
-                }
-            );
 
 
 
-        return testCases;
+
+
+            testCase.source =
+                "Requirement Intelligence Engine";
+
+
+
+
+
+            testCase.reason =
+                scenario.reason
+                ||
+                "";
+
+
+
+
+
+            testCase.riskCategory =
+                scenario.riskCategory
+                ||
+                "";
+
+
+
+
+
+            testCase.intelligence =
+                scenario.intelligence
+                ||
+                null;
+
+
+
+
+
+            return testCase;
+
+
+
+        });
+
 
 
     }

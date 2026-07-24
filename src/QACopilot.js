@@ -183,7 +183,8 @@ class QACopilot {
         const scenarios =
             this.intelligenceScenarioGenerator.generate(
                 recommendedScenarios,
-                requirement
+                requirement,
+                knowledge
             );
 
 

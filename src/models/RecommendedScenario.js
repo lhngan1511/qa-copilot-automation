@@ -16,7 +16,8 @@ class RecommendedScenario {
         source = "",
 
 
-        // Sprint 15.5
+        // Traceability
+
         requirementReference = "",
 
         riskCategory = ""
@@ -26,13 +27,17 @@ class RecommendedScenario {
 
 
 
-        // Scenario identity
+        // ==========================
+        // Identity
+        // ==========================
 
         this.id = id;
 
 
 
-        // Nội dung scenario
+        // ==========================
+        // Scenario Information
+        // ==========================
 
         this.title = title;
 
@@ -41,9 +46,11 @@ class RecommendedScenario {
         // POSITIVE
         // NEGATIVE
         // BOUNDARY
+        // BUSINESS_RULE
         // SECURITY
         // PERMISSION
         // DATA_INTEGRITY
+        // PERFORMANCE
 
         this.type = type;
 
@@ -55,31 +62,53 @@ class RecommendedScenario {
 
 
 
-        // Lý do sinh testcase
+        // ==========================
+        // Intelligence Reason
+        // ==========================
 
         this.reason = reason;
 
 
 
-        // Nguồn sinh
+        // Rule Engine / AI / Intelligence Engine
 
         this.source = source;
 
 
 
-        // Sprint 15.5 Traceability
+        // ==========================
+        // Traceability
+        // ==========================
 
-        // Requirement nào tạo ra scenario này
+        // Requirement tạo ra scenario
 
         this.requirementReference =
             requirementReference;
 
 
 
-        // Nhóm rủi ro
+        // ==========================
+        // Risk Classification
+        // ==========================
 
         this.riskCategory =
             riskCategory || type;
+
+
+
+        // ==========================
+        // Automation Metadata
+        // ==========================
+
+        this.automationCandidate = false;
+
+
+
+        // ==========================
+        // Version
+        // ==========================
+
+        this.version = "1.0";
 
 
     }

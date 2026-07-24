@@ -15,7 +15,7 @@ class TestDataGenerator {
 
 
 
-        if(
+        if (
             !Array.isArray(inputDefinitions)
         ) {
 
@@ -37,75 +37,87 @@ class TestDataGenerator {
 
 
 
-
-        inputDefinitions.forEach(
-            input => {
-
-
-                const name =
-                    this.resolveName(input);
+        inputDefinitions.forEach(input => {
 
 
 
-                if(!name){
-
-                    return;
-
-                }
+            const name =
+                this.resolveName(input);
 
 
 
+            if (!name) {
 
-                testData.inputs[name] =
-                    this.generateValidValue(
+                return;
+
+            }
+
+
+
+
+            testData.inputs[name] =
+                this.generateValidValue(
+                    input,
+                    name
+                );
+
+
+
+
+
+            if (
+
+                [
+                    "NEGATIVE",
+                    "SECURITY",
+                    "PERMISSION",
+                    "DATA_INTEGRITY"
+
+                ].includes(type)
+
+            ) {
+
+
+
+                testData.invalid[name] =
+                    this.generateInvalidValue(
                         input,
+                        title,
                         name
                     );
 
 
-
-
-
-                if(
-                    type === "NEGATIVE"
-                ) {
-
-
-                    testData.invalid[name] =
-                        this.generateInvalidValue(
-                            input,
-                            title,
-                            name
-                        );
-
-
-                }
+            }
 
 
 
 
 
-                if(
-                    type === "BOUNDARY"
-                ) {
+
+            if (
+                type === "BOUNDARY"
+            ) {
 
 
-                    testData.invalid[name] =
-                        this.generateBoundaryValue(
-                            input,
-                            title
-                        );
 
-
-                }
+                testData.invalid[name] =
+                    this.generateBoundaryValue(
+                        input,
+                        title
+                    );
 
 
             }
-        );
+
+
+
+        });
+
 
 
 
         return testData;
+
 
 
     }
@@ -118,10 +130,11 @@ class TestDataGenerator {
 
 
 
-    resolveName(input){
+    resolveName(input) {
 
 
         return (
+
             input.name
             ||
             input.field
@@ -133,6 +146,7 @@ class TestDataGenerator {
             input.key
             ||
             null
+
         );
 
 
@@ -146,15 +160,17 @@ class TestDataGenerator {
 
 
 
-    getDataType(input){
+    getDataType(input) {
 
 
         return (
+
             input.dataType
             ||
             input.type
             ||
             "STRING"
+
         )
         .toUpperCase();
 
@@ -172,7 +188,7 @@ class TestDataGenerator {
     generateValidValue(
         input,
         name
-    ){
+    ) {
 
 
         const type =
@@ -180,12 +196,14 @@ class TestDataGenerator {
 
 
 
-        switch(type){
+
+        switch(type) {
 
 
             case "NUMBER":
 
                 return 100;
+
 
 
 
@@ -195,9 +213,18 @@ class TestDataGenerator {
 
 
 
+
             case "EMAIL":
 
                 return "test@example.com";
+
+
+
+
+            case "PHONE":
+
+                return "0900000000";
+
 
 
 
@@ -223,21 +250,21 @@ class TestDataGenerator {
         input,
         title,
         name
-    ){
+    ) {
 
 
 
-        /*
-         Duplicate
-        */
+        if (
 
-        if(
             title.includes("trùng")
             ||
             title.includes("tồn tại")
             ||
             title.includes("đã tồn tại")
-        ){
+
+        ) {
+
+
 
             return `${name}_EXISTED`;
 
@@ -248,21 +275,25 @@ class TestDataGenerator {
 
 
 
-        /*
-          Required
-        */
 
-        if(
+
+        if (
+
             title.includes("trống")
             ||
             title.includes("bắt buộc")
             ||
             title.includes("thiếu")
-        ){
+
+        ) {
+
+
 
             return "";
 
         }
+
+
 
 
 
@@ -274,7 +305,8 @@ class TestDataGenerator {
 
 
 
-        switch(type){
+
+        switch(type) {
 
 
             case "NUMBER":
@@ -283,9 +315,25 @@ class TestDataGenerator {
 
 
 
+
             case "EMAIL":
 
                 return "invalid";
+
+
+
+
+            case "DATE":
+
+                return "invalid-date";
+
+
+
+
+            case "PHONE":
+
+                return "invalid-phone";
+
 
 
 
@@ -310,27 +358,34 @@ class TestDataGenerator {
     generateBoundaryValue(
         input,
         title
-    ){
+    ) {
 
 
-        if(
+        if (
             title.includes("nhỏ hơn")
-        ){
+        ) {
+
 
             return this.getMinValue(input);
 
+
         }
 
 
 
-        if(
+
+        if (
+
             title.includes("lớn hơn")
             ||
             title.includes("vượt quá")
-        ){
+
+        ) {
+
 
             return this.getMaxValue(input);
 
+
         }
 
 
@@ -348,20 +403,28 @@ class TestDataGenerator {
 
 
 
-    getMinValue(input){
+    getMinValue(input) {
 
 
-        if(
+        if (
+
             this.getDataType(input)
             ===
             "NUMBER"
-        ){
+
+        ) {
+
 
             return (
+
                 input.validation?.minValue
                 ??
+                input.minValue
+                ??
                 0
+
             );
+
 
         }
 
@@ -380,20 +443,28 @@ class TestDataGenerator {
 
 
 
-    getMaxValue(input){
+    getMaxValue(input) {
 
 
-        if(
+        if (
+
             this.getDataType(input)
             ===
             "NUMBER"
-        ){
+
+        ) {
+
 
             return (
+
                 input.validation?.maxValue
                 ??
+                input.maxValue
+                ??
                 999999
+
             );
+
 
         }
 
