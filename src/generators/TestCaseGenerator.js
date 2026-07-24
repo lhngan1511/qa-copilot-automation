@@ -1,15 +1,23 @@
 import TestCase from "../models/TestCase.js";
-import TestData from "../models/TestData.js";
+import TestDataGenerator from "./TestDataGenerator.js";
+
 
 class TestCaseGenerator {
+
 
     constructor() {
 
         this.counter = 1;
 
+        this.testDataGenerator =
+            new TestDataGenerator();
+
     }
 
+
+
     generate(scenarios) {
+
 
         if (!Array.isArray(scenarios)) {
 
@@ -17,67 +25,121 @@ class TestCaseGenerator {
 
         }
 
-        return scenarios.map(scenario => {
 
-            const testCase = new TestCase();
 
-            testCase.id =
-                `TC${String(this.counter++).padStart(3, "0")}`;
+        return scenarios.map(
+            scenario => {
 
-            testCase.scenarioId =
-                scenario.id;
 
-            testCase.feature =
-                scenario.feature;
+                const testCase =
+                    new TestCase();
 
-            testCase.title =
-                scenario.title;
 
-            testCase.type =
-                scenario.type;
 
-            testCase.requirementReference =
-                scenario.requirementReference;
+                testCase.id =
+                    `TC${String(this.counter++)
+                    .padStart(3, "0")}`;
 
-            testCase.preconditions =
-                scenario.preconditions || [];
 
-            testCase.testData =
-                new TestData();
 
-            testCase.steps =
-                scenario.steps || [];
+                testCase.scenarioId =
+                    scenario.id;
 
-            testCase.expectedResults =
-                scenario.expectedResults || [];
 
-            testCase.severity =
-                scenario.severity;
 
-            testCase.priority =
-                scenario.priority;
+                testCase.feature =
+                    scenario.feature;
 
-            testCase.automationCandidate =
-                scenario.automationCandidate;
 
-            testCase.automation.candidate =
-                scenario.automationCandidate;
 
-            testCase.source =
-                "AI";
+                testCase.title =
+                    scenario.title;
 
-            testCase.reason =
-                scenario.reason;
 
-            testCase.riskCategory =
-                scenario.riskCategory;
 
-            return testCase;
+                testCase.type =
+                    scenario.type;
 
-        });
+
+
+                testCase.requirementReference =
+                    scenario.requirementReference;
+
+
+
+                testCase.preconditions =
+                    scenario.preconditions || [];
+
+
+
+                /*
+                 * Generate Test Data
+                 */
+
+                testCase.testData =
+                    this.testDataGenerator.generate(
+                        scenario.inputDefinitions || [],
+                        scenario
+                    );
+
+
+
+                testCase.steps =
+                    scenario.steps || [];
+
+
+
+                testCase.expectedResults =
+                    scenario.expectedResults || [];
+
+
+
+                testCase.severity =
+                    scenario.severity;
+
+
+
+                testCase.priority =
+                    scenario.priority;
+
+
+
+                testCase.automationCandidate =
+                    scenario.automationCandidate;
+
+
+
+                testCase.automation.candidate =
+                    scenario.automationCandidate;
+
+
+
+                testCase.source =
+                    "Rule Engine";
+
+
+
+                testCase.reason =
+                    scenario.reason;
+
+
+
+                testCase.riskCategory =
+                    scenario.riskCategory;
+
+
+
+                return testCase;
+
+
+            }
+        );
+
 
     }
 
+
 }
+
 
 export default TestCaseGenerator;

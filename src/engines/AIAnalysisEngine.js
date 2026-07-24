@@ -1,16 +1,24 @@
 import AIAnalysisResult from "../models/AIAnalysisResult.js";
+import AIProviderFactory from "../providers/AIProviderFactory.js";
 
 
 class AIAnalysisEngine {
 
 
-    constructor(){
+    constructor() {
+
+
+        this.aiProvider =
+            AIProviderFactory.create();
+
 
     }
 
 
 
-    analyze(requirement){
+
+
+    async analyze(requirement) {
 
 
         const result =
@@ -18,25 +26,254 @@ class AIAnalysisEngine {
 
 
 
-        /*
-            Feature Understanding
+        try {
 
-            Hiện tại lấy trực tiếp từ RequirementObject.
-            Sau này thay bằng AI Prompt.
-        */
+
+            const prompt =
+                this.buildPrompt(
+                    requirement
+                );
+
+
+
+            const aiResponse =
+                await this.aiProvider.generate(
+                    prompt
+                );
+
+
+
+            const parsedResult =
+                this.parseAIResponse(
+                    aiResponse
+                );
+
+
+
+            result.featureUnderstanding =
+                parsedResult.featureUnderstanding
+                ||
+                requirement.feature;
+
+
+
+            result.testFocus =
+                parsedResult.testFocus
+                ||
+                [];
+
+
+
+            result.riskAreas =
+                parsedResult.riskAreas
+                ||
+                [];
+
+
+
+            result.suggestedScenarios =
+                parsedResult.suggestedScenarios
+                ||
+                [];
+
+
+
+            result.questions =
+                parsedResult.questions
+                ||
+                [];
+
+
+
+            result.notes =
+                parsedResult.notes
+                ||
+                [];
+
+
+
+            result.confidence =
+                parsedResult.confidence
+                ||
+                0.8;
+
+
+
+            return result;
+
+
+
+        }
+        catch(error){
+
+
+
+            console.error(
+                "AI Analysis failed:",
+                error.message
+            );
+
+
+
+            return this.fallbackAnalysis(
+                requirement
+            );
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+    buildPrompt(requirement){
+
+
+
+        return `
+
+Bạn là chuyên gia QA Senior.
+
+Hãy phân tích yêu cầu phần mềm sau.
+
+Chức năng:
+${requirement.feature}
+
+
+Mục đích:
+${requirement.purpose}
+
+
+Quy tắc nghiệp vụ:
+${JSON.stringify(
+    requirement.businessRules,
+    null,
+    2
+)}
+
+
+Trường hợp ngoại lệ:
+${JSON.stringify(
+    requirement.edgeCases,
+    null,
+    2
+)}
+
+
+Dữ liệu đầu vào:
+${JSON.stringify(
+    requirement.inputDefinitions,
+    null,
+    2
+)}
+
+
+
+Hãy sinh kết quả JSON duy nhất theo format:
+
+{
+ "featureUnderstanding":"",
+ "testFocus":[],
+ "riskAreas":[],
+ "suggestedScenarios":[],
+ "questions":[],
+ "notes":[],
+ "confidence":0.0
+}
+
+
+Yêu cầu:
+
+- Không trả lời giải thích.
+- Chỉ trả về JSON.
+- Sinh testcase scenario phù hợp QA.
+- Bao gồm Positive, Negative, Validation, Business Rule.
+
+
+`;
+
+    }
+
+
+
+
+
+
+
+
+    parseAIResponse(response){
+
+
+        try {
+
+
+            let json =
+                response;
+
+
+
+            if(
+                response.includes("```")
+            ){
+
+
+                json =
+                    response
+                    .replace(/```json/g,"")
+                    .replace(/```/g,"")
+                    .trim();
+
+
+            }
+
+
+
+            return JSON.parse(json);
+
+
+
+        }
+        catch(error){
+
+
+            console.error(
+                "Cannot parse AI JSON response"
+            );
+
+
+            return {};
+
+        }
+
+
+    }
+
+
+
+
+
+
+
+
+    fallbackAnalysis(requirement){
+
+
+
+        const result =
+            new AIAnalysisResult();
+
+
+
 
         result.featureUnderstanding =
-            requirement.purpose
-            ||
             requirement.feature;
 
 
 
-        /*
-            Test Focus
-
-            Lấy từ các khu vực nghiệp vụ.
-        */
 
         result.testFocus = [
 
@@ -48,13 +285,6 @@ class AIAnalysisEngine {
 
 
 
-        /*
-            Risk Areas
-
-            Hiện tại lấy từ:
-            - Business Rules
-            - Edge Cases
-        */
 
         result.riskAreas = [
 
@@ -66,22 +296,21 @@ class AIAnalysisEngine {
 
 
 
-        /*
-            Suggested Scenarios
-
-            Mock AI sinh scenario.
-        */
 
         result.suggestedScenarios = [
 
+
             `${requirement.feature} thành công`,
+
 
             ...requirement.edgeCases.map(
                 item =>
                 `${requirement.feature} - ${item}`
             )
 
+
         ];
+
 
 
 
@@ -95,13 +324,8 @@ class AIAnalysisEngine {
 
 
 
-        /*
-            Confidence giả lập
-
-            Sau này lấy từ AI Provider.
-        */
-
-        result.confidence = 0.8;
+        result.confidence =
+            0.5;
 
 
 
@@ -109,6 +333,7 @@ class AIAnalysisEngine {
 
 
     }
+
 
 
 }

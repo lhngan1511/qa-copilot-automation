@@ -4,13 +4,8 @@ class BoundaryAnalyzer {
     analyze(requirement, knowledge) {
 
 
-        if(
-            !requirement ||
-            !knowledge
-        ){
-
+        if(!requirement || !knowledge){
             return;
-
         }
 
 
@@ -19,24 +14,22 @@ class BoundaryAnalyzer {
 
 
 
-        inputs.forEach(
-            input => {
+        inputs.forEach(input => {
 
 
-                this.analyzeLength(
-                    input,
-                    knowledge
-                );
+            this.analyzeLength(
+                input,
+                knowledge
+            );
 
 
-                this.analyzeValue(
-                    input,
-                    knowledge
-                );
+            this.analyzeValue(
+                input,
+                knowledge
+            );
 
 
-            }
-        );
+        });
 
 
     }
@@ -45,17 +38,19 @@ class BoundaryAnalyzer {
 
 
 
-    analyzeLength(
-        input,
-        knowledge
-    ){
+    analyzeLength(input, knowledge){
 
 
-        if(input.minLength !== undefined){
+        const validation =
+            input.validation || {};
+
+
+
+        if(validation.minLength !== null){
 
 
             knowledge.boundaryCases.push(
-                `${input.name} nhỏ hơn độ dài tối thiểu`
+                `${input.name} nhỏ hơn độ dài tốiểu`
             );
 
 
@@ -63,7 +58,7 @@ class BoundaryAnalyzer {
 
 
 
-        if(input.maxLength !== undefined){
+        if(validation.maxLength !== null){
 
 
             knowledge.boundaryCases.push(
@@ -81,13 +76,16 @@ class BoundaryAnalyzer {
 
 
 
-    analyzeValue(
-        input,
-        knowledge
-    ){
+
+    analyzeValue(input, knowledge){
 
 
-        if(input.minValue !== undefined){
+        const validation =
+            input.validation || {};
+
+
+
+        if(validation.minValue !== null){
 
 
             knowledge.boundaryCases.push(
@@ -99,7 +97,7 @@ class BoundaryAnalyzer {
 
 
 
-        if(input.maxValue !== undefined){
+        if(validation.maxValue !== null){
 
 
             knowledge.boundaryCases.push(

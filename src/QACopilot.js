@@ -2,20 +2,23 @@ import RequirementLoader from "./loaders/RequirementLoader.js";
 import MarkdownParser from "./parsers/MarkdownParser.js";
 import AIAnalysisEngine from "./engines/AIAnalysisEngine.js";
 
-import RequirementIntelligenceEngine 
+import RequirementIntelligenceEngine
     from "./engines/RequirementIntelligenceEngine.js";
 
-import ScenarioRecommendationEngine 
+import ScenarioRecommendationEngine
     from "./recommenders/ScenarioRecommendationEngine.js";
 
-import IntelligenceScenarioGenerator 
+import IntelligenceScenarioGenerator
     from "./generators/IntelligenceScenarioGenerator.js";
 
-import TestCaseGenerator 
+import TestCaseGenerator
     from "./generators/TestCaseGenerator.js";
 
-import OutputManager 
+import OutputManager
     from "./managers/OutputManager.js";
+
+import JsonExporter
+    from "./exporters/JsonExporter.js";
 
 
 class QACopilot {
@@ -28,39 +31,39 @@ class QACopilot {
             new RequirementLoader();
 
 
-
         this.parser =
             new MarkdownParser();
-
 
 
         this.aiEngine =
             new AIAnalysisEngine();
 
 
-
         this.intelligenceEngine =
             new RequirementIntelligenceEngine();
-
 
 
         this.scenarioRecommendationEngine =
             new ScenarioRecommendationEngine();
 
 
-
         this.intelligenceScenarioGenerator =
             new IntelligenceScenarioGenerator();
-
 
 
         this.testCaseGenerator =
             new TestCaseGenerator();
 
 
-
         this.outputManager =
             new OutputManager();
+
+
+        this.outputManager.registerExporter(
+            "json",
+            new JsonExporter()
+        );
+
 
     }
 
@@ -68,7 +71,7 @@ class QACopilot {
 
 
 
-    run(requirementFile) {
+    async run(requirementFile) {
 
 
         console.log("\n=================================");
@@ -81,12 +84,12 @@ class QACopilot {
 
 
         const markdown =
-            this.loader.load(requirementFile);
+            this.loader.load(
+                requirementFile
+            );
 
 
         console.log("✓ Requirement loaded");
-
-
 
 
 
@@ -94,23 +97,47 @@ class QACopilot {
 
 
         const requirement =
-            this.parser.parse(markdown);
+            this.parser.parse(
+                markdown
+            );
 
 
         console.log("✓ Requirement parsed");
 
 
 
-
-
         console.log("\n[3/7] AI Analysis...");
 
 
-        const aiResult =
-            this.aiEngine.analyze(requirement);
+        let aiResult = null;
 
 
-        console.log("✓ AI analysis completed");
+        if (
+            process.env.ENABLE_AI === "true"
+        ) {
+
+
+            aiResult =
+                await this.aiEngine.analyze(
+                    requirement
+                );
+
+
+            console.log(
+                "✓ AI analysis completed"
+            );
+
+
+        }
+        else {
+
+
+            console.log(
+                "✓ AI skipped - Rule Engine mode"
+            );
+
+
+        }
 
 
 
@@ -161,7 +188,7 @@ class QACopilot {
 
 
         console.log(
-            `✓ ${scenarios.length} intelligence scenarios generated`
+            `✓ ${scenarios.length} scenarios generated`
         );
 
 
@@ -204,29 +231,29 @@ class QACopilot {
 
 
 
-        console.log("\n=================================");
-        console.log(" PIPELINE COMPLETED");
-        console.log("=================================\n");
-
-
-
-
-
         return {
+
 
             requirement,
 
+
             aiResult,
+
 
             knowledge,
 
+
             recommendedScenarios,
+
 
             scenarios,
 
+
             testCases,
 
+
             output
+
 
         };
 

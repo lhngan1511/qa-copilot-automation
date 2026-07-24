@@ -8,74 +8,98 @@ class IntelligenceScenarioGenerator {
 
     }
 
-    generate(aiResult) {
+
+    generate(recommendedScenarios, requirement) {
 
         if (
-            !aiResult ||
-            !Array.isArray(aiResult.suggestedScenarios)
+            !Array.isArray(recommendedScenarios)
         ) {
 
             return [];
 
         }
 
-        return aiResult.suggestedScenarios.map(title => {
 
-            const scenario = new TestScenario();
+        return recommendedScenarios.map(item => {
+
+            const scenario =
+                new TestScenario();
+
 
             scenario.id =
-                `SC${String(this.counter++).padStart(3, "0")}`;
+                `SC${String(this.counter++)
+                    .padStart(3, "0")}`;
+
 
             scenario.feature =
-                aiResult.featureUnderstanding || "";
+                requirement.feature;
+
 
             scenario.title =
-                title;
+                item.title;
+
 
             scenario.type =
-                this.detectType(title);
+                item.type;
 
-            scenario.reason = "";
 
-            scenario.riskLevel =
-                scenario.type === "NEGATIVE"
-                    ? "High"
-                    : "Medium";
+            scenario.priority =
+                item.priority;
+
+
+            scenario.reason =
+                item.reason;
+
 
             scenario.riskCategory =
-                this.detectRiskCategory(title);
+                item.riskCategory;
+
 
             scenario.requirementReference =
-                aiResult.featureUnderstanding || "";
+                item.requirementReference;
+
 
             scenario.requirementType =
-                scenario.type;
+                item.type;
 
-            scenario.preconditions = [];
 
-            scenario.testData = null;
+            // Truyền input definition từ Requirement xuống Scenario
+            scenario.inputDefinitions =
+                requirement.inputDefinitions || [];
+
+
+
+            scenario.preconditions =
+                [
+                    "Người dùng đã đăng nhập"
+                ];
+
 
             scenario.steps =
                 this.generateSteps(
                     scenario
                 );
 
-            scenario.expectedResults = [
 
-                this.generateExpectedResult(
-                    scenario
-                )
+            scenario.expectedResults =
+                [
+                    this.generateExpectedResult(
+                        scenario
+                    )
+                ];
 
-            ];
+
+            scenario.testData =
+                null;
+
 
             scenario.severity =
-                scenario.riskLevel;
+                item.priority;
 
-            scenario.priority =
-                scenario.riskLevel;
 
             scenario.automationCandidate =
                 true;
+
 
             return scenario;
 
@@ -83,59 +107,10 @@ class IntelligenceScenarioGenerator {
 
     }
 
-    detectType(title) {
 
-        const negativeKeywords = [
-
-            "không",
-            "trùng",
-            "thiếu",
-            "sai",
-            "tồn tại",
-            "vượt",
-            "lỗi",
-            "để trống"
-
-        ];
-
-        const lower =
-            title.toLowerCase();
-
-        return negativeKeywords.some(
-            keyword => lower.includes(keyword)
-        )
-            ? "NEGATIVE"
-            : "POSITIVE";
-
-    }
-
-    detectRiskCategory(title) {
-
-        const lower =
-            title.toLowerCase();
-
-        if (
-            lower.includes("trùng")
-        ) {
-
-            return "Business Rule";
-
-        }
-
-        if (
-            lower.includes("không") ||
-            lower.includes("trống")
-        ) {
-
-            return "Validation";
-
-        }
-
-        return "General";
-
-    }
 
     generateSteps(scenario) {
+
 
         if (
             scenario.type === "NEGATIVE"
@@ -151,7 +126,7 @@ class IntelligenceScenarioGenerator {
 
                 {
                     order: 2,
-                    action: `Nhập dữ liệu lỗi: ${scenario.title}`,
+                    action: `Nhập dữ liệu không hợp lệ: ${scenario.title}`,
                     expected: "Hệ thống kiểm tra dữ liệu"
                 },
 
@@ -165,6 +140,7 @@ class IntelligenceScenarioGenerator {
 
         }
 
+
         return [
 
             {
@@ -175,7 +151,7 @@ class IntelligenceScenarioGenerator {
 
             {
                 order: 2,
-                action: `Thực hiện ${scenario.title}`,
+                action: scenario.title,
                 expected: "Dữ liệu được xử lý"
             },
 
@@ -189,7 +165,10 @@ class IntelligenceScenarioGenerator {
 
     }
 
+
+
     generateExpectedResult(scenario) {
+
 
         if (
             scenario.type === "NEGATIVE"
@@ -199,10 +178,14 @@ class IntelligenceScenarioGenerator {
 
         }
 
+
         return "Hệ thống xử lý thành công";
+
 
     }
 
+
 }
+
 
 export default IntelligenceScenarioGenerator;

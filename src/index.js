@@ -1,88 +1,26 @@
-import IntelligenceScenarioGenerator from "./generators/IntelligenceScenarioGenerator.js";
-import TestCaseGenerator from "./generators/TestCaseGenerator.js";
+import "dotenv/config";
+
+import QACopilot from "./QACopilot.js";
+
+
+const copilot =
+    new QACopilot();
 
 
 
-const requirement = {
-
-    feature: "Thiết bị",
-
-    conditions: [
-        "Người dùng đã đăng nhập",
-        "Có quyền thêm thiết bị"
-    ]
-
-};
-
-
-
-const recommendedScenarios = [
-
-    {
-        title: "Thêm thiết bị thành công",
-        type: "POSITIVE",
-        priority: "MEDIUM"
-    },
-
-    {
-        title: "Mã thiết bị không được trùng",
-        type: "NEGATIVE",
-        priority: "HIGH"
-    },
-
-    {
-        title: "Tên thiết bị không được để trống",
-        type: "NEGATIVE",
-        priority: "HIGH"
-    }
-
-];
-
-
-
-const scenarioGenerator =
-    new IntelligenceScenarioGenerator();
-
-
-
-const scenarios =
-    scenarioGenerator.generate(
-        recommendedScenarios,
-        requirement
+const result =
+    await copilot.run(
+        "./REQUIREMENTS/thiet-bi.md"
     );
 
 
 
-console.log("====== SCENARIOS ======");
+console.log("\n====== FINAL RESULT ======");
+
 
 console.log(
     JSON.stringify(
-        scenarios,
-        null,
-        2
-    )
-);
-
-
-
-const testCaseGenerator =
-    new TestCaseGenerator();
-
-
-
-const testCases =
-    testCaseGenerator.generate(
-        scenarios,
-        requirement
-    );
-
-
-
-console.log("====== TEST CASES ======");
-
-console.log(
-    JSON.stringify(
-        testCases,
+        result.testCases,
         null,
         2
     )

@@ -1,7 +1,10 @@
 class AIConfig {
 
+
     static provider =
-        process.env.AI_PROVIDER || "openai";
+        process.env.AI_PROVIDER || "ollama";
+
+
 
     static openai = {
 
@@ -13,6 +16,8 @@ class AIConfig {
 
     };
 
+
+
     static gemini = {
 
         apiKey:
@@ -22,6 +27,8 @@ class AIConfig {
             process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 
     };
+
+
 
     static claude = {
 
@@ -33,16 +40,25 @@ class AIConfig {
 
     };
 
+
+
     static ollama = {
 
         host:
-            process.env.OLLAMA_HOST || "http://localhost:11434",
+            process.env.OLLAMA_HOST 
+            || 
+            "http://localhost:11434",
+
 
         model:
-            process.env.OLLAMA_MODEL || "qwen2.5:7b"
+            process.env.OLLAMA_MODEL 
+            || 
+            "qwen2.5:3b"
 
     };
 
+
 }
+
 
 export default AIConfig;
