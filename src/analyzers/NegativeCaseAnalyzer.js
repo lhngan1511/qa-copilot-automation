@@ -37,7 +37,7 @@ class NegativeCaseAnalyzer {
             }
 
             if (this.isNegativeContent(content)) {
-                this.addNegativeCase(knowledge, content);
+                this.addNegativeCase(knowledge, rule);
             }
         });
     }
@@ -74,12 +74,7 @@ class NegativeCaseAnalyzer {
 
     collectEdgeCases(requirement) {
         const edgeCases = [];
-
-        /*
-        Requirement-level aggregated edge cases
-        */
-
-        this.mergeItems(edgeCases, requirement.edgeCases);
+        const featureExceptionContents = new Set();
 
         /*
         Feature-level exceptions
@@ -91,9 +86,53 @@ class NegativeCaseAnalyzer {
                     return;
                 }
 
-                this.mergeItems(edgeCases, feature.exceptions);
+                const contextualExceptions = Array.isArray(feature.exceptions)
+                    ? feature.exceptions.map(exception =>
+                          this.createContextualItem(exception, {
+                              module: requirement.module,
+
+                              feature: feature.name,
+
+                              source: "FEATURE_EXCEPTION"
+                          })
+                      )
+                    : [];
+
+                contextualExceptions.forEach(exception => {
+                    featureExceptionContents.add(
+                        this.normalizeForComparison(this.getItemContent(exception))
+                    );
+                });
+
+                this.mergeItems(edgeCases, contextualExceptions);
             });
         }
+
+        /*
+        Legacy requirement-level edge cases remain supported.
+        Aggregated copies of feature exceptions are suppressed.
+        */
+
+        const requirementEdgeCases = Array.isArray(requirement.edgeCases)
+            ? requirement.edgeCases
+                  .filter(
+                      item =>
+                          !featureExceptionContents.has(
+                              this.normalizeForComparison(this.getItemContent(item))
+                          )
+                  )
+                  .map(item =>
+                      this.createContextualItem(item, {
+                          module: requirement.module,
+
+                          feature: "",
+
+                          source: "LEGACY_EDGE_CASE"
+                      })
+                  )
+            : [];
+
+        this.mergeItems(edgeCases, requirementEdgeCases);
 
         return edgeCases;
     }
@@ -110,16 +149,14 @@ class NegativeCaseAnalyzer {
                 return;
             }
 
-            const normalizedContent = this.normalizeForComparison(content);
+            const comparisonKey = this.getNegativeCaseComparisonKey(item);
 
-            const alreadyExists = target.some(existingItem => {
-                const existingContent = this.getItemContent(existingItem);
-
-                return this.normalizeForComparison(existingContent) === normalizedContent;
-            });
+            const alreadyExists = target.some(
+                existingItem => this.getNegativeCaseComparisonKey(existingItem) === comparisonKey
+            );
 
             if (!alreadyExists) {
-                target.push(content);
+                target.push(item);
             }
         });
     }
@@ -185,22 +222,77 @@ class NegativeCaseAnalyzer {
             return;
         }
 
-        const normalizedContent = this.normalizeForComparison(content);
+        const normalizedItem =
+            item && typeof item === "object" ? this.createContextualItem(item) : content;
 
-        const alreadyExists = knowledge.negativeCases.some(existingItem => {
-            const existingContent = this.getItemContent(existingItem);
+        const comparisonKey = this.getNegativeCaseComparisonKey(normalizedItem);
 
-            return this.normalizeForComparison(existingContent) === normalizedContent;
-        });
+        const alreadyExists = knowledge.negativeCases.some(
+            existingItem => this.getNegativeCaseComparisonKey(existingItem) === comparisonKey
+        );
 
         if (!alreadyExists) {
-            /*
-            Negative Case luôn lưu dạng chuỗi
-            để các generator phía sau dễ xử lý.
-            */
-
-            knowledge.negativeCases.push(content);
+            knowledge.negativeCases.push(normalizedItem);
         }
+    }
+
+    createContextualItem(item, context = {}) {
+        if (!item || typeof item !== "object") {
+            return item;
+        }
+
+        const supportedFields = [
+            "module",
+            "feature",
+            "code",
+            "inputName",
+            "source",
+            "validationType",
+            "required",
+            "controlType",
+            "dataSource",
+            "description",
+            "severity",
+            "priority",
+            "riskCategory",
+            "requirementReference"
+        ];
+
+        const normalizedItem = {};
+
+        supportedFields.forEach(fieldName => {
+            if (item[fieldName] !== undefined) {
+                normalizedItem[fieldName] = item[fieldName];
+            } else if (context[fieldName] !== undefined) {
+                normalizedItem[fieldName] = context[fieldName];
+            }
+        });
+
+        normalizedItem.module = normalizedItem.module ?? context.module ?? "";
+
+        normalizedItem.feature = normalizedItem.feature ?? context.feature ?? "";
+
+        normalizedItem.content = this.getItemContent(item);
+
+        normalizedItem.source = normalizedItem.source ?? context.source ?? "NEGATIVE_CASE";
+
+        return normalizedItem;
+    }
+
+    getNegativeCaseComparisonKey(item) {
+        if (typeof item === "string") {
+            return ["", "", this.normalizeForComparison(item), "LEGACY_NEGATIVE_CASE"].join("|");
+        }
+
+        return [
+            this.normalizeForComparison(item?.module ?? ""),
+
+            this.normalizeForComparison(item?.feature ?? ""),
+
+            this.normalizeForComparison(this.getItemContent(item)),
+
+            this.normalizeForComparison(item?.source ?? "NEGATIVE_CASE")
+        ].join("|");
     }
 
     /*

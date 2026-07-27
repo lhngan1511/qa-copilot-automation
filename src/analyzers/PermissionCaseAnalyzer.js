@@ -23,13 +23,26 @@ class PermissionCaseAnalyzer {
         const permissions = Array.isArray(requirement.permissions) ? requirement.permissions : [];
 
         permissions.forEach(permission => {
-            const content = this.getItemContent(permission);
+            const permissionName = this.getItemContent(permission);
 
-            if (!content) {
+            if (!permissionName) {
                 return;
             }
 
-            this.addUnique(knowledge.permissionCases, `Kiểm tra ${content}`);
+            this.addUnique(
+                knowledge.permissionCases,
+                this.createPermissionCase(permission, {
+                    module: requirement.module,
+
+                    feature: this.resolveRequirementFeature(requirement),
+
+                    permissionName,
+
+                    content: `Kiểm tra ${permissionName}`,
+
+                    permissionType: "GLOBAL_PERMISSION"
+                })
+            );
         });
     }
 
@@ -43,32 +56,36 @@ class PermissionCaseAnalyzer {
         const conditions = this.collectConditions(requirement);
 
         conditions.forEach(condition => {
-            const content = this.getItemContent(condition);
+            const permissionName = this.getItemContent(condition);
 
-            if (!content) {
+            if (!permissionName) {
                 return;
             }
 
-            const normalizedContent = this.normalizeForComparison(content);
+            const normalizedContent = this.normalizeForComparison(permissionName);
 
             if (this.containsPermissionKeyword(normalizedContent)) {
-                this.addUnique(knowledge.permissionCases, `Kiểm tra ${content}`);
+                this.addUnique(
+                    knowledge.permissionCases,
+                    this.createPermissionCase(condition.item, {
+                        module: condition.module,
+
+                        feature: condition.feature,
+
+                        permissionName,
+
+                        content: `Kiểm tra ${permissionName}`,
+
+                        permissionType: condition.feature ? "FEATURE_ACCESS" : "GLOBAL_PERMISSION"
+                    })
+                );
             }
         });
     }
 
     collectConditions(requirement) {
         const conditions = [];
-
-        /*
-        Requirement-level aggregated conditions
-        */
-
-        this.mergeItems(conditions, requirement.conditions);
-
-        /*
-        Feature-level preconditions
-        */
+        const featureConditionContents = new Set();
 
         if (Array.isArray(requirement.features)) {
             requirement.features.forEach(feature => {
@@ -76,9 +93,42 @@ class PermissionCaseAnalyzer {
                     return;
                 }
 
-                this.mergeItems(conditions, feature.preconditions);
+                const featureConditions = [
+                    ...(Array.isArray(feature.preconditions) ? feature.preconditions : []),
+
+                    ...(Array.isArray(feature.businessRules) ? feature.businessRules : [])
+                ];
+
+                featureConditions.forEach(item => {
+                    const content = this.normalizeForComparison(this.getItemContent(item));
+
+                    if (content) {
+                        featureConditionContents.add(content);
+                    }
+                });
+
+                this.mergeItems(conditions, featureConditions, {
+                    module: requirement.module,
+
+                    feature: feature.name
+                });
             });
         }
+
+        const globalConditions = Array.isArray(requirement.conditions)
+            ? requirement.conditions.filter(
+                  item =>
+                      !featureConditionContents.has(
+                          this.normalizeForComparison(this.getItemContent(item))
+                      )
+              )
+            : [];
+
+        this.mergeItems(conditions, globalConditions, {
+            module: requirement.module,
+
+            feature: this.resolveRequirementFeature(requirement)
+        });
 
         return conditions;
     }
@@ -106,19 +156,49 @@ class PermissionCaseAnalyzer {
             ) {
                 this.addUnique(
                     knowledge.permissionCases,
-                    "Người dùng không có quyền không được truy cập chức năng"
+                    this.createPermissionCase(description, {
+                        module: requirement.module,
+
+                        feature: this.resolveRequirementFeature(requirement),
+
+                        permissionName: "Quyền truy cập chức năng",
+
+                        content: "Người dùng không có quyền không được truy cập chức năng",
+
+                        permissionType: "UNAUTHORIZED_ACCESS"
+                    })
                 );
             }
 
             if (normalizedDescription.includes("quản lý")) {
                 this.addUnique(
                     knowledge.permissionCases,
-                    "Kiểm tra người dùng có quyền truy cập chức năng quản lý"
+                    this.createPermissionCase(description, {
+                        module: requirement.module,
+
+                        feature: this.resolveRequirementFeature(requirement),
+
+                        permissionName: "Quyền truy cập chức năng quản lý",
+
+                        content: "Kiểm tra người dùng có quyền truy cập chức năng quản lý",
+
+                        permissionType: "MANAGEMENT_ACCESS"
+                    })
                 );
 
                 this.addUnique(
                     knowledge.permissionCases,
-                    "Người dùng không có quyền không được thao tác chức năng quản lý"
+                    this.createPermissionCase(description, {
+                        module: requirement.module,
+
+                        feature: this.resolveRequirementFeature(requirement),
+
+                        permissionName: "Quyền thao tác chức năng quản lý",
+
+                        content: "Người dùng không có quyền không được thao tác chức năng quản lý",
+
+                        permissionType: "RESTRICTED_ACTION"
+                    })
                 );
             }
         });
@@ -133,8 +213,8 @@ class PermissionCaseAnalyzer {
     analyzeActions(requirement, knowledge) {
         const actions = this.collectActions(requirement);
 
-        actions.forEach(action => {
-            const normalizedAction = this.normalizeForComparison(action);
+        actions.forEach(entry => {
+            const normalizedAction = this.normalizeForComparison(entry.action);
 
             if (!normalizedAction) {
                 return;
@@ -146,7 +226,12 @@ class PermissionCaseAnalyzer {
                 normalizedAction.includes("create") ||
                 normalizedAction.includes("add")
             ) {
-                this.addUnique(knowledge.permissionCases, "Kiểm tra quyền thêm dữ liệu");
+                this.addActionPermissionCase(
+                    knowledge,
+                    entry,
+                    "Kiểm tra quyền thêm dữ liệu",
+                    "CREATE_PERMISSION"
+                );
             }
 
             if (
@@ -155,7 +240,12 @@ class PermissionCaseAnalyzer {
                 normalizedAction.includes("update") ||
                 normalizedAction.includes("edit")
             ) {
-                this.addUnique(knowledge.permissionCases, "Kiểm tra quyền chỉnh sửa dữ liệu");
+                this.addActionPermissionCase(
+                    knowledge,
+                    entry,
+                    "Kiểm tra quyền chỉnh sửa dữ liệu",
+                    "UPDATE_PERMISSION"
+                );
             }
 
             if (
@@ -163,7 +253,12 @@ class PermissionCaseAnalyzer {
                 normalizedAction.includes("delete") ||
                 normalizedAction.includes("remove")
             ) {
-                this.addUnique(knowledge.permissionCases, "Kiểm tra quyền xóa dữ liệu");
+                this.addActionPermissionCase(
+                    knowledge,
+                    entry,
+                    "Kiểm tra quyền xóa dữ liệu",
+                    "DELETE_PERMISSION"
+                );
             }
 
             if (
@@ -173,11 +268,21 @@ class PermissionCaseAnalyzer {
                 normalizedAction.includes("view") ||
                 normalizedAction.includes("search")
             ) {
-                this.addUnique(knowledge.permissionCases, "Kiểm tra quyền xem dữ liệu");
+                this.addActionPermissionCase(
+                    knowledge,
+                    entry,
+                    "Kiểm tra quyền xem dữ liệu",
+                    "VIEW_PERMISSION"
+                );
             }
 
             if (normalizedAction.includes("xuất") || normalizedAction.includes("export")) {
-                this.addUnique(knowledge.permissionCases, "Kiểm tra quyền xuất dữ liệu");
+                this.addActionPermissionCase(
+                    knowledge,
+                    entry,
+                    "Kiểm tra quyền xuất dữ liệu",
+                    "EXPORT_PERMISSION"
+                );
             }
 
             /*
@@ -191,8 +296,7 @@ class PermissionCaseAnalyzer {
 
     collectActions(requirement) {
         const actions = [];
-
-        this.mergeItems(actions, requirement.actions);
+        const featureActions = new Set();
 
         if (Array.isArray(requirement.features)) {
             requirement.features.forEach(feature => {
@@ -200,23 +304,112 @@ class PermissionCaseAnalyzer {
                     return;
                 }
 
-                if (feature.name) {
-                    this.mergeItems(actions, [feature.name]);
-                }
+                const scopedActions = [feature.name, feature.automation?.operation].filter(Boolean);
 
-                const operation = feature.automation?.operation;
+                scopedActions.forEach(action => {
+                    featureActions.add(this.normalizeForComparison(action));
+                });
 
-                if (operation) {
-                    this.mergeItems(actions, [operation]);
-                }
+                this.mergeActions(actions, scopedActions, {
+                    module: requirement.module,
+
+                    feature: feature.name,
+
+                    operation: feature.automation?.operation ?? ""
+                });
             });
         }
 
+        const globalActions = Array.isArray(requirement.actions)
+            ? requirement.actions.filter(
+                  action =>
+                      !featureActions.has(this.normalizeForComparison(this.getActionText(action)))
+              )
+            : [];
+
+        this.mergeActions(actions, globalActions, {
+            module: requirement.module,
+
+            feature: this.resolveRequirementFeature(requirement)
+        });
+
         if (actions.length === 0 && requirement.feature) {
-            this.mergeItems(actions, [requirement.feature]);
+            this.mergeActions(actions, [requirement.feature], {
+                module: requirement.module,
+
+                feature: this.resolveRequirementFeature(requirement)
+            });
         }
 
         return actions;
+    }
+
+    mergeActions(target, source, context = {}) {
+        if (!Array.isArray(target) || !Array.isArray(source)) {
+            return;
+        }
+
+        source.forEach(action => {
+            const isObject = action && typeof action === "object";
+            const normalizedAction = this.getActionText(action);
+
+            if (!normalizedAction) {
+                return;
+            }
+
+            const entry = {
+                action: normalizedAction,
+
+                operation: this.firstMeaningful(
+                    isObject ? action.operation : "",
+                    context.operation
+                ),
+
+                module: this.firstMeaningful(context.module, isObject ? action.module : ""),
+
+                feature: this.firstMeaningful(
+                    context.feature,
+                    isObject ? action.feature : "",
+                    isObject ? action.featureName : ""
+                )
+            };
+
+            const existed = target.some(currentEntry => {
+                return (
+                    this.normalizeForComparison(currentEntry.action) ===
+                        this.normalizeForComparison(entry.action) &&
+                    this.normalizeForComparison(currentEntry.module) ===
+                        this.normalizeForComparison(entry.module) &&
+                    this.normalizeForComparison(currentEntry.feature) ===
+                        this.normalizeForComparison(entry.feature)
+                );
+            });
+
+            if (!existed) {
+                target.push(entry);
+            }
+        });
+    }
+
+    addActionPermissionCase(knowledge, entry, content, permissionType) {
+        this.addUnique(
+            knowledge.permissionCases,
+            this.createPermissionCase(entry, {
+                module: entry.module,
+
+                feature: entry.feature,
+
+                permissionName: entry.action,
+
+                content,
+
+                permissionType,
+
+                action: entry.action,
+
+                operation: entry.operation
+            })
+        );
     }
 
     /*
@@ -249,13 +442,54 @@ class PermissionCaseAnalyzer {
         return keywords.some(keyword => content.includes(keyword));
     }
 
+    createPermissionCase(item, context = {}) {
+        const isObject = item && typeof item === "object";
+
+        return {
+            module: this.firstMeaningful(context.module, isObject ? item.module : ""),
+
+            feature: this.firstMeaningful(
+                context.feature,
+                isObject ? item.feature : "",
+                isObject ? item.featureName : ""
+            ),
+
+            permissionName:
+                context.permissionName ??
+                (isObject ? (item.permissionName ?? item.permission ?? item.name) : "") ??
+                "",
+
+            content: context.content ?? this.getItemContent(item),
+
+            source: "PERMISSION_ANALYSIS",
+
+            permissionType: context.permissionType ?? (isObject ? item.permissionType : "") ?? "",
+
+            action: this.firstMeaningful(context.action, isObject ? item.action : ""),
+
+            operation: this.firstMeaningful(context.operation, isObject ? item.operation : ""),
+
+            code: isObject ? item.code : undefined,
+
+            severity: isObject ? item.severity : undefined,
+
+            priority: isObject ? item.priority : undefined,
+
+            riskCategory: isObject ? item.riskCategory : undefined,
+
+            requirementReference: isObject ? item.requirementReference : undefined,
+
+            description: isObject ? item.description : undefined
+        };
+    }
+
     /*
     =================================================
     Collection Utilities
     =================================================
     */
 
-    mergeItems(target, source) {
+    mergeItems(target, source, context = {}) {
         if (!Array.isArray(target) || !Array.isArray(source)) {
             return;
         }
@@ -267,18 +501,65 @@ class PermissionCaseAnalyzer {
                 return;
             }
 
-            const normalizedContent = this.normalizeForComparison(content);
+            const entry = {
+                item,
+
+                module: this.firstMeaningful(
+                    context.module,
+                    item && typeof item === "object" ? item.module : ""
+                ),
+
+                feature: this.firstMeaningful(
+                    context.feature,
+                    item && typeof item === "object" ? item.feature : "",
+                    item && typeof item === "object" ? item.featureName : ""
+                ),
+
+                content
+            };
+
+            const comparisonKey = [
+                this.normalizeForComparison(entry.module),
+
+                this.normalizeForComparison(entry.feature),
+
+                this.normalizeForComparison(entry.content)
+            ].join("|");
 
             const existed = target.some(existingItem => {
-                const existingContent = this.getItemContent(existingItem);
+                return (
+                    [
+                        this.normalizeForComparison(existingItem.module),
 
-                return this.normalizeForComparison(existingContent) === normalizedContent;
+                        this.normalizeForComparison(existingItem.feature),
+
+                        this.normalizeForComparison(existingItem.content)
+                    ].join("|") === comparisonKey
+                );
             });
 
             if (!existed) {
-                target.push(content);
+                target.push(entry);
             }
         });
+    }
+
+    getPermissionComparisonKey(value) {
+        if (!value || typeof value !== "object") {
+            return ["", "", "", this.normalizeForComparison(value), ""].join("|");
+        }
+
+        return [
+            this.normalizeForComparison(value.module),
+
+            this.normalizeForComparison(value.feature),
+
+            this.normalizeForComparison(value.permissionName),
+
+            this.normalizeForComparison(value.content),
+
+            this.normalizeForComparison(value.permissionType)
+        ].join("|");
     }
 
     addUnique(target, value) {
@@ -286,20 +567,14 @@ class PermissionCaseAnalyzer {
             return;
         }
 
-        const normalizedValue = this.normalizeForComparison(value);
+        const comparisonKey = this.getPermissionComparisonKey(value);
 
-        if (!normalizedValue) {
-            return;
-        }
-
-        const existed = target.some(item => {
-            const itemContent = this.getItemContent(item);
-
-            return this.normalizeForComparison(itemContent) === normalizedValue;
-        });
+        const existed = target.some(
+            item => this.getPermissionComparisonKey(item) === comparisonKey
+        );
 
         if (!existed) {
-            target.push(this.normalizeText(value));
+            target.push(value && typeof value === "object" ? value : this.normalizeText(value));
         }
     }
 
@@ -308,6 +583,38 @@ class PermissionCaseAnalyzer {
     Content Normalization
     =================================================
     */
+
+    resolveRequirementFeature(requirement) {
+        return this.firstMeaningful(requirement?.feature, requirement?.module);
+    }
+
+    getActionText(action) {
+        if (
+            typeof action === "string" ||
+            typeof action === "number" ||
+            typeof action === "boolean"
+        ) {
+            return this.normalizeText(action);
+        }
+
+        if (!action || typeof action !== "object") {
+            return "";
+        }
+
+        return this.firstMeaningful(action.action, action.name, action.title);
+    }
+
+    firstMeaningful(...values) {
+        for (const value of values) {
+            const normalized = this.normalizeText(value);
+
+            if (normalized) {
+                return normalized;
+            }
+        }
+
+        return "";
+    }
 
     getItemContent(item) {
         if (item === undefined || item === null) {

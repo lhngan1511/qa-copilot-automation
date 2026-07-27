@@ -6,12 +6,12 @@ class InputAnalyzer {
 
         const inputs = this.collectInputs(requirement);
 
-        inputs.forEach(input => {
-            this.analyzeRequired(input, knowledge);
+        inputs.forEach(entry => {
+            this.analyzeRequired(entry.input, knowledge, entry);
 
-            this.analyzeControlType(input, knowledge);
+            this.analyzeControlType(entry.input, knowledge, entry);
 
-            this.analyzeDescription(input, knowledge);
+            this.analyzeDescription(entry.input, knowledge, entry);
         });
     }
 
@@ -23,21 +23,10 @@ class InputAnalyzer {
 
     collectInputs(requirement) {
         const inputs = [];
+        const featureInputNames = new Set();
 
         /*
-        Module-level inputs
-        */
-
-        this.mergeInputs(inputs, requirement.commonInputs);
-
-        /*
-        Compatibility with old pipeline
-        */
-
-        this.mergeInputs(inputs, requirement.inputDefinitions);
-
-        /*
-        Feature-level inputs
+        Feature-level inputs take precedence over common definitions.
         */
 
         if (Array.isArray(requirement.features)) {
@@ -46,14 +35,49 @@ class InputAnalyzer {
                     return;
                 }
 
-                this.mergeInputs(inputs, feature.inputs);
+                const featureInputs = Array.isArray(feature.inputs) ? feature.inputs : [];
+
+                featureInputs.forEach(input => {
+                    const inputName = this.normalizeText(input?.name);
+
+                    if (inputName) {
+                        featureInputNames.add(inputName);
+                    }
+                });
+
+                this.mergeInputs(inputs, featureInputs, {
+                    module: requirement.module,
+
+                    feature: feature.name
+                });
             });
         }
+
+        /*
+        Module-level and legacy inputs remain ownerless when no
+        feature-scoped definition with the same name exists.
+        */
+
+        this.mergeInputs(inputs, requirement.commonInputs, {
+            module: requirement.module,
+
+            feature: "",
+
+            excludedNames: featureInputNames
+        });
+
+        this.mergeInputs(inputs, requirement.inputDefinitions, {
+            module: requirement.module,
+
+            feature: "",
+
+            excludedNames: featureInputNames
+        });
 
         return inputs;
     }
 
-    mergeInputs(target, source) {
+    mergeInputs(target, source, context = {}) {
         if (!Array.isArray(target) || !Array.isArray(source)) {
             return;
         }
@@ -63,24 +87,48 @@ class InputAnalyzer {
                 return;
             }
 
-            const existed = target.some(currentInput => this.isSameInput(currentInput, input));
+            const inputName = this.normalizeText(input?.name);
+
+            if (context.excludedNames instanceof Set && context.excludedNames.has(inputName)) {
+                return;
+            }
+
+            const entry = {
+                input,
+
+                module: context.module ?? "",
+
+                feature: context.feature ?? ""
+            };
+
+            const existed = target.some(currentEntry => this.isSameInput(currentEntry, entry));
 
             if (!existed) {
-                target.push(input);
+                target.push(entry);
             }
         });
     }
 
-    isSameInput(firstInput, secondInput) {
-        const firstName = String(firstInput?.name ?? "")
-            .trim()
-            .toLowerCase();
+    isSameInput(firstEntry, secondEntry) {
+        const firstName = this.normalizeText(firstEntry?.input?.name);
 
-        const secondName = String(secondInput?.name ?? "")
-            .trim()
-            .toLowerCase();
+        const secondName = this.normalizeText(secondEntry?.input?.name);
 
-        return Boolean(firstName && secondName && firstName === secondName);
+        const firstModule = this.normalizeText(firstEntry?.module);
+
+        const secondModule = this.normalizeText(secondEntry?.module);
+
+        const firstFeature = this.normalizeText(firstEntry?.feature);
+
+        const secondFeature = this.normalizeText(secondEntry?.feature);
+
+        return Boolean(
+            firstName &&
+            secondName &&
+            firstName === secondName &&
+            firstModule === secondModule &&
+            firstFeature === secondFeature
+        );
     }
 
     /*
@@ -89,14 +137,25 @@ class InputAnalyzer {
     =================================================
     */
 
-    analyzeRequired(input, knowledge) {
+    analyzeRequired(input, knowledge, context = {}) {
         if (!input?.required) {
             return;
         }
 
-        this.addUnique(knowledge.validationRules, `${input.name} không được để trống`);
+        this.addUnique(
+            knowledge.validationRules,
+            this.createValidationCase(
+                input,
+                context,
+                `${input.name} không được để trống`,
+                "REQUIRED"
+            )
+        );
 
-        this.addUnique(knowledge.riskAreas, `Thiếu ${input.name}`);
+        this.addUnique(
+            knowledge.riskAreas,
+            this.createValidationCase(input, context, `Thiếu ${input.name}`, "REQUIRED_RISK")
+        );
     }
 
     /*
@@ -105,7 +164,7 @@ class InputAnalyzer {
     =================================================
     */
 
-    analyzeControlType(input, knowledge) {
+    analyzeControlType(input, knowledge, context = {}) {
         const controlType = String(input?.controlType ?? "")
             .trim()
             .toLowerCase();
@@ -114,9 +173,25 @@ class InputAnalyzer {
             return;
         }
 
-        this.addUnique(knowledge.validationRules, `${input.name} phải chọn giá trị hợp lệ`);
+        this.addUnique(
+            knowledge.validationRules,
+            this.createValidationCase(
+                input,
+                context,
+                `${input.name} phải chọn giá trị hợp lệ`,
+                "CONTROL_TYPE"
+            )
+        );
 
-        this.addUnique(knowledge.riskAreas, `${input.name} không thuộc danh mục`);
+        this.addUnique(
+            knowledge.riskAreas,
+            this.createValidationCase(
+                input,
+                context,
+                `${input.name} không thuộc danh mục`,
+                "CONTROL_TYPE_RISK"
+            )
+        );
     }
 
     /*
@@ -125,7 +200,7 @@ class InputAnalyzer {
     =================================================
     */
 
-    analyzeDescription(input, knowledge) {
+    analyzeDescription(input, knowledge, context = {}) {
         const description = String(input?.description ?? "")
             .trim()
             .toLowerCase();
@@ -135,10 +210,50 @@ class InputAnalyzer {
         }
 
         if (description.includes("duy nhất") || description.includes("không trùng")) {
-            this.addUnique(knowledge.validationRules, `${input.name} phải duy nhất`);
+            this.addUnique(
+                knowledge.validationRules,
+                this.createValidationCase(
+                    input,
+                    context,
+                    `${input.name} phải duy nhất`,
+                    "UNIQUENESS"
+                )
+            );
 
-            this.addUnique(knowledge.dataIntegrityCases, `${input.name} bị trùng`);
+            this.addUnique(
+                knowledge.dataIntegrityCases,
+                this.createValidationCase(
+                    input,
+                    context,
+                    `${input.name} bị trùng`,
+                    "DATA_INTEGRITY"
+                )
+            );
         }
+    }
+
+    createValidationCase(input, context, content, validationType) {
+        return {
+            module: context?.module ?? "",
+
+            feature: context?.feature ?? "",
+
+            inputName: input?.name ?? "",
+
+            content,
+
+            source: "INPUT_VALIDATION",
+
+            required: input?.required,
+
+            controlType: input?.controlType,
+
+            dataSource: input?.dataSource,
+
+            description: input?.description,
+
+            validationType
+        };
     }
 
     /*
@@ -147,23 +262,42 @@ class InputAnalyzer {
     =================================================
     */
 
+    getValidationComparisonKey(value) {
+        if (!value || typeof value !== "object") {
+            return ["", "", "", this.normalizeText(value)].join("|");
+        }
+
+        return [
+            this.normalizeText(value.module),
+
+            this.normalizeText(value.feature),
+
+            this.normalizeText(value.inputName),
+
+            this.normalizeText(value.content)
+        ].join("|");
+    }
+
     addUnique(target, value) {
         if (!Array.isArray(target) || value === undefined || value === null || value === "") {
             return;
         }
 
-        const normalizedValue = String(value).trim().toLowerCase();
+        const comparisonKey = this.getValidationComparisonKey(value);
 
         const existed = target.some(
-            currentValue =>
-                String(currentValue ?? "")
-                    .trim()
-                    .toLowerCase() === normalizedValue
+            currentValue => this.getValidationComparisonKey(currentValue) === comparisonKey
         );
 
         if (!existed) {
             target.push(value);
         }
+    }
+
+    normalizeText(value) {
+        return String(value ?? "")
+            .trim()
+            .toLowerCase();
     }
 }
 

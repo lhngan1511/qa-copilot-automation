@@ -7,6 +7,8 @@ import RequirementIntelligenceEngine from "./engines/RequirementIntelligenceEngi
 
 import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
 
+import ScenarioEnrichmentEngine from "./engines/ScenarioEnrichmentEngine.js";
+
 import IntelligenceScenarioGenerator from "./generators/IntelligenceScenarioGenerator.js";
 
 import TestCaseGenerator from "./generators/TestCaseGenerator.js";
@@ -35,6 +37,8 @@ class QACopilot {
 
         this.scenarioRecommendationEngine = new ScenarioRecommendationEngine();
 
+        this.scenarioEnrichmentEngine = new ScenarioEnrichmentEngine();
+
         this.intelligenceScenarioGenerator = new IntelligenceScenarioGenerator();
 
         this.testCaseGenerator = new TestCaseGenerator();
@@ -61,13 +65,13 @@ class QACopilot {
         console.log(" QA COPILOT PIPELINE");
         console.log("=================================\n");
 
-        console.log("[1/7] Loading Requirement...");
+        console.log("[1/8] Loading Requirement...");
 
         const markdown = this.loader.load(requirementFile);
 
         console.log("✓ Requirement loaded");
 
-        console.log("\n[2/7] Parsing Requirement...");
+        console.log("\n[2/8] Parsing Requirement...");
 
         const requirement = this.parser.parse(markdown);
 
@@ -77,7 +81,7 @@ class QACopilot {
 
         console.log("✓ Requirement parsed");
 
-        console.log("\n[3/7] AI Analysis...");
+        console.log("\n[3/8] AI Analysis...");
 
         let aiResult = null;
 
@@ -89,35 +93,44 @@ class QACopilot {
             console.log("✓ AI skipped - Rule Engine mode");
         }
 
-        console.log("\n[4/7] Building Requirement Intelligence...");
+        console.log("\n[4/8] Building Requirement Intelligence...");
 
         const knowledge = this.intelligenceEngine.analyze(requirement);
 
         console.log("✓ Requirement intelligence completed");
 
-        const recommendedScenarios = this.scenarioRecommendationEngine.generate(
-            knowledge,
-            requirement
-        );
+        const recommendedScenarios = this.scenarioRecommendationEngine
+            .generate(knowledge, requirement)
+            .map(scenario => ({ ...scenario }));
 
         console.log(`✓ ${recommendedScenarios.length} scenarios recommended`);
 
-        console.log("\n[5/7] Generating Intelligence Scenarios...");
+        console.log("\n[5/8] Enriching Recommended Scenarios...");
+
+        const enrichedScenarios = this.scenarioEnrichmentEngine.enrich({
+            scenarios: recommendedScenarios,
+            requirement,
+            knowledge
+        });
+
+        console.log(`✓ ${enrichedScenarios.length} scenarios enriched`);
+
+        console.log("\n[6/8] Generating Intelligence Scenarios...");
 
         const scenarios = this.intelligenceScenarioGenerator.generate(
-            recommendedScenarios,
+            enrichedScenarios,
             requirement
         );
 
         console.log(`✓ ${scenarios.length} scenarios generated`);
 
-        console.log("\n[6/7] Generating TestCases...");
+        console.log("\n[7/8] Generating TestCases...");
 
         const testCases = this.testCaseGenerator.generate(scenarios);
 
         console.log(`✓ ${testCases.length} testcases generated`);
 
-        console.log("\n[7/7] Exporting Outputs...");
+        console.log("\n[8/8] Exporting Outputs...");
 
         const featureName = requirement.feature || "testcases";
 

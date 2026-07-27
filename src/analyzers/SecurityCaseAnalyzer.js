@@ -18,7 +18,8 @@ class SecurityCaseAnalyzer {
     analyzeInputs(requirement, knowledge) {
         const inputs = this.collectInputs(requirement);
 
-        inputs.forEach(input => {
+        inputs.forEach(entry => {
+            const input = entry.input;
             const inputName = this.normalizeText(input?.name);
 
             if (!inputName) {
@@ -43,7 +44,15 @@ class SecurityCaseAnalyzer {
                 normalizedName.includes("secret") ||
                 normalizedName.includes("token")
             ) {
-                this.addUnique(knowledge.securityCases, `${inputName} cần kiểm tra bảo mật`);
+                this.addUnique(
+                    knowledge.securityCases,
+                    this.createSecurityCase(
+                        input,
+                        entry,
+                        `${inputName} cần kiểm tra bảo mật`,
+                        "SENSITIVE_FIELD"
+                    )
+                );
             }
 
             /*
@@ -60,7 +69,12 @@ class SecurityCaseAnalyzer {
             ) {
                 this.addUnique(
                     knowledge.securityCases,
-                    `${inputName} cần kiểm tra dữ liệu nhập nguy hiểm`
+                    this.createSecurityCase(
+                        input,
+                        entry,
+                        `${inputName} cần kiểm tra dữ liệu nhập nguy hiểm`,
+                        "MALICIOUS_INPUT"
+                    )
                 );
             }
 
@@ -75,7 +89,12 @@ class SecurityCaseAnalyzer {
             ) {
                 this.addUnique(
                     knowledge.securityCases,
-                    `${inputName} cần kiểm tra dữ liệu đăng nhập bất thường`
+                    this.createSecurityCase(
+                        input,
+                        entry,
+                        `${inputName} cần kiểm tra dữ liệu đăng nhập bất thường`,
+                        "ABNORMAL_LOGIN_INPUT"
+                    )
                 );
             }
 
@@ -90,7 +109,12 @@ class SecurityCaseAnalyzer {
             ) {
                 this.addUnique(
                     knowledge.securityCases,
-                    `${inputName} cần kiểm tra khả năng bỏ qua xác thực`
+                    this.createSecurityCase(
+                        input,
+                        entry,
+                        `${inputName} cần kiểm tra khả năng bỏ qua xác thực`,
+                        "AUTHENTICATION_BYPASS"
+                    )
                 );
             }
         });
@@ -98,22 +122,12 @@ class SecurityCaseAnalyzer {
 
     collectInputs(requirement) {
         const inputs = [];
+        const featureInputNames = new Set();
+        const moduleInputs = [
+            ...(Array.isArray(requirement.commonInputs) ? requirement.commonInputs : []),
 
-        /*
-        Module-level inputs
-        */
-
-        this.mergeInputs(inputs, requirement.commonInputs);
-
-        /*
-        Compatibility with old pipeline
-        */
-
-        this.mergeInputs(inputs, requirement.inputDefinitions);
-
-        /*
-        Feature-level inputs
-        */
+            ...(Array.isArray(requirement.inputDefinitions) ? requirement.inputDefinitions : [])
+        ];
 
         if (Array.isArray(requirement.features)) {
             requirement.features.forEach(feature => {
@@ -121,14 +135,73 @@ class SecurityCaseAnalyzer {
                     return;
                 }
 
-                this.mergeInputs(inputs, feature.inputs);
+                const featureInputs = Array.isArray(feature.inputs)
+                    ? feature.inputs.map(input => {
+                          const moduleInput = moduleInputs.find(
+                              candidate =>
+                                  this.normalizeForComparison(candidate?.name) ===
+                                  this.normalizeForComparison(input?.name)
+                          );
+
+                          const mergedInput = {
+                              ...(moduleInput ?? {}),
+
+                              ...input
+                          };
+
+                          mergedInput.controlType =
+                              this.normalizeText(input?.controlType) ||
+                              moduleInput?.controlType ||
+                              "";
+
+                          mergedInput.dataSource =
+                              this.normalizeText(input?.dataSource) ||
+                              moduleInput?.dataSource ||
+                              "";
+
+                          mergedInput.format =
+                              this.normalizeText(input?.format) || moduleInput?.format || "";
+
+                          return mergedInput;
+                      })
+                    : [];
+
+                featureInputs.forEach(input => {
+                    const inputName = this.normalizeForComparison(input?.name);
+
+                    if (inputName) {
+                        featureInputNames.add(inputName);
+                    }
+                });
+
+                this.mergeInputs(inputs, featureInputs, {
+                    module: requirement.module,
+
+                    feature: feature.name
+                });
             });
         }
+
+        this.mergeInputs(inputs, requirement.commonInputs, {
+            module: requirement.module,
+
+            feature: "",
+
+            excludedNames: featureInputNames
+        });
+
+        this.mergeInputs(inputs, requirement.inputDefinitions, {
+            module: requirement.module,
+
+            feature: "",
+
+            excludedNames: featureInputNames
+        });
 
         return inputs;
     }
 
-    mergeInputs(target, source) {
+    mergeInputs(target, source, context = {}) {
         if (!Array.isArray(target) || !Array.isArray(source)) {
             return;
         }
@@ -138,18 +211,36 @@ class SecurityCaseAnalyzer {
                 return;
             }
 
-            const inputName = this.normalizeText(input.name).toLowerCase();
+            const inputName = this.normalizeForComparison(input.name);
 
             if (!inputName) {
                 return;
             }
 
-            const existed = target.some(currentInput => {
-                return this.normalizeText(currentInput?.name).toLowerCase() === inputName;
+            if (context.excludedNames instanceof Set && context.excludedNames.has(inputName)) {
+                return;
+            }
+
+            const entry = {
+                input,
+
+                module: context.module ?? "",
+
+                feature: context.feature ?? ""
+            };
+
+            const existed = target.some(currentEntry => {
+                return (
+                    this.normalizeForComparison(currentEntry?.input?.name) === inputName &&
+                    this.normalizeForComparison(currentEntry?.module) ===
+                        this.normalizeForComparison(entry.module) &&
+                    this.normalizeForComparison(currentEntry?.feature) ===
+                        this.normalizeForComparison(entry.feature)
+                );
             });
 
             if (!existed) {
-                target.push(input);
+                target.push(entry);
             }
         });
     }
@@ -163,15 +254,22 @@ class SecurityCaseAnalyzer {
     analyzeActions(requirement, knowledge) {
         const actions = this.collectActions(requirement);
 
-        actions.forEach(action => {
-            const normalizedAction = this.normalizeText(action).toLowerCase();
+        actions.forEach(entry => {
+            const normalizedAction = this.normalizeForComparison(entry.action);
 
             if (!normalizedAction) {
                 return;
             }
 
             if (normalizedAction.includes("xóa") || normalizedAction.includes("delete")) {
-                this.addUnique(knowledge.securityCases, "Kiểm tra quyền xóa dữ liệu");
+                this.addUnique(
+                    knowledge.securityCases,
+                    this.createActionSecurityCase(
+                        entry,
+                        "Kiểm tra quyền xóa dữ liệu",
+                        "DELETE_PERMISSION"
+                    )
+                );
             }
 
             if (
@@ -180,16 +278,34 @@ class SecurityCaseAnalyzer {
                 normalizedAction.includes("update") ||
                 normalizedAction.includes("edit")
             ) {
-                this.addUnique(knowledge.securityCases, "Kiểm tra quyền chỉnh sửa dữ liệu");
+                this.addUnique(
+                    knowledge.securityCases,
+                    this.createActionSecurityCase(
+                        entry,
+                        "Kiểm tra quyền chỉnh sửa dữ liệu",
+                        "EDIT_PERMISSION"
+                    )
+                );
             }
 
             if (normalizedAction.includes("đăng nhập") || normalizedAction.includes("login")) {
                 this.addUnique(
                     knowledge.securityCases,
-                    "Kiểm tra chống dò mật khẩu và đăng nhập lặp lại"
+                    this.createActionSecurityCase(
+                        entry,
+                        "Kiểm tra chống dò mật khẩu và đăng nhập lặp lại",
+                        "BRUTE_FORCE"
+                    )
                 );
 
-                this.addUnique(knowledge.securityCases, "Kiểm tra quản lý phiên đăng nhập");
+                this.addUnique(
+                    knowledge.securityCases,
+                    this.createActionSecurityCase(
+                        entry,
+                        "Kiểm tra quản lý phiên đăng nhập",
+                        "SESSION_MANAGEMENT"
+                    )
+                );
             }
 
             if (
@@ -200,7 +316,11 @@ class SecurityCaseAnalyzer {
             ) {
                 this.addUnique(
                     knowledge.securityCases,
-                    "Kiểm tra dữ liệu đầu vào trước khi tạo mới"
+                    this.createActionSecurityCase(
+                        entry,
+                        "Kiểm tra dữ liệu đầu vào trước khi tạo mới",
+                        "CREATE_INPUT_VALIDATION"
+                    )
                 );
             }
         });
@@ -208,8 +328,7 @@ class SecurityCaseAnalyzer {
 
     collectActions(requirement) {
         const actions = [];
-
-        this.mergeActions(actions, requirement.actions);
+        const featureActions = new Set();
 
         if (Array.isArray(requirement.features)) {
             requirement.features.forEach(feature => {
@@ -217,48 +336,131 @@ class SecurityCaseAnalyzer {
                     return;
                 }
 
-                if (feature.name) {
-                    this.mergeActions(actions, [feature.name]);
-                }
+                const scopedActions = [feature.name, feature.automation?.operation].filter(Boolean);
 
-                const operation = feature.automation?.operation;
+                scopedActions.forEach(action => {
+                    featureActions.add(this.normalizeForComparison(action));
+                });
 
-                if (operation) {
-                    this.mergeActions(actions, [operation]);
-                }
+                this.mergeActions(actions, scopedActions, {
+                    module: requirement.module,
+
+                    feature: feature.name
+                });
             });
         }
 
+        this.mergeActions(actions, requirement.actions, {
+            module: requirement.module,
+
+            feature: "",
+
+            excludedActions: featureActions
+        });
+
         if (actions.length === 0 && requirement.feature) {
-            this.mergeActions(actions, [requirement.feature]);
+            this.mergeActions(actions, [requirement.feature], {
+                module: requirement.module,
+
+                feature: ""
+            });
         }
 
         return actions;
     }
 
-    mergeActions(target, source) {
+    mergeActions(target, source, context = {}) {
         if (!Array.isArray(target) || !Array.isArray(source)) {
             return;
         }
 
         source.forEach(action => {
             const normalizedAction = this.normalizeText(action);
+            const comparisonAction = this.normalizeForComparison(action);
 
             if (!normalizedAction) {
                 return;
             }
 
-            const existed = target.some(currentAction => {
+            if (
+                context.excludedActions instanceof Set &&
+                context.excludedActions.has(comparisonAction)
+            ) {
+                return;
+            }
+
+            const entry = {
+                action: normalizedAction,
+
+                module: context.module ?? "",
+
+                feature: context.feature ?? ""
+            };
+
+            const existed = target.some(currentEntry => {
                 return (
-                    this.normalizeText(currentAction).toLowerCase() ===
-                    normalizedAction.toLowerCase()
+                    this.normalizeForComparison(currentEntry?.action) === comparisonAction &&
+                    this.normalizeForComparison(currentEntry?.module) ===
+                        this.normalizeForComparison(entry.module) &&
+                    this.normalizeForComparison(currentEntry?.feature) ===
+                        this.normalizeForComparison(entry.feature)
                 );
             });
 
             if (!existed) {
-                target.push(normalizedAction);
+                target.push(entry);
             }
         });
+    }
+
+    createSecurityCase(input, context, content, securityType) {
+        return {
+            module: context?.module ?? "",
+
+            feature: context?.feature ?? "",
+
+            inputName: input?.name ?? "",
+
+            content,
+
+            source: "SECURITY_ANALYSIS",
+
+            securityType,
+
+            controlType: input?.controlType,
+
+            dataSource: input?.dataSource,
+
+            description: input?.description,
+
+            required: input?.required,
+
+            validationType: input?.validationType,
+
+            severity: input?.severity,
+
+            priority: input?.priority,
+
+            riskCategory: input?.riskCategory,
+
+            requirementReference: input?.requirementReference
+        };
+    }
+
+    createActionSecurityCase(context, content, securityType) {
+        return {
+            module: context?.module ?? "",
+
+            feature: context?.feature ?? "",
+
+            inputName: "",
+
+            content,
+
+            source: "SECURITY_ANALYSIS",
+
+            securityType
+        };
     }
 
     /*
@@ -267,23 +469,35 @@ class SecurityCaseAnalyzer {
     =================================================
     */
 
+    getSecurityComparisonKey(value) {
+        if (!value || typeof value !== "object") {
+            return ["", "", "", this.normalizeForComparison(value), ""].join("|");
+        }
+
+        return [
+            this.normalizeForComparison(value.module),
+
+            this.normalizeForComparison(value.feature),
+
+            this.normalizeForComparison(value.inputName),
+
+            this.normalizeForComparison(value.content),
+
+            this.normalizeForComparison(value.securityType)
+        ].join("|");
+    }
+
     addUnique(target, value) {
         if (!Array.isArray(target) || !value) {
             return;
         }
 
-        const normalizedValue = this.normalizeText(value).toLowerCase();
+        const comparisonKey = this.getSecurityComparisonKey(value);
 
-        if (!normalizedValue) {
-            return;
-        }
-
-        const existed = target.some(item => {
-            return this.normalizeText(item).toLowerCase() === normalizedValue;
-        });
+        const existed = target.some(item => this.getSecurityComparisonKey(item) === comparisonKey);
 
         if (!existed) {
-            target.push(this.normalizeText(value));
+            target.push(value && typeof value === "object" ? value : this.normalizeText(value));
         }
     }
 
@@ -293,6 +507,10 @@ class SecurityCaseAnalyzer {
         }
 
         return String(value).replace(/\s+/g, " ").trim();
+    }
+
+    normalizeForComparison(value) {
+        return this.normalizeText(value).toLowerCase();
     }
 }
 

@@ -13,9 +13,19 @@ class BusinessRuleAnalyzer {
                 return;
             }
 
-            this.addUnique(knowledge.validationRules, content);
+            const contextualRule = this.createRuleContext(rule, {
+                module: rule?.module ?? requirement.module,
 
-            this.addUnique(knowledge.riskAreas, this.createRiskDescription(content));
+                feature: rule?.feature ?? ""
+            });
+
+            this.addUnique(knowledge.validationRules, contextualRule);
+
+            this.addUnique(knowledge.riskAreas, {
+                ...contextualRule,
+
+                content: this.createRiskDescription(content)
+            });
         });
     }
 
@@ -27,12 +37,7 @@ class BusinessRuleAnalyzer {
 
     collectRules(requirement) {
         const rules = [];
-
-        /*
-        Requirement-level aggregated rules
-        */
-
-        this.mergeRules(rules, requirement.businessRules);
+        const featureRuleContents = new Set();
 
         /*
         Feature-level rules
@@ -44,9 +49,45 @@ class BusinessRuleAnalyzer {
                     return;
                 }
 
-                this.mergeRules(rules, feature.businessRules);
+                const contextualRules = Array.isArray(feature.businessRules)
+                    ? feature.businessRules.map(rule =>
+                          this.createRuleContext(rule, {
+                              module: requirement.module,
+
+                              feature: feature.name
+                          })
+                      )
+                    : [];
+
+                contextualRules.forEach(rule => {
+                    featureRuleContents.add(this.normalizeText(this.getRuleContent(rule)));
+                });
+
+                this.mergeRules(rules, contextualRules);
             });
         }
+
+        /*
+        Requirement-level rules remain supported for older requirements.
+        Aggregated copies of feature rules are not emitted a second time.
+        */
+
+        const requirementRules = Array.isArray(requirement.businessRules)
+            ? requirement.businessRules
+                  .filter(
+                      rule =>
+                          !featureRuleContents.has(this.normalizeText(this.getRuleContent(rule)))
+                  )
+                  .map(rule =>
+                      this.createRuleContext(rule, {
+                          module: requirement.module,
+
+                          feature: ""
+                      })
+                  )
+            : [];
+
+        this.mergeRules(rules, requirementRules);
 
         return rules;
     }
@@ -65,14 +106,43 @@ class BusinessRuleAnalyzer {
 
             const existed = target.some(
                 currentRule =>
-                    this.normalizeText(this.getRuleContent(currentRule)) ===
-                    this.normalizeText(ruleContent)
+                    this.getRuleComparisonKey(currentRule) === this.getRuleComparisonKey(rule)
             );
 
             if (!existed) {
                 target.push(rule);
             }
         });
+    }
+
+    createRuleContext(rule, context = {}) {
+        const isRuleObject = rule && typeof rule === "object";
+
+        return {
+            module:
+                isRuleObject && rule.module !== undefined ? rule.module : (context.module ?? ""),
+
+            feature:
+                isRuleObject && rule.feature !== undefined ? rule.feature : (context.feature ?? ""),
+
+            code: isRuleObject ? (rule.code ?? "") : "",
+
+            content: this.getRuleContent(rule),
+
+            source: "BUSINESS_RULE"
+        };
+    }
+
+    getRuleComparisonKey(rule) {
+        const moduleName = this.normalizeText(rule && typeof rule === "object" ? rule.module : "");
+
+        const featureName = this.normalizeText(
+            rule && typeof rule === "object" ? rule.feature : ""
+        );
+
+        const content = this.normalizeText(this.getRuleContent(rule));
+
+        return [moduleName, featureName, content].join("|");
     }
 
     /*
@@ -130,14 +200,14 @@ class BusinessRuleAnalyzer {
             return;
         }
 
-        const normalizedValue = this.normalizeText(value);
+        const comparisonKey = this.getRuleComparisonKey(value);
 
-        if (!normalizedValue) {
+        if (!this.normalizeText(this.getRuleContent(value))) {
             return;
         }
 
         const existed = target.some(
-            currentValue => this.normalizeText(currentValue) === normalizedValue
+            currentValue => this.getRuleComparisonKey(currentValue) === comparisonKey
         );
 
         if (!existed) {

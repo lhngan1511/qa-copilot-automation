@@ -25,64 +25,118 @@ class IntelligenceScenarioGenerator {
         }
 
         const scenario = new TestScenario();
+        const generatedId = `SC${String(this.counter++).padStart(3, "0")}`;
 
-        scenario.id = `SC${String(this.counter++).padStart(3, "0")}`;
+        scenario.id =
+            item.id === undefined || item.id === null || item.id === "" ? generatedId : item.id;
 
-        /*
-        Module phải ưu tiên requirement.module.
+        const itemModule = this.getText(item?.module);
 
-        Không được ưu tiên requirement.feature vì feature
-        thường là một chức năng con như "Thêm thiết bị".
-        */
+        scenario.module = itemModule !== "" ? item.module : this.getText(requirement?.module);
 
-        scenario.module =
-            this.getText(requirement?.module) ||
-            this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
-            "";
-
-        scenario.title = this.buildTitle(item);
+        scenario.title =
+            item.title === undefined || item.title === null || item.title === ""
+                ? this.buildTitle(item)
+                : item.title;
 
         if (!scenario.title) {
             return null;
         }
 
-        scenario.testScenario = scenario.title;
+        scenario.testScenario =
+            item.testScenario === undefined || item.testScenario === null
+                ? scenario.title
+                : item.testScenario;
 
-        scenario.feature = this.extractFeature(requirement, item, scenario.title);
+        const itemFeature = this.getText(item?.feature);
 
-        scenario.type = this.normalizeType(item?.type);
+        scenario.feature =
+            itemFeature !== ""
+                ? item.feature
+                : this.extractFeature(requirement, item, scenario.title);
 
-        scenario.priority = this.getText(item?.priority).toUpperCase() || "MEDIUM";
+        scenario.type =
+            item.type === undefined || item.type === null || item.type === ""
+                ? this.normalizeType(item?.type)
+                : item.type;
 
-        scenario.reason = this.getText(item?.reason) || this.getText(item?.description) || "";
+        scenario.priority =
+            item.priority === undefined || item.priority === null || item.priority === ""
+                ? "MEDIUM"
+                : item.priority;
 
-        scenario.riskCategory = this.getText(item?.riskCategory) || scenario.type;
+        scenario.reason =
+            item.reason === undefined || item.reason === null
+                ? (item.description ?? "")
+                : item.reason;
+
+        scenario.riskCategory =
+            item.riskCategory === undefined || item.riskCategory === null
+                ? scenario.type
+                : item.riskCategory;
 
         scenario.requirementReference =
-            this.getText(item?.requirementReference) ||
-            this.getText(item?.code) ||
-            this.getText(item?.title) ||
-            this.getText(item?.content) ||
-            "";
+            item.requirementReference === undefined || item.requirementReference === null
+                ? (item.code ?? item.title ?? item.content ?? "")
+                : item.requirementReference;
 
-        scenario.inputDefinitions = Array.isArray(requirement?.inputDefinitions)
-            ? requirement.inputDefinitions
-            : [];
+        scenario.inputDefinitions =
+            item.inputDefinitions !== undefined
+                ? item.inputDefinitions
+                : Array.isArray(requirement?.inputDefinitions)
+                  ? requirement.inputDefinitions
+                  : [];
 
-        scenario.preconditions = this.buildPreconditions(requirement, scenario.feature);
+        scenario.preconditions =
+            item.preconditions === undefined ||
+            (Array.isArray(item.preconditions) && item.preconditions.length === 0)
+                ? this.buildPreconditions(requirement, scenario.feature)
+                : item.preconditions;
 
-        scenario.expectedResults = this.generateExpectedResults(scenario);
+        scenario.expectedResult =
+            item.expectedResult === undefined ? scenario.expectedResult : item.expectedResult;
 
-        scenario.steps = this.generateSteps(scenario);
+        if (item.expectedResults !== undefined) {
+            scenario.expectedResults = item.expectedResults;
+        } else if (item.expectedResult !== undefined && item.expectedResult !== null) {
+            scenario.expectedResults = [item.expectedResult];
+        } else {
+            scenario.expectedResults = this.generateExpectedResults(scenario);
+        }
 
-        scenario.testData = null;
+        scenario.steps =
+            item.steps === undefined || (Array.isArray(item.steps) && item.steps.length === 0)
+                ? this.generateSteps(scenario)
+                : item.steps;
 
-        scenario.severity = this.calculateSeverity(scenario.type);
+        if (Object.prototype.hasOwnProperty.call(item, "testData")) {
+            scenario.testData = item.testData;
+        }
 
-        scenario.automationCandidate = true;
+        if (Object.prototype.hasOwnProperty.call(item, "assertions")) {
+            scenario.assertions = item.assertions;
+        }
+
+        if (
+            item.automationHints &&
+            typeof item.automationHints === "object" &&
+            !Array.isArray(item.automationHints)
+        ) {
+            scenario.automationHints = this.cloneValue(item.automationHints);
+        } else if (scenario.automationHints === undefined) {
+            scenario.automationHints = {};
+        }
+
+        scenario.severity =
+            item.severity === undefined || item.severity === null || item.severity === ""
+                ? this.calculateSeverity(scenario.type)
+                : item.severity;
+
+        scenario.automationCandidate =
+            item.automationCandidate === undefined ? true : item.automationCandidate;
 
         scenario.automation = {
-            candidate: true,
+            candidate: scenario.automationCandidate,
 
             framework: "Playwright",
 
@@ -284,6 +338,12 @@ class IntelligenceScenarioGenerator {
     buildPreconditions(requirement, featureName) {
         const preconditions = [];
 
+        if (Array.isArray(requirement?.preconditions)) {
+            requirement.preconditions.forEach(precondition => {
+                this.addUniqueText(preconditions, this.getText(precondition));
+            });
+        }
+
         if (Array.isArray(requirement?.permissions)) {
             requirement.permissions.forEach(permission => {
                 this.addUniqueText(preconditions, this.getText(permission));
@@ -307,10 +367,6 @@ class IntelligenceScenarioGenerator {
             matchedFeature.preconditions.forEach(precondition => {
                 this.addUniqueText(preconditions, this.getText(precondition));
             });
-        }
-
-        if (preconditions.length === 0) {
-            preconditions.push("Người dùng đã đăng nhập vào hệ thống");
         }
 
         return preconditions;
@@ -475,7 +531,9 @@ class IntelligenceScenarioGenerator {
         */
 
         uniqueScenarios.forEach((scenario, index) => {
-            scenario.id = `SC${String(index + 1).padStart(3, "0")}`;
+            if (scenario.id === undefined || scenario.id === null || scenario.id === "") {
+                scenario.id = `SC${String(index + 1).padStart(3, "0")}`;
+            }
         });
 
         return uniqueScenarios;
@@ -538,6 +596,24 @@ class IntelligenceScenarioGenerator {
                 value.value ??
                 ""
         ).trim();
+    }
+
+    cloneValue(value) {
+        if (Array.isArray(value)) {
+            return value.map(item => this.cloneValue(item));
+        }
+
+        if (value && typeof value === "object") {
+            const clone = {};
+
+            Object.entries(value).forEach(([key, item]) => {
+                clone[key] = this.cloneValue(item);
+            });
+
+            return clone;
+        }
+
+        return value;
     }
 }
 
