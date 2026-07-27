@@ -1,23 +1,30 @@
 class TestCase {
-
-
     constructor() {
-
+        /*
+        =====================================================
+         Identification
+        =====================================================
+        */
 
         this.id = "";
 
         this.scenarioId = "";
 
-
-        // Module / Feature
+        /*
+        =====================================================
+         Module / Feature
+        =====================================================
+        */
 
         this.module = "";
 
         this.feature = "";
 
-
-
-        // Nội dung testcase
+        /*
+        =====================================================
+         Business Test Case
+        =====================================================
+        */
 
         this.title = "";
 
@@ -27,131 +34,192 @@ class TestCase {
 
         this.testObjective = "";
 
-
-
-        // Trace requirement
+        /*
+        =====================================================
+         Requirement Trace
+        =====================================================
+        */
 
         this.requirementReference = "";
 
-
-
-        // Preconditions
+        /*
+        =====================================================
+         Preconditions
+        =====================================================
+        */
 
         this.preconditions = [];
 
-
-
-        // Test data
+        /*
+        =====================================================
+         Test Data
+        =====================================================
+        */
 
         this.testData = {
-
             inputs: {},
 
             expected: {},
 
             invalid: {}
-
         };
 
+        /*
+        =====================================================
+         Execution Steps
+        =====================================================
 
+         Một testcase nghiệp vụ có thể chứa nhiều bước.
 
-        // Steps chuẩn QA
+         Ví dụ:
+
+         [
+             {
+                 order: 1,
+                 action: "OPEN_FEATURE",
+                 target: "Thêm thiết bị",
+                 description: "Mở chức năng Thêm thiết bị"
+             },
+             {
+                 order: 2,
+                 action: "FILL",
+                 target: "Mã thiết bị",
+                 valueRef: "testData.inputs.maThietBi"
+             }
+         ]
+
+        =====================================================
+        */
 
         this.steps = [];
 
+        /*
+        =====================================================
+         Automation Assertions
+        =====================================================
 
+         Assertions dùng để sinh các lệnh expect()
+         trong Playwright.
 
-        // Expected Result
+         Một testcase có thể có nhiều assertions.
+
+         Ví dụ:
+
+         [
+             {
+                 type: "MESSAGE_VISIBLE",
+                 target: "Thông báo thành công",
+                 expected: "Thêm thiết bị thành công"
+             },
+             {
+                 type: "DATA_VISIBLE",
+                 target: "Danh sách thiết bị",
+                 valueRef: "testData.inputs.maThietBi"
+             }
+         ]
+
+        =====================================================
+        */
+
+        this.assertions = [];
+
+        /*
+        =====================================================
+         Business Expected Result
+        =====================================================
+
+         expectedResult:
+         - Kết quả nghiệp vụ tổng hợp
+         - Phù hợp để xuất Excel / Markdown
+
+         expectedResults:
+         - Giữ lại để tương thích với framework hiện tại
+         - Có thể chứa nhiều kết quả chi tiết
+         - Sau này sẽ được chuyển thành assertions
+
+        =====================================================
+        */
+
+        this.expectedResult = "";
 
         this.expectedResults = [];
 
-
-
-        // Execution
+        /*
+        =====================================================
+         Execution Result
+        =====================================================
+        */
 
         this.actualResult = "";
 
         this.status = "Not Tested";
 
-
-
-        // Priority
+        /*
+        =====================================================
+         Priority / Severity
+        =====================================================
+        */
 
         this.priority = "MEDIUM";
 
         this.severity = "MEDIUM";
 
-
-
-        // Automation
+        /*
+        =====================================================
+         Automation Metadata
+        =====================================================
+        */
 
         this.automation = {
-
-
             candidate: false,
-
 
             framework: "Playwright",
 
-
             pageObject: "",
-
 
             locatorStrategy: "",
 
-
             locator: "",
 
-
             tags: []
-
-
         };
 
-
-
-        // AI Intelligence
+        /*
+        =====================================================
+         AI Intelligence
+        =====================================================
+        */
 
         this.intelligence = null;
 
-
-
-        // Traceability
+        /*
+        =====================================================
+         Traceability
+        =====================================================
+        */
 
         this.traceability = {
-
-
             requirementId: "",
 
-
             scenarioId: ""
-
-
         };
 
-
-
-        // Metadata
+        /*
+        =====================================================
+         Metadata
+        =====================================================
+        */
 
         this.source = "QA-Copilot";
 
-
         this.reason = "";
-
 
         this.riskCategory = "";
 
-
         this.createdBy = "QA-Copilot";
 
-
-        this.version = "1.0";
-
-
+        this.version = "1.1";
     }
-
-
 }
-
 
 export default TestCase;

@@ -1,12 +1,8 @@
 class RecommendedScenario {
-
-
     constructor({
-
         id = "",
 
         title = "",
-
 
         // Module / Feature Context
 
@@ -14,134 +10,187 @@ class RecommendedScenario {
 
         feature = "",
 
+        // Scenario Classification
 
         type = "",
 
-        priority = "",
+        priority = "MEDIUM",
+
+        severity = "MEDIUM",
+
+        // Intelligence Information
 
         reason = "",
 
         source = "",
 
-
         // Traceability
 
         requirementReference = "",
 
-        riskCategory = ""
+        riskCategory = "",
 
+        // Test Preparation
 
+        preconditions = [],
+
+        inputDefinitions = [],
+
+        // Generated Test Data
+
+        testData = null,
+
+        // Scenario Execution
+
+        steps = [],
+
+        // Expected Results
+
+        expectedResult = "",
+
+        expectedResults = [],
+
+        // Automation Assertions
+
+        assertions = [],
+
+        // Automation
+
+        automationCandidate = false
     } = {}) {
-
-
-
-        // ==========================
-        // Identity
-        // ==========================
+        /*
+        =====================================================
+         Identity
+        =====================================================
+        */
 
         this.id = id;
 
-
-
-        // ==========================
-        // Scenario Information
-        // ==========================
-
-        this.title = title;
-
-
         /*
-            Module cấp cao
-
-            Ví dụ:
-            Thiết bị
+        =====================================================
+         Module / Feature
+        =====================================================
         */
 
         this.module = module;
 
-
-
-        /*
-            Chức năng thực tế
-
-            Ví dụ:
-            Thêm thiết bị
-        */
-
         this.feature = feature;
 
+        /*
+        =====================================================
+         Scenario Information
+        =====================================================
+        */
 
+        this.title = title;
 
-        // POSITIVE
-        // NEGATIVE
-        // BOUNDARY
-        // BUSINESS_RULE
-        // SECURITY
-        // PERMISSION
-        // DATA_INTEGRITY
-        // PERFORMANCE
+        this.testScenario = title;
+
+        /*
+        =====================================================
+         Scenario Classification
+        =====================================================
+        */
 
         this.type = type;
 
-
-
-        // HIGH / MEDIUM / LOW
-
         this.priority = priority;
 
+        this.severity = severity;
 
-
-        // ==========================
-        // Intelligence Reason
-        // ==========================
+        /*
+        =====================================================
+         Intelligence Information
+        =====================================================
+        */
 
         this.reason = reason;
 
-
-
-        // Rule Engine / AI / Intelligence Engine
-
         this.source = source;
 
+        /*
+        =====================================================
+         Traceability
+        =====================================================
+        */
 
+        this.requirementReference = requirementReference;
 
-        // ==========================
-        // Traceability
-        // ==========================
+        /*
+        =====================================================
+         Risk Classification
+        =====================================================
+        */
 
-        this.requirementReference =
-            requirementReference;
+        this.riskCategory = riskCategory || type;
 
+        /*
+        =====================================================
+         Test Preparation
+        =====================================================
+        */
 
+        this.preconditions = Array.isArray(preconditions) ? preconditions : [];
 
-        // ==========================
-        // Risk Classification
-        // ==========================
+        this.inputDefinitions = Array.isArray(inputDefinitions) ? inputDefinitions : [];
 
-        this.riskCategory =
-            riskCategory || type;
+        /*
+        =====================================================
+         Test Data
+        =====================================================
+        */
 
+        this.testData =
+            testData && typeof testData === "object"
+                ? testData
+                : {
+                      valid: {},
 
+                      invalid: {}
+                  };
 
-        // ==========================
-        // Automation Metadata
-        // ==========================
+        /*
+        =====================================================
+         Execution Steps
+        =====================================================
+        */
 
-        this.automationCandidate = false;
+        this.steps = Array.isArray(steps) ? steps : [];
 
+        /*
+        =====================================================
+         Expected Results
+        =====================================================
+        */
 
+        this.expectedResult = expectedResult;
 
-        // ==========================
-        // Version
-        // ==========================
+        this.expectedResults = Array.isArray(expectedResults) ? expectedResults : [];
 
-        this.version = "1.0";
+        /*
+        =====================================================
+         Automation Assertions
+        =====================================================
+        */
 
+        this.assertions = Array.isArray(assertions) ? assertions : [];
 
+        /*
+        =====================================================
+         Automation Metadata
+        =====================================================
+        */
+
+        this.automationCandidate = Boolean(automationCandidate);
+
+        /*
+        =====================================================
+         Version
+        =====================================================
+        */
+
+        this.version = "1.1";
     }
-
-
 }
-
 
 export default RecommendedScenario;

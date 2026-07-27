@@ -1,0 +1,4514 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "module": "Thêm thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Thêm thiết bị thành công",
+    "testScenario": "Thêm thiết bị thành công",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "1",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Thêm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thêm thiết bị thành công",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Thêm thiết bị",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống thực hiện thành công thao tác; Dữ liệu được cập nhật và hiển thị đúng"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống thực hiện thành công thao tác",
+      "Dữ liệu được cập nhật và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "1",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Kiểm tra luồng nghiệp vụ chính với dữ liệu hợp lệ",
+    "riskCategory": "FUNCTIONAL",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Sửa thiết bị thành công",
+    "testScenario": "Sửa thiết bị thành công",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "2",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Sửa thiết bị thành công",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống thực hiện thành công thao tác; Dữ liệu được cập nhật và hiển thị đúng"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống thực hiện thành công thao tác",
+      "Dữ liệu được cập nhật và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "2",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Kiểm tra luồng nghiệp vụ chính với dữ liệu hợp lệ",
+    "riskCategory": "FUNCTIONAL",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Xóa thiết bị thành công",
+    "testScenario": "Xóa thiết bị thành công",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "3",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Xóa thiết bị thành công",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống thực hiện thành công thao tác; Dữ liệu được cập nhật và hiển thị đúng"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống thực hiện thành công thao tác",
+      "Dữ liệu được cập nhật và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "3",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Kiểm tra luồng nghiệp vụ chính với dữ liệu hợp lệ",
+    "riskCategory": "FUNCTIONAL",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC004",
+    "module": "Tìm kiếm thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Tìm kiếm thiết bị thành công",
+    "testScenario": "Tìm kiếm thiết bị thành công",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "4",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Tìm kiếm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Tìm kiếm thiết bị thành công",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "expected": "Hệ thống thực hiện xử lý nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống thực hiện thành công thao tác; Dữ liệu được cập nhật và hiển thị đúng"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống thực hiện thành công thao tác",
+      "Dữ liệu được cập nhật và hiển thị đúng"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "POSITIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "4",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Kiểm tra luồng nghiệp vụ chính với dữ liệu hợp lệ",
+    "riskCategory": "FUNCTIONAL",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC005",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "testScenario": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "scenarioId": "SC005"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC006",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+    "testScenario": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC007",
+    "scenarioId": "SC007",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Không được xóa thiết bị đang được sử dụng.",
+    "testScenario": "Không được xóa thiết bị đang được sử dụng.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Không được xóa thiết bị đang được sử dụng.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Không được xóa thiết bị đang được sử dụng.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không được xóa thiết bị đang được sử dụng.",
+      "scenarioId": "SC007"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC008",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "testScenario": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "scenarioId": "SC008"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC009",
+    "scenarioId": "SC009",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "testScenario": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "scenarioId": "SC009"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC010",
+    "scenarioId": "SC010",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị không được để trống",
+    "testScenario": "Mã thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị không được để trống",
+      "scenarioId": "SC010"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC011",
+    "scenarioId": "SC011",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Tên thiết bị không được để trống",
+    "testScenario": "Tên thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Tên thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Tên thiết bị không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tên thiết bị không được để trống",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC012",
+    "scenarioId": "SC012",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Loại thiết bị không được để trống",
+    "testScenario": "Loại thiết bị không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Loại thiết bị không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Loại thiết bị không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Loại thiết bị không được để trống",
+      "scenarioId": "SC012"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC013",
+    "scenarioId": "SC013",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Thiết bị cần sửa không được để trống",
+    "testScenario": "Thiết bị cần sửa không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị cần sửa không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị cần sửa không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị cần sửa không được để trống",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC014",
+    "scenarioId": "SC014",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Thiết bị cần xóa không được để trống",
+    "testScenario": "Thiết bị cần xóa không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị cần xóa không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị cần xóa không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị cần xóa không được để trống",
+      "scenarioId": "SC014"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC015",
+    "scenarioId": "SC015",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Xác nhận xóa không được để trống",
+    "testScenario": "Xác nhận xóa không được để trống",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Xác nhận xóa không được để trống",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Xác nhận xóa không được để trống",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Xác nhận xóa không được để trống",
+      "scenarioId": "SC015"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC016",
+    "scenarioId": "SC016",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị bị trùng",
+    "testScenario": "Mã thiết bị bị trùng",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị bị trùng",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị bị trùng",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị bị trùng",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC017",
+    "scenarioId": "SC017",
+    "module": "Thêm thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Người dùng không có quyền thêm thiết bị.",
+    "testScenario": "Người dùng không có quyền thêm thiết bị.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Người dùng không có quyền thêm thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Thêm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng không có quyền thêm thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Thêm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền thêm thiết bị.",
+      "scenarioId": "SC017"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC018",
+    "scenarioId": "SC018",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị đã tồn tại.",
+    "testScenario": "Mã thiết bị đã tồn tại.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Mã thiết bị đã tồn tại.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị đã tồn tại.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị đã tồn tại.",
+      "scenarioId": "SC018"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC019",
+    "scenarioId": "SC019",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Trường bắt buộc bị bỏ trống.",
+    "testScenario": "Trường bắt buộc bị bỏ trống.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Trường bắt buộc bị bỏ trống.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Trường bắt buộc bị bỏ trống.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Trường bắt buộc bị bỏ trống.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC020",
+    "scenarioId": "SC020",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Loại thiết bị không hợp lệ.",
+    "testScenario": "Loại thiết bị không hợp lệ.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Loại thiết bị không hợp lệ.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Loại thiết bị không hợp lệ.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Loại thiết bị không hợp lệ.",
+      "scenarioId": "SC020"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC021",
+    "scenarioId": "SC021",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Dữ liệu vượt quá độ dài cho phép.",
+    "testScenario": "Dữ liệu vượt quá độ dài cho phép.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Dữ liệu vượt quá độ dài cho phép.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Dữ liệu vượt quá độ dài cho phép.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Dữ liệu vượt quá độ dài cho phép.",
+      "scenarioId": "SC021"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC022",
+    "scenarioId": "SC022",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Hệ thống xảy ra lỗi trong quá trình lưu.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "scenarioId": "SC022"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC023",
+    "scenarioId": "SC023",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Người dùng không có quyền sửa thiết bị.",
+    "testScenario": "Người dùng không có quyền sửa thiết bị.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Người dùng không có quyền sửa thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng không có quyền sửa thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền sửa thiết bị.",
+      "scenarioId": "SC023"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC024",
+    "scenarioId": "SC024",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị không còn tồn tại.",
+    "testScenario": "Thiết bị không còn tồn tại.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị không còn tồn tại.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị không còn tồn tại.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị không còn tồn tại.",
+      "scenarioId": "SC024"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC025",
+    "scenarioId": "SC025",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị đã bị người dùng khác thay đổi.",
+    "testScenario": "Thiết bị đã bị người dùng khác thay đổi.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị đã bị người dùng khác thay đổi.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị đã bị người dùng khác thay đổi.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị đã bị người dùng khác thay đổi.",
+      "scenarioId": "SC025"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC026",
+    "scenarioId": "SC026",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Dữ liệu cập nhật không hợp lệ.",
+    "testScenario": "Dữ liệu cập nhật không hợp lệ.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Dữ liệu cập nhật không hợp lệ.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Dữ liệu cập nhật không hợp lệ.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Dữ liệu cập nhật không hợp lệ.",
+      "scenarioId": "SC026"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC027",
+    "scenarioId": "SC027",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Người dùng không có quyền xóa thiết bị.",
+    "testScenario": "Người dùng không có quyền xóa thiết bị.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Người dùng không có quyền xóa thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng không có quyền xóa thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền xóa thiết bị.",
+      "scenarioId": "SC027"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC028",
+    "scenarioId": "SC028",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị không tồn tại.",
+    "testScenario": "Thiết bị không tồn tại.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị không tồn tại.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị không tồn tại.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị không tồn tại.",
+      "scenarioId": "SC028"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC029",
+    "scenarioId": "SC029",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Thiết bị đã bị người dùng khác xóa.",
+    "testScenario": "Thiết bị đã bị người dùng khác xóa.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị đã bị người dùng khác xóa.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị đã bị người dùng khác xóa.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị đã bị người dùng khác xóa.",
+      "scenarioId": "SC029"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC030",
+    "scenarioId": "SC030",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị đang được sử dụng.",
+    "testScenario": "Thiết bị đang được sử dụng.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị đang được sử dụng.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị đang được sử dụng.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị đang được sử dụng.",
+      "scenarioId": "SC030"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC031",
+    "scenarioId": "SC031",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Thiết bị có dữ liệu liên quan.",
+    "testScenario": "Thiết bị có dữ liệu liên quan.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Thiết bị có dữ liệu liên quan.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Thiết bị có dữ liệu liên quan.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị có dữ liệu liên quan.",
+      "scenarioId": "SC031"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC032",
+    "scenarioId": "SC032",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Người dùng hủy xác nhận xóa.",
+    "testScenario": "Người dùng hủy xác nhận xóa.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Người dùng hủy xác nhận xóa.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng hủy xác nhận xóa.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng hủy xác nhận xóa.",
+      "scenarioId": "SC032"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC033",
+    "scenarioId": "SC033",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Hệ thống xảy ra lỗi trong quá trình xóa.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "scenarioId": "SC033"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC034",
+    "scenarioId": "SC034",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng không có quyền xem thiết bị.",
+    "testScenario": "Người dùng không có quyền xem thiết bị.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Người dùng không có quyền xem thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng không có quyền xem thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền xem thiết bị.",
+      "scenarioId": "SC034"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC035",
+    "scenarioId": "SC035",
+    "module": "Tìm kiếm thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Điều kiện tìm kiếm không hợp lệ.",
+    "testScenario": "Điều kiện tìm kiếm không hợp lệ.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Điều kiện tìm kiếm không hợp lệ.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Tìm kiếm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Điều kiện tìm kiếm không hợp lệ.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Điều kiện tìm kiếm không hợp lệ.",
+      "scenarioId": "SC035"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC036",
+    "scenarioId": "SC036",
+    "module": "Tìm kiếm thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Không tìm thấy dữ liệu phù hợp.",
+    "testScenario": "Không tìm thấy dữ liệu phù hợp.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Không tìm thấy dữ liệu phù hợp.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Tìm kiếm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Không tìm thấy dữ liệu phù hợp.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không tìm thấy dữ liệu phù hợp.",
+      "scenarioId": "SC036"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC037",
+    "scenarioId": "SC037",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Ký tự đặc biệt gây lỗi xử lý.",
+    "testScenario": "Ký tự đặc biệt gây lỗi xử lý.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Ký tự đặc biệt gây lỗi xử lý.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Ký tự đặc biệt gây lỗi xử lý.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Ký tự đặc biệt gây lỗi xử lý.",
+      "scenarioId": "SC037"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC038",
+    "scenarioId": "SC038",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ; Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+      "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "NEGATIVE"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "scenarioId": "SC038"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE risk detected",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC039",
+    "scenarioId": "SC039",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "testScenario": "Mã thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Mã thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+      "scenarioId": "SC039"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC040",
+    "scenarioId": "SC040",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Tên thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "testScenario": "Tên thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Tên thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Tên thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tên thiết bị cần kiểm tra dữ liệu nhập nguy hiểm",
+      "scenarioId": "SC040"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC041",
+    "scenarioId": "SC041",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Ghi chú cần kiểm tra dữ liệu nhập nguy hiểm",
+    "testScenario": "Ghi chú cần kiểm tra dữ liệu nhập nguy hiểm",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Ghi chú cần kiểm tra dữ liệu nhập nguy hiểm",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Ghi chú cần kiểm tra dữ liệu nhập nguy hiểm",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Ghi chú cần kiểm tra dữ liệu nhập nguy hiểm",
+      "scenarioId": "SC041"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC042",
+    "scenarioId": "SC042",
+    "module": "Thêm thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "dữ liệu đầu vào trước khi tạo mới",
+    "testScenario": "dữ liệu đầu vào trước khi tạo mới",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Kiểm tra dữ liệu đầu vào trước khi tạo mới",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Thêm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: dữ liệu đầu vào trước khi tạo mới",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Thêm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu đầu vào trước khi tạo mới",
+      "scenarioId": "SC042"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC043",
+    "scenarioId": "SC043",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "quyền chỉnh sửa dữ liệu",
+    "testScenario": "quyền chỉnh sửa dữ liệu",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Kiểm tra quyền chỉnh sửa dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền chỉnh sửa dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền chỉnh sửa dữ liệu",
+      "scenarioId": "SC043"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC044",
+    "scenarioId": "SC044",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "quyền xóa dữ liệu",
+    "testScenario": "quyền xóa dữ liệu",
+    "type": "SECURITY",
+    "testObjective": "Kiểm tra yêu cầu bảo mật",
+    "requirementReference": "Kiểm tra quyền xóa dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền xóa dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn; Dữ liệu và quyền truy cập được bảo vệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
+      "Dữ liệu và quyền truy cập được bảo vệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "SECURITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền xóa dữ liệu",
+      "scenarioId": "SC044"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "SECURITY risk detected",
+    "riskCategory": "SECURITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC045",
+    "scenarioId": "SC045",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng đã đăng nhập vào hệ thống.",
+    "testScenario": "Người dùng đã đăng nhập vào hệ thống.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng đã đăng nhập vào hệ thống.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng đã đăng nhập vào hệ thống.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng đã đăng nhập vào hệ thống.",
+      "scenarioId": "SC045"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC046",
+    "scenarioId": "SC046",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+    "testScenario": "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "scenarioId": "SC046"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC047",
+    "scenarioId": "SC047",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng có quyền thực hiện chức năng tương ứng.",
+    "testScenario": "Người dùng có quyền thực hiện chức năng tương ứng.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền thực hiện chức năng tương ứng.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền thực hiện chức năng tương ứng.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền thực hiện chức năng tương ứng.",
+      "scenarioId": "SC047"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC048",
+    "scenarioId": "SC048",
+    "module": "Thêm thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Người dùng có quyền thêm thiết bị.",
+    "testScenario": "Người dùng có quyền thêm thiết bị.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Thêm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền thêm thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Thêm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+      "scenarioId": "SC048"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC049",
+    "scenarioId": "SC049",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Người dùng có quyền sửa thiết bị.",
+    "testScenario": "Người dùng có quyền sửa thiết bị.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền sửa thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền sửa thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền sửa thiết bị.",
+      "scenarioId": "SC049"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC050",
+    "scenarioId": "SC050",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Người dùng có quyền xóa thiết bị.",
+    "testScenario": "Người dùng có quyền xóa thiết bị.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền xóa thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+      "scenarioId": "SC050"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC051",
+    "scenarioId": "SC051",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng có quyền xem danh sách thiết bị.",
+    "testScenario": "Người dùng có quyền xem danh sách thiết bị.",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng có quyền xem danh sách thiết bị.",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+      "scenarioId": "SC051"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC052",
+    "scenarioId": "SC052",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "người dùng có quyền truy cập chức năng quản lý",
+    "testScenario": "người dùng có quyền truy cập chức năng quản lý",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra người dùng có quyền truy cập chức năng quản lý",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: người dùng có quyền truy cập chức năng quản lý",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra người dùng có quyền truy cập chức năng quản lý",
+      "scenarioId": "SC052"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC053",
+    "scenarioId": "SC053",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Người dùng không có quyền không được thao tác chức năng quản lý",
+    "testScenario": "Người dùng không có quyền không được thao tác chức năng quản lý",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Người dùng không có quyền không được thao tác chức năng quản lý",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Người dùng không có quyền không được thao tác chức năng quản lý",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền không được thao tác chức năng quản lý",
+      "scenarioId": "SC053"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC054",
+    "scenarioId": "SC054",
+    "module": "Thêm thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "quyền thêm dữ liệu",
+    "testScenario": "quyền thêm dữ liệu",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thêm dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Thêm thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền thêm dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Thêm thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thêm dữ liệu",
+      "scenarioId": "SC054"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC055",
+    "scenarioId": "SC055",
+    "module": "Sửa thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "quyền chỉnh sửa dữ liệu",
+    "testScenario": "quyền chỉnh sửa dữ liệu",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền chỉnh sửa dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Sửa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền chỉnh sửa dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Sửa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền chỉnh sửa dữ liệu",
+      "scenarioId": "SC055"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC056",
+    "scenarioId": "SC056",
+    "module": "Xóa thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "quyền xóa dữ liệu",
+    "testScenario": "quyền xóa dữ liệu",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền xóa dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Xóa thiết bị",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền xóa dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Xóa thiết bị",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền xóa dữ liệu",
+      "scenarioId": "SC056"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC057",
+    "scenarioId": "SC057",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "quyền xem dữ liệu",
+    "testScenario": "quyền xem dữ liệu",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền xem dữ liệu",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: quyền xem dữ liệu",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống từ chối thao tác khi người dùng không có quyền; Hiển thị thông báo không có quyền phù hợp"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống từ chối thao tác khi người dùng không có quyền",
+      "Hiển thị thông báo không có quyền phù hợp"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "PERMISSION"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền xem dữ liệu",
+      "scenarioId": "SC057"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION risk detected",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  },
+  {
+    "id": "TC058",
+    "scenarioId": "SC058",
+    "module": "Chức năng chưa xác định",
+    "feature": "Chức năng chưa xác định",
+    "title": "Mã thiết bị bị trùng",
+    "testScenario": "Mã thiết bị bị trùng",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Mã thiết bị bị trùng",
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "valid": {},
+      "invalid": {}
+    },
+    "steps": [
+      {
+        "order": 1,
+        "actionType": "NAVIGATION",
+        "action": "Mở chức năng Chức năng chưa xác định",
+        "expected": "Màn hình chức năng hiển thị"
+      },
+      {
+        "order": 2,
+        "actionType": "INPUT",
+        "action": "Chuẩn bị dữ liệu cho tình huống: Mã thiết bị bị trùng",
+        "expected": "Dữ liệu kiểm tra được chuẩn bị"
+      },
+      {
+        "order": 3,
+        "actionType": "ACTION",
+        "action": "Thực hiện Chức năng chưa xác định",
+        "expected": "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "actionType": "ASSERT",
+        "action": "Kiểm tra kết quả thực tế",
+        "expected": "Hệ thống bảo toàn tính toàn vẹn dữ liệu; Không tạo dữ liệu trùng hoặc dữ liệu không hợp lệ"
+      }
+    ],
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Hệ thống bảo toàn tính toàn vẹn dữ liệu",
+      "Không tạo dữ liệu trùng hoặc dữ liệu không hợp lệ"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "automation": {
+      "candidate": true,
+      "framework": "Playwright",
+      "pageObject": "",
+      "locatorStrategy": "",
+      "locator": "",
+      "tags": [
+        "DATA_INTEGRITY"
+      ]
+    },
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị bị trùng",
+      "scenarioId": "SC058"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY risk detected",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1"
+  }
+]

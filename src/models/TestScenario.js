@@ -1,106 +1,139 @@
 class TestScenario {
-
-
-    constructor(){
-
+    constructor() {
+        /*
+        =====================================================
+         Identification
+        =====================================================
+        */
 
         this.id = "";
 
+        /*
+        =====================================================
+         Module / Feature
+        =====================================================
+        */
 
-        // Module
+        this.module = "";
 
         this.feature = "";
 
-
-
-        // Scenario information
+        /*
+        =====================================================
+         Scenario Information
+        =====================================================
+        */
 
         this.title = "";
 
-        this.type = "POSITIVE";
+        this.testScenario = "";
 
+        this.type = "POSITIVE";
 
         this.priority = "MEDIUM";
 
         this.severity = "MEDIUM";
 
-
-
         this.reason = "";
 
         this.riskCategory = "";
 
-
-
-
-        // Requirement trace
+        /*
+        =====================================================
+         Requirement Trace
+        =====================================================
+        */
 
         this.requirementReference = "";
 
         this.requirementType = "";
 
-
-
-
-        // Test preparation
+        /*
+        =====================================================
+         Test Preparation
+        =====================================================
+        */
 
         this.preconditions = [];
 
-
-
-        // Input data definition
+        /*
+        =====================================================
+         Input Definition
+        =====================================================
+        */
 
         this.inputDefinitions = [];
 
-
-
-        // Generated test data
+        /*
+        =====================================================
+         Generated Test Data
+        =====================================================
+        */
 
         this.testData = {
-
             valid: {},
 
             invalid: {}
-
         };
 
-
-
-
-
-        // Test execution steps
+        /*
+        =====================================================
+         Test Execution Steps
+        =====================================================
+        */
 
         this.steps = [];
 
+        /*
+        =====================================================
+         Automation Assertions
+        =====================================================
 
+         Assertions là các kiểm tra chi tiết có thể chuyển
+         thành expect() trong Playwright.
 
+        =====================================================
+        */
 
+        this.assertions = [];
 
-        // Expected business results
+        /*
+        =====================================================
+         Expected Results
+        =====================================================
+
+         expectedResult:
+         - Kết quả nghiệp vụ tổng hợp
+         - Một scenario có một kết quả tổng hợp
+
+         expectedResults:
+         - Danh sách các kết quả chi tiết
+         - Giữ lại để tương thích với framework hiện tại
+         - Sau này có thể chuyển thành assertions
+
+        =====================================================
+        */
+
+        this.expectedResult = "";
 
         this.expectedResults = [];
 
-
-
-
-
-        // Automation information
+        /*
+        =====================================================
+         Automation Information
+        =====================================================
+        */
 
         this.automationCandidate = false;
 
-
-
-
-
-        // Intelligence information
+        /*
+        =====================================================
+         Intelligence Information
+        =====================================================
+        */
 
         this.intelligence = null;
-
-
     }
-
-
 }
-
 
 export default TestScenario;

@@ -12,9 +12,11 @@ class IntelligenceScenarioGenerator {
 
         this.counter = 1;
 
-        return recommendedScenarios
+        const scenarios = recommendedScenarios
             .map(item => this.buildScenario(item, requirement, knowledge))
             .filter(Boolean);
+
+        return this.removeDuplicateScenarios(scenarios);
     }
 
     buildScenario(item, requirement, knowledge) {
@@ -26,10 +28,17 @@ class IntelligenceScenarioGenerator {
 
         scenario.id = `SC${String(this.counter++).padStart(3, "0")}`;
 
-        scenario.module =
-            this.getText(requirement?.feature) || this.getText(requirement?.module) || "";
+        /*
+        Module phải ưu tiên requirement.module.
 
-        scenario.feature = this.extractFeature(requirement, item);
+        Không được ưu tiên requirement.feature vì feature
+        thường là một chức năng con như "Thêm thiết bị".
+        */
+
+        scenario.module =
+            this.getText(requirement?.module) ||
+            this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
+            "";
 
         scenario.title = this.buildTitle(item);
 
@@ -38,6 +47,8 @@ class IntelligenceScenarioGenerator {
         }
 
         scenario.testScenario = scenario.title;
+
+        scenario.feature = this.extractFeature(requirement, item, scenario.title);
 
         scenario.type = this.normalizeType(item?.type);
 
@@ -60,9 +71,9 @@ class IntelligenceScenarioGenerator {
 
         scenario.preconditions = this.buildPreconditions(requirement, scenario.feature);
 
-        scenario.steps = this.generateSteps(scenario);
-
         scenario.expectedResults = this.generateExpectedResults(scenario);
+
+        scenario.steps = this.generateSteps(scenario);
 
         scenario.testData = null;
 
@@ -72,25 +83,34 @@ class IntelligenceScenarioGenerator {
 
         scenario.automation = {
             candidate: true,
+
             framework: "Playwright",
+
             pageObject: "",
+
             locatorStrategy: "",
+
             locator: "",
+
             tags: [scenario.type.toLowerCase()]
         };
 
         if (knowledge) {
             scenario.intelligence = {
                 confidence: knowledge.confidence || 0,
+
                 validationRules: Array.isArray(knowledge.validationRules)
                     ? knowledge.validationRules
                     : [],
+
                 boundaryCases: Array.isArray(knowledge.boundaryCases)
                     ? knowledge.boundaryCases
                     : [],
+
                 negativeCases: Array.isArray(knowledge.negativeCases)
                     ? knowledge.negativeCases
                     : [],
+
                 positiveCases: Array.isArray(knowledge.positiveCases) ? knowledge.positiveCases : []
             };
         }
@@ -98,7 +118,7 @@ class IntelligenceScenarioGenerator {
         return scenario;
     }
 
-    extractFeature(requirement, item) {
+    extractFeature(requirement, item, scenarioTitle = "") {
         const itemFeature = this.getText(item?.feature);
 
         if (itemFeature) {
@@ -111,27 +131,134 @@ class IntelligenceScenarioGenerator {
             return itemFeatureName;
         }
 
-        const sourceText = this.getText(item);
+        const sourceText = [
+            scenarioTitle,
+            this.getText(item),
+            this.getText(item?.reason),
+            this.getText(item?.description),
+            this.getText(item?.requirementReference)
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
 
-        const matchedFeature = requirement?.features?.find(feature => {
-            const featureName = this.getText(feature?.name);
+        /*
+        Ưu tiên match trực tiếp với danh sách feature
+        đã được RequirementAnalysisEngine phân tích.
+        */
 
-            if (!featureName || !sourceText) {
-                return false;
+        if (Array.isArray(requirement?.features)) {
+            const matchedFeature = requirement.features.find(feature => {
+                const featureName = this.getText(
+                    feature?.name || feature?.feature || feature?.title
+                );
+
+                if (!featureName || !sourceText) {
+                    return false;
+                }
+
+                return sourceText.includes(featureName.toLowerCase());
+            });
+
+            if (matchedFeature) {
+                return this.getText(
+                    matchedFeature?.name || matchedFeature?.feature || matchedFeature?.title
+                );
             }
-
-            return sourceText.toLowerCase().includes(featureName.toLowerCase());
-        });
-
-        if (matchedFeature) {
-            return this.getText(matchedFeature.name);
         }
 
-        if (Array.isArray(requirement?.actions) && requirement.actions.length > 0) {
-            return this.getText(requirement.actions[0]);
+        /*
+        Suy luận feature dựa trên động từ nghiệp vụ
+        có trong tiêu đề scenario.
+        */
+
+        const inferredFeature = this.inferFeatureFromText(sourceText, requirement);
+
+        if (inferredFeature) {
+            return inferredFeature;
+        }
+
+        /*
+        Chỉ dùng requirement.feature khi requirement
+        thực sự chỉ có một feature.
+        */
+
+        if (!Array.isArray(requirement?.features) || requirement.features.length <= 1) {
+            const requirementFeature = this.getText(requirement?.feature);
+
+            if (requirementFeature) {
+                return requirementFeature;
+            }
         }
 
         return "Chức năng chưa xác định";
+    }
+
+    inferFeatureFromText(sourceText, requirement) {
+        if (!sourceText) {
+            return "";
+        }
+
+        const moduleName =
+            this.getText(requirement?.module) ||
+            this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
+            "thiết bị";
+
+        if (
+            this.containsAny(sourceText, [
+                "tìm kiếm",
+                "tìm thiết bị",
+                "tra cứu",
+                "lọc dữ liệu",
+                "kết quả tìm"
+            ])
+        ) {
+            return `Tìm kiếm ${moduleName.toLowerCase()}`;
+        }
+
+        if (this.containsAny(sourceText, ["xóa", "xoá", "không được xóa", "không cho phép xóa"])) {
+            return `Xóa ${moduleName.toLowerCase()}`;
+        }
+
+        if (
+            this.containsAny(sourceText, [
+                "cập nhật",
+                "chỉnh sửa",
+                "sửa thiết bị",
+                "thay đổi thông tin"
+            ])
+        ) {
+            return `Sửa ${moduleName.toLowerCase()}`;
+        }
+
+        if (
+            this.containsAny(sourceText, [
+                "thêm",
+                "tạo mới",
+                "mã thiết bị bị trùng",
+                "mã thiết bị đã tồn tại",
+                "dữ liệu hợp lệ"
+            ])
+        ) {
+            return `Thêm ${moduleName.toLowerCase()}`;
+        }
+
+        return "";
+    }
+
+    extractModuleFromFeature(featureName) {
+        const normalizedFeature = this.normalizeText(featureName);
+
+        if (!normalizedFeature) {
+            return "";
+        }
+
+        const moduleName = normalizedFeature.replace(
+            /^(thêm|sửa|xóa|xoá|tìm kiếm|tìm|cập nhật|quản lý)\s+/i,
+            ""
+        );
+
+        return moduleName.trim();
     }
 
     buildTitle(item) {
@@ -148,9 +275,10 @@ class IntelligenceScenarioGenerator {
         }
 
         title = title.replace(/^Kiểm tra chức năng\s*/i, "");
+
         title = title.replace(/^Kiểm tra\s*/i, "");
 
-        return title.trim();
+        return this.normalizeText(title);
     }
 
     buildPreconditions(requirement, featureName) {
@@ -158,63 +286,80 @@ class IntelligenceScenarioGenerator {
 
         if (Array.isArray(requirement?.permissions)) {
             requirement.permissions.forEach(permission => {
-                const text = this.getText(permission);
-
-                if (text && !preconditions.includes(text)) {
-                    preconditions.push(text);
-                }
+                this.addUniqueText(preconditions, this.getText(permission));
             });
         }
 
-        const matchedFeature = requirement?.features?.find(feature => {
-            return (
-                this.getText(feature?.name).toLowerCase() ===
-                this.getText(featureName).toLowerCase()
-            );
-        });
+        const matchedFeature = Array.isArray(requirement?.features)
+            ? requirement.features.find(feature => {
+                  const currentFeatureName = this.getText(
+                      feature?.name || feature?.feature || feature?.title
+                  );
+
+                  return (
+                      this.normalizeForComparison(currentFeatureName) ===
+                      this.normalizeForComparison(featureName)
+                  );
+              })
+            : null;
 
         if (Array.isArray(matchedFeature?.preconditions)) {
             matchedFeature.preconditions.forEach(precondition => {
-                const text = this.getText(precondition);
-
-                if (text && !preconditions.includes(text)) {
-                    preconditions.push(text);
-                }
+                this.addUniqueText(preconditions, this.getText(precondition));
             });
         }
 
         if (preconditions.length === 0) {
-            preconditions.push("Người dùng đã đăng nhập hệ thống");
+            preconditions.push("Người dùng đã đăng nhập vào hệ thống");
         }
 
         return preconditions;
     }
 
     generateSteps(scenario) {
+        const expectedResults = Array.isArray(scenario.expectedResults)
+            ? scenario.expectedResults
+            : [];
+
         return [
             {
                 order: 1,
+
                 actionType: "NAVIGATION",
+
                 action: `Mở chức năng ${scenario.feature}`,
+
                 expected: "Màn hình chức năng hiển thị"
             },
+
             {
                 order: 2,
+
                 actionType: "INPUT",
-                action: "Nhập dữ liệu kiểm tra",
-                expected: "Hệ thống tiếp nhận dữ liệu"
+
+                action: `Chuẩn bị dữ liệu cho tình huống: ${scenario.title}`,
+
+                expected: "Dữ liệu kiểm tra được chuẩn bị"
             },
+
             {
                 order: 3,
-                actionType: "CLICK",
-                action: "Thực hiện thao tác lưu",
+
+                actionType: "ACTION",
+
+                action: `Thực hiện ${scenario.feature}`,
+
                 expected: this.getProcessExpected(scenario.type)
             },
+
             {
                 order: 4,
+
                 actionType: "ASSERT",
-                action: "Kiểm tra kết quả",
-                expected: this.generateExpectedResults(scenario).join("; ")
+
+                action: "Kiểm tra kết quả thực tế",
+
+                expected: expectedResults.join("; ")
             }
         ];
     }
@@ -222,13 +367,22 @@ class IntelligenceScenarioGenerator {
     generateExpectedResults(scenario) {
         switch (scenario.type) {
             case "NEGATIVE":
-                return ["Hệ thống không cho phép lưu dữ liệu", "Hiển thị thông báo lỗi phù hợp"];
+                return [
+                    "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
+                    "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
+                ];
 
             case "PERMISSION":
-                return ["Hệ thống từ chối truy cập", "Hiển thị thông báo không có quyền"];
+                return [
+                    "Hệ thống từ chối thao tác khi người dùng không có quyền",
+                    "Hiển thị thông báo không có quyền phù hợp"
+                ];
 
             case "DATA_INTEGRITY":
-                return ["Dữ liệu không được tạo trùng", "Hệ thống bảo toàn dữ liệu"];
+                return [
+                    "Hệ thống bảo toàn tính toàn vẹn dữ liệu",
+                    "Không tạo dữ liệu trùng hoặc dữ liệu không hợp lệ"
+                ];
 
             case "BOUNDARY":
                 return [
@@ -238,12 +392,15 @@ class IntelligenceScenarioGenerator {
 
             case "SECURITY":
                 return [
-                    "Hệ thống ngăn chặn thao tác không an toàn",
+                    "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
                     "Dữ liệu và quyền truy cập được bảo vệ"
                 ];
 
             default:
-                return ["Hệ thống xử lý thành công yêu cầu", "Dữ liệu được lưu và hiển thị đúng"];
+                return [
+                    "Hệ thống thực hiện thành công thao tác",
+                    "Dữ liệu được cập nhật và hiển thị đúng"
+                ];
         }
     }
 
@@ -272,10 +429,15 @@ class IntelligenceScenarioGenerator {
 
         const supportedTypes = [
             "POSITIVE",
+
             "NEGATIVE",
+
             "PERMISSION",
+
             "DATA_INTEGRITY",
+
             "BOUNDARY",
+
             "SECURITY"
         ];
 
@@ -284,6 +446,73 @@ class IntelligenceScenarioGenerator {
         }
 
         return "POSITIVE";
+    }
+
+    removeDuplicateScenarios(scenarios) {
+        const uniqueScenarios = [];
+
+        const scenarioKeys = new Set();
+
+        scenarios.forEach(scenario => {
+            const key = [
+                this.normalizeForComparison(scenario.module),
+                this.normalizeForComparison(scenario.feature),
+                this.normalizeForComparison(scenario.title),
+                this.normalizeForComparison(scenario.type)
+            ].join("|");
+
+            if (scenarioKeys.has(key)) {
+                return;
+            }
+
+            scenarioKeys.add(key);
+
+            uniqueScenarios.push(scenario);
+        });
+
+        /*
+        Đánh lại ID sau khi loại bỏ scenario trùng.
+        */
+
+        uniqueScenarios.forEach((scenario, index) => {
+            scenario.id = `SC${String(index + 1).padStart(3, "0")}`;
+        });
+
+        return uniqueScenarios;
+    }
+
+    addUniqueText(target, value) {
+        if (!Array.isArray(target) || !value) {
+            return;
+        }
+
+        const normalizedValue = this.normalizeForComparison(value);
+
+        const alreadyExists = target.some(existingValue => {
+            return this.normalizeForComparison(existingValue) === normalizedValue;
+        });
+
+        if (!alreadyExists) {
+            target.push(this.normalizeText(value));
+        }
+    }
+
+    containsAny(sourceText, keywords) {
+        return keywords.some(keyword => sourceText.includes(keyword.toLowerCase()));
+    }
+
+    normalizeText(value) {
+        if (typeof value !== "string") {
+            return "";
+        }
+
+        return value.replace(/\s+/g, " ").trim();
+    }
+
+    normalizeForComparison(value) {
+        return this.normalizeText(this.getText(value))
+            .replace(/[.!?;:,]+$/g, "")
+            .toLowerCase();
     }
 
     getText(value) {
