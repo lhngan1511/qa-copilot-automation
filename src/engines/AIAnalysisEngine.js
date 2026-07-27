@@ -1,5 +1,6 @@
 import AIAnalysisResult from "../models/AIAnalysisResult.js";
 import AIProviderFactory from "../providers/AIProviderFactory.js";
+import AIConfig from "../config/AIConfig.js";
 
 class AIAnalysisEngine {
     constructor() {
@@ -14,11 +15,35 @@ class AIAnalysisEngine {
 
             const parsedResult = this.parseAIResponse(aiResponse);
 
-            return this.buildAnalysisResult(parsedResult, requirement);
-        } catch (error) {
-            console.error("AI Analysis failed:", error?.message || error);
+            if (!this.isUsableAIResult(parsedResult, requirement)) {
+                throw new Error("AI response does not contain usable scenarios");
+            }
 
-            return this.fallbackAnalysis(requirement);
+            const result = this.buildAnalysisResult(parsedResult, requirement);
+
+            this.assignAnalysisMetadata(result, {
+                analysisStatus: "SUCCESS",
+                analysisSource: this.getProviderName(),
+                analysisError: ""
+            });
+
+            console.log("AI Analysis Status: SUCCESS");
+
+            return result;
+        } catch (error) {
+            const errorMessage = this.getErrorMessage(error);
+            const result = this.fallbackAnalysis(requirement);
+
+            this.assignAnalysisMetadata(result, {
+                analysisStatus: "FALLBACK",
+                analysisSource: "FALLBACK",
+                analysisError: errorMessage
+            });
+
+            console.error("AI Analysis failed:", errorMessage);
+            console.log("AI Analysis Status: FALLBACK");
+
+            return result;
         }
     }
 
@@ -242,10 +267,51 @@ QUY TẮC BẮT BUỘC:
 
             return JSON.parse(json);
         } catch (error) {
-            console.error("Cannot parse AI JSON response:", error?.message || error);
-
-            return {};
+            throw new Error(`Invalid AI JSON response: ${this.getErrorMessage(error)}`, {
+                cause: error
+            });
         }
+    }
+
+    isUsableAIResult(parsedResult, requirement) {
+        if (!parsedResult || typeof parsedResult !== "object" || Array.isArray(parsedResult)) {
+            return false;
+        }
+
+        return (
+            this.normalizeSuggestedScenarios(parsedResult.suggestedScenarios, requirement).length >
+            0
+        );
+    }
+
+    assignAnalysisMetadata(result, metadata) {
+        if (!result || typeof result !== "object") {
+            return;
+        }
+
+        result.analysisStatus = metadata.analysisStatus;
+        result.analysisSource = metadata.analysisSource;
+        result.analysisError = metadata.analysisError;
+    }
+
+    getProviderName() {
+        const configuredProvider = this.normalizeText(AIConfig.provider);
+
+        if (configuredProvider) {
+            return configuredProvider;
+        }
+
+        return this.aiProvider?.constructor?.name ?? "UNKNOWN";
+    }
+
+    getErrorMessage(error) {
+        const message = typeof error === "string" ? error : error?.message;
+
+        const normalizedMessage = this.normalizeText(message) || "Unknown AI analysis error";
+
+        return normalizedMessage.length > 200
+            ? `${normalizedMessage.slice(0, 197)}...`
+            : normalizedMessage;
     }
 
     normalizeSuggestedScenarios(suggestedScenarios, requirement) {
