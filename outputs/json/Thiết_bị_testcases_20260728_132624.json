@@ -1,0 +1,3631 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Thêm thiết bị",
+    "testScenario": "Thêm thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {
+        "Mã thiết bị": "DEVICE_NEW_001",
+        "Tên thiết bị": "Tên thiết bị kiểm thử",
+        "Loại thiết bị": "Danh mục loại thiết bị - giá trị hợp lệ"
+      },
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Cho phép người dùng thêm mới một thiết bị vào hệ thống."
+      }
+    ],
+    "expectedResult": "Cho phép người dùng thêm mới một thiết bị vào hệ thống.",
+    "expectedResults": [
+      "Cho phép người dùng thêm mới một thiết bị vào hệ thống.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thêm thiết bị",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng thêm mới một thiết bị vào hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Nhập dữ liệu",
+        "target": "Mã thiết bị",
+        "value": "DEVICE_NEW_001",
+        "expected": "Trường Mã thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 6,
+        "action": "Nhập dữ liệu",
+        "target": "Tên thiết bị",
+        "value": "Tên thiết bị kiểm thử",
+        "expected": "Trường Tên thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 7,
+        "action": "Chọn giá trị",
+        "target": "Loại thiết bị",
+        "value": "Danh mục loại thiết bị - giá trị hợp lệ",
+        "expected": "Trường Loại thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 8,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 9,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Cho phép người dùng thêm mới một thiết bị vào hệ thống."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Thêm thiết bị",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Thêm thiết bị",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Mã thiết bị phải là duy nhất.",
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "BR01: Mã thiết bị phải là duy nhất.",
+      "BR02: Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "BR03: Người dùng phải có quyền thêm thiết bị.",
+      "BR04: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Mã thiết bị phải là duy nhất."
+      }
+    ],
+    "expectedResult": "Mã thiết bị phải là duy nhất.",
+    "expectedResults": [
+      "Mã thiết bị phải là duy nhất.",
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "BR01: Mã thiết bị phải là duy nhất.",
+      "BR02: Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "BR03: Người dùng phải có quyền thêm thiết bị.",
+      "BR04: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Thêm thiết bị",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC002",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Mã thiết bị phải là duy nhất."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Thêm thiết bị",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Thêm thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Mã thiết bị phải là duy nhất.",
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "Mã thiết bị không được để trống",
+      "Tên thiết bị không được để trống",
+      "Loại thiết bị không được để trống",
+      "Mã thiết bị là bắt buộc.",
+      "Tên thiết bị là bắt buộc.",
+      "Loại thiết bị là bắt buộc.",
+      "Trạng thái là không bắt buộc, nếu không chọn hệ thống sử dụng giá trị mặc định."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Mã thiết bị phải là duy nhất.",
+    "expectedResults": [
+      "Mã thiết bị phải là duy nhất.",
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "Mã thiết bị không được để trống",
+      "Tên thiết bị không được để trống",
+      "Loại thiết bị không được để trống",
+      "Mã thiết bị là bắt buộc.",
+      "Tên thiết bị là bắt buộc.",
+      "Loại thiết bị là bắt buộc.",
+      "Trạng thái là không bắt buộc, nếu không chọn hệ thống sử dụng giá trị mặc định.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Thêm thiết bị",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC003",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Mã thiết bị phải là duy nhất."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra quyền thực hiện Thêm thiết bị",
+    "testScenario": "Kiểm tra quyền thực hiện Thêm thiết bị",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thực hiện Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng có quyền thêm thiết bị."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Kiểm tra Người dùng có quyền thêm thiết bị."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng có quyền thêm thiết bị.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Thêm thiết bị",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC004",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền thêm thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC005",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra điều kiện biên của Thêm thiết bị",
+    "testScenario": "Kiểm tra điều kiện biên của Thêm thiết bị",
+    "type": "BOUNDARY",
+    "testObjective": "Kiểm tra giới hạn dữ liệu",
+    "objective": "Kiểm tra giới hạn dữ liệu",
+    "requirementReference": "Kiểm tra điều kiện biên của Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Mã thiết bị không có giới hạn độ dài nhưng phải duy nhất (CL002)."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Mã thiết bị không có giới hạn độ dài nhưng phải duy nhất (CL002)."
+      }
+    ],
+    "expectedResult": "Mã thiết bị không có giới hạn độ dài nhưng phải duy nhất (CL002).",
+    "expectedResults": [
+      "Mã thiết bị không có giới hạn độ dài nhưng phải duy nhất (CL002).",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra điều kiện biên của Thêm thiết bị",
+      "scenarioId": "SC005"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "BOUNDARY from approved function",
+    "riskCategory": "BOUNDARY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC005",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Mã thiết bị không có giới hạn độ dài nhưng phải duy nhất (CL002)."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra ngoại lệ của Thêm thiết bị",
+    "testScenario": "Kiểm tra ngoại lệ của Thêm thiết bị",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra ngoại lệ của Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Người dùng không có quyền thêm thiết bị.",
+      "Mã thiết bị đã tồn tại.",
+      "Trường bắt buộc bị bỏ trống.",
+      "Loại thiết bị không hợp lệ.",
+      "Dữ liệu vượt quá độ dài cho phép.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "EX01: Người dùng không có quyền thêm thiết bị.",
+      "EX02: Mã thiết bị đã tồn tại.",
+      "EX03: Trường bắt buộc bị bỏ trống.",
+      "EX04: Loại thiết bị không hợp lệ.",
+      "EX05: Dữ liệu vượt quá độ dài cho phép.",
+      "EX06: Hệ thống xảy ra lỗi trong quá trình lưu."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Người dùng không có quyền thêm thiết bị."
+      }
+    ],
+    "expectedResult": "Người dùng không có quyền thêm thiết bị.",
+    "expectedResults": [
+      "Người dùng không có quyền thêm thiết bị.",
+      "Mã thiết bị đã tồn tại.",
+      "Trường bắt buộc bị bỏ trống.",
+      "Loại thiết bị không hợp lệ.",
+      "Dữ liệu vượt quá độ dài cho phép.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "EX01: Người dùng không có quyền thêm thiết bị.",
+      "EX02: Mã thiết bị đã tồn tại.",
+      "EX03: Trường bắt buộc bị bỏ trống.",
+      "EX04: Loại thiết bị không hợp lệ.",
+      "EX05: Dữ liệu vượt quá độ dài cho phép.",
+      "EX06: Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Thêm thiết bị",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC006",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Người dùng không có quyền thêm thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC007",
+    "scenarioId": "SC007",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Thêm thiết bị",
+    "title": "Kiểm tra rủi ro của Thêm thiết bị",
+    "testScenario": "Kiểm tra rủi ro của Thêm thiết bị",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra rủi ro của Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "Feature 1",
+      "CL002",
+      "CL001",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Xung đột dữ liệu khi nhiều người dùng cùng thêm mới mã thiết bị cùng lúc."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Người dùng phải có quyền thêm thiết bị."
+      }
+    ],
+    "expectedResult": "Người dùng phải có quyền thêm thiết bị.",
+    "expectedResults": [
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Xung đột dữ liệu khi nhiều người dùng cùng thêm mới mã thiết bị cùng lúc.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Thêm thiết bị",
+      "scenarioId": "SC007"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC007",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền thêm thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Người dùng phải có quyền thêm thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC008",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Sửa thiết bị",
+    "testScenario": "Sửa thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {
+        "Thiết bị cần sửa": "DEVICE_EXISTING_001",
+        "Mã thiết bị": "CODE_UPDATED_001",
+        "Tên thiết bị": "Tên thiết bị kiểm thử",
+        "Loại thiết bị": "Danh mục loại thiết bị - giá trị hợp lệ"
+      },
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Sửa thiết bị",
+        "expected": "Cho phép người dùng cập nhật thông tin của một thiết bị đã tồn tại."
+      }
+    ],
+    "expectedResult": "Cho phép người dùng cập nhật thông tin của một thiết bị đã tồn tại.",
+    "expectedResults": [
+      "Cho phép người dùng cập nhật thông tin của một thiết bị đã tồn tại.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Sửa thiết bị",
+      "scenarioId": "SC008"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng cập nhật thông tin của một thiết bị đã tồn tại.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC008",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Chọn bản ghi",
+        "target": "Thiết bị cần sửa",
+        "value": "DEVICE_EXISTING_001",
+        "expected": "Đúng bản ghi cần thao tác được chọn"
+      },
+      {
+        "order": 7,
+        "action": "Nhập dữ liệu",
+        "target": "Mã thiết bị",
+        "value": "CODE_UPDATED_001",
+        "expected": "Trường Mã thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 8,
+        "action": "Nhập dữ liệu",
+        "target": "Tên thiết bị",
+        "value": "Tên thiết bị kiểm thử",
+        "expected": "Trường Tên thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 9,
+        "action": "Chọn giá trị",
+        "target": "Loại thiết bị",
+        "value": "Danh mục loại thiết bị - giá trị hợp lệ",
+        "expected": "Trường Loại thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 10,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 11,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Cho phép người dùng cập nhật thông tin của một thiết bị đã tồn tại."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC009",
+    "scenarioId": "SC009",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Sửa thiết bị",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Sửa thiết bị",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Thiết bị cần sửa phải tồn tại.",
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có.",
+      "BR05: Thiết bị cần sửa phải tồn tại.",
+      "BR06: Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "BR07: Người dùng phải có quyền sửa thiết bị.",
+      "BR08: Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "BR09: Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Sửa thiết bị",
+        "expected": "Thiết bị cần sửa phải tồn tại."
+      }
+    ],
+    "expectedResult": "Thiết bị cần sửa phải tồn tại.",
+    "expectedResults": [
+      "Thiết bị cần sửa phải tồn tại.",
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có.",
+      "BR05: Thiết bị cần sửa phải tồn tại.",
+      "BR06: Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "BR07: Người dùng phải có quyền sửa thiết bị.",
+      "BR08: Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "BR09: Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Sửa thiết bị",
+      "scenarioId": "SC009"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC009",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị cần sửa phải tồn tại."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC010",
+    "scenarioId": "SC011",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Sửa thiết bị",
+    "title": "Kiểm tra quyền thực hiện Sửa thiết bị",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Sửa thiết bị",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Thiết bị cần sửa phải tồn tại.",
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có.",
+      "Thiết bị cần sửa không được để trống",
+      "Mã thiết bị không được để trống",
+      "Tên thiết bị không được để trống",
+      "Loại thiết bị không được để trống",
+      "Mã thiết bị là bắt buộc.",
+      "Tên thiết bị là bắt buộc.",
+      "Loại thiết bị là bắt buộc."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền sửa thiết bị.",
+      "Thiết bị cần sửa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Kiểm tra Người dùng có quyền sửa thiết bị.",
+    "expectedResults": [
+      "Thiết bị cần sửa phải tồn tại.",
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ.",
+      "Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có.",
+      "Thiết bị cần sửa không được để trống",
+      "Mã thiết bị không được để trống",
+      "Tên thiết bị không được để trống",
+      "Loại thiết bị không được để trống",
+      "Mã thiết bị là bắt buộc.",
+      "Tên thiết bị là bắt buộc.",
+      "Loại thiết bị là bắt buộc.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Sửa thiết bị",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC010",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị cần sửa phải tồn tại."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC011",
+    "scenarioId": "SC014",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Xóa thiết bị",
+    "testScenario": "Kiểm tra quyền thực hiện Sửa thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra quyền thực hiện Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền sửa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền sửa thiết bị.",
+      "Kiểm tra quyền chỉnh sửa dữ liệu",
+      "Người dùng có quyền sửa thiết bị."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Sửa thiết bị",
+        "expected": "Kiểm tra Người dùng có quyền sửa thiết bị."
+      }
+    ],
+    "expectedResult": "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền sửa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền sửa thiết bị.",
+      "Kiểm tra quyền chỉnh sửa dữ liệu",
+      "Người dùng có quyền sửa thiết bị.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Sửa thiết bị",
+      "scenarioId": "SC014"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC011",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền sửa thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC012",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Xóa thiết bị",
+    "testScenario": "Kiểm tra ngoại lệ của Sửa thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra ngoại lệ của Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Người dùng không có quyền sửa thiết bị.",
+      "Thiết bị không còn tồn tại.",
+      "Thiết bị đã bị người dùng khác thay đổi.",
+      "Mã thiết bị bị trùng.",
+      "Trường bắt buộc bị bỏ trống.",
+      "Dữ liệu cập nhật không hợp lệ.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "EX07: Người dùng không có quyền sửa thiết bị.",
+      "EX08: Thiết bị không còn tồn tại.",
+      "EX09: Thiết bị đã bị người dùng khác thay đổi.",
+      "EX10: Mã thiết bị bị trùng.",
+      "EX11: Trường bắt buộc bị bỏ trống.",
+      "EX12: Dữ liệu cập nhật không hợp lệ.",
+      "EX13: Hệ thống xảy ra lỗi trong quá trình lưu."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Sửa thiết bị",
+        "expected": "Người dùng không có quyền sửa thiết bị."
+      }
+    ],
+    "expectedResult": "Thiết bị cần xóa phải tồn tại.",
+    "expectedResults": [
+      "Người dùng không có quyền sửa thiết bị.",
+      "Thiết bị không còn tồn tại.",
+      "Thiết bị đã bị người dùng khác thay đổi.",
+      "Mã thiết bị bị trùng.",
+      "Trường bắt buộc bị bỏ trống.",
+      "Dữ liệu cập nhật không hợp lệ.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "EX07: Người dùng không có quyền sửa thiết bị.",
+      "EX08: Thiết bị không còn tồn tại.",
+      "EX09: Thiết bị đã bị người dùng khác thay đổi.",
+      "EX10: Mã thiết bị bị trùng.",
+      "EX11: Trường bắt buộc bị bỏ trống.",
+      "EX12: Dữ liệu cập nhật không hợp lệ.",
+      "EX13: Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Sửa thiết bị",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC012",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Người dùng không có quyền sửa thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC013",
+    "scenarioId": "SC017",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sửa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Kiểm tra quyền thực hiện Xóa thiết bị",
+    "testScenario": "Kiểm tra rủi ro của Sửa thiết bị",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra rủi ro của Sửa thiết bị",
+    "requirementReferences": [
+      "2",
+      "Sửa thiết bị",
+      "BR05",
+      "BR06",
+      "BR07",
+      "BR08",
+      "BR09",
+      "EX07",
+      "EX08",
+      "EX09",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "Feature 2",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Xung đột dữ liệu khi nhiều người dùng cùng sửa một thiết bị (Concurrency)."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Sửa thiết bị",
+        "expected": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+    "expectedResults": [
+      "Mã thiết bị sau khi sửa không được trùng với thiết bị khác.",
+      "Người dùng phải có quyền sửa thiết bị.",
+      "Xung đột dữ liệu khi nhiều người dùng cùng sửa một thiết bị (Concurrency).",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Sửa thiết bị",
+      "scenarioId": "SC017"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC013",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền sửa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần sửa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Cập nhật dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Mã thiết bị sau khi sửa không được trùng với thiết bị khác."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "UPDATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.updateButton",
+        "controls.Thiết bị cần sửa",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC014",
+    "scenarioId": "SC018",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Kiểm tra ngoại lệ của Xóa thiết bị",
+    "testScenario": "Xóa thiết bị",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {
+        "Thiết bị cần xóa": "DEVICE_EXISTING_001",
+        "Xác nhận xóa": "VALID_VALUE"
+      },
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Xóa thiết bị",
+        "expected": "Cho phép người dùng xóa một thiết bị khỏi hệ thống."
+      }
+    ],
+    "expectedResult": "Người dùng không có quyền xóa thiết bị.",
+    "expectedResults": [
+      "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Xóa thiết bị",
+      "scenarioId": "SC018"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC014",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Chọn bản ghi",
+        "target": "Thiết bị cần xóa",
+        "value": "DEVICE_EXISTING_001",
+        "expected": "Đúng bản ghi cần thao tác được chọn"
+      },
+      {
+        "order": 7,
+        "action": "Nhập hoặc chọn dữ liệu",
+        "target": "Xác nhận xóa",
+        "value": "VALID_VALUE",
+        "expected": "Trường Xác nhận xóa nhận giá trị đã nhập"
+      },
+      {
+        "order": 8,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 9,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 10,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Cho phép người dùng xóa một thiết bị khỏi hệ thống."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC015",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Xóa thiết bị",
+    "title": "Kiểm tra rủi ro của Xóa thiết bị",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Xóa thiết bị",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "BR10: Thiết bị cần xóa phải tồn tại.",
+      "BR11: Người dùng phải có quyền xóa thiết bị.",
+      "BR12: Không được xóa thiết bị đang được sử dụng.",
+      "BR13: Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "BR14: Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "BR15: Việc xóa là xóa hoàn toàn khỏi cơ sở dữ liệu."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Xóa thiết bị",
+        "expected": "Thiết bị cần xóa phải tồn tại."
+      }
+    ],
+    "expectedResult": "Người dùng phải có quyền xóa thiết bị.",
+    "expectedResults": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "BR10: Thiết bị cần xóa phải tồn tại.",
+      "BR11: Người dùng phải có quyền xóa thiết bị.",
+      "BR12: Không được xóa thiết bị đang được sử dụng.",
+      "BR13: Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "BR14: Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "BR15: Việc xóa là xóa hoàn toàn khỏi cơ sở dữ liệu.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Xóa thiết bị",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC015",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị cần xóa phải tồn tại."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC016",
+    "scenarioId": "SC020",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Tìm kiếm thiết bị",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Xóa thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "Thiết bị cần xóa không được để trống",
+      "Xác nhận xóa không được để trống"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện.",
+    "expectedResults": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "Thiết bị cần xóa không được để trống",
+      "Xác nhận xóa không được để trống",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Xóa thiết bị",
+      "scenarioId": "SC020"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC016",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị cần xóa phải tồn tại."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC017",
+    "scenarioId": "SC021",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm thiết bị",
+    "testScenario": "Kiểm tra quyền thực hiện Xóa thiết bị",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quyền thực hiện Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra quyền xóa dữ liệu",
+      "Người dùng có quyền xóa thiết bị."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Xóa thiết bị",
+        "expected": "Kiểm tra Người dùng có quyền xóa thiết bị."
+      }
+    ],
+    "expectedResult": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra quyền xóa dữ liệu",
+      "Người dùng có quyền xóa thiết bị.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Xóa thiết bị",
+      "scenarioId": "SC021"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC017",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền xóa thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC018",
+    "scenarioId": "SC022",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Tìm kiếm thiết bị",
+    "testScenario": "Kiểm tra ngoại lệ của Xóa thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra ngoại lệ của Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Người dùng không có quyền xóa thiết bị.",
+      "Thiết bị không tồn tại.",
+      "Thiết bị đã bị người dùng khác xóa.",
+      "Thiết bị đang được sử dụng.",
+      "Thiết bị có dữ liệu liên quan.",
+      "Người dùng hủy xác nhận xóa.",
+      "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "EX14: Người dùng không có quyền xóa thiết bị.",
+      "EX15: Thiết bị không tồn tại.",
+      "EX16: Thiết bị đã bị người dùng khác xóa.",
+      "EX17: Thiết bị đang được sử dụng.",
+      "EX18: Thiết bị có dữ liệu liên quan.",
+      "EX19: Người dùng hủy xác nhận xóa.",
+      "EX20: Hệ thống xảy ra lỗi trong quá trình xóa."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Xóa thiết bị",
+        "expected": "Người dùng không có quyền xóa thiết bị."
+      }
+    ],
+    "expectedResult": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "expectedResults": [
+      "Người dùng không có quyền xóa thiết bị.",
+      "Thiết bị không tồn tại.",
+      "Thiết bị đã bị người dùng khác xóa.",
+      "Thiết bị đang được sử dụng.",
+      "Thiết bị có dữ liệu liên quan.",
+      "Người dùng hủy xác nhận xóa.",
+      "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "EX14: Người dùng không có quyền xóa thiết bị.",
+      "EX15: Thiết bị không tồn tại.",
+      "EX16: Thiết bị đã bị người dùng khác xóa.",
+      "EX17: Thiết bị đang được sử dụng.",
+      "EX18: Thiết bị có dữ liệu liên quan.",
+      "EX19: Người dùng hủy xác nhận xóa.",
+      "EX20: Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Xóa thiết bị",
+      "scenarioId": "SC022"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC018",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Người dùng không có quyền xóa thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC019",
+    "scenarioId": "SC023",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Xóa thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra quyền thực hiện Tìm kiếm thiết bị",
+    "testScenario": "Kiểm tra rủi ro của Xóa thiết bị",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra rủi ro của Xóa thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "Feature 3",
+      "CL001",
+      "CL002",
+      "CL003"
+    ],
+    "coveredRules": [
+      "Người dùng phải có quyền xóa thiết bị."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Xóa thiết bị",
+        "expected": "Người dùng phải có quyền xóa thiết bị."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+    "expectedResults": [
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Xóa thiết bị",
+      "scenarioId": "SC023"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC019",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xóa thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Thiết bị cần xóa đã tồn tại.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Xóa dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Xác nhận thao tác xóa",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu xóa được xác nhận"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Người dùng phải có quyền xóa thiết bị."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "DELETE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.deleteButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC020",
+    "scenarioId": "SC024",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra ngoại lệ của Tìm kiếm thiết bị",
+    "testScenario": "Tìm kiếm thiết bị",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Tìm kiếm thiết bị",
+    "requirementReferences": [
+      "4",
+      "Tìm kiếm thiết bị",
+      "BR16",
+      "BR17",
+      "BR18",
+      "BR19",
+      "BR20",
+      "EX21",
+      "EX22",
+      "EX23",
+      "EX24",
+      "EX25",
+      "Feature 4",
+      "CL003",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "4",
+      "Tìm kiếm thiết bị",
+      "BR16",
+      "BR17",
+      "BR18",
+      "BR19",
+      "BR20",
+      "EX21",
+      "EX22",
+      "EX23",
+      "EX24",
+      "EX25",
+      "Feature 4",
+      "CL003"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện."
+      }
+    ],
+    "expectedResult": "Người dùng không có quyền xem thiết bị.",
+    "expectedResults": [
+      "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tìm kiếm thiết bị",
+      "scenarioId": "SC024"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC020",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xem danh sách thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC021",
+    "scenarioId": "SC025",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Thiết bị",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra rủi ro của Tìm kiếm thiết bị",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm thiết bị",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm thiết bị",
+    "requirementReferences": [
+      "4",
+      "Tìm kiếm thiết bị",
+      "BR16",
+      "BR17",
+      "BR18",
+      "BR19",
+      "BR20",
+      "EX21",
+      "EX22",
+      "EX23",
+      "EX24",
+      "EX25",
+      "Feature 4",
+      "CL003",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "BR16: Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "BR17: Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "BR18: Khi không nhập điều kiện, hệ thống mặc định hiển thị toàn bộ danh sách.",
+      "BR19: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "BR20: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện."
+      }
+    ],
+    "expectedResult": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "expectedResults": [
+      "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "BR16: Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "BR17: Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "BR18: Khi không nhập điều kiện, hệ thống mặc định hiển thị toàn bộ danh sách.",
+      "BR19: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "BR20: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm thiết bị",
+      "scenarioId": "SC025"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC021",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng có quyền xem danh sách thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "Người dùng đang ở màn hình quản lý thiết bị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC022",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Thêm mới thiết bị hợp lệ",
+    "objective": "Xác nhận hệ thống cho phép người dùng thêm thiết bị mới khi cung cấp đủ dữ liệu hợp lệ.",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thêm thiết bị",
+      "Đang ở màn hình quản lý thiết bị"
+    ],
+    "testData": [
+      {
+        "name": "Mã thiết bị",
+        "value": "DEV_001",
+        "description": "Giá trị duy nhất"
+      },
+      {
+        "name": "Tên thiết bị",
+        "value": "Thiết bị mẫu 01",
+        "description": "Tên hợp lệ"
+      },
+      {
+        "name": "Loại thiết bị",
+        "value": "Loại A",
+        "description": "Danh mục đã tồn tại"
+      }
+    ],
+    "expectedResult": "Thiết bị được thêm mới thành công vào hệ thống",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04"
+    ],
+    "coveredRules": [
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Sử dụng Playwright để tự động hóa quy trình nhập liệu và kiểm tra thông báo thành công",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC022",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Điền dữ liệu vào các trường bắt buộc",
+        "data": "Mã: DEV_001, Tên: Thiết bị mẫu 01, Loại: Loại A",
+        "expectedResult": "Dữ liệu được hiển thị trên form"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhấn nút Lưu",
+        "data": "",
+        "expectedResult": "Yêu cầu được gửi, hệ thống thông báo thêm mới thành công và hiển thị thiết bị trong danh sách"
+      }
+    ],
+    "expectedResults": [
+      "Thiết bị được thêm mới thành công vào hệ thống"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC023",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Kiểm tra tính duy nhất của Mã thiết bị",
+    "objective": "Đảm bảo không thể thêm hai thiết bị có cùng mã.",
+    "type": "DATA_INTEGRITY",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "preconditions": [
+      "Thiết bị với mã 'DEV_EXISTING' đã tồn tại trong hệ thống"
+    ],
+    "testData": [
+      {
+        "name": "Mã thiết bị",
+        "value": "DEV_EXISTING",
+        "description": "Mã đã tồn tại"
+      }
+    ],
+    "expectedResult": "Hệ thống chặn hành động lưu và hiển thị thông báo lỗi phù hợp",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR01"
+    ],
+    "coveredRules": [
+      "BR01"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Kiểm tra validation message khi submit trùng ID",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC023",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Điền mã thiết bị đã tồn tại",
+        "data": "DEV_EXISTING",
+        "expectedResult": "Dữ liệu được nhập"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhấn nút Lưu",
+        "data": "",
+        "expectedResult": "Hệ thống hiển thị lỗi 'Mã thiết bị phải là duy nhất'"
+      }
+    ],
+    "expectedResults": [
+      "Hệ thống chặn hành động lưu và hiển thị thông báo lỗi phù hợp"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC024",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Kiểm tra xử lý khi thiếu trường bắt buộc",
+    "description": "Kiểm tra hệ thống yêu cầu đầy đủ các thông tin bắt buộc.",
+    "objective": "Đảm bảo hệ thống từ chối lưu dữ liệu nếu thiếu thông tin bắt buộc.",
+    "type": "NEGATIVE",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "preconditions": [
+      "Người dùng ở màn hình thêm thiết bị"
+    ],
+    "testData": [
+      {
+        "name": "Dữ liệu",
+        "value": "Bỏ trống",
+        "description": "Không nhập bất kỳ thông tin nào"
+      }
+    ],
+    "expectedResult": "Không có thiết bị mới nào được tạo",
+    "postconditions": [],
+    "requirementReferences": [
+      "EX03"
+    ],
+    "coveredRules": [
+      "EX03"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Kiểm tra các trường input có thuộc tính required hoặc validation phía client",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC024",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Nhấn nút Lưu mà không nhập dữ liệu",
+        "data": "",
+        "expectedResult": "Hệ thống hiển thị thông báo yêu cầu nhập trường bắt buộc"
+      }
+    ],
+    "expectedResults": [
+      "Không có thiết bị mới nào được tạo"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC025",
+    "scenarioId": "SC018",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "title": "Xóa thiết bị thành công",
+    "objective": "Xác nhận hệ thống xóa hoàn toàn thiết bị khỏi CSDL.",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Thiết bị 'DEV_DELETE' đã tồn tại",
+      "Người dùng có quyền xóa"
+    ],
+    "testData": [
+      {
+        "name": "Thiết bị cần xóa",
+        "value": "DEV_DELETE",
+        "description": "ID thiết bị hợp lệ"
+      }
+    ],
+    "expectedResult": "Thiết bị 'DEV_DELETE' bị xóa hoàn toàn khỏi hệ thống",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR15"
+    ],
+    "coveredRules": [
+      "BR15"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Kiểm tra sự tồn tại của bản ghi trong UI/API sau khi xóa",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC025",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Chọn thiết bị 'DEV_DELETE'",
+        "data": "",
+        "expectedResult": "Thiết bị được chọn"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Thực hiện thao tác xóa và xác nhận",
+        "data": "",
+        "expectedResult": "Yêu cầu xóa được xử lý"
+      }
+    ],
+    "expectedResults": [
+      "Thiết bị 'DEV_DELETE' bị xóa hoàn toàn khỏi hệ thống"
+    ],
+    "automationHints": {}
+  }
+]

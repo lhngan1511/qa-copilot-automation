@@ -1,0 +1,3163 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Thêm mới đơn vị tính",
+    "testScenario": "Thêm mới đơn vị tính",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {
+        "Tên đơn vị tính": "Tên đơn vị tính kiểm thử"
+      },
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Cho phép người dùng thêm mới một đơn vị tính vào danh mục."
+      }
+    ],
+    "expectedResult": "Cho phép người dùng thêm mới một đơn vị tính vào danh mục.",
+    "expectedResults": [
+      "Cho phép người dùng thêm mới một đơn vị tính vào danh mục.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thêm mới đơn vị tính",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng thêm mới một đơn vị tính vào danh mục.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Nhập dữ liệu",
+        "target": "Tên đơn vị tính",
+        "value": "Tên đơn vị tính kiểm thử",
+        "expected": "Trường Tên đơn vị tính nhận giá trị đã nhập"
+      },
+      {
+        "order": 7,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 8,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Cho phép người dùng thêm mới một đơn vị tính vào danh mục."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Thêm mới đơn vị tính",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Tên đơn vị tính là trường bắt buộc.",
+      "Mã đơn vị tính phải là duy nhất.",
+      "Người dùng được phép nhập mã thủ công.",
+      "Người dùng được phép sử dụng chức năng sinh mã.",
+      "Khi mã đơn vị tính được để trống, hệ thống xử lý tự sinh mã theo cấu hình.",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ.",
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Mã đơn vị tính phải là duy nhất",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ",
+      "Mã được sinh phải là duy nhất",
+      "Mã được sinh phải tuân thủ định dạng của hệ thống",
+      "Chức năng sinh mã không làm mất dữ liệu tại các trường khác đã nhập trước đó",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Tên đơn vị tính là trường bắt buộc."
+      }
+    ],
+    "expectedResult": "Tên đơn vị tính là trường bắt buộc.",
+    "expectedResults": [
+      "Tên đơn vị tính là trường bắt buộc.",
+      "Mã đơn vị tính phải là duy nhất.",
+      "Người dùng được phép nhập mã thủ công.",
+      "Người dùng được phép sử dụng chức năng sinh mã.",
+      "Khi mã đơn vị tính được để trống, hệ thống xử lý tự sinh mã theo cấu hình.",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ.",
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Mã đơn vị tính phải là duy nhất",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ",
+      "Mã được sinh phải là duy nhất",
+      "Mã được sinh phải tuân thủ định dạng của hệ thống",
+      "Chức năng sinh mã không làm mất dữ liệu tại các trường khác đã nhập trước đó",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Thêm mới đơn vị tính",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC002",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Tên đơn vị tính là trường bắt buộc."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Thêm mới đơn vị tính",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Tên đơn vị tính là trường bắt buộc.",
+      "Mã đơn vị tính phải là duy nhất.",
+      "Người dùng được phép nhập mã thủ công.",
+      "Người dùng được phép sử dụng chức năng sinh mã.",
+      "Khi mã đơn vị tính được để trống, hệ thống xử lý tự sinh mã theo cấu hình.",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ.",
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Tên đơn vị tính không được để trống",
+      "Tên đơn vị tính là trường bắt buộc",
+      "Mã đơn vị tính không được trùng lặp"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Tên đơn vị tính là trường bắt buộc.",
+    "expectedResults": [
+      "Tên đơn vị tính là trường bắt buộc.",
+      "Mã đơn vị tính phải là duy nhất.",
+      "Người dùng được phép nhập mã thủ công.",
+      "Người dùng được phép sử dụng chức năng sinh mã.",
+      "Khi mã đơn vị tính được để trống, hệ thống xử lý tự sinh mã theo cấu hình.",
+      "Dữ liệu chỉ được lưu khi các trường bắt buộc hợp lệ.",
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Tên đơn vị tính không được để trống",
+      "Tên đơn vị tính là trường bắt buộc",
+      "Mã đơn vị tính không được trùng lặp",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Thêm mới đơn vị tính",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC003",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Tên đơn vị tính là trường bắt buộc."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra quyền thực hiện Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra quyền thực hiện Thêm mới đơn vị tính",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thực hiện Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Kiểm tra Người dùng có quyền thêm mới đơn vị tính.",
+      "Kiểm tra Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng đã đăng nhập vào hệ thống",
+      "Người dùng có quyền truy cập chức năng Danh mục",
+      "Người dùng có quyền xem danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính khi thực hiện chức năng thêm",
+      "Người dùng có quyền thêm mới đơn vị tính"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Kiểm tra Người dùng có quyền truy cập danh mục đơn vị tính."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng có quyền truy cập danh mục đơn vị tính.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Kiểm tra Người dùng có quyền thêm mới đơn vị tính.",
+      "Kiểm tra Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng đã đăng nhập vào hệ thống",
+      "Người dùng có quyền truy cập chức năng Danh mục",
+      "Người dùng có quyền xem danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính khi thực hiện chức năng thêm",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Thêm mới đơn vị tính",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC004",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền truy cập danh mục đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC005",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra điều kiện biên của Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra điều kiện biên của Thêm mới đơn vị tính",
+    "type": "BOUNDARY",
+    "testObjective": "Kiểm tra giới hạn dữ liệu",
+    "objective": "Kiểm tra giới hạn dữ liệu",
+    "requirementReference": "Kiểm tra điều kiện biên của Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Độ dài ký tự của mã đơn vị tính",
+      "Độ dài ký tự của tên đơn vị tính"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Độ dài ký tự của mã đơn vị tính"
+      }
+    ],
+    "expectedResult": "Độ dài ký tự của mã đơn vị tính",
+    "expectedResults": [
+      "Độ dài ký tự của mã đơn vị tính",
+      "Độ dài ký tự của tên đơn vị tính",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra điều kiện biên của Thêm mới đơn vị tính",
+      "scenarioId": "SC005"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "BOUNDARY from approved function",
+    "riskCategory": "BOUNDARY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC005",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Độ dài ký tự của mã đơn vị tính"
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra ngoại lệ của Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra ngoại lệ của Thêm mới đơn vị tính",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra ngoại lệ của Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Người dùng không có quyền thêm mới đơn vị tính.",
+      "Tên đơn vị tính bị bỏ trống.",
+      "Tên đơn vị tính chỉ chứa khoảng trắng.",
+      "Mã đơn vị tính đã tồn tại.",
+      "Mã đơn vị tính không đúng định dạng.",
+      "Chức năng sinh mã không tạo được mã.",
+      "Dữ liệu vượt quá độ dài cho phép.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "Người dùng đóng biểu mẫu mà chưa lưu dữ liệu.",
+      "Người dùng không có quyền thêm mới",
+      "Tên đơn vị tính bị bỏ trống hoặc chỉ chứa khoảng trắng",
+      "Mã đơn vị tính đã tồn tại",
+      "Mã đơn vị tính không đúng định dạng",
+      "Dữ liệu vượt quá độ dài cho phép",
+      "Lỗi hệ thống khi lưu dữ liệu",
+      "Hệ thống không thể sinh mã",
+      "Mã được sinh bị trùng",
+      "Mã được sinh không đúng định dạng",
+      "Mất kết nối hệ thống trong quá trình sinh mã"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Người dùng không có quyền thêm mới đơn vị tính."
+      }
+    ],
+    "expectedResult": "Người dùng không có quyền thêm mới đơn vị tính.",
+    "expectedResults": [
+      "Người dùng không có quyền thêm mới đơn vị tính.",
+      "Tên đơn vị tính bị bỏ trống.",
+      "Tên đơn vị tính chỉ chứa khoảng trắng.",
+      "Mã đơn vị tính đã tồn tại.",
+      "Mã đơn vị tính không đúng định dạng.",
+      "Chức năng sinh mã không tạo được mã.",
+      "Dữ liệu vượt quá độ dài cho phép.",
+      "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "Người dùng đóng biểu mẫu mà chưa lưu dữ liệu.",
+      "Người dùng không có quyền thêm mới",
+      "Tên đơn vị tính bị bỏ trống hoặc chỉ chứa khoảng trắng",
+      "Mã đơn vị tính đã tồn tại",
+      "Mã đơn vị tính không đúng định dạng",
+      "Dữ liệu vượt quá độ dài cho phép",
+      "Lỗi hệ thống khi lưu dữ liệu",
+      "Hệ thống không thể sinh mã",
+      "Mã được sinh bị trùng",
+      "Mã được sinh không đúng định dạng",
+      "Mất kết nối hệ thống trong quá trình sinh mã",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Thêm mới đơn vị tính",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC006",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Người dùng không có quyền thêm mới đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC007",
+    "scenarioId": "SC007",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Kiểm tra rủi ro của Thêm mới đơn vị tính",
+    "testScenario": "Kiểm tra rủi ro của Thêm mới đơn vị tính",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra rủi ro của Thêm mới đơn vị tính",
+    "requirementReferences": [
+      "1",
+      "Thêm mới đơn vị tính",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "BR06",
+      "BR07",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06",
+      "EX07",
+      "EX08",
+      "EX09",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR12",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Xung đột dữ liệu khi nhiều người dùng thêm mới cùng lúc",
+      "Mất kết nối gây gián đoạn quy trình"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền truy cập danh mục đơn vị tính.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền truy cập danh mục đơn vị tính",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm mới đơn vị tính",
+        "expected": "Người dùng phải có quyền thêm mới đơn vị tính."
+      }
+    ],
+    "expectedResult": "Người dùng phải có quyền thêm mới đơn vị tính.",
+    "expectedResults": [
+      "Người dùng phải có quyền thêm mới đơn vị tính.",
+      "Xung đột dữ liệu khi nhiều người dùng thêm mới cùng lúc",
+      "Mất kết nối gây gián đoạn quy trình",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Thêm mới đơn vị tính",
+      "scenarioId": "SC007"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC007",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền truy cập danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Lưu dữ liệu",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Người dùng phải có quyền thêm mới đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Tên đơn vị tính",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC008",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Sinh mã đơn vị tính",
+    "testScenario": "Sinh mã đơn vị tính",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [],
+    "expectedResult": "Cho phép người dùng yêu cầu hệ thống tự sinh mã đơn vị tính khi thêm mới dữ liệu.",
+    "expectedResults": [
+      "Cho phép người dùng yêu cầu hệ thống tự sinh mã đơn vị tính khi thêm mới dữ liệu.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Sinh mã đơn vị tính",
+      "scenarioId": "SC008"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng yêu cầu hệ thống tự sinh mã đơn vị tính khi thêm mới dữ liệu.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC008",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Cho phép người dùng yêu cầu hệ thống tự sinh mã đơn vị tính khi thêm mới dữ liệu."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC009",
+    "scenarioId": "SC009",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Sinh mã đơn vị tính",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Sinh mã đơn vị tính",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Mã được sinh phải là duy nhất.",
+      "Mã được sinh phải tuân thủ định dạng mã của hệ thống.",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu.",
+      "Mã được sinh có thể được thay đổi thủ công nếu hệ thống cho phép.",
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Mã được sinh phải là duy nhất.",
+    "expectedResults": [
+      "Mã được sinh phải là duy nhất.",
+      "Mã được sinh phải tuân thủ định dạng mã của hệ thống.",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu.",
+      "Mã được sinh có thể được thay đổi thủ công nếu hệ thống cho phép.",
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Sinh mã đơn vị tính",
+      "scenarioId": "SC009"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC009",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Mã được sinh phải là duy nhất."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC010",
+    "scenarioId": "SC010",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Sinh mã đơn vị tính",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Sinh mã đơn vị tính",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Mã được sinh phải là duy nhất.",
+      "Mã được sinh phải tuân thủ định dạng mã của hệ thống.",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu.",
+      "Mã được sinh có thể được thay đổi thủ công nếu hệ thống cho phép.",
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Mã được sinh phải là duy nhất.",
+    "expectedResults": [
+      "Mã được sinh phải là duy nhất.",
+      "Mã được sinh phải tuân thủ định dạng mã của hệ thống.",
+      "Chức năng sinh mã chỉ tạo giá trị, chưa thực hiện lưu dữ liệu.",
+      "Mã được sinh có thể được thay đổi thủ công nếu hệ thống cho phép.",
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Sinh mã đơn vị tính",
+      "scenarioId": "SC010"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC010",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Mã được sinh phải là duy nhất."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC011",
+    "scenarioId": "SC011",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Kiểm tra quyền thực hiện Sinh mã đơn vị tính",
+    "testScenario": "Kiểm tra quyền thực hiện Sinh mã đơn vị tính",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thực hiện Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền thêm mới đơn vị tính."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Kiểm tra Người dùng có quyền thêm mới đơn vị tính.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền thêm mới đơn vị tính.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Sinh mã đơn vị tính",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC011",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền thêm mới đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC012",
+    "scenarioId": "SC012",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Kiểm tra ngoại lệ của Sinh mã đơn vị tính",
+    "testScenario": "Kiểm tra ngoại lệ của Sinh mã đơn vị tính",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra ngoại lệ của Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Hệ thống không thể sinh mã.",
+      "Mã được sinh bị trùng.",
+      "Mã được sinh không đúng định dạng.",
+      "Hệ thống mất kết nối trong quá trình sinh mã.",
+      "Người dùng thực hiện sinh mã nhiều lần liên tiếp."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [],
+    "expectedResult": "Hệ thống không thể sinh mã.",
+    "expectedResults": [
+      "Hệ thống không thể sinh mã.",
+      "Mã được sinh bị trùng.",
+      "Mã được sinh không đúng định dạng.",
+      "Hệ thống mất kết nối trong quá trình sinh mã.",
+      "Người dùng thực hiện sinh mã nhiều lần liên tiếp.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Sinh mã đơn vị tính",
+      "scenarioId": "SC012"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC012",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Hệ thống không thể sinh mã."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC013",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "function": "Sinh mã đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Sinh mã đơn vị tính",
+    "title": "Kiểm tra rủi ro của Sinh mã đơn vị tính",
+    "testScenario": "Kiểm tra rủi ro của Sinh mã đơn vị tính",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra rủi ro của Sinh mã đơn vị tính",
+    "requirementReferences": [
+      "2",
+      "Sinh mã đơn vị tính",
+      "BR08",
+      "BR09",
+      "BR10",
+      "BR11",
+      "BR12",
+      "EX10",
+      "EX11",
+      "EX12",
+      "EX13",
+      "EX14",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm mới đơn vị tính.",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [],
+    "expectedResult": "Việc sinh mã không được làm mất dữ liệu tại các trường khác.",
+    "expectedResults": [
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Sinh mã đơn vị tính",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC013",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền thêm mới đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Biểu mẫu thêm mới đơn vị tính đang được hiển thị.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện Sinh mã đơn vị tính",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Việc sinh mã không được làm mất dữ liệu tại các trường khác."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "GENERATECODE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC014",
+    "scenarioId": "SC014",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Tìm kiếm đơn vị tính",
+    "testScenario": "Tìm kiếm đơn vị tính",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm đơn vị tính",
+        "expected": "Cho phép người dùng tìm kiếm đơn vị tính theo mã hoặc tên đơn vị tính."
+      }
+    ],
+    "expectedResult": "Cho phép người dùng tìm kiếm đơn vị tính theo mã hoặc tên đơn vị tính.",
+    "expectedResults": [
+      "Cho phép người dùng tìm kiếm đơn vị tính theo mã hoặc tên đơn vị tính.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tìm kiếm đơn vị tính",
+      "scenarioId": "SC014"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng tìm kiếm đơn vị tính theo mã hoặc tên đơn vị tính.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC014",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Cho phép người dùng tìm kiếm đơn vị tính theo mã hoặc tên đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC015",
+    "scenarioId": "SC015",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm đơn vị tính",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm đơn vị tính",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Cho phép tìm kiếm theo mã đơn vị tính.",
+      "Cho phép tìm kiếm theo tên đơn vị tính.",
+      "Từ khóa có thể được tìm theo giá trị chính xác hoặc gần đúng tùy thiết kế hệ thống.",
+      "Khi không nhập từ khóa, hệ thống có thể hiển thị toàn bộ danh sách.",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "Tìm kiếm theo mã đơn vị tính",
+      "Tìm kiếm theo tên đơn vị tính",
+      "Hỗ trợ tìm kiếm gần đúng (chứa từ khóa)",
+      "Hiển thị toàn bộ danh sách khi không nhập từ khóa",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm đơn vị tính",
+        "expected": "Cho phép tìm kiếm theo mã đơn vị tính."
+      }
+    ],
+    "expectedResult": "Cho phép tìm kiếm theo mã đơn vị tính.",
+    "expectedResults": [
+      "Cho phép tìm kiếm theo mã đơn vị tính.",
+      "Cho phép tìm kiếm theo tên đơn vị tính.",
+      "Từ khóa có thể được tìm theo giá trị chính xác hoặc gần đúng tùy thiết kế hệ thống.",
+      "Khi không nhập từ khóa, hệ thống có thể hiển thị toàn bộ danh sách.",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "Tìm kiếm theo mã đơn vị tính",
+      "Tìm kiếm theo tên đơn vị tính",
+      "Hỗ trợ tìm kiếm gần đúng (chứa từ khóa)",
+      "Hiển thị toàn bộ danh sách khi không nhập từ khóa",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Tìm kiếm đơn vị tính",
+      "scenarioId": "SC015"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC015",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Cho phép tìm kiếm theo mã đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC016",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Tìm kiếm đơn vị tính",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Tìm kiếm đơn vị tính",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Cho phép tìm kiếm theo mã đơn vị tính.",
+      "Cho phép tìm kiếm theo tên đơn vị tính.",
+      "Từ khóa có thể được tìm theo giá trị chính xác hoặc gần đúng tùy thiết kế hệ thống.",
+      "Khi không nhập từ khóa, hệ thống có thể hiển thị toàn bộ danh sách.",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [],
+    "expectedResult": "Cho phép tìm kiếm theo mã đơn vị tính.",
+    "expectedResults": [
+      "Cho phép tìm kiếm theo mã đơn vị tính.",
+      "Cho phép tìm kiếm theo tên đơn vị tính.",
+      "Từ khóa có thể được tìm theo giá trị chính xác hoặc gần đúng tùy thiết kế hệ thống.",
+      "Khi không nhập từ khóa, hệ thống có thể hiển thị toàn bộ danh sách.",
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Tìm kiếm đơn vị tính",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC016",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Cho phép tìm kiếm theo mã đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC017",
+    "scenarioId": "SC017",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Kiểm tra quyền thực hiện Tìm kiếm đơn vị tính",
+    "testScenario": "Kiểm tra quyền thực hiện Tìm kiếm đơn vị tính",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thực hiện Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền xem danh mục đơn vị tính.",
+      "Kiểm tra Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kiểm tra quyền xem dữ liệu",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm đơn vị tính",
+        "expected": "Kiểm tra Người dùng có quyền xem danh mục đơn vị tính."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng có quyền xem danh mục đơn vị tính.",
+    "expectedResults": [
+      "Kiểm tra Người dùng có quyền xem danh mục đơn vị tính.",
+      "Kiểm tra Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kiểm tra quyền xem dữ liệu",
+      "Người dùng có quyền xem danh mục đơn vị tính",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Tìm kiếm đơn vị tính",
+      "scenarioId": "SC017"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC017",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Kiểm tra Người dùng có quyền xem danh mục đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC018",
+    "scenarioId": "SC018",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Kiểm tra ngoại lệ của Tìm kiếm đơn vị tính",
+    "testScenario": "Kiểm tra ngoại lệ của Tìm kiếm đơn vị tính",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra ngoại lệ của Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Người dùng không có quyền xem danh mục đơn vị tính.",
+      "Không tìm thấy dữ liệu phù hợp.",
+      "Từ khóa vượt quá độ dài cho phép.",
+      "Từ khóa chứa ký tự đặc biệt.",
+      "Từ khóa chỉ chứa khoảng trắng.",
+      "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "Hệ thống mất kết nối khi đang tìm kiếm.",
+      "Người dùng không có quyền xem danh mục",
+      "Không tìm thấy dữ liệu phù hợp",
+      "Từ khóa vượt quá độ dài cho phép",
+      "Từ khóa chứa ký tự đặc biệt",
+      "Từ khóa chỉ chứa khoảng trắng",
+      "Lỗi hệ thống khi truy vấn"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm đơn vị tính",
+        "expected": "Người dùng không có quyền xem danh mục đơn vị tính."
+      }
+    ],
+    "expectedResult": "Người dùng không có quyền xem danh mục đơn vị tính.",
+    "expectedResults": [
+      "Người dùng không có quyền xem danh mục đơn vị tính.",
+      "Không tìm thấy dữ liệu phù hợp.",
+      "Từ khóa vượt quá độ dài cho phép.",
+      "Từ khóa chứa ký tự đặc biệt.",
+      "Từ khóa chỉ chứa khoảng trắng.",
+      "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "Hệ thống mất kết nối khi đang tìm kiếm.",
+      "Người dùng không có quyền xem danh mục",
+      "Không tìm thấy dữ liệu phù hợp",
+      "Từ khóa vượt quá độ dài cho phép",
+      "Từ khóa chứa ký tự đặc biệt",
+      "Từ khóa chỉ chứa khoảng trắng",
+      "Lỗi hệ thống khi truy vấn",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Tìm kiếm đơn vị tính",
+      "scenarioId": "SC018"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC018",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Người dùng không có quyền xem danh mục đơn vị tính."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC019",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Kiểm tra rủi ro của Tìm kiếm đơn vị tính",
+    "testScenario": "Kiểm tra rủi ro của Tìm kiếm đơn vị tính",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra rủi ro của Tìm kiếm đơn vị tính",
+    "requirementReferences": [
+      "3",
+      "Tìm kiếm đơn vị tính",
+      "BR13",
+      "BR14",
+      "BR15",
+      "BR16",
+      "BR17",
+      "BR18",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20",
+      "EX21",
+      "CL002",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Lỗi hiển thị khi từ khóa tìm kiếm chứa ký tự đặc biệt"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh mục đơn vị tính.",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền xem danh mục đơn vị tính"
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm đơn vị tính",
+        "expected": "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "expectedResult": "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "expectedResults": [
+      "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Lỗi hiển thị khi từ khóa tìm kiếm chứa ký tự đặc biệt",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Tìm kiếm đơn vị tính",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC019",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đã đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng có quyền xem danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "UnitOfMeasure",
+        "value": "Người dùng đang ở màn hình Danh mục đơn vị tính.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "UnitOfMeasure",
+        "value": "",
+        "expected": "Kết quả tìm kiếm phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "automationHints": {
+      "screen": "UnitOfMeasure",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC020",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Thêm mới đơn vị tính thành công",
+    "objective": "Xác nhận hệ thống cho phép thêm mới đơn vị tính khi cung cấp đầy đủ thông tin hợp lệ",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Người dùng đã đăng nhập",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Biểu mẫu thêm mới đơn vị tính đang được hiển thị"
+    ],
+    "testData": [
+      {
+        "name": "Tên đơn vị tính",
+        "value": "Cái",
+        "description": "Giá trị hợp lệ cho trường tên"
+      }
+    ],
+    "expectedResult": "Đơn vị tính được thêm vào danh mục thành công",
+    "postconditions": [
+      "Danh mục đơn vị tính cập nhật bản ghi mới"
+    ],
+    "requirementReferences": [
+      "BR01",
+      "BR08"
+    ],
+    "coveredRules": [
+      "Thêm mới đơn vị tính"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Cần locator cho trường nhập liệu và nút lưu",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC020",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Nhập giá trị 'Cái' vào trường Tên đơn vị tính",
+        "data": "Cái",
+        "expectedResult": "Trường Tên đơn vị tính hiển thị giá trị 'Cái'"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhấn nút Lưu",
+        "data": "",
+        "expectedResult": "Dữ liệu được gửi lên hệ thống và thông báo thành công"
+      }
+    ],
+    "expectedResults": [
+      "Đơn vị tính được thêm vào danh mục thành công"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC021",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Kiểm tra quy tắc bắt buộc của trường Tên đơn vị tính",
+    "objective": "Xác nhận hệ thống chặn lưu khi không nhập tên đơn vị tính",
+    "type": "DATA_INTEGRITY",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "preconditions": [
+      "Người dùng đang ở màn hình thêm mới đơn vị tính"
+    ],
+    "testData": [
+      {
+        "name": "Tên đơn vị tính",
+        "value": "",
+        "description": "Để trống trường bắt buộc"
+      }
+    ],
+    "expectedResult": "Không thể lưu dữ liệu",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR01"
+    ],
+    "coveredRules": [
+      "Tên đơn vị tính là trường bắt buộc."
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Kiểm tra thông báo validate field",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC021",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Để trống trường Tên đơn vị tính",
+        "data": "",
+        "expectedResult": "Trường không có dữ liệu"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhấn nút Lưu",
+        "data": "",
+        "expectedResult": "Hệ thống hiển thị thông báo lỗi bắt buộc"
+      }
+    ],
+    "expectedResults": [
+      "Không thể lưu dữ liệu"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC022",
+    "scenarioId": "SC008",
+    "moduleId": "MOD001",
+    "functionId": "FUNC002",
+    "title": "Kiểm tra chức năng sinh mã đơn vị tính",
+    "objective": "Xác nhận hệ thống tự động sinh mã khi nhấn chức năng sinh mã",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Người dùng ở màn hình thêm mới",
+      "Đã nhập tên đơn vị tính"
+    ],
+    "testData": [
+      {
+        "name": "Tên đơn vị tính",
+        "value": "Thùng",
+        "description": "Dữ liệu hợp lệ"
+      }
+    ],
+    "expectedResult": "Mã đơn vị tính được sinh ra và dữ liệu tên đơn vị tính được giữ nguyên",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR08",
+      "CL001"
+    ],
+    "coveredRules": [
+      "Sinh mã đơn vị tính",
+      "Việc sinh mã không được làm mất dữ liệu tại các trường khác."
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Cần locator cho nút sinh mã và trường mã",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC022",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Nhấn vào chức năng 'Sinh mã'",
+        "data": "",
+        "expectedResult": "Trường Mã đơn vị tính được điền tự động"
+      }
+    ],
+    "expectedResults": [
+      "Mã đơn vị tính được sinh ra và dữ liệu tên đơn vị tính được giữ nguyên"
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC023",
+    "scenarioId": "SC014",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "title": "Tìm kiếm đơn vị tính bằng tên",
+    "objective": "Xác nhận chức năng tìm kiếm đơn vị tính hoạt động đúng với từ khóa tìm kiếm",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Danh mục đã có dữ liệu đơn vị tính"
+    ],
+    "testData": [
+      {
+        "name": "Từ khóa",
+        "value": "Cái",
+        "description": "Từ khóa tìm kiếm gần đúng"
+      }
+    ],
+    "expectedResult": "Danh sách tìm kiếm hiển thị chính xác",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR13",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Hỗ trợ tìm kiếm gần đúng (chứa từ khóa)"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Kiểm tra kết quả bảng trả về",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC023",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Nhập 'Cái' vào ô tìm kiếm",
+        "data": "Cái",
+        "expectedResult": "Từ khóa xuất hiện trong ô"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhấn nút Tìm kiếm",
+        "data": "",
+        "expectedResult": "Hệ thống trả về danh sách có tên chứa 'Cái'"
+      }
+    ],
+    "expectedResults": [
+      "Danh sách tìm kiếm hiển thị chính xác"
+    ],
+    "automationHints": {}
+  }
+]

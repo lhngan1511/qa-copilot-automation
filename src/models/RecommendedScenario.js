@@ -4,11 +4,19 @@ class RecommendedScenario {
 
         title = "",
 
+        description = "",
+
         // Module / Feature Context
 
         module = "",
 
         feature = "",
+
+        moduleId = "",
+
+        functionId = "",
+
+        functionName = "",
 
         // Scenario Classification
 
@@ -28,6 +36,12 @@ class RecommendedScenario {
 
         requirementReference = "",
 
+        requirementReferences = [],
+
+        coveredRules = [],
+
+        riskReason = "",
+
         riskCategory = "",
 
         // Test Preparation
@@ -39,6 +53,8 @@ class RecommendedScenario {
         // Generated Test Data
 
         testData = null,
+
+        testDataHints = [],
 
         // Scenario Execution
 
@@ -76,6 +92,12 @@ class RecommendedScenario {
 
         this.feature = feature;
 
+        this.moduleId = moduleId;
+
+        this.functionId = functionId;
+
+        this.function = functionName || feature;
+
         /*
         =====================================================
          Scenario Information
@@ -83,6 +105,8 @@ class RecommendedScenario {
         */
 
         this.title = title;
+
+        this.description = description;
 
         this.testScenario = title;
 
@@ -116,6 +140,14 @@ class RecommendedScenario {
 
         this.requirementReference = requirementReference;
 
+        this.requirementReferences = Array.isArray(requirementReferences)
+            ? [...requirementReferences]
+            : [];
+
+        this.coveredRules = Array.isArray(coveredRules) ? [...coveredRules] : [];
+
+        this.riskReason = riskReason;
+
         /*
         =====================================================
          Risk Classification
@@ -148,6 +180,8 @@ class RecommendedScenario {
 
                       invalid: {}
                   };
+
+        this.testDataHints = Array.isArray(testDataHints) ? [...testDataHints] : [];
 
         /*
         =====================================================

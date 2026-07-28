@@ -2,18 +2,13 @@ import fs from "fs";
 import path from "path";
 
 class JsonExporter {
-    export(testCases, featureName) {
-        const outputDir = "./outputs/json";
+    export(testCases, outputPath) {
+        const filePath = outputPath || "./outputs/json/testcases.json";
+        const outputDir = path.dirname(filePath);
 
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
         }
-
-        const safeName = (featureName || "testcases")
-            .replace(/[\\/:*?"<>|]/g, "_")
-            .replace(/\s+/g, "_");
-
-        const filePath = path.join(outputDir, `${safeName}_testcases.json`);
 
         const canonicalTestCases = Array.isArray(testCases)
             ? testCases.map(testCase => this.toCanonicalTestCase(testCase))
@@ -37,22 +32,18 @@ class JsonExporter {
         const canonical = {};
 
         Object.entries(source).forEach(([key, value]) => {
-            if (
-                key === "expectedResult" ||
-                key === "expectedResults" ||
-                key === "automation" ||
-                key === "automationCandidate" ||
-                key === "automationHints" ||
-                key === "steps"
-            ) {
+            if (key === "automation" || key === "automationHints" || key === "steps") {
                 return;
             }
 
             canonical[key] = this.cloneValue(value);
         });
 
+        canonical.testcaseId = source.testcaseId ?? source.testCaseId ?? source.id ?? "";
         canonical.steps = this.normalizeSteps(source.steps);
+        canonical.expectedResult = this.resolveExpectedResult(source);
         canonical.expectedResults = this.resolveExpectedResults(source);
+        canonical.automationCandidate = this.resolveAutomationCandidate(source);
         canonical.automationHints = this.isPlainObject(source.automationHints)
             ? this.cloneValue(source.automationHints)
             : {};
@@ -102,6 +93,28 @@ class JsonExporter {
         }
 
         return [];
+    }
+
+    resolveExpectedResult(testCase) {
+        if (testCase.expectedResult !== undefined && testCase.expectedResult !== null) {
+            return this.cloneValue(testCase.expectedResult);
+        }
+
+        return Array.isArray(testCase.expectedResults)
+            ? this.cloneValue(testCase.expectedResults[0] ?? "")
+            : "";
+    }
+
+    resolveAutomationCandidate(testCase) {
+        if (typeof testCase.automationCandidate === "boolean") {
+            return testCase.automationCandidate;
+        }
+
+        if (typeof testCase.automation?.candidate === "boolean") {
+            return testCase.automation.candidate;
+        }
+
+        return testCase.automationHints?.executable === true;
     }
 
     cloneValue(value) {

@@ -1,4 +1,5 @@
 import RequirementKnowledge from "../models/RequirementKnowledge.js";
+import RequirementIntelligenceInput from "../models/RequirementIntelligenceInput.js";
 
 import BusinessRuleAnalyzer from "../analyzers/BusinessRuleAnalyzer.js";
 import InputAnalyzer from "../analyzers/InputAnalyzer.js";
@@ -57,7 +58,9 @@ class RequirementIntelligenceEngine {
     =================================================
     */
 
-    analyze(requirement) {
+    analyze(input) {
+        const isStructuredInput = input instanceof RequirementIntelligenceInput;
+        const requirement = isStructuredInput ? input.requirement : input;
         const knowledge = new RequirementKnowledge();
 
         if (!requirement) {
@@ -86,7 +89,150 @@ class RequirementIntelligenceEngine {
 
         knowledge.confidence = this.calculateConfidence(knowledge);
 
+        if (isStructuredInput) {
+            this.assignStructuredKnowledge(requirement, input, knowledge);
+        }
+
         return knowledge;
+    }
+
+    assignStructuredKnowledge(requirement, input, knowledge) {
+        const moduleId = "MOD001";
+        const moduleName = this.normalizeText(requirement?.module ?? requirement?.feature);
+
+        knowledge.setModule({
+            id: moduleId,
+            name: moduleName,
+            purpose: this.normalizeText(requirement?.purpose ?? requirement?.description),
+            requirementReferences: this.normalizeTextArray([
+                requirement?.id,
+                requirement?.module
+            ])
+        });
+
+        const features = Array.isArray(requirement?.features)
+            ? requirement.features
+            : requirement?.feature
+              ? [requirement.feature]
+              : [];
+
+        knowledge.setFunctions(
+            features.map((feature, index) => {
+                const item =
+                    feature && typeof feature === "object"
+                        ? feature
+                        : {
+                              name: feature
+                          };
+                const featureName = this.normalizeText(
+                    item.name ?? item.feature ?? item.title
+                );
+
+                return {
+                    id: `FUNC${String(index + 1).padStart(3, "0")}`,
+                    moduleId,
+                    name: featureName,
+                    description: this.normalizeText(item.description ?? item.purpose),
+                    actors: this.normalizeTextArray(item.actors),
+                    preconditions: this.normalizeTextArray(item.preconditions),
+                    businessRules: this.normalizeContextTextArray(item.businessRules),
+                    validationRules: this.mergeTextArrays(
+                        this.normalizeContextTextArray(item.validationRules),
+                        this.getOwnedTexts(knowledge.validationRules, featureName)
+                    ),
+                    permissions: this.mergeTextArrays(
+                        this.normalizeContextTextArray(item.permissions),
+                        this.getOwnedTexts(knowledge.permissionCases, featureName)
+                    ),
+                    boundaries: this.mergeTextArrays(
+                        this.normalizeContextTextArray(item.boundaries ?? item.boundaryCases),
+                        this.getOwnedTexts(knowledge.boundaryCases, featureName)
+                    ),
+                    exceptions: this.normalizeContextTextArray(
+                        item.exceptions ?? item.exceptionCases
+                    ),
+                    risks: this.mergeTextArrays(
+                        this.normalizeContextTextArray(item.risks ?? item.riskAreas),
+                        this.getOwnedTexts(knowledge.riskAreas, featureName)
+                    ),
+                    requirementReferences: this.normalizeTextArray([
+                        item.id,
+                        item.name ?? item.feature,
+                        ...this.getCodes(item.businessRules),
+                        ...this.getCodes(item.exceptions)
+                    ])
+                };
+            })
+        );
+
+        knowledge.purpose = this.normalizeText(requirement?.purpose ?? requirement?.description);
+        knowledge.actors = this.normalizeTextArray(requirement?.actors);
+        knowledge.businessRules = this.normalizeContextTextArray(requirement?.businessRules);
+        knowledge.permissions = this.normalizeContextTextArray(requirement?.permissions);
+        knowledge.exceptions = this.normalizeContextTextArray(
+            requirement?.exceptions ?? requirement?.edgeCases
+        );
+        knowledge.notes = this.normalizeTextArray(requirement?.notes);
+        knowledge.clarificationAnswers = input.clarifications.map(item => ({
+            ...item,
+            options: Array.isArray(item.options) ? [...item.options] : []
+        }));
+        knowledge.confidence = Math.min(1, Math.max(0, knowledge.confidence / 100));
+        knowledge.source = "rule-engine";
+    }
+
+    getOwnedTexts(values, featureName) {
+        if (!Array.isArray(values)) {
+            return [];
+        }
+
+        const normalizedFeature = this.normalizeText(featureName).toLowerCase();
+
+        return this.normalizeContextTextArray(
+            values.filter(
+                value =>
+                    value &&
+                    typeof value === "object" &&
+                    this.normalizeText(value.feature ?? value.featureName).toLowerCase() ===
+                        normalizedFeature
+            )
+        );
+    }
+
+    mergeTextArrays(...collections) {
+        return this.normalizeTextArray(collections.flat());
+    }
+
+    normalizeTextArray(values) {
+        if (!Array.isArray(values)) {
+            return [];
+        }
+
+        return [...new Set(values.map(value => this.normalizeText(value)).filter(Boolean))];
+    }
+
+    normalizeContextTextArray(values) {
+        if (!Array.isArray(values)) {
+            return [];
+        }
+
+        return this.normalizeTextArray(
+            values.map(value =>
+                value && typeof value === "object"
+                    ? value.content ?? value.description ?? value.name
+                    : value
+            )
+        );
+    }
+
+    getCodes(values) {
+        if (!Array.isArray(values)) {
+            return [];
+        }
+
+        return values
+            .map(value => (value && typeof value === "object" ? value.code : ""))
+            .filter(Boolean);
     }
 
     /*

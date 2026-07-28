@@ -1,197 +1,93 @@
 import TestCase from "../models/TestCase.js";
 
-
 class TestCaseGenerator {
-
-
-    constructor(){
-
+    constructor() {
         this.counter = 1;
-
     }
 
-
-
-
-    generate(scenarios){
-
-
+    generate(scenarios) {
         const testCases = [];
 
+        scenarios.forEach(scenario => {
+            const testCase = new TestCase();
 
+            testCase.id = this.generateId();
 
-        scenarios.forEach(
-            scenario => {
+            testCase.scenarioId = scenario.id;
 
+            testCase.feature = scenario.feature;
 
-                const testCase =
-                    new TestCase();
+            testCase.title = scenario.title;
 
+            testCase.type = scenario.type;
 
+            testCase.severity = scenario.severity;
 
-                testCase.id =
-                    this.generateId();
+            testCase.priority = scenario.priority;
 
+            testCase.preconditions = scenario.preconditions;
 
+            testCase.steps = this.generateSteps(scenario);
 
-                testCase.scenarioId =
-                    scenario.id;
+            testCase.expectedResults = scenario.expectedResults;
 
+            testCase.automationCandidate = scenario.automationCandidate;
 
+            testCase.requirementReference = scenario.requirementReference;
 
-                testCase.feature =
-                    scenario.feature;
-
-
-
-                testCase.title =
-                    scenario.title;
-
-
-
-                testCase.type =
-                    scenario.type;
-
-
-
-                testCase.severity =
-                    scenario.severity;
-
-
-
-                testCase.priority =
-                    scenario.priority;
-
-
-
-                testCase.preconditions =
-                    scenario.preconditions;
-
-
-
-                testCase.steps =
-                    this.generateSteps(
-                        scenario
-                    );
-
-
-
-                testCase.expectedResults =
-                    scenario.expectedResults;
-
-
-
-                testCase.automationCandidate =
-                    scenario.automationCandidate;
-
-
-
-                testCase.requirementReference =
-                    scenario.requirementReference;
-
-
-
-                testCases.push(
-                    testCase
-                );
-
-
-            }
-        );
-
-
+            testCases.push(testCase);
+        });
 
         return testCases;
-
-
     }
 
-
-
-
-
-
-    generateSteps(scenario){
-
-
-        if(
-            scenario.type === "NEGATIVE"
-        ){
-
-
+    generateSteps(scenario) {
+        if (scenario.type === "NEGATIVE") {
             return [
-
                 {
-                    order:1,
-                    action:"Mở chức năng",
-                    expected:"Màn hình hiển thị"
+                    order: 1,
+                    action: "Mở chức năng",
+                    expected: "Màn hình hiển thị"
                 },
 
-
                 {
-                    order:2,
-                    action:`Nhập dữ liệu lỗi: ${scenario.title}`,
-                    expected:"Hệ thống kiểm tra dữ liệu"
+                    order: 2,
+                    action: `Nhập dữ liệu lỗi: ${scenario.title}`,
+                    expected: "Hệ thống kiểm tra dữ liệu"
                 },
 
-
                 {
-                    order:3,
-                    action:"Thực hiện lưu",
-                    expected:"Hệ thống từ chối dữ liệu"
+                    order: 3,
+                    action: "Thực hiện lưu",
+                    expected: "Hệ thống từ chối dữ liệu"
                 }
-
             ];
-
-
         }
 
-
-
-
         return [
-
             {
-                order:1,
-                action:"Mở chức năng",
-                expected:"Màn hình hiển thị"
+                order: 1,
+                action: "Mở chức năng",
+                expected: "Màn hình hiển thị"
             },
 
-
             {
-                order:2,
-                action:`Thực hiện ${scenario.title}`,
-                expected:"Dữ liệu được xử lý"
+                order: 2,
+                action: `Thực hiện ${scenario.title}`,
+                expected: "Dữ liệu được xử lý"
             },
 
-
             {
-                order:3,
-                action:"Kiểm tra kết quả",
-                expected:"Kết quả đúng yêu cầu"
+                order: 3,
+                action: "Kiểm tra kết quả",
+                expected: "Kết quả đúng yêu cầu"
             }
-
         ];
-
-
     }
 
-
-
-
-
-
-    generateId(){
-
-
-        return `TC${String(this.counter++)
-        .padStart(3,"0")}`;
-
-
+    generateId() {
+        return `TC${String(this.counter++).padStart(3, "0")}`;
     }
-
-
 }
-
 
 export default TestCaseGenerator;

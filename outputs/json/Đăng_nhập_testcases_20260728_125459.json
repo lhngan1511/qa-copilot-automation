@@ -1,0 +1,1024 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Đăng nhập",
+    "testScenario": "Đăng nhập",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {
+        "Tài khoản": "VALID_VALUE",
+        "Mật khẩu": "VALID_VALUE",
+        "Mã xác nhận": "DEVICE_NEW_001"
+      },
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Người dùng nhập thông tin đăng nhập để truy cập hệ thống."
+      }
+    ],
+    "expectedResult": "Người dùng nhập thông tin đăng nhập để truy cập hệ thống.",
+    "expectedResults": [
+      "Người dùng nhập thông tin đăng nhập để truy cập hệ thống.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Đăng nhập",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Người dùng nhập thông tin đăng nhập để truy cập hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Nhập hoặc chọn dữ liệu",
+        "target": "Tài khoản",
+        "value": "VALID_VALUE",
+        "expected": "Trường Tài khoản nhận giá trị đã nhập"
+      },
+      {
+        "order": 4,
+        "action": "Nhập hoặc chọn dữ liệu",
+        "target": "Mật khẩu",
+        "value": "VALID_VALUE",
+        "expected": "Trường Mật khẩu nhận giá trị đã nhập"
+      },
+      {
+        "order": 5,
+        "action": "Nhập hoặc chọn dữ liệu",
+        "target": "Mã xác nhận",
+        "value": "DEVICE_NEW_001",
+        "expected": "Trường Mã xác nhận nhận giá trị đã nhập"
+      },
+      {
+        "order": 6,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Người dùng nhập thông tin đăng nhập để truy cập hệ thống."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra quy tắc nghiệp vụ của Đăng nhập",
+    "testScenario": "Kiểm tra quy tắc nghiệp vụ của Đăng nhập",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "objective": "Kiểm tra tính toàn vẹn dữ liệu",
+    "requirementReference": "Kiểm tra quy tắc nghiệp vụ của Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Tài khoản không được để trống.",
+      "Mật khẩu không được để trống.",
+      "Mã xác nhận không được để trống.",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị.",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập.",
+      "Tài khoản không được để trống (BR01).",
+      "Mật khẩu không được để trống (BR02).",
+      "Mã xác nhận không được để trống (BR03).",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị (BR04).",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập (BR05).",
+      "Thông báo lỗi khi sai tài khoản hoặc mật khẩu phải là thông báo chung chung (CL001).",
+      "Hệ thống khóa tài khoản sau 5 lần nhập sai liên tiếp (CL002)."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Tài khoản không được để trống."
+      }
+    ],
+    "expectedResult": "Tài khoản không được để trống.",
+    "expectedResults": [
+      "Tài khoản không được để trống.",
+      "Mật khẩu không được để trống.",
+      "Mã xác nhận không được để trống.",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị.",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập.",
+      "Tài khoản không được để trống (BR01).",
+      "Mật khẩu không được để trống (BR02).",
+      "Mã xác nhận không được để trống (BR03).",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị (BR04).",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập (BR05).",
+      "Thông báo lỗi khi sai tài khoản hoặc mật khẩu phải là thông báo chung chung (CL001).",
+      "Hệ thống khóa tài khoản sau 5 lần nhập sai liên tiếp (CL002).",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quy tắc nghiệp vụ của Đăng nhập",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC002",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Tài khoản không được để trống."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra dữ liệu không hợp lệ của Đăng nhập",
+    "testScenario": "Kiểm tra dữ liệu không hợp lệ của Đăng nhập",
+    "type": "NEGATIVE",
+    "testObjective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "objective": "Kiểm tra xử lý dữ liệu không hợp lệ",
+    "requirementReference": "Kiểm tra dữ liệu không hợp lệ của Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Tài khoản không được để trống.",
+      "Mật khẩu không được để trống.",
+      "Mã xác nhận không được để trống.",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị.",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Tài khoản không được để trống."
+      }
+    ],
+    "expectedResult": "Tài khoản không được để trống.",
+    "expectedResults": [
+      "Tài khoản không được để trống.",
+      "Mật khẩu không được để trống.",
+      "Mã xác nhận không được để trống.",
+      "Mã xác nhận hiện tại không cần giống CAPTCHA hiển thị.",
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra dữ liệu không hợp lệ của Đăng nhập",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC003",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Tài khoản không được để trống."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra quyền thực hiện Đăng nhập",
+    "testScenario": "Kiểm tra quyền thực hiện Đăng nhập",
+    "type": "PERMISSION",
+    "testObjective": "Kiểm tra quyền truy cập chức năng",
+    "objective": "Kiểm tra quyền truy cập chức năng",
+    "requirementReference": "Kiểm tra quyền thực hiện Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng chưa đăng nhập.",
+      "Kiểm tra Người dùng có tài khoản trong hệ thống.",
+      "Người dùng chưa đăng nhập.",
+      "Người dùng có tài khoản trong hệ thống."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {
+        "scenarioCondition": ""
+      }
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Kiểm tra Người dùng chưa đăng nhập."
+      }
+    ],
+    "expectedResult": "Kiểm tra Người dùng chưa đăng nhập.",
+    "expectedResults": [
+      "Kiểm tra Người dùng chưa đăng nhập.",
+      "Kiểm tra Người dùng có tài khoản trong hệ thống.",
+      "Người dùng chưa đăng nhập.",
+      "Người dùng có tài khoản trong hệ thống.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra quyền thực hiện Đăng nhập",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC004",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Kiểm tra Người dùng chưa đăng nhập."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC005",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra điều kiện biên của Đăng nhập",
+    "testScenario": "Kiểm tra điều kiện biên của Đăng nhập",
+    "type": "BOUNDARY",
+    "testObjective": "Kiểm tra giới hạn dữ liệu",
+    "objective": "Kiểm tra giới hạn dữ liệu",
+    "requirementReference": "Kiểm tra điều kiện biên của Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Đăng nhập tối đa 5 lần sai liên tiếp trước khi tài khoản bị khóa."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Đăng nhập tối đa 5 lần sai liên tiếp trước khi tài khoản bị khóa."
+      }
+    ],
+    "expectedResult": "Đăng nhập tối đa 5 lần sai liên tiếp trước khi tài khoản bị khóa.",
+    "expectedResults": [
+      "Đăng nhập tối đa 5 lần sai liên tiếp trước khi tài khoản bị khóa.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra điều kiện biên của Đăng nhập",
+      "scenarioId": "SC005"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "BOUNDARY from approved function",
+    "riskCategory": "BOUNDARY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC005",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Đăng nhập tối đa 5 lần sai liên tiếp trước khi tài khoản bị khóa."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra ngoại lệ của Đăng nhập",
+    "testScenario": "Kiểm tra ngoại lệ của Đăng nhập",
+    "type": "EXCEPTION",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra ngoại lệ của Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Tài khoản hoặc mật khẩu không đúng.",
+      "Tài khoản bị khóa sau 5 lần nhập sai liên tiếp."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Tài khoản hoặc mật khẩu không đúng."
+      }
+    ],
+    "expectedResult": "Tài khoản hoặc mật khẩu không đúng.",
+    "expectedResults": [
+      "Tài khoản hoặc mật khẩu không đúng.",
+      "Tài khoản bị khóa sau 5 lần nhập sai liên tiếp.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra ngoại lệ của Đăng nhập",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC006",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Tài khoản hoặc mật khẩu không đúng."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC007",
+    "scenarioId": "SC007",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Kiểm tra rủi ro của Đăng nhập",
+    "testScenario": "Kiểm tra rủi ro của Đăng nhập",
+    "type": "RISK",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Kiểm tra rủi ro của Đăng nhập",
+    "requirementReferences": [
+      "1",
+      "Đăng nhập",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "Trải nghiệm người dùng khi thông báo lỗi không rõ ràng."
+    ],
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": {
+      "inputs": {},
+      "invalid": {},
+      "expected": {}
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Trải nghiệm người dùng khi thông báo lỗi không rõ ràng."
+      }
+    ],
+    "expectedResult": "Trải nghiệm người dùng khi thông báo lỗi không rõ ràng.",
+    "expectedResults": [
+      "Trải nghiệm người dùng khi thông báo lỗi không rõ ràng.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra rủi ro của Đăng nhập",
+      "scenarioId": "SC007"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC007",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Login",
+        "value": "Người dùng đang ở màn hình đăng nhập.",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Login",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 3,
+        "action": "Đăng nhập",
+        "target": "Login",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Login",
+        "value": "",
+        "expected": "Trải nghiệm người dùng khi thông báo lỗi không rõ ràng."
+      }
+    ],
+    "automationHints": {
+      "screen": "Login",
+      "operation": "LOGIN",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.username",
+        "controls.password",
+        "controls.submit",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Đăng nhập thành công với thông tin hợp lệ",
+    "objective": "Xác thực người dùng truy cập thành công vào hệ thống với thông tin tài khoản và mật khẩu đúng.",
+    "type": "POSITIVE",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập."
+    ],
+    "testData": [
+      {
+        "name": "Tài khoản",
+        "value": "valid_user_01",
+        "description": "Tài khoản hợp lệ"
+      },
+      {
+        "name": "Mật khẩu",
+        "value": "password_valid_01",
+        "description": "Mật khẩu hợp lệ"
+      },
+      {
+        "name": "Mã xác nhận",
+        "value": "DEVICE_NEW_001",
+        "description": "Mã xác nhận hợp lệ"
+      }
+    ],
+    "expectedResult": "Người dùng truy cập vào hệ thống thành công.",
+    "postconditions": [],
+    "requirementReferences": [
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "coveredRules": [
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "BR05",
+      "CL001",
+      "CL002"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Sử dụng Playwright để thực hiện luồng đăng nhập hợp lệ",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC008",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Nhập tài khoản vào trường Tài khoản",
+        "data": "valid_user_01",
+        "expectedResult": "Hệ thống ghi nhận giá trị tài khoản"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Nhập mật khẩu vào trường Mật khẩu",
+        "data": "password_valid_01",
+        "expectedResult": "Hệ thống ghi nhận giá trị mật khẩu"
+      },
+      {
+        "stepNumber": 3,
+        "action": "Nhập mã xác nhận vào trường Mã xác nhận",
+        "data": "DEVICE_NEW_001",
+        "expectedResult": "Hệ thống ghi nhận giá trị mã xác nhận"
+      },
+      {
+        "stepNumber": 4,
+        "action": "Nhấn nút Đăng nhập",
+        "data": "",
+        "expectedResult": "Người dùng đăng nhập thành công vào trang chủ hệ thống"
+      }
+    ],
+    "expectedResults": [
+      "Người dùng truy cập vào hệ thống thành công."
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC009",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "title": "Kiểm tra hệ thống khóa tài khoản sau 5 lần nhập sai",
+    "objective": "Đảm bảo quy tắc bảo mật khóa tài khoản khi nhập sai mật khẩu vượt ngưỡng cho phép.",
+    "type": "DATA_INTEGRITY",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập.",
+      "Tài khoản tồn tại trong hệ thống."
+    ],
+    "testData": [
+      {
+        "name": "Tài khoản",
+        "value": "valid_user_01",
+        "description": "Tài khoản tồn tại"
+      },
+      {
+        "name": "Mật khẩu",
+        "value": "wrong_password",
+        "description": "Mật khẩu sai"
+      }
+    ],
+    "expectedResult": "Tài khoản bị khóa theo quy tắc CL002.",
+    "postconditions": [],
+    "requirementReferences": [
+      "CL002"
+    ],
+    "coveredRules": [
+      "CL002",
+      "CL001"
+    ],
+    "automationCandidate": false,
+    "automationNotes": "Cần thiết lập state tài khoản trước khi test",
+    "source": "gemini",
+    "feature": "",
+    "actualResult": "",
+    "testcaseId": "TC009",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "action": "Thực hiện nhập sai tài khoản hoặc mật khẩu 5 lần liên tiếp",
+        "data": "valid_user_01, wrong_password",
+        "expectedResult": "Hệ thống hiển thị thông báo lỗi chung chung sau mỗi lần thử"
+      },
+      {
+        "stepNumber": 2,
+        "action": "Thực hiện lần nhập thứ 6 với thông tin đúng",
+        "data": "valid_user_01, valid_password",
+        "expectedResult": "Hệ thống hiển thị thông báo tài khoản đã bị khóa"
+      }
+    ],
+    "expectedResults": [
+      "Tài khoản bị khóa theo quy tắc CL002."
+    ],
+    "automationHints": {}
+  }
+]

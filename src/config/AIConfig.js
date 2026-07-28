@@ -24,7 +24,7 @@ class AIConfig {
             process.env.GEMINI_API_KEY || "",
 
         model:
-            process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
+            process.env.GEMINI_MODEL || "gemini-3.1-flash-lite"
 
     };
 

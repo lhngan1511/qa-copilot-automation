@@ -1,10 +1,14 @@
 import AIAnalysisResult from "../models/AIAnalysisResult.js";
+import ClarificationQuestion from "../models/ClarificationQuestion.js";
 import AIProviderFactory from "../providers/AIProviderFactory.js";
 import AIConfig from "../config/AIConfig.js";
+import RequirementAnalysisPromptBuilder from "../prompts/RequirementAnalysisPromptBuilder.js";
 
 class AIAnalysisEngine {
-    constructor() {
-        this.aiProvider = AIProviderFactory.create();
+    constructor(aiProvider = null, options = {}) {
+        this.aiProvider = aiProvider || AIProviderFactory.create();
+        this.promptBuilder =
+            options.promptBuilder || new RequirementAnalysisPromptBuilder();
     }
 
     async analyze(requirement) {
@@ -36,7 +40,7 @@ class AIAnalysisEngine {
 
             this.assignAnalysisMetadata(result, {
                 analysisStatus: "FALLBACK",
-                analysisSource: "FALLBACK",
+                analysisSource: "rule-engine",
                 analysisError: errorMessage
             });
 
@@ -49,7 +53,7 @@ class AIAnalysisEngine {
 
     buildAnalysisResult(parsedResult, requirement) {
         const result = new AIAnalysisResult();
-
+        result.requirementComplete = parsedResult?.requirementComplete === true;
         result.featureUnderstanding =
             this.getText(parsedResult?.featureUnderstanding) ||
             this.getText(requirement?.module) ||
@@ -64,7 +68,7 @@ class AIAnalysisEngine {
             requirement
         );
 
-        result.questions = this.normalizeTextArray(parsedResult?.questions);
+        result.questions = this.normalizeClarificationQuestions(parsedResult?.questions);
 
         result.notes = this.normalizeTextArray(parsedResult?.notes);
 
@@ -82,83 +86,7 @@ class AIAnalysisEngine {
     }
 
     buildPrompt(requirement) {
-        const requirementContext = this.buildRequirementContext(requirement);
-
-        return `
-Bạn là chuyên gia QA Senior.
-
-Hãy phân tích requirement phần mềm dưới đây và đề xuất
-các test scenario cho tất cả chức năng có trong requirement.
-
-REQUIREMENT:
-
-${JSON.stringify(requirementContext, null, 2)}
-
-Chỉ trả về một JSON hợp lệ theo đúng cấu trúc sau:
-
-{
-  "featureUnderstanding": "Mô tả ngắn gọn module và các chức năng",
-  "testFocus": [
-    "Nội dung cần tập trung kiểm thử"
-  ],
-  "riskAreas": [
-    "Rủi ro cần kiểm thử"
-  ],
-  "suggestedScenarios": [
-    {
-      "feature": "Tên chính xác của chức năng",
-      "title": "Tên tình huống kiểm tra",
-      "type": "POSITIVE",
-      "priority": "HIGH",
-      "reason": "Lý do cần kiểm thử",
-      "riskCategory": "FUNCTIONAL",
-      "requirementReference": "Quy tắc hoặc yêu cầu liên quan"
-    }
-  ],
-  "questions": [],
-  "notes": [],
-  "confidence": 0.9
-}
-
-QUY TẮC BẮT BUỘC:
-
-1. Chỉ trả về JSON, không trả về Markdown.
-2. Không dùng khối code có dấu ba dấu backtick.
-3. suggestedScenarios phải là mảng object, không được là mảng string.
-4. Mỗi scenario bắt buộc có:
-   - feature
-   - title
-   - type
-   - priority
-   - reason
-   - riskCategory
-   - requirementReference
-5. Trường feature phải xác định đúng chức năng nghiệp vụ.
-6. Không gán tất cả scenario vào cùng một feature.
-7. Phải sinh scenario cho tất cả feature trong requirement.
-8. Nếu requirement có Thêm, Sửa, Xóa và Tìm kiếm thì phải
-   tạo scenario riêng cho từng chức năng.
-9. type chỉ nhận một trong các giá trị:
-   - POSITIVE
-   - NEGATIVE
-   - PERMISSION
-   - DATA_INTEGRITY
-   - BOUNDARY
-   - SECURITY
-10. priority chỉ nhận:
-   - HIGH
-   - MEDIUM
-   - LOW
-11. Scenario phải bao gồm khi phù hợp:
-   - Positive
-   - Negative
-   - Validation
-   - Business Rule
-   - Permission
-   - Boundary
-   - Security
-12. Không tự đổi tên module hoặc tên chức năng.
-`;
+        return this.promptBuilder.build(requirement);
     }
 
     buildRequirementContext(requirement) {
@@ -295,13 +223,23 @@ QUY TẮC BẮT BUỘC:
     }
 
     getProviderName() {
+        const successfulProvider = this.normalizeText(
+            this.aiProvider?.lastSuccessfulProviderName
+        ).toLowerCase();
+
+        if (successfulProvider) {
+            return successfulProvider;
+        }
+
         const configuredProvider = this.normalizeText(AIConfig.provider);
 
         if (configuredProvider) {
-            return configuredProvider;
+            return configuredProvider.toLowerCase();
         }
 
-        return this.aiProvider?.constructor?.name ?? "UNKNOWN";
+        return String(this.aiProvider?.constructor?.name || "unknown")
+            .replace(/Provider$/i, "")
+            .toLowerCase();
     }
 
     getErrorMessage(error) {
@@ -391,7 +329,7 @@ QUY TẮC BẮT BUỘC:
 
     fallbackAnalysis(requirement) {
         const result = new AIAnalysisResult();
-
+        result.requirementComplete = false;
         result.featureUnderstanding =
             this.getText(requirement?.module) || this.getText(requirement?.feature);
 
@@ -405,7 +343,7 @@ QUY TẮC BẮT BUỘC:
 
         result.suggestedScenarios = this.buildFallbackScenarios(requirement);
 
-        result.questions = this.normalizeTextArray(requirement?.questions);
+        result.questions = this.normalizeClarificationQuestions(requirement?.questions);
 
         result.notes = this.normalizeTextArray(requirement?.notes);
 
@@ -628,6 +566,64 @@ QUY TẮC BẮT BUỘC:
         }
 
         return values.map(value => this.getText(value)).filter(Boolean);
+    }
+
+    normalizeClarificationQuestions(questions) {
+        if (!Array.isArray(questions)) {
+            return [];
+        }
+
+        const normalizedQuestions = [];
+        const usedIds = new Set();
+
+        for (const item of questions) {
+            if (normalizedQuestions.length >= 5) {
+                break;
+            }
+
+            const fallbackId = this.getNextClarificationId(
+                normalizedQuestions.length + 1,
+                usedIds
+            );
+            let question = ClarificationQuestion.from(item, fallbackId);
+
+            if (!question) {
+                continue;
+            }
+
+            const normalizedId = question.id.toUpperCase();
+
+            if (usedIds.has(normalizedId)) {
+                question = ClarificationQuestion.from(
+                    {
+                        ...question.toJSON(),
+                        id: fallbackId
+                    },
+                    fallbackId
+                );
+            }
+
+            if (!question?.isValid()) {
+                continue;
+            }
+
+            usedIds.add(question.id.toUpperCase());
+            normalizedQuestions.push(question.toJSON());
+        }
+
+        return normalizedQuestions;
+    }
+
+    getNextClarificationId(sequence, usedIds) {
+        let nextSequence = sequence;
+        let candidate = `CL${String(nextSequence).padStart(3, "0")}`;
+
+        while (usedIds.has(candidate.toUpperCase())) {
+            nextSequence += 1;
+            candidate = `CL${String(nextSequence).padStart(3, "0")}`;
+        }
+
+        return candidate;
     }
 
     normalizeContextArray(values) {

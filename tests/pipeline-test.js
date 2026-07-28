@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import QACopilot from "../src/QACopilot.js";
 
 
@@ -42,6 +44,15 @@ async function runTest() {
         return;
 
     }
+
+    console.log("AI Analysis Status:", result.aiAnalysis?.analysisStatus);
+    console.log("AI Analysis Source:", result.aiAnalysis?.analysisSource);
+    console.log("AI Feature Understanding:", result.aiAnalysis?.featureUnderstanding);
+    console.log("AI Questions:", result.aiAnalysis?.questions);
+    console.log(
+        "AI Suggested Scenario Count:",
+        result.aiAnalysis?.suggestedScenarios?.length ?? 0
+    );
 
 
     if (result.requirement) {

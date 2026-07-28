@@ -39,6 +39,8 @@ class IntelligenceScenarioGenerator {
                 ? this.buildTitle(item)
                 : item.title;
 
+        scenario.description = item.description ?? "";
+
         if (!scenario.title) {
             return null;
         }
@@ -54,6 +56,12 @@ class IntelligenceScenarioGenerator {
             itemFeature !== ""
                 ? item.feature
                 : this.extractFeature(requirement, item, scenario.title);
+
+        scenario.moduleId = item.moduleId ?? "";
+
+        scenario.functionId = item.functionId ?? "";
+
+        scenario.function = item.function ?? item.functionName ?? scenario.feature;
 
         scenario.type =
             item.type === undefined || item.type === null || item.type === ""
@@ -79,6 +87,18 @@ class IntelligenceScenarioGenerator {
             item.requirementReference === undefined || item.requirementReference === null
                 ? (item.code ?? item.title ?? item.content ?? "")
                 : item.requirementReference;
+
+        scenario.requirementReferences = Array.isArray(item.requirementReferences)
+            ? [...item.requirementReferences]
+            : scenario.requirementReference
+              ? [scenario.requirementReference]
+              : [];
+
+        scenario.coveredRules = Array.isArray(item.coveredRules) ? [...item.coveredRules] : [];
+
+        scenario.riskReason = item.riskReason ?? "";
+
+        scenario.testDataHints = Array.isArray(item.testDataHints) ? [...item.testDataHints] : [];
 
         scenario.inputDefinitions =
             item.inputDefinitions !== undefined

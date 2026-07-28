@@ -324,7 +324,9 @@ class TestDataBuilder {
         }
 
         if (name.includes("tên") || name.includes("name")) {
-            return "Thiết bị kiểm thử";
+            const inputName = this.normalizeText(input?.name);
+
+            return inputName ? `${inputName} kiểm thử` : "Dữ liệu kiểm thử";
         }
 
         if (name.includes("ghi chú") || name.includes("note")) {

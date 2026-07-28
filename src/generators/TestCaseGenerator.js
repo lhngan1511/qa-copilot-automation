@@ -10,17 +10,27 @@ class TestCaseGenerator {
             return [];
         }
 
+        this.counter = 1;
+
         return scenarios.map(scenario => {
             const testCase = new TestCase();
 
             const generatedId = `TC${String(this.counter++).padStart(3, "0")}`;
 
             testCase.id =
-                scenario.id === undefined || scenario.id === null || scenario.id === ""
+                scenario.testCaseId === undefined ||
+                scenario.testCaseId === null ||
+                scenario.testCaseId === ""
                     ? generatedId
-                    : scenario.id;
+                    : scenario.testCaseId;
 
             testCase.scenarioId = scenario.id ?? "";
+
+            testCase.moduleId = scenario.moduleId ?? "";
+
+            testCase.functionId = scenario.functionId ?? "";
+
+            testCase.function = scenario.function ?? scenario.feature ?? "";
 
             testCase.module = scenario.module === undefined ? "" : scenario.module;
 
@@ -34,7 +44,27 @@ class TestCaseGenerator {
 
             testCase.testObjective = scenario.testObjective ?? this.buildObjective(scenario);
 
+            testCase.objective = scenario.objective ?? testCase.testObjective;
+
             testCase.requirementReference = scenario.requirementReference ?? "";
+
+            testCase.requirementReferences = Array.isArray(scenario.requirementReferences)
+                ? this.cloneValue(scenario.requirementReferences)
+                : testCase.requirementReference
+                  ? [testCase.requirementReference]
+                  : [];
+
+            testCase.coveredRules = Array.isArray(scenario.coveredRules)
+                ? this.cloneValue(scenario.coveredRules)
+                : [];
+
+            testCase.postconditions = Array.isArray(scenario.postconditions)
+                ? this.cloneValue(scenario.postconditions)
+                : [];
+
+            testCase.automationNotes = scenario.automationNotes ?? "";
+
+            testCase.automationCandidate = scenario.automationCandidate ?? false;
 
             testCase.preconditions =
                 scenario.preconditions === undefined ? [] : scenario.preconditions;
@@ -42,10 +72,19 @@ class TestCaseGenerator {
             testCase.testData =
                 scenario.testData === undefined ? testCase.testData : scenario.testData;
 
-            testCase.steps = scenario.steps === undefined ? [] : scenario.steps;
+            testCase.steps =
+                scenario.steps === undefined
+                    ? []
+                    : this.buildSteps(scenario.steps, testCase.function);
 
             testCase.expectedResult =
-                scenario.expectedResult === undefined ? "" : scenario.expectedResult;
+                scenario.expectedResult !== undefined
+                    ? scenario.expectedResult
+                    : Array.isArray(scenario.expectedResults)
+                      ? (scenario.expectedResults.find(
+                            result => typeof result === "string" && result.trim()
+                        ) ?? "")
+                      : "";
 
             testCase.expectedResults =
                 scenario.expectedResults !== undefined
@@ -126,6 +165,27 @@ class TestCaseGenerator {
             default:
                 return "Kiểm tra chức năng hoạt động đúng theo yêu cầu";
         }
+    }
+
+    buildSteps(steps, functionName) {
+        if (!Array.isArray(steps)) {
+            return this.cloneValue(steps);
+        }
+
+        return steps.map(step => {
+            if (!step || typeof step !== "object" || Array.isArray(step)) {
+                return step;
+            }
+
+            const clonedStep = this.cloneValue(step);
+            const action = String(clonedStep.action ?? "").trim();
+
+            if (/^Thực hiện thao tác$/i.test(action) && functionName) {
+                clonedStep.action = `Thực hiện ${functionName}`;
+            }
+
+            return clonedStep;
+        });
     }
 
     cloneValue(value) {

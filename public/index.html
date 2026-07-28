@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>QA Copilot V2 — Human Review Workspace</title>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+    <body>
+        <header class="app-header">
+            <div>
+                <p class="eyebrow">QA Copilot V2</p>
+                <h1>Human Review Workspace</h1>
+                <p class="subtitle">Từ requirement đến test case đã được phê duyệt.</p>
+            </div>
+            <button id="newWorkflowButton" class="button secondary hidden">Phiên mới</button>
+        </header>
+
+        <main>
+            <ol id="progress" class="progress" aria-label="Tiến trình workflow"></ol>
+
+            <section id="startPanel" class="panel">
+                <h2>Bắt đầu phân tích requirement</h2>
+                <p class="muted">Chọn file Markdown. File sẽ được upload an toàn lên máy chủ.</p>
+                <label class="file-picker">
+                    <input id="requirementFile" type="file" accept=".md,text/markdown" />
+                    <span>Chọn file .md</span>
+                </label>
+                <p id="selectedFile" class="file-name">Chưa chọn file</p>
+                <button id="startButton" class="button primary" disabled>Bắt đầu phân tích</button>
+            </section>
+
+            <section id="reviewPanel" class="panel hidden">
+                <div class="panel-heading">
+                    <div>
+                        <p id="stageLabel" class="eyebrow"></p>
+                        <h2 id="reviewTitle">Review</h2>
+                    </div>
+                    <span id="reviewBadge" class="badge"></span>
+                </div>
+                <div id="reviewContent"></div>
+                <div class="action-bar">
+                    <button id="saveButton" class="button secondary">Lưu thay đổi</button>
+                    <button id="approveButton" class="button primary">Phê duyệt và tiếp tục</button>
+                </div>
+            </section>
+
+            <section id="completedPanel" class="panel hidden">
+                <p class="eyebrow">Export</p>
+                <h2>Workflow đã hoàn thành</h2>
+                <p>Các file dưới đây chỉ được tạo từ TestCase Artifact đã phê duyệt.</p>
+                <div id="outputList" class="output-list"></div>
+            </section>
+
+            <section class="status-panel" aria-live="polite">
+                <div>
+                    <span id="statusDot" class="status-dot"></span>
+                    <strong id="statusText">Chưa bắt đầu</strong>
+                </div>
+                <p id="errorText" class="error hidden"></p>
+                <details id="technicalDetails" class="hidden">
+                    <summary>Thông tin kỹ thuật</summary>
+                    <pre id="technicalContent"></pre>
+                </details>
+            </section>
+        </main>
+
+        <template id="emptyTemplate">
+            <div class="empty-state">Chưa có dữ liệu để hiển thị.</div>
+        </template>
+        <script type="module" src="/app.js"></script>
+    </body>
+</html>

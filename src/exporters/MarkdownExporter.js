@@ -17,12 +17,22 @@ class MarkdownExporter {
             markdown += `## ${this.safeInline(testCase?.id)} - ${this.safeInline(testCase?.title)}\n\n`;
             markdown += "| Thuộc tính | Giá trị |\n";
             markdown += "|---|---|\n";
+            markdown += `| TestCase ID | ${this.safeInline(testCase?.testcaseId ?? testCase?.id)} |\n`;
+            markdown += `| Scenario ID | ${this.safeInline(testCase?.scenarioId)} |\n`;
+            markdown += `| Module ID | ${this.safeInline(testCase?.moduleId)} |\n`;
             markdown += `| Module | ${this.safeInline(testCase?.module)} |\n`;
+            markdown += `| Function ID | ${this.safeInline(testCase?.functionId)} |\n`;
+            markdown += `| Function | ${this.safeInline(testCase?.function ?? testCase?.feature)} |\n`;
             markdown += `| Chức năng | ${this.safeInline(testCase?.feature)} |\n`;
             markdown += `| Loại | ${this.safeInline(testCase?.type)} |\n`;
+            markdown += `| Objective | ${this.safeInline(testCase?.objective ?? testCase?.testObjective)} |\n`;
             markdown += `| Priority | ${this.safeInline(testCase?.priority)} |\n`;
             markdown += `| Severity | ${this.safeInline(testCase?.severity)} |\n`;
-            markdown += `| Automation | ${this.resolveAutomation(testCase)} |\n\n`;
+            markdown += `| Automation | ${this.resolveAutomation(testCase)} |\n`;
+            markdown += `| Automation Notes | ${this.safeInline(testCase?.automationNotes)} |\n`;
+            markdown += `| Requirement References | ${this.safeInline(testCase?.requirementReferences)} |\n`;
+            markdown += `| Covered Rules | ${this.safeInline(testCase?.coveredRules)} |\n`;
+            markdown += `| Source | ${this.safeInline(testCase?.source)} |\n\n`;
 
             markdown += "### Tiền điều kiện\n\n";
             markdown += this.renderList(testCase?.preconditions, "Không có");
@@ -49,7 +59,10 @@ class MarkdownExporter {
 
         fs.writeFileSync(outputPath, markdown, "utf8");
 
+        const exportedPath = outputPath;
+
         console.log(`✓ Markdown exported: ${outputPath}`);
+        return exportedPath;
     }
 
     collectSummary(testCases, field) {
@@ -184,7 +197,7 @@ class MarkdownExporter {
                 return {
                     order: step.order,
                     action,
-                    expected: this.valueToText(step.expected)
+                    expected: this.valueToText(step.expectedResult ?? step.expected)
                 };
             })
             .filter(Boolean);

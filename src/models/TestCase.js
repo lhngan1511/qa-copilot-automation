@@ -10,6 +10,12 @@ class TestCase {
 
         this.scenarioId = "";
 
+        this.moduleId = "";
+
+        this.functionId = "";
+
+        this.function = "";
+
         /*
         =====================================================
          Module / Feature
@@ -34,6 +40,8 @@ class TestCase {
 
         this.testObjective = "";
 
+        this.objective = "";
+
         /*
         =====================================================
          Requirement Trace
@@ -41,6 +49,16 @@ class TestCase {
         */
 
         this.requirementReference = "";
+
+        this.requirementReferences = [];
+
+        this.coveredRules = [];
+
+        this.postconditions = [];
+
+        this.automationNotes = "";
+
+        this.automationCandidate = false;
 
         /*
         =====================================================

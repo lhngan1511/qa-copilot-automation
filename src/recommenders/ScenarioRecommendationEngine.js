@@ -20,6 +20,12 @@ class ScenarioRecommendationEngine {
 
         const scenarios = [];
 
+        if (knowledge.module && Array.isArray(knowledge.functions) && knowledge.functions.length > 0) {
+            this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
+            this.generateOwnedSuggestions(knowledge, scenarios, requirement);
+            return this.removeDuplicateScenarios(scenarios);
+        }
+
         this.generateFromList(
             knowledge.positiveCases,
             "POSITIVE",
@@ -57,6 +63,167 @@ class ScenarioRecommendationEngine {
         );
 
         return this.removeDuplicateScenarios(scenarios);
+    }
+
+    generateFromStructuredFunctions(knowledge, scenarios, requirement) {
+        const moduleName = this.getText(knowledge.module?.name);
+        const moduleId = this.getText(knowledge.module?.id);
+
+        knowledge.functions.forEach(functionKnowledge => {
+            const functionName = this.getText(functionKnowledge?.name);
+            const functionId = this.getText(functionKnowledge?.id);
+
+            if (!functionName || !functionId) {
+                return;
+            }
+
+            const context = {
+                module: moduleName,
+                moduleId,
+                feature: functionName,
+                functionId,
+                functionName,
+                preconditions: this.getArray(functionKnowledge.preconditions),
+                requirementReferences: this.getArray(functionKnowledge.requirementReferences),
+                source: knowledge.source || "Approved Module Artifact"
+            };
+            const candidates = [
+                {
+                    ...context,
+                    title: functionName,
+                    type: "POSITIVE",
+                    priority: "MEDIUM",
+                    reason: functionKnowledge.description || "Approved business function",
+                    description: functionKnowledge.description || "",
+                    expectedResults: [
+                        functionKnowledge.description || `${functionName} hoàn thành đúng yêu cầu`
+                    ],
+                    coveredRules: context.requirementReferences
+                },
+                this.buildGroupedCandidate(
+                    functionKnowledge.businessRules,
+                    context,
+                    "DATA_INTEGRITY",
+                    "HIGH",
+                    `Kiểm tra quy tắc nghiệp vụ của ${functionName}`
+                ),
+                this.buildGroupedCandidate(
+                    functionKnowledge.validationRules,
+                    context,
+                    "NEGATIVE",
+                    "HIGH",
+                    `Kiểm tra dữ liệu không hợp lệ của ${functionName}`
+                ),
+                this.buildGroupedCandidate(
+                    functionKnowledge.permissions,
+                    context,
+                    "PERMISSION",
+                    "HIGH",
+                    `Kiểm tra quyền thực hiện ${functionName}`
+                ),
+                this.buildGroupedCandidate(
+                    this.filterConcreteBoundaries(functionKnowledge.boundaries),
+                    context,
+                    "BOUNDARY",
+                    "MEDIUM",
+                    `Kiểm tra điều kiện biên của ${functionName}`
+                ),
+                this.buildGroupedCandidate(
+                    functionKnowledge.exceptions,
+                    context,
+                    "EXCEPTION",
+                    "HIGH",
+                    `Kiểm tra ngoại lệ của ${functionName}`
+                ),
+                this.buildGroupedCandidate(
+                    this.filterTestableRisks(functionKnowledge.risks),
+                    context,
+                    "RISK",
+                    "HIGH",
+                    `Kiểm tra rủi ro của ${functionName}`
+                )
+            ].filter(Boolean);
+
+            candidates.forEach(candidate => {
+                this.generateFromList(
+                    [candidate],
+                    candidate.type,
+                    candidate.priority,
+                    scenarios,
+                    requirement
+                );
+            });
+        });
+    }
+
+    buildGroupedCandidate(values, context, type, priority, title) {
+        const contents = Array.isArray(values)
+            ? values.filter(value => typeof value === "string" && value.trim()).map(value => value.trim())
+            : [];
+        if (contents.length === 0) return null;
+        return {
+            ...context,
+            title,
+            type,
+            priority,
+            reason: `${type} from approved function`,
+            description: contents.join("; "),
+            expectedResults: contents,
+            coveredRules: contents,
+            riskReason: type === "RISK" ? contents.join("; ") : ""
+        };
+    }
+
+    filterConcreteBoundaries(values) {
+        return (Array.isArray(values) ? values : []).filter(value =>
+            /[0-9]|tối đa|tối thiểu|giới hạn|độ dài|lớn|nhỏ|vượt|phân trang/i.test(value)
+        );
+    }
+
+    filterTestableRisks(values) {
+        return (Array.isArray(values) ? values : []).filter(value =>
+            /lỗi|mất|trùng|xung đột|đồng thời|chậm|hiệu năng|quyền|không thể|thất bại/i.test(value)
+        );
+    }
+
+    generateOwnedSuggestions(knowledge, scenarios, requirement) {
+        if (!Array.isArray(knowledge.suggestedScenarios)) {
+            return;
+        }
+
+        knowledge.suggestedScenarios.forEach(item => {
+            if (!item || typeof item !== "object") {
+                return;
+            }
+
+            const owner = knowledge.functions.find(
+                functionKnowledge =>
+                    (item.functionId && item.functionId === functionKnowledge.id) ||
+                    this.normalizeForComparison(item.feature ?? item.function) ===
+                        this.normalizeForComparison(functionKnowledge.name)
+            );
+
+            if (!owner) {
+                return;
+            }
+
+            this.generateFromList(
+                [
+                    {
+                        ...item,
+                        module: knowledge.module.name,
+                        moduleId: knowledge.module.id,
+                        feature: owner.name,
+                        functionId: owner.id,
+                        functionName: owner.name
+                    }
+                ],
+                "POSITIVE",
+                "MEDIUM",
+                scenarios,
+                requirement
+            );
+        });
     }
 
     /*
@@ -109,6 +276,15 @@ class ScenarioRecommendationEngine {
 
                 feature,
 
+                moduleId: this.getText(item?.moduleId),
+
+                functionId: this.getText(item?.functionId),
+
+                functionName:
+                    this.getText(item?.functionName) ||
+                    this.getText(item?.function) ||
+                    feature,
+
                 testScenario: this.getText(item?.testScenario) || title,
 
                 type,
@@ -119,10 +295,25 @@ class ScenarioRecommendationEngine {
 
                 reason: this.getText(item?.reason) || `${type} risk detected`,
 
+                description: this.getText(item?.description),
+
                 source: this.getText(item?.source) || "Requirement Intelligence",
 
                 requirementReference:
                     this.getText(item?.requirementReference) || this.getText(item?.code) || title,
+
+                requirementReferences:
+                    this.getArray(item?.requirementReferences).length > 0
+                        ? this.getArray(item?.requirementReferences)
+                        : [
+                              this.getText(item?.requirementReference) ||
+                                  this.getText(item?.code) ||
+                                  title
+                          ],
+
+                coveredRules: this.getArray(item?.coveredRules),
+
+                riskReason: this.getText(item?.riskReason),
 
                 riskCategory: this.getText(item?.riskCategory) || type,
 
@@ -445,6 +636,10 @@ class ScenarioRecommendationEngine {
 
         scenarios.forEach(scenario => {
             const key = [
+                this.normalizeForComparison(scenario.moduleId),
+
+                this.normalizeForComparison(scenario.functionId),
+
                 this.normalizeForComparison(scenario.module),
 
                 this.normalizeForComparison(scenario.feature),

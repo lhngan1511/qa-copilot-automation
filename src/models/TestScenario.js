@@ -18,6 +18,12 @@ class TestScenario {
 
         this.feature = "";
 
+        this.moduleId = "";
+
+        this.functionId = "";
+
+        this.function = "";
+
         /*
         =====================================================
          Scenario Information
@@ -25,6 +31,8 @@ class TestScenario {
         */
 
         this.title = "";
+
+        this.description = "";
 
         this.testScenario = "";
 
@@ -45,6 +53,14 @@ class TestScenario {
         */
 
         this.requirementReference = "";
+
+        this.requirementReferences = [];
+
+        this.coveredRules = [];
+
+        this.riskReason = "";
+
+        this.testDataHints = [];
 
         this.requirementType = "";
 

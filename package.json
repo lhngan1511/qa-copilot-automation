@@ -1,35 +1,43 @@
 {
-  "name": "qa-copilot-v2",
-  "version": "1.0.0",
-  "description": "AI QA Copilot - Test Case Generation Framework",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "test": "node tests/pipeline-test.js",
-    "test:foundation": "node tests/foundation-test.js",
-    "test:parser": "node tests/parser-test.js",
-    "test:data": "node tests/data-definition-test.js",
-    "test:scenario": "node tests/scenario-generator-test.js",
-    "test:testcase": "node tests/testcase-generator-test.js",
-    "test:export": "node tests/excel-exporter-test.js",
-    "test:pipeline": "node tests/pipeline-test.js",
-    "test:ai": "node tests/ai-engine-test.js",
-    "test:ollama": "node tests/ollama.test.js",
-    "test:provider": "node tests/provider.test.js"
-  },
-  "dependencies": {
-    "dotenv": "^17.4.2",
-    "openai": "^6.48.0",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prettier": "^3.9.6"
-  },
-  "directories": {
-    "test": "tests"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "name": "qa-copilot-v2",
+    "version": "1.0.0",
+    "description": "AI QA Copilot - Test Case Generation Framework",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node src/server/startServer.js",
+        "test": "npm run test:regression",
+        "start:server": "node src/server/startServer.js",
+        "test:foundation": "node tests/foundation-test.js",
+        "test:parser": "node tests/parser-test.js",
+        "test:data": "node tests/data-definition-test.js",
+        "test:scenario": "node tests/scenario-generator-test.js",
+        "test:testcase": "node tests/testcase-generator-test.js",
+        "test:export": "node tests/excel-exporter-test.js",
+        "test:pipeline": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node tests/pipeline-test.js",
+        "test:ai": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node tests/ai-engine-test.js",
+        "test:provider": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node tests/provider.test.js",
+        "test:gemini": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node tests/gemini.test.js",
+        "test:ollama": "node tests/ollama.test.js",
+        "test:pipeline:ai": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first ENABLE_AI=true AI_PROVIDER=gemini AI_FALLBACK_ENABLED=false node tests/pipeline-test.js",
+        "test:regression": "cross-env ENABLE_AI=false node tests/pipeline-test.js"
+    },
+    "dependencies": {
+        "@google/genai": "^2.13.0",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "openai": "^6.48.0",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "cross-env": "^10.1.0",
+        "nodemon": "^3.1.14",
+        "prettier": "^3.9.6"
+    },
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
 }

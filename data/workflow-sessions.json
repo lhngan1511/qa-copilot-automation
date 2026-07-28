@@ -1,0 +1,705 @@
+[
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260728_111407",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260728_111407",
+    "status": "completed",
+    "startedAt": "2026-07-28T04:14:07.889Z",
+    "updatedAt": "2026-07-28T04:18:02.459Z",
+    "requirementFile": "requirements/thiet-bi.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_111407",
+        "artifactId": "CLARIFICATION-20260728_111407"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260728_111407",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T04:18:02.451Z",
+    "approvedBy": "Ngân",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T04:18:02.454Z",
+    "completedAt": "2026-07-28T04:18:02.459Z"
+  },
+  {
+    "sessionId": "SESSION-REQUIREMENT-20260728_115231",
+    "workflowName": "requirement-review",
+    "artifactId": "REQUIREMENT-20260728_115231",
+    "status": "started",
+    "startedAt": "2026-07-28T04:52:31.469Z",
+    "updatedAt": "2026-07-28T04:52:31.469Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785214351403-6e28c5f2.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_115231",
+        "artifactId": "REQUIREMENT-20260728_115231"
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_REQUIREMENT_REVIEW",
+    "currentStage": "requirementReview",
+    "currentArtifactId": "REQUIREMENT-20260728_115231",
+    "outputs": {}
+  },
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260728_125200",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:52:00.806Z",
+    "updatedAt": "2026-07-28T05:52:24.564Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\dang-nhap-1785217916845-213125eb.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+        "artifactId": "CLARIFICATION-20260728_125200"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260728_125200",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:52:24.556Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:52:24.559Z",
+    "completedAt": "2026-07-28T05:52:24.564Z"
+  },
+  {
+    "sessionId": "SESSION-REQUIREMENT-20260728_125228",
+    "workflowName": "requirement-review",
+    "artifactId": "REQUIREMENT-20260728_125228",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:52:28.081Z",
+    "updatedAt": "2026-07-28T05:52:53.501Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\dang-nhap-1785217916845-213125eb.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+        "artifactId": "CLARIFICATION-20260728_125200"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125228",
+        "artifactId": "REQUIREMENT-20260728_125228"
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_REQUIREMENT_REVIEW",
+    "currentStage": "requirementReview",
+    "currentArtifactId": "REQUIREMENT-20260728_125228",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:52:53.493Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:52:53.495Z",
+    "completedAt": "2026-07-28T05:52:53.501Z"
+  },
+  {
+    "sessionId": "SESSION-MODULE-20260728_125256",
+    "workflowName": "module-review",
+    "artifactId": "MODULE-20260728_125256",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:52:56.428Z",
+    "updatedAt": "2026-07-28T05:53:11.950Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\dang-nhap-1785217916845-213125eb.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+        "artifactId": "CLARIFICATION-20260728_125200"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125228",
+        "artifactId": "REQUIREMENT-20260728_125228"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125256",
+        "artifactId": "MODULE-20260728_125256"
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_MODULE_REVIEW",
+    "currentStage": "moduleReview",
+    "currentArtifactId": "MODULE-20260728_125256",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:53:11.942Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:53:11.943Z",
+    "completedAt": "2026-07-28T05:53:11.950Z"
+  },
+  {
+    "sessionId": "SESSION-SCENARIO-20260728_125313",
+    "workflowName": "scenario-review",
+    "artifactId": "SCENARIO-20260728_125313",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:53:13.124Z",
+    "updatedAt": "2026-07-28T05:53:48.437Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\dang-nhap-1785217916845-213125eb.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+        "artifactId": "CLARIFICATION-20260728_125200"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125228",
+        "artifactId": "REQUIREMENT-20260728_125228"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125256",
+        "artifactId": "MODULE-20260728_125256"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_125313",
+        "artifactId": "SCENARIO-20260728_125313"
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_SCENARIO_REVIEW",
+    "currentStage": "scenarioReview",
+    "currentArtifactId": "SCENARIO-20260728_125313",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:53:48.428Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:53:48.430Z",
+    "completedAt": "2026-07-28T05:53:48.437Z"
+  },
+  {
+    "sessionId": "SESSION-TESTCASE-20260728_125352",
+    "workflowName": "testcase-review",
+    "artifactId": "TESTCASE-20260728_125352",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:53:52.687Z",
+    "updatedAt": "2026-07-28T05:54:59.714Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\dang-nhap-1785217916845-213125eb.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125200",
+        "artifactId": "CLARIFICATION-20260728_125200"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125228",
+        "artifactId": "REQUIREMENT-20260728_125228"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125256",
+        "artifactId": "MODULE-20260728_125256"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_125313",
+        "artifactId": "SCENARIO-20260728_125313"
+      },
+      "testCaseReview": {
+        "sessionId": "SESSION-TESTCASE-20260728_125352",
+        "artifactId": "TESTCASE-20260728_125352"
+      }
+    },
+    "pipelineStatus": "COMPLETED",
+    "currentStage": null,
+    "currentArtifactId": "TESTCASE-20260728_125352",
+    "outputs": {
+      "json": "outputs/json/Đăng_nhập_testcases_20260728_125459.json",
+      "markdown": "outputs/markdown/Đăng_nhập_testcases_20260728_125459.md",
+      "excel": "outputs/excel/Đăng_nhập_testcases_20260728_125459.xlsx"
+    },
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:54:59.702Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:54:59.705Z",
+    "completedAt": "2026-07-28T05:54:59.714Z"
+  },
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260728_125703",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:57:03.346Z",
+    "updatedAt": "2026-07-28T05:57:18.556Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\danh-muc-don-vi-tinh-1785218218763-bf406277.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+        "artifactId": "CLARIFICATION-20260728_125703"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260728_125703",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:57:18.544Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:57:18.548Z",
+    "completedAt": "2026-07-28T05:57:18.556Z"
+  },
+  {
+    "sessionId": "SESSION-REQUIREMENT-20260728_125723",
+    "workflowName": "requirement-review",
+    "artifactId": "REQUIREMENT-20260728_125723",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:57:23.410Z",
+    "updatedAt": "2026-07-28T05:57:39.866Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\danh-muc-don-vi-tinh-1785218218763-bf406277.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+        "artifactId": "CLARIFICATION-20260728_125703"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125723",
+        "artifactId": "REQUIREMENT-20260728_125723"
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_REQUIREMENT_REVIEW",
+    "currentStage": "requirementReview",
+    "currentArtifactId": "REQUIREMENT-20260728_125723",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:57:39.853Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:57:39.856Z",
+    "completedAt": "2026-07-28T05:57:39.866Z"
+  },
+  {
+    "sessionId": "SESSION-MODULE-20260728_125744",
+    "workflowName": "module-review",
+    "artifactId": "MODULE-20260728_125744",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:57:44.990Z",
+    "updatedAt": "2026-07-28T05:57:52.142Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\danh-muc-don-vi-tinh-1785218218763-bf406277.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+        "artifactId": "CLARIFICATION-20260728_125703"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125723",
+        "artifactId": "REQUIREMENT-20260728_125723"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125744",
+        "artifactId": "MODULE-20260728_125744"
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_MODULE_REVIEW",
+    "currentStage": "moduleReview",
+    "currentArtifactId": "MODULE-20260728_125744",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:57:52.128Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:57:52.130Z",
+    "completedAt": "2026-07-28T05:57:52.142Z"
+  },
+  {
+    "sessionId": "SESSION-SCENARIO-20260728_125753",
+    "workflowName": "scenario-review",
+    "artifactId": "SCENARIO-20260728_125753",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:57:53.921Z",
+    "updatedAt": "2026-07-28T05:58:07.573Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\danh-muc-don-vi-tinh-1785218218763-bf406277.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+        "artifactId": "CLARIFICATION-20260728_125703"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125723",
+        "artifactId": "REQUIREMENT-20260728_125723"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125744",
+        "artifactId": "MODULE-20260728_125744"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_125753",
+        "artifactId": "SCENARIO-20260728_125753"
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_SCENARIO_REVIEW",
+    "currentStage": "scenarioReview",
+    "currentArtifactId": "SCENARIO-20260728_125753",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:58:07.554Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:58:07.556Z",
+    "completedAt": "2026-07-28T05:58:07.573Z"
+  },
+  {
+    "sessionId": "SESSION-TESTCASE-20260728_125813",
+    "workflowName": "testcase-review",
+    "artifactId": "TESTCASE-20260728_125813",
+    "status": "completed",
+    "startedAt": "2026-07-28T05:58:13.583Z",
+    "updatedAt": "2026-07-28T05:58:27.288Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\danh-muc-don-vi-tinh-1785218218763-bf406277.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_125703",
+        "artifactId": "CLARIFICATION-20260728_125703"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_125723",
+        "artifactId": "REQUIREMENT-20260728_125723"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_125744",
+        "artifactId": "MODULE-20260728_125744"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_125753",
+        "artifactId": "SCENARIO-20260728_125753"
+      },
+      "testCaseReview": {
+        "sessionId": "SESSION-TESTCASE-20260728_125813",
+        "artifactId": "TESTCASE-20260728_125813"
+      }
+    },
+    "pipelineStatus": "COMPLETED",
+    "currentStage": null,
+    "currentArtifactId": "TESTCASE-20260728_125813",
+    "outputs": {
+      "json": "outputs/json/Danh_mục_đơn_vị_tính_testcases_20260728_125827.json",
+      "markdown": "outputs/markdown/Danh_mục_đơn_vị_tính_testcases_20260728_125827.md",
+      "excel": "outputs/excel/Danh_mục_đơn_vị_tính_testcases_20260728_125827.xlsx"
+    },
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T05:58:27.264Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T05:58:27.266Z",
+    "completedAt": "2026-07-28T05:58:27.288Z"
+  },
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260728_132214",
+    "status": "completed",
+    "startedAt": "2026-07-28T06:22:14.018Z",
+    "updatedAt": "2026-07-28T06:23:10.653Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785219728704-c5be38af.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+        "artifactId": "CLARIFICATION-20260728_132214"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260728_132214",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T06:23:10.629Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T06:23:10.636Z",
+    "completedAt": "2026-07-28T06:23:10.653Z"
+  },
+  {
+    "sessionId": "SESSION-REQUIREMENT-20260728_132315",
+    "workflowName": "requirement-review",
+    "artifactId": "REQUIREMENT-20260728_132315",
+    "status": "completed",
+    "startedAt": "2026-07-28T06:23:15.455Z",
+    "updatedAt": "2026-07-28T06:23:44.667Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785219728704-c5be38af.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+        "artifactId": "CLARIFICATION-20260728_132214"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_132315",
+        "artifactId": "REQUIREMENT-20260728_132315"
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_REQUIREMENT_REVIEW",
+    "currentStage": "requirementReview",
+    "currentArtifactId": "REQUIREMENT-20260728_132315",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T06:23:44.645Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T06:23:44.647Z",
+    "completedAt": "2026-07-28T06:23:44.667Z"
+  },
+  {
+    "sessionId": "SESSION-MODULE-20260728_132351",
+    "workflowName": "module-review",
+    "artifactId": "MODULE-20260728_132351",
+    "status": "completed",
+    "startedAt": "2026-07-28T06:23:51.425Z",
+    "updatedAt": "2026-07-28T06:24:12.377Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785219728704-c5be38af.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+        "artifactId": "CLARIFICATION-20260728_132214"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_132315",
+        "artifactId": "REQUIREMENT-20260728_132315"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_132351",
+        "artifactId": "MODULE-20260728_132351"
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_MODULE_REVIEW",
+    "currentStage": "moduleReview",
+    "currentArtifactId": "MODULE-20260728_132351",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T06:24:12.348Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T06:24:12.350Z",
+    "completedAt": "2026-07-28T06:24:12.377Z"
+  },
+  {
+    "sessionId": "SESSION-SCENARIO-20260728_132414",
+    "workflowName": "scenario-review",
+    "artifactId": "SCENARIO-20260728_132414",
+    "status": "completed",
+    "startedAt": "2026-07-28T06:24:14.107Z",
+    "updatedAt": "2026-07-28T06:25:56.403Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785219728704-c5be38af.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+        "artifactId": "CLARIFICATION-20260728_132214"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_132315",
+        "artifactId": "REQUIREMENT-20260728_132315"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_132351",
+        "artifactId": "MODULE-20260728_132351"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_132414",
+        "artifactId": "SCENARIO-20260728_132414"
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_SCENARIO_REVIEW",
+    "currentStage": "scenarioReview",
+    "currentArtifactId": "SCENARIO-20260728_132414",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T06:25:56.371Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T06:25:56.374Z",
+    "completedAt": "2026-07-28T06:25:56.403Z"
+  },
+  {
+    "sessionId": "SESSION-TESTCASE-20260728_132602",
+    "workflowName": "testcase-review",
+    "artifactId": "TESTCASE-20260728_132602",
+    "status": "completed",
+    "startedAt": "2026-07-28T06:26:02.659Z",
+    "updatedAt": "2026-07-28T06:26:24.643Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785219728704-c5be38af.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_132214",
+        "artifactId": "CLARIFICATION-20260728_132214"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_132315",
+        "artifactId": "REQUIREMENT-20260728_132315"
+      },
+      "moduleReview": {
+        "sessionId": "SESSION-MODULE-20260728_132351",
+        "artifactId": "MODULE-20260728_132351"
+      },
+      "scenarioReview": {
+        "sessionId": "SESSION-SCENARIO-20260728_132414",
+        "artifactId": "SCENARIO-20260728_132414"
+      },
+      "testCaseReview": {
+        "sessionId": "SESSION-TESTCASE-20260728_132602",
+        "artifactId": "TESTCASE-20260728_132602"
+      }
+    },
+    "pipelineStatus": "COMPLETED",
+    "currentStage": null,
+    "currentArtifactId": "TESTCASE-20260728_132602",
+    "outputs": {
+      "json": "outputs/json/Thiết_bị_testcases_20260728_132624.json",
+      "markdown": "outputs/markdown/Thiết_bị_testcases_20260728_132624.md",
+      "excel": "outputs/excel/Thiết_bị_testcases_20260728_132624.xlsx"
+    },
+    "reviewData": "",
+    "reviewedAt": "2026-07-28T06:26:24.607Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-28T06:26:24.610Z",
+    "completedAt": "2026-07-28T06:26:24.643Z"
+  }
+]

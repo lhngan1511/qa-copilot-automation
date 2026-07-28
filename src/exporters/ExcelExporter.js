@@ -8,7 +8,11 @@ class ExcelExporter {
         const columns = [
             "STT",
             "Test Case ID",
+            "Scenario ID",
+            "Module ID",
             "Module",
+            "Function ID",
+            "Function",
             "Chức năng",
             "Mục tiêu kiểm thử",
             "Tình huống kiểm tra",
@@ -19,18 +23,27 @@ class ExcelExporter {
             "Kết quả mong đợi",
             "Kết quả thực tế",
             "Trạng thái",
+            "Type",
             "Priority",
             "Severity",
-            "Automation"
+            "Automation",
+            "Automation Notes",
+            "Requirement References",
+            "Covered Rules",
+            "Source"
         ];
         const moduleSummary = this.collectSummary(normalizedTestCases, "module");
         const featureSummary = this.collectSummary(normalizedTestCases, "feature");
         const rows = normalizedTestCases.map((testCase, index) => ({
             STT: index + 1,
-            "Test Case ID": testCase?.id ?? "",
+            "Test Case ID": testCase?.testcaseId ?? testCase?.id ?? "",
+            "Scenario ID": testCase?.scenarioId ?? "",
+            "Module ID": testCase?.moduleId ?? "",
             Module: testCase?.module ?? "",
+            "Function ID": testCase?.functionId ?? "",
+            Function: testCase?.function ?? testCase?.feature ?? "",
             "Chức năng": testCase?.feature ?? "",
-            "Mục tiêu kiểm thử": testCase?.testObjective ?? "",
+            "Mục tiêu kiểm thử": testCase?.objective ?? testCase?.testObjective ?? "",
             "Tình huống kiểm tra": testCase?.testScenario ?? "",
             "Tiền điều kiện": this.arrayToText(testCase?.preconditions),
             "Chuẩn bị dữ liệu": this.valueToText(testCase?.setupData),
@@ -39,9 +52,14 @@ class ExcelExporter {
             "Kết quả mong đợi": this.resolveExpectedResult(testCase),
             "Kết quả thực tế": this.valueToText(testCase?.actualResult),
             "Trạng thái": testCase?.status || "Not Tested",
+            Type: testCase?.type ?? "",
             Priority: testCase?.priority ?? "",
             Severity: testCase?.severity ?? "",
-            Automation: this.resolveAutomation(testCase)
+            Automation: this.resolveAutomation(testCase),
+            "Automation Notes": testCase?.automationNotes ?? "",
+            "Requirement References": this.arrayToText(testCase?.requirementReferences),
+            "Covered Rules": this.arrayToText(testCase?.coveredRules),
+            Source: testCase?.source ?? ""
         }));
         const metadataRows = [
             [`BỘ TEST CASE - ${moduleSummary}`],
@@ -59,9 +77,9 @@ class ExcelExporter {
             skipHeader: false
         });
 
-        worksheet["!merges"] = [XLSX.utils.decode_range("A1:P1")];
+        worksheet["!merges"] = [XLSX.utils.decode_range("A1:Y1")];
         worksheet["!autofilter"] = {
-            ref: `A7:P${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
+            ref: `A7:Y${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
         };
         worksheet["!cols"] = [
             { wch: 5 },
@@ -251,7 +269,7 @@ class ExcelExporter {
                 }
 
                 const order = this.hasValues(step.order) ? step.order : index + 1;
-                const expected = this.valueToText(step.expected);
+                const expected = this.valueToText(step.expectedResult ?? step.expected);
 
                 return expected
                     ? `${order}. ${action}\nKết quả: ${expected}`
