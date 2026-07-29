@@ -1,0 +1,211 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Tạo hồ sơ",
+    "module": "Quản lý hồ sơ",
+    "feature": "Tạo hồ sơ",
+    "title": "Để trống Mã hồ sơ khi thực hiện Tạo hồ sơ",
+    "testScenario": "Để trống Mã hồ sơ khi thực hiện Tạo hồ sơ",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh trường Mã hồ sơ là bắt buộc",
+    "objective": "Xác minh trường Mã hồ sơ là bắt buộc",
+    "requirementReference": "Mã hồ sơ không được để trống",
+    "requirementReferences": [
+      "Mã hồ sơ không được để trống"
+    ],
+    "coveredRules": [
+      "Mã hồ sơ không được để trống"
+    ],
+    "sourceItem": {
+      "content": "Mã hồ sơ không được để trống",
+      "source": "REQUIRED_VALIDATION",
+      "category": "REQUIRED_VALIDATION",
+      "code": "",
+      "reference": "Mã hồ sơ không được để trống",
+      "text": "Mã hồ sơ không được để trống",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Mã hồ sơ",
+      "value": "HS-REAL-42"
+    },
+    "executionReadiness": "READY",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Mã hồ sơ",
+        "expected": "Hệ thống không thực hiện Tạo hồ sơ và đánh dấu trường Mã hồ sơ là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Tạo hồ sơ và đánh dấu trường Mã hồ sơ là không hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Tạo hồ sơ và đánh dấu trường Mã hồ sơ là không hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã hồ sơ không được để trống",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "",
+    "riskCategory": "",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Tạo hồ sơ được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Mã hồ sơ",
+        "target": "Mã hồ sơ",
+        "value": "",
+        "expected": "Mã hồ sơ không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Tạo hồ sơ",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Tạo hồ sơ và đánh dấu trường Mã hồ sơ là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {}
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Tạo hồ sơ",
+    "module": "Quản lý hồ sơ",
+    "feature": "Tạo hồ sơ",
+    "title": "Mã hồ sơ không được trùng",
+    "testScenario": "Mã hồ sơ không được trùng",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Mã hồ sơ không được trùng",
+    "objective": "Xác minh quy tắc: Mã hồ sơ không được trùng",
+    "requirementReference": "Mã hồ sơ không được trùng",
+    "requirementReferences": [
+      "Mã hồ sơ không được trùng"
+    ],
+    "coveredRules": [
+      "Mã hồ sơ không được trùng"
+    ],
+    "sourceItem": {
+      "content": "Mã hồ sơ không được trùng",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Mã hồ sơ không được trùng",
+      "text": "Mã hồ sơ không được trùng",
+      "classification": "DUPLICATE"
+    },
+    "ruleClassification": "DUPLICATE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [],
+    "testData": {
+      "requirement": "Sử dụng một giá trị Mã hồ sơ đã tồn tại trong hệ thống",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "DUPLICATE",
+        "target": "Mã hồ sơ",
+        "expected": "Hệ thống không tạo bản ghi mới bằng giá trị Mã hồ sơ đã tồn tại; dữ liệu hiện có không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không tạo bản ghi mới bằng giá trị Mã hồ sơ đã tồn tại; dữ liệu hiện có không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không tạo bản ghi mới bằng giá trị Mã hồ sơ đã tồn tại; dữ liệu hiện có không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã hồ sơ không được trùng",
+      "scenarioId": "SC002"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "",
+    "riskCategory": "",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC002",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Tạo hồ sơ được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập giá trị đã tồn tại cho Mã hồ sơ",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tạo hồ sơ",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tạo hồ sơ",
+        "value": "",
+        "expected": "Hệ thống không tạo bản ghi mới bằng giá trị Mã hồ sơ đã tồn tại; dữ liệu hiện có không thay đổi."
+      }
+    ],
+    "automationHints": {}
+  }
+]

@@ -54,6 +54,18 @@ class TestCase {
 
         this.coveredRules = [];
 
+        this.sourceItem = null;
+
+        this.ruleClassification = "";
+
+        this.needsClarification = false;
+
+        this.requiresRuntimeSupport = false;
+
+        this.needsEnrichment = false;
+
+        this.executable = false;
+
         this.postconditions = [];
 
         this.automationNotes = "";
@@ -75,12 +87,12 @@ class TestCase {
         */
 
         this.testData = {
-            inputs: {},
+            requirement: "",
 
-            expected: {},
-
-            invalid: {}
+            value: ""
         };
+
+        this.executionReadiness = "READY";
 
         /*
         =====================================================

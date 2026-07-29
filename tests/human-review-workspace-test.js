@@ -30,14 +30,11 @@ try {
     assert.equal(upload.status, 201);
     const uploadBody = await upload.json();
     assert.equal(uploadBody.success, true);
-    assert.equal(path.extname(uploadBody.data.requirementFile), ".md");
-    assert.equal(
-        path.dirname(uploadBody.data.requirementFile),
-        path.resolve(api.dataDir, "uploads")
-    );
+    assert.equal(path.extname(uploadBody.data.requirementId), ".md");
+    assert.equal("requirementFile" in uploadBody.data, false);
 
     const created = await api.request("POST", "/api/workflows", {
-        requirementFile: uploadBody.data.requirementFile
+        requirementId: uploadBody.data.requirementId
     });
     assert.equal(created.status, 201);
     assert.equal(created.body.success, true);

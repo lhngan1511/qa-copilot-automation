@@ -76,7 +76,7 @@ try {
     assert.equal(approved.status, 200);
 
     const resumed = await api.request("POST", `/api/workflows/${stage.sessionId}/resume`, {});
-    assert.equal(resumed.body.data.status, "AWAITING_REQUIREMENT_REVIEW");
+    assert.equal(resumed.body.data.status, "AWAITING_TEST_CASE_REVIEW");
 } finally {
     await api.close();
     if (originalEnableAI === undefined) delete process.env.ENABLE_AI;

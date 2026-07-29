@@ -49,9 +49,28 @@ export default class RequirementUploadService {
         return {
             originalName: safeName,
             storedName,
-            requirementFile: storedPath,
+            requirementId: storedName,
             size: content.length
         };
+    }
+
+    resolve(requirementId) {
+        const safeName = this.normalizeFileName(requirementId);
+        const storedPath = path.resolve(this.uploadDir, safeName);
+
+        if (
+            !this.isInside(this.uploadDir, storedPath) ||
+            !fs.existsSync(storedPath) ||
+            !fs.statSync(storedPath).isFile()
+        ) {
+            throw this.error(
+                "REQUIREMENT_UPLOAD_NOT_FOUND",
+                "Không tìm thấy requirement đã upload.",
+                404
+            );
+        }
+
+        return storedPath;
     }
 
     normalizeFileName(fileName) {

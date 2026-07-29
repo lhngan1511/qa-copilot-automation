@@ -15,6 +15,8 @@ try {
 
     const status = await api.request("GET", `/api/workflows/${current.sessionId}`);
     assert.equal(status.status, 200);
+    assert.equal(status.body.data.workflow.id, current.sessionId);
+    assert.equal(status.body.data.deprecated.pipelineStatus, created.body.data.status);
     const review = await api.request("GET", `/api/workflows/${current.sessionId}/current-review`);
     assert.equal(review.body.data.artifactId, current.artifactId);
     const artifacts = await api.request("GET", `/api/workflows/${current.sessionId}/artifacts`);

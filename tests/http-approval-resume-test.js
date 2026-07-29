@@ -21,7 +21,7 @@ try {
 
     const resumed = await api.request("POST", `/api/workflows/${current.sessionId}/resume`);
     assert.equal(resumed.status, 200);
-    assert.equal(resumed.body.data.currentStage, "moduleReview");
+    assert.equal(resumed.body.data.currentStage, "testCaseReview");
 } finally {
     await api.close();
 }

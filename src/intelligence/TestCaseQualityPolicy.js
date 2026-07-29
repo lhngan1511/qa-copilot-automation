@@ -51,13 +51,21 @@ export default class TestCaseQualityPolicy {
                 rejectedCount++;
                 continue;
             }
-            const key = `${tc.scenarioId}|${type}|${objective}`;
+            const key = [
+                this.norm(tc.moduleId || tc.module),
+                this.norm(tc.functionId || tc.function || tc.feature),
+                [...new Set(refs.map(value => this.norm(value)))].sort().join(","),
+                type,
+                objective,
+                this.norm(tc.expectedResult)
+            ].join("|");
             if (seen.has(key)) {
                 duplicateRemovedCount++;
                 continue;
             }
             const count = counts.get(tc.scenarioId) || 0,
-                cap = maxTestCasesPerScenario || this.caps[type] || 3,
+                sourceItemCount = Array.isArray(s?.sourceItems) ? s.sourceItems.length : 0,
+                cap = maxTestCasesPerScenario || Math.max(this.caps[type] || 3, sourceItemCount),
                 critical = String(tc.priority).toLowerCase() === "critical" && refs.length > 0;
             if (!critical && count >= cap) {
                 rejectedCount++;

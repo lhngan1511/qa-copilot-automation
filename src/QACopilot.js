@@ -18,7 +18,10 @@ import TestCaseIntelligenceInputMapper from "./mappers/TestCaseIntelligenceInput
 import AITestCaseIntelligenceEngine from "./engines/AITestCaseIntelligenceEngine.js";
 import TestCaseQualityPolicy from "./intelligence/TestCaseQualityPolicy.js";
 import TestCaseIntelligenceMerger from "./intelligence/TestCaseIntelligenceMerger.js";
+import SemanticTestCaseOverlapResolver from "./resolvers/SemanticTestCaseOverlapResolver.js";
 import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerger.js";
+import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
+import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
 
 import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
 
@@ -39,6 +42,8 @@ import ExcelExporter from "./exporters/ExcelExporter.js";
 import CsvExporter from "./exporters/CsvExporter.js";
 
 import FileNameGenerator from "./utils/FileNameGenerator.js";
+
+import TestCaseOutputService from "./services/TestCaseOutputService.js";
 
 import PipelineStatuses from "./constants/PipelineStatuses.js";
 
@@ -82,8 +87,11 @@ class QACopilot {
         this.testCaseIntelligenceMerger = new TestCaseIntelligenceMerger(
             this.testCaseQualityPolicy
         );
+        this.semanticTestCaseOverlapResolver = new SemanticTestCaseOverlapResolver();
+        this.coreTestCaseCoverageValidator = new CoreTestCaseCoverageValidator();
 
         this.requirementKnowledgeMerger = new RequirementKnowledgeMerger();
+        this.requirementKnowledgeMapper = new RequirementKnowledgeMapper();
 
         this.scenarioRecommendationEngine = new ScenarioRecommendationEngine();
 
@@ -110,6 +118,11 @@ class QACopilot {
         this.outputManager.registerExporter("excel", new ExcelExporter());
 
         this.outputManager.registerExporter("csv", new CsvExporter());
+
+        this.testCaseOutputService = new TestCaseOutputService({
+            outputManager: this.outputManager,
+            fileNameGenerator: this.fileNameGenerator
+        });
     }
 
     async run(requirementFile, options = {}) {
@@ -142,8 +155,16 @@ class QACopilot {
         const existingRequirementArtifact = existingRequirementReview.artifactId
             ? this.workflowCoordinator.findArtifact(existingRequirementReview.artifactId)
             : null;
+        const existingAnalysisReview = workflowContext.getStage("clarificationReview");
+        const existingAnalysisArtifact = existingAnalysisReview.artifactId
+            ? this.workflowCoordinator.findArtifact(existingAnalysisReview.artifactId)
+            : null;
 
-        if (existingRequirementArtifact) {
+        if (options.productionWorkflow === true && existingAnalysisArtifact) {
+            aiResult = existingAnalysisArtifact.aiAnalysis ?? null;
+
+            console.log("âœ“ AI analysis restored from AI Analysis Review Artifact");
+        } else if (existingRequirementArtifact) {
             aiResult = existingRequirementArtifact.aiResult ?? null;
 
             console.log("✓ AI analysis restored from Requirement Artifact");
@@ -151,6 +172,15 @@ class QACopilot {
             aiResult = await this.aiEngine.analyze(requirement);
 
             console.log("✓ AI analysis completed");
+        } else if (options.productionWorkflow === true) {
+            aiResult = this.aiEngine.fallbackAnalysis(requirement);
+            this.aiEngine.assignAnalysisMetadata(aiResult, {
+                analysisStatus: "FALLBACK",
+                analysisSource: "rule-engine",
+                analysisError: ""
+            });
+
+            console.log("✓ Requirement knowledge created by rule engine");
         } else {
             console.log("✓ AI skipped - Rule Engine mode");
         }
@@ -180,7 +210,7 @@ class QACopilot {
         let approvedClarifications = [];
 
         if (
-            clarificationQuestions.length > 0 &&
+            (clarificationQuestions.length > 0 || options.productionWorkflow === true) &&
             (!clarificationReviewSessionId || !clarificationArtifactId)
         ) {
             const timestamp = this.fileNameGenerator.getTimestamp();
@@ -192,9 +222,45 @@ class QACopilot {
             const clarificationArtifact = {
                 artifactId: newArtifactId,
 
-                artifactType: "AI_CLARIFICATION_REVIEW",
+                artifactType:
+                    options.productionWorkflow === true
+                        ? "AI_ANALYSIS_REVIEW"
+                        : "AI_CLARIFICATION_REVIEW",
 
                 approvalStatus: "pending",
+
+                requirement,
+
+                aiAnalysis: this.cloneValue(aiResult),
+
+                ...(options.productionWorkflow === true
+                    ? {}
+                    : {
+                          knowledge: knowledge.toJSON(),
+                          detectedFunctions: Array.isArray(requirement?.features)
+                              ? requirement.features.map(feature => ({
+                                    ...this.cloneValue(feature),
+                                    id: feature.id ?? "",
+                                    name: feature.name ?? "",
+                                    description: feature.description ?? ""
+                                }))
+                              : [],
+                          businessRules: Array.isArray(requirement?.businessRules)
+                              ? requirement.businessRules.map(item => ({ ...item }))
+                              : [],
+                          validation: Array.isArray(requirement?.features)
+                              ? requirement.features.flatMap(feature =>
+                                    Array.isArray(feature.inputs)
+                                        ? feature.inputs.map(input => ({
+                                              feature: feature.name ?? "",
+                                              inputName: input.name ?? "",
+                                              required: input.required ?? false,
+                                              description: input.description ?? ""
+                                          }))
+                                        : []
+                                )
+                              : []
+                      }),
 
                 questions: clarificationQuestions,
 
@@ -239,7 +305,10 @@ class QACopilot {
             return {
                 status: "AWAITING_AI_CLARIFICATION",
 
-                reviewStage: "AI_CLARIFICATION_REVIEW",
+                reviewStage:
+                    options.productionWorkflow === true
+                        ? "AI_ANALYSIS_REVIEW"
+                        : "AI_CLARIFICATION_REVIEW",
 
                 clarificationReview: {
                     sessionId: newSessionId,
@@ -311,6 +380,18 @@ class QACopilot {
             }));
 
             console.log("\nâœ“ AI clarification approved");
+        }
+
+        if (options.productionWorkflow === true) {
+            return this.runCoreProductionWorkflow({
+                requirement,
+                aiResult,
+                knowledge,
+                clarificationArtifactId,
+                clarificationReviewSessionId,
+                workflowContext,
+                options
+            });
         }
 
         /*
@@ -930,8 +1011,13 @@ class QACopilot {
                     maxStepsPerTestCase: testCaseInput.constraints.maxStepsPerTestCase
                 }
             );
-            testCases = mergedTestCases.testCases;
+            testCases = this.semanticTestCaseOverlapResolver.resolve(mergedTestCases.testCases, {
+                approvedFunctions: approvedModuleArtifact?.functions
+            });
             testCaseQualitySummary = mergedTestCases.summary;
+            testCaseQualitySummary.overlapResolution =
+                this.semanticTestCaseOverlapResolver.lastSummary;
+            testCaseQualitySummary.finalCount = testCases.length;
             console.log(`✓ ${testCases.length} testcases generated`);
         }
 
@@ -1127,35 +1213,12 @@ class QACopilot {
 
         console.log("\n[8/8] Exporting Outputs...");
 
-        const featureName = requirement.feature || "testcases";
-
-        const safeFeature = featureName.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_");
-
-        const timestamp = this.fileNameGenerator.getTimestamp();
-
-        const baseName = `${safeFeature}_testcases_${timestamp}`;
-
-        const outputs = {};
-
-        outputs.json = this.outputManager.export(
+        const outputs = this.testCaseOutputService.export({
+            requirement,
             testCases,
-            "json",
-            `outputs/json/${baseName}.json`
-        );
-
-        outputs.markdown = this.outputManager.export(
-            testCases,
-            "markdown",
-            `outputs/markdown/${baseName}.md`
-        );
-
-        outputs.excel = this.outputManager.export(
-            testCases,
-            "excel",
-            `outputs/excel/${baseName}.xlsx`
-        );
-
-        outputs.csv = this.outputManager.export(testCases, "csv", `outputs/csv/${baseName}.csv`);
+            outputRoot: options.outputRoot ?? options.outputDirectory ?? "./outputs/production",
+            outputFilePrefix: options.outputFilePrefix ?? ""
+        });
 
         this.workflowCoordinator.saveArtifact({
             ...approvedTestCaseArtifact,
@@ -1187,6 +1250,236 @@ class QACopilot {
 
             outputs
         };
+    }
+
+    async runCoreProductionWorkflow({
+        requirement,
+        aiResult,
+        knowledge,
+        clarificationArtifactId,
+        clarificationReviewSessionId,
+        workflowContext,
+        options
+    }) {
+        const analysisArtifact = clarificationArtifactId
+            ? this.workflowCoordinator.findArtifact(clarificationArtifactId)
+            : null;
+        const analysisApproved =
+            analysisArtifact?.approvalStatus === "approved" &&
+            this.workflowCoordinator.isCompleted(clarificationReviewSessionId);
+
+        if (!analysisApproved) {
+            throw new Error(
+                "AI Analysis Review must be answered, approved and completed before core testcase generation."
+            );
+        }
+
+        knowledge = this.requirementKnowledgeMapper.map({
+            approvedArtifact: analysisArtifact,
+            clarificationQuestions: analysisArtifact.questions,
+            clarificationAnswers: analysisArtifact.questions
+        });
+
+        if (!knowledge.isApproved()) {
+            throw new Error(
+                "Approved RequirementKnowledge is required before core testcase generation."
+            );
+        }
+
+        const confirmedRequirement = analysisArtifact.requirement;
+        if (!confirmedRequirement || typeof confirmedRequirement !== "object") {
+            throw new Error(
+                "Approved AI Analysis Review does not contain its reviewed requirement."
+            );
+        }
+
+        this.workflowCoordinator.saveArtifact({
+            ...analysisArtifact,
+            knowledge: knowledge.toJSON()
+        });
+
+        console.log("\n[4/6] Generating Core Test Cases...");
+
+        const recommendedScenarios = this.scenarioRecommendationEngine
+            .generate(knowledge, confirmedRequirement)
+            .filter(scenario => this.isCoreProductionScenario(scenario, knowledge))
+            .map(scenario => ({ ...scenario }));
+        const enrichedScenarios = this.scenarioEnrichmentEngine.enrich({
+            scenarios: recommendedScenarios,
+            requirement: confirmedRequirement,
+            knowledge
+        });
+        const scenarios = this.intelligenceScenarioGenerator.generate(
+            enrichedScenarios,
+            confirmedRequirement
+        );
+
+        const testCaseReview = workflowContext.getStage("testCaseReview");
+        const testCaseReviewSessionId = testCaseReview.sessionId || null;
+        const testCaseArtifactId = testCaseReview.artifactId || null;
+        const existingTestCaseArtifact = testCaseArtifactId
+            ? this.workflowCoordinator.findArtifact(testCaseArtifactId)
+            : null;
+        let testCases = [];
+
+        if (existingTestCaseArtifact) {
+            testCases = Array.isArray(existingTestCaseArtifact.testCases)
+                ? existingTestCaseArtifact.testCases.map(item => ({ ...item }))
+                : [];
+        } else {
+            const generatedTestCases = this.testCaseGenerator.generate(scenarios);
+            testCases = this.semanticTestCaseOverlapResolver.resolve(generatedTestCases, {
+                approvedFunctions: knowledge.functions
+            });
+        }
+        const coverageSummary = this.coreTestCaseCoverageValidator.validate(knowledge, testCases);
+
+        console.log(`✓ ${scenarios.length} core scenarios generated`);
+        console.log(`✓ ${testCases.length} core testcases generated`);
+
+        if (!testCaseReviewSessionId || !testCaseArtifactId) {
+            const timestamp = this.fileNameGenerator.getTimestamp();
+            const newSessionId = `SESSION-TESTCASE-${timestamp}`;
+            const newArtifactId = `TESTCASE-${timestamp}`;
+            const testCaseReviewArtifact = {
+                artifactId: newArtifactId,
+                artifactType: "TEST_CASE_REVIEW",
+                testCases,
+                source: "CORE_RULE_ENGINE",
+                summary: this.buildTestCaseReviewSummary(testCases),
+                qualitySummary: {
+                    overlapResolution: this.semanticTestCaseOverlapResolver.lastSummary,
+                    coverage: coverageSummary,
+                    finalCount: testCases.length
+                },
+                references: {
+                    aiAnalysisReviewSessionId: clarificationReviewSessionId,
+                    aiAnalysisArtifactId: clarificationArtifactId
+                },
+                approvalStatus: "pending"
+            };
+            const reviewResult = this.workflowCoordinator.startTestCaseReview({
+                sessionId: newSessionId,
+                artifactId: newArtifactId,
+                testCase: testCaseReviewArtifact
+            });
+            workflowContext.setStage("testCaseReview", {
+                sessionId: newSessionId,
+                artifactId: newArtifactId
+            });
+
+            return {
+                status: PipelineStatuses.AWAITING_TEST_CASE_REVIEW,
+                reviewStage: "TEST_CASE_REVIEW",
+                currentStage: "testCaseReview",
+                testCaseReview: {
+                    sessionId: newSessionId,
+                    artifactId: newArtifactId,
+                    status: reviewResult.status
+                },
+                requirement: confirmedRequirement,
+                aiResult,
+                aiAnalysis: aiResult,
+                knowledge,
+                recommendedScenarios,
+                scenarios,
+                testCases,
+                workflowContext: workflowContext.toJSON(),
+                outputs: {}
+            };
+        }
+
+        if (
+            !this.workflowCoordinator.isApproved(testCaseArtifactId) ||
+            !this.workflowCoordinator.isCompleted(testCaseReviewSessionId)
+        ) {
+            throw new Error("Tester Review must be approved and completed before export.");
+        }
+
+        const approvedTestCaseArtifact = this.workflowCoordinator.findArtifact(testCaseArtifactId);
+        testCases = this.approvedTestCaseMapper.map(approvedTestCaseArtifact);
+
+        if (Object.keys(approvedTestCaseArtifact.outputs ?? {}).length > 0) {
+            return {
+                status: PipelineStatuses.COMPLETED,
+                reviewStage: null,
+                requirement: confirmedRequirement,
+                aiResult,
+                aiAnalysis: aiResult,
+                knowledge,
+                recommendedScenarios,
+                scenarios,
+                testCases,
+                workflowContext: workflowContext.toJSON(),
+                outputs: { ...approvedTestCaseArtifact.outputs }
+            };
+        }
+
+        console.log("\n[6/6] Exporting approved testcases...");
+        const outputs = this.testCaseOutputService.export({
+            requirement: confirmedRequirement,
+            testCases,
+            outputRoot: options.outputRoot ?? options.outputDirectory ?? "./outputs/production",
+            outputFileName: "approved-testcases",
+            formats: ["json", "excel"]
+        });
+        this.workflowCoordinator.saveArtifact({
+            ...approvedTestCaseArtifact,
+            outputs: { ...outputs }
+        });
+
+        return {
+            status: PipelineStatuses.COMPLETED,
+            reviewStage: null,
+            requirement: confirmedRequirement,
+            aiResult,
+            aiAnalysis: aiResult,
+            knowledge,
+            recommendedScenarios,
+            scenarios,
+            testCases,
+            workflowContext: workflowContext.toJSON(),
+            outputs
+        };
+    }
+
+    isCoreProductionScenario(scenario, knowledge) {
+        const type = String(scenario?.type ?? "")
+            .trim()
+            .toUpperCase();
+        const groupType = String(scenario?.groupType ?? "")
+            .trim()
+            .toUpperCase();
+        const sourceTypes = (Array.isArray(scenario?.sourceItems) ? scenario.sourceItems : [])
+            .map(item =>
+                String(item?.source ?? "")
+                    .trim()
+                    .toUpperCase()
+            )
+            .filter(Boolean);
+
+        if (type === "POSITIVE") return true;
+        if (
+            type === "DATA_INTEGRITY" &&
+            (groupType === "BUSINESS_RULE" || sourceTypes.includes("BUSINESS_RULE"))
+        ) {
+            return true;
+        }
+        if (
+            type === "NEGATIVE" &&
+            [groupType, ...sourceTypes].some(value =>
+                ["REQUIRED_VALIDATION", "FORMAT_OR_VALUE_VALIDATION"].includes(value)
+            )
+        ) {
+            return true;
+        }
+        if (type === "PERMISSION") {
+            return Array.isArray(knowledge?.permissions) && knowledge.permissions.length > 0;
+        }
+        if (type === "BOUNDARY") {
+            return Array.isArray(scenario?.sourceItems) && scenario.sourceItems.length > 0;
+        }
+        return false;
     }
 
     buildWorkflowContext(options = {}) {
@@ -1300,6 +1593,10 @@ class QACopilot {
                 reason: item.reason,
 
                 options: [...item.options],
+
+                requirementReferences: Array.isArray(item.requirementReferences)
+                    ? [...item.requirementReferences]
+                    : [],
 
                 answer: "",
 
@@ -1438,7 +1735,7 @@ class QACopilot {
             artifactId
         });
 
-        if (!status.isFullyAnswered) {
+        if (!status.isFullyAnswered && status.total > 0) {
             throw new Error("All clarification questions must be answered before approval.");
         }
 
@@ -1831,7 +2128,16 @@ class QACopilot {
 
                 usedIds.add(normalizedQuestion.id.toUpperCase());
                 comparisonKeys.add(comparisonKey);
-                questions.push(normalizedQuestion.toJSON());
+                questions.push({
+                    ...normalizedQuestion.toJSON(),
+                    requirementReferences: Array.isArray(sourceItem?.requirementReferences)
+                        ? sourceItem.requirementReferences
+                              .filter(
+                                  reference => typeof reference === "string" && reference.trim()
+                              )
+                              .map(reference => reference.trim())
+                        : []
+                });
             }
         }
 

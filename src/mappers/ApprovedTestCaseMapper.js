@@ -1,3 +1,5 @@
+import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
+
 export default class ApprovedTestCaseMapper {
     map(testCaseArtifact) {
         if (testCaseArtifact?.artifactType !== "TEST_CASE_REVIEW") {
@@ -15,6 +17,8 @@ export default class ApprovedTestCaseMapper {
         return testCaseArtifact.testCases.map(testCase => {
             const clone = this.clone(testCase);
             const id = clone?.testcaseId ?? clone?.testCaseId ?? clone?.id ?? "";
+            clone.testData = normalizeTestData(clone.testData, clone);
+            clone.executionReadiness = resolveExecutionReadiness(clone.testData);
 
             return { ...clone, id, testcaseId: id };
         });

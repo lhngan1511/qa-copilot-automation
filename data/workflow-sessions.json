@@ -701,5 +701,160 @@
     "approvalData": null,
     "approvedAt": "2026-07-28T06:26:24.610Z",
     "completedAt": "2026-07-28T06:26:24.643Z"
+  },
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260728_160937",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260728_160937",
+    "status": "started",
+    "startedAt": "2026-07-28T09:09:37.503Z",
+    "updatedAt": "2026-07-28T09:09:37.504Z",
+    "requirementFile": "./requirements/thiet-bi.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_160937",
+        "artifactId": "CLARIFICATION-20260728_160937"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260728_160937",
+    "outputs": {}
+  },
+  {
+    "sessionId": "SESSION-REQUIREMENT-20260728_161922",
+    "workflowName": "requirement-review",
+    "artifactId": "REQUIREMENT-20260728_161922",
+    "status": "started",
+    "startedAt": "2026-07-28T09:19:22.571Z",
+    "updatedAt": "2026-07-28T09:19:22.571Z",
+    "requirementFile": "./requirements/thiet-bi.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260728_160937",
+        "artifactId": "CLARIFICATION-20260728_160937"
+      },
+      "requirementReview": {
+        "sessionId": "SESSION-REQUIREMENT-20260728_161922",
+        "artifactId": "REQUIREMENT-20260728_161922"
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_REQUIREMENT_REVIEW",
+    "currentStage": "requirementReview",
+    "currentArtifactId": "REQUIREMENT-20260728_161922",
+    "outputs": {}
+  },
+  {
+    "sessionId": "SESSION-CLARIFICATION-20260729_103637",
+    "workflowName": "requirement-review",
+    "artifactId": "CLARIFICATION-20260729_103637",
+    "status": "completed",
+    "startedAt": "2026-07-29T03:36:37.904Z",
+    "updatedAt": "2026-07-29T03:37:28.107Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785296191882-8cc13055.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260729_103637",
+        "artifactId": "CLARIFICATION-20260729_103637"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "",
+        "artifactId": ""
+      }
+    },
+    "pipelineStatus": "AWAITING_AI_CLARIFICATION",
+    "currentStage": "clarificationReview",
+    "currentArtifactId": "CLARIFICATION-20260729_103637",
+    "outputs": {},
+    "reviewData": "",
+    "reviewedAt": "2026-07-29T03:37:28.055Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-29T03:37:28.070Z",
+    "completedAt": "2026-07-29T03:37:28.107Z"
+  },
+  {
+    "sessionId": "SESSION-TESTCASE-20260729_103728",
+    "workflowName": "testcase-review",
+    "artifactId": "TESTCASE-20260729_103728",
+    "status": "completed",
+    "startedAt": "2026-07-29T03:37:28.306Z",
+    "updatedAt": "2026-07-29T03:38:33.481Z",
+    "requirementFile": "G:\\qa-copilot-v2\\data\\uploads\\thiet-bi-1785296191882-8cc13055.md",
+    "workflowContext": {
+      "clarificationReview": {
+        "sessionId": "SESSION-CLARIFICATION-20260729_103637",
+        "artifactId": "CLARIFICATION-20260729_103637"
+      },
+      "requirementReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "moduleReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "scenarioReview": {
+        "sessionId": "",
+        "artifactId": ""
+      },
+      "testCaseReview": {
+        "sessionId": "SESSION-TESTCASE-20260729_103728",
+        "artifactId": "TESTCASE-20260729_103728"
+      }
+    },
+    "pipelineStatus": "COMPLETED",
+    "currentStage": null,
+    "currentArtifactId": "TESTCASE-20260729_103728",
+    "outputs": {
+      "json": "outputs\\production\\json\\approved-testcases.json",
+      "excel": "outputs\\production\\excel\\approved-testcases.xlsx"
+    },
+    "reviewData": "",
+    "reviewedAt": "2026-07-29T03:38:33.433Z",
+    "approvedBy": "user",
+    "approvalData": null,
+    "approvedAt": "2026-07-29T03:38:33.436Z",
+    "completedAt": "2026-07-29T03:38:33.481Z"
   }
 ]

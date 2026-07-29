@@ -20,8 +20,9 @@ const testData = builder.build({
     ]
 });
 
-assert.equal(testData.inputs["Tên khách hàng"], "Tên khách hàng kiểm thử");
-assert.equal(testData.inputs["Tên sản phẩm"], "Tên sản phẩm kiểm thử");
+assert.match(testData.requirement, /Tên khách hàng/);
+assert.match(testData.requirement, /Tên sản phẩm/);
+assert.equal(testData.value, "");
 assert.equal(JSON.stringify(testData).includes("Thiết bị"), false);
 
 const missingArgument = spawnSync(process.execPath, ["src/index.js"], {

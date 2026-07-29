@@ -20,7 +20,11 @@ class ScenarioRecommendationEngine {
 
         const scenarios = [];
 
-        if (knowledge.module && Array.isArray(knowledge.functions) && knowledge.functions.length > 0) {
+        if (
+            knowledge.module &&
+            Array.isArray(knowledge.functions) &&
+            knowledge.functions.length > 0
+        ) {
             this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
             this.generateOwnedSuggestions(knowledge, scenarios, requirement);
             return this.removeDuplicateScenarios(scenarios);
@@ -77,6 +81,7 @@ class ScenarioRecommendationEngine {
                 return;
             }
 
+            const reviewedFunction = this.findReviewedFunction(requirement, functionKnowledge);
             const context = {
                 module: moduleName,
                 moduleId,
@@ -84,9 +89,27 @@ class ScenarioRecommendationEngine {
                 functionId,
                 functionName,
                 preconditions: this.getArray(functionKnowledge.preconditions),
+                inputDefinitions: this.getArray(reviewedFunction?.inputs),
                 requirementReferences: this.getArray(functionKnowledge.requirementReferences),
                 source: knowledge.source || "Approved Module Artifact"
             };
+            const permissionRules = this.uniqueRules([
+                ...this.getArray(functionKnowledge.permissions),
+                ...this.filterRules(functionKnowledge.businessRules, value =>
+                    this.hasPermissionEvidence(value)
+                )
+            ]);
+            const businessRules = this.filterRules(
+                functionKnowledge.businessRules,
+                value => !this.hasPermissionEvidence(value)
+            );
+            const requiredValidations = this.filterRules(functionKnowledge.validationRules, value =>
+                /không được để trống|bỏ trống|required/i.test(value)
+            );
+            const valueValidations = this.filterRules(
+                functionKnowledge.validationRules,
+                value => !/không được để trống|bỏ trống|required/i.test(value)
+            );
             const candidates = [
                 {
                     ...context,
@@ -95,52 +118,68 @@ class ScenarioRecommendationEngine {
                     priority: "MEDIUM",
                     reason: functionKnowledge.description || "Approved business function",
                     description: functionKnowledge.description || "",
-                    expectedResults: [
-                        functionKnowledge.description || `${functionName} hoàn thành đúng yêu cầu`
-                    ],
+                    expectedResults: this.resolvePositiveExpectedResults(
+                        reviewedFunction,
+                        functionKnowledge,
+                        functionName
+                    ),
                     coveredRules: context.requirementReferences
                 },
                 this.buildGroupedCandidate(
-                    functionKnowledge.businessRules,
+                    businessRules,
                     context,
                     "DATA_INTEGRITY",
                     "HIGH",
-                    `Kiểm tra quy tắc nghiệp vụ của ${functionName}`
+                    `Kiểm tra quy tắc nghiệp vụ của ${functionName}`,
+                    "BUSINESS_RULE"
                 ),
                 this.buildGroupedCandidate(
-                    functionKnowledge.validationRules,
+                    requiredValidations,
                     context,
                     "NEGATIVE",
                     "HIGH",
-                    `Kiểm tra dữ liệu không hợp lệ của ${functionName}`
+                    `Kiểm tra các trường bắt buộc của ${functionName}`,
+                    "REQUIRED_VALIDATION"
                 ),
                 this.buildGroupedCandidate(
-                    functionKnowledge.permissions,
+                    valueValidations,
+                    context,
+                    "NEGATIVE",
+                    "HIGH",
+                    `Kiểm tra định dạng hoặc giá trị không hợp lệ của ${functionName}`,
+                    "FORMAT_OR_VALUE_VALIDATION"
+                ),
+                this.buildGroupedCandidate(
+                    permissionRules,
                     context,
                     "PERMISSION",
                     "HIGH",
-                    `Kiểm tra quyền thực hiện ${functionName}`
+                    `Kiểm tra quyền thực hiện ${functionName}`,
+                    "PERMISSION"
                 ),
                 this.buildGroupedCandidate(
                     this.filterConcreteBoundaries(functionKnowledge.boundaries),
                     context,
                     "BOUNDARY",
                     "MEDIUM",
-                    `Kiểm tra điều kiện biên của ${functionName}`
+                    `Kiểm tra điều kiện biên của ${functionName}`,
+                    "BOUNDARY"
                 ),
                 this.buildGroupedCandidate(
                     functionKnowledge.exceptions,
                     context,
                     "EXCEPTION",
                     "HIGH",
-                    `Kiểm tra ngoại lệ của ${functionName}`
+                    `Kiểm tra ngoại lệ của ${functionName}`,
+                    "EXCEPTION"
                 ),
                 this.buildGroupedCandidate(
                     this.filterTestableRisks(functionKnowledge.risks),
                     context,
                     "RISK",
                     "HIGH",
-                    `Kiểm tra rủi ro của ${functionName}`
+                    `Kiểm tra rủi ro của ${functionName}`,
+                    "RISK"
                 )
             ].filter(Boolean);
 
@@ -156,9 +195,11 @@ class ScenarioRecommendationEngine {
         });
     }
 
-    buildGroupedCandidate(values, context, type, priority, title) {
+    buildGroupedCandidate(values, context, type, priority, title, groupType = type) {
         const contents = Array.isArray(values)
-            ? values.filter(value => typeof value === "string" && value.trim()).map(value => value.trim())
+            ? values
+                  .filter(value => typeof value === "string" && value.trim())
+                  .map(value => value.trim())
             : [];
         if (contents.length === 0) return null;
         return {
@@ -170,14 +211,76 @@ class ScenarioRecommendationEngine {
             description: contents.join("; "),
             expectedResults: contents,
             coveredRules: contents,
+            sourceItems: contents.map(content => ({
+                content,
+                source: groupType
+            })),
+            groupType,
             riskReason: type === "RISK" ? contents.join("; ") : ""
         };
     }
 
+    filterRules(values, predicate) {
+        return (Array.isArray(values) ? values : [])
+            .filter(value => typeof value === "string" && value.trim())
+            .filter(value => predicate(value.trim()));
+    }
+
     filterConcreteBoundaries(values) {
-        return (Array.isArray(values) ? values : []).filter(value =>
-            /[0-9]|tối đa|tối thiểu|giới hạn|độ dài|lớn|nhỏ|vượt|phân trang/i.test(value)
+        return (Array.isArray(values) ? values : []).filter(value => {
+            if (typeof value !== "string") return false;
+            const hasNumericLimit =
+                /\d/.test(value) &&
+                /tối đa|tối thiểu|min|max|giới hạn|độ dài|ký tự|số lượng|không quá|ít nhất|nhiều nhất/i.test(
+                    value
+                );
+            const hasExplicitRelationship =
+                /(?:<=|>=|<|>)|(?:nhỏ hơn|lớn hơn|trước|sau).*(?:hoặc bằng|bằng)|(?:ngày bắt đầu|startDate).*(?:ngày kết thúc|endDate)/i.test(
+                    value
+                );
+            return hasNumericLimit || hasExplicitRelationship;
+        });
+    }
+
+    hasPermissionEvidence(value) {
+        return /(?:quyền|permission|role|vai trò|nhóm người dùng|được phép|không được phép|allow|deny|unauthorized)/i.test(
+            String(value ?? "")
         );
+    }
+
+    uniqueRules(values) {
+        const seen = new Set();
+        return values.filter(value => {
+            if (typeof value !== "string" || !value.trim()) return false;
+            const key = this.normalizeForComparison(value).replace(/^(?:br|vr|pr)\s*\d+\s*/i, "");
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    findReviewedFunction(requirement, functionKnowledge) {
+        return this.getArray(requirement?.features).find(feature => {
+            if (!feature || typeof feature !== "object") return false;
+            return (
+                this.normalizeForComparison(feature.id) ===
+                    this.normalizeForComparison(functionKnowledge.id) ||
+                this.normalizeForComparison(feature.name ?? feature.feature ?? feature.title) ===
+                    this.normalizeForComparison(functionKnowledge.name)
+            );
+        });
+    }
+
+    resolvePositiveExpectedResults(reviewedFunction, functionKnowledge, functionName) {
+        const reviewedResults = this.getArray(reviewedFunction?.expectedResults).filter(
+            value => typeof value === "string" && value.trim()
+        );
+        if (reviewedResults.length > 0) return reviewedResults;
+
+        const description = this.getText(functionKnowledge.description);
+        if (description) return [description];
+
+        return [`Kết quả của ${functionName} được hiển thị theo requirement đã duyệt`];
     }
 
     filterTestableRisks(values) {
@@ -281,9 +384,7 @@ class ScenarioRecommendationEngine {
                 functionId: this.getText(item?.functionId),
 
                 functionName:
-                    this.getText(item?.functionName) ||
-                    this.getText(item?.function) ||
-                    feature,
+                    this.getText(item?.functionName) || this.getText(item?.function) || feature,
 
                 testScenario: this.getText(item?.testScenario) || title,
 
@@ -312,6 +413,8 @@ class ScenarioRecommendationEngine {
                           ],
 
                 coveredRules: this.getArray(item?.coveredRules),
+
+                sourceItems: this.getArray(item?.sourceItems),
 
                 riskReason: this.getText(item?.riskReason),
 

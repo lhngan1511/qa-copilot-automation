@@ -1,15 +1,13 @@
 const STORAGE_KEY = "qa-copilot-v2.active-session";
 const stages = [
-    ["requirement", "Requirement"],
-    ["clarificationReview", "Clarification"],
-    ["requirementReview", "Requirement Review"],
-    ["moduleReview", "Module Review"],
-    ["scenarioReview", "Scenario Review"],
-    ["testCaseReview", "TestCase Review"],
+    ["requirement", "Requirement Upload"],
+    ["clarificationReview", "AI Analysis Review"],
+    ["generation", "Generate Core Test Cases"],
+    ["testCaseReview", "Tester Review"],
     ["completed", "Export"]
 ];
 const state = {
-    requirementFile: "",
+    requirementId: "",
     fileName: "",
     sessionId: "",
     artifactId: "",
@@ -115,7 +113,7 @@ function persist() {
         STORAGE_KEY,
         JSON.stringify({
             sessionId: state.sessionId,
-            requirementFile: state.requirementFile,
+            requirementId: state.requirementId,
             fileName: state.fileName
         })
     );
@@ -146,13 +144,13 @@ async function uploadAndStart() {
             },
             body: file
         });
-        state.requirementFile = upload.requirementFile;
+        state.requirementId = upload.requirementId;
         state.fileName = upload.originalName;
         setBusy(true, "AI đang phân tích requirement...");
         const result = await api("/api/workflows", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ requirementFile: upload.requirementFile })
+            body: JSON.stringify({ requirementId: upload.requirementId })
         });
         applyPipeline(result);
         await loadCurrentReview();
@@ -193,17 +191,11 @@ function renderReview() {
     elements.reviewBadge.textContent = state.artifact?.approvalStatus || "pending";
     const renderers = {
         clarificationReview: renderClarification,
-        requirementReview: renderRequirement,
-        moduleReview: renderModules,
-        scenarioReview: renderScenarios,
         testCaseReview: renderTestCases
     };
     const titles = {
-        clarificationReview: "Làm rõ requirement",
-        requirementReview: "Review requirement",
-        moduleReview: "Review module và chức năng",
-        scenarioReview: "Review test scenario",
-        testCaseReview: "Review test case"
+        clarificationReview: "AI Analysis Review",
+        testCaseReview: "Tester Review"
     };
     elements.stageLabel.textContent = state.currentStage;
     elements.reviewTitle.textContent = titles[state.currentStage] || "Review";
@@ -213,9 +205,35 @@ function renderReview() {
 
 function renderClarification() {
     const questions = state.artifact?.questions || [];
-    elements.reviewContent.innerHTML = questions
-        .map(
-            question => `
+    const requirement = state.artifact?.requirement || {};
+    const functions = state.artifact?.detectedFunctions || [];
+    const businessRules = state.artifact?.businessRules || [];
+    const validation = state.artifact?.validation || [];
+    elements.reviewContent.innerHTML = `
+        <section class="analysis-summary">
+            <h3>AI hiểu requirement</h3>
+            <p>${escapeHtml(state.artifact?.featureUnderstanding || requirement.description || "")}</p>
+            <h3>Chức năng phát hiện</h3>
+            <ul>${functions.map(item => `<li>${escapeHtml(item.name)}</li>`).join("")}</ul>
+            <h3>Business rules</h3>
+            <ul>${businessRules
+                .map(
+                    item =>
+                        `<li>${escapeHtml(item.code ? `${item.code}: ${item.content}` : item.content)}</li>`
+                )
+                .join("")}</ul>
+            <h3>Validation</h3>
+            <ul>${validation
+                .map(
+                    item =>
+                        `<li>${escapeHtml(`${item.feature} — ${item.inputName}: ${item.description || (item.required ? "Bắt buộc" : "")}`)}</li>`
+                )
+                .join("")}</ul>
+            <h3>Điểm cần làm rõ và câu trả lời</h3>
+        </section>
+        ${questions
+            .map(
+                question => `
             <article class="question-card" data-question-id="${escapeHtml(question.questionId)}">
                 <div class="item-heading">
                     <span class="badge">${escapeHtml(question.category || "General")}</span>
@@ -236,8 +254,8 @@ function renderClarification() {
                         .join("")}
                 </div>
             </article>`
-        )
-        .join("");
+            )
+            .join("")}`;
 }
 
 function renderRequirement() {
@@ -557,16 +575,25 @@ async function restoreSession() {
     if (!saved?.sessionId) return;
     if (!confirm(`Tiếp tục phiên "${saved.fileName || saved.sessionId}" chưa hoàn tất?`)) return;
     state.sessionId = saved.sessionId;
-    state.requirementFile = saved.requirementFile;
+    state.requirementId = saved.requirementId;
     state.fileName = saved.fileName;
     try {
         const workflow = await api(`/api/workflows/${encodeURIComponent(saved.sessionId)}`);
-        state.pipelineStatus = workflow.pipelineStatus;
-        state.workflowContext = workflow.workflowContext;
+        state.pipelineStatus =
+            workflow.workflow?.status === "COMPLETED"
+                ? "COMPLETED"
+                : workflow.deprecated?.pipelineStatus;
+        state.workflowContext = workflow.deprecated?.workflowContext;
         const active = Object.entries(state.workflowContext || {}).find(
             ([, value]) => value.sessionId === saved.sessionId
         );
-        state.currentStage = active?.[0] || workflow.session.currentStage;
+        state.currentStage =
+            active?.[0] ||
+            {
+                AI_ANALYSIS_REVIEW: "clarificationReview",
+                TEST_CASE_REVIEW: "testCaseReview"
+            }[workflow.workflow?.step] ||
+            "";
         if (state.pipelineStatus === "COMPLETED") await renderCompleted();
         else await loadCurrentReview();
     } catch (error) {

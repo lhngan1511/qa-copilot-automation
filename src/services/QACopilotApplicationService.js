@@ -1,5 +1,6 @@
 import QACopilot from "../QACopilot.js";
 import WorkflowExecutionContext from "../models/WorkflowExecutionContext.js";
+import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 import PipelineStatuses from "../constants/PipelineStatuses.js";
 import ApplicationActions from "../constants/ApplicationActions.js";
 
@@ -12,7 +13,8 @@ export default class QACopilotApplicationService {
         this.requireRequirementFile(requirementFile);
 
         const result = await this.qaCopilot.run(requirementFile, {
-            workflowContext: new WorkflowExecutionContext()
+            workflowContext: new WorkflowExecutionContext(),
+            productionWorkflow: true
         });
 
         const applicationResult = this.buildApplicationResult(result);
@@ -26,7 +28,8 @@ export default class QACopilotApplicationService {
         const normalizedContext = this.normalizeWorkflowContext(workflowContext);
 
         const result = await this.qaCopilot.run(requirementFile, {
-            workflowContext: normalizedContext
+            workflowContext: normalizedContext,
+            productionWorkflow: true
         });
 
         const applicationResult = this.buildApplicationResult(result);
@@ -147,12 +150,31 @@ export default class QACopilotApplicationService {
     }
 
     getWorkflow({ sessionId } = {}) {
-        const session = this.requireSession(sessionId);
+        if (typeof sessionId !== "string" || !sessionId.trim()) {
+            throw this.applicationError("WORKFLOW_ID_REQUIRED", "workflowId is required.", 400);
+        }
+        const session = this.qaCopilot.workflowCoordinator.findSession(sessionId);
+        if (!session) {
+            throw this.applicationError("WORKFLOW_NOT_FOUND", "Không tìm thấy workflow.", 404);
+        }
+        const artifacts =
+            this.qaCopilot.workflowCoordinator.runtime.findArtifactsBySessionId(sessionId);
+
         return {
-            session,
+            ...session,
             pipelineStatus: session.pipelineStatus ?? null,
-            workflowContext: session.workflowContext ?? null
+            workflowContext: session.workflowContext ?? null,
+            artifacts
         };
+    }
+
+    listWorkflows() {
+        return this.qaCopilot.workflowCoordinator.runtime.findSessions().map(session => ({
+            session,
+            artifacts: this.qaCopilot.workflowCoordinator.runtime.findArtifactsBySessionId(
+                session.sessionId
+            )
+        }));
     }
 
     getCurrentReview({ sessionId } = {}) {
@@ -173,6 +195,52 @@ export default class QACopilotApplicationService {
             approvalStatus: artifact?.approvalStatus ?? null,
             artifact
         };
+    }
+
+    updateAIAnalysisReview({ sessionId, artifactId, analysis } = {}) {
+        this.requireSession(sessionId);
+        const current = this.requireArtifact(artifactId);
+        this.requireArtifactOwnership(current, sessionId);
+
+        if (current.artifactType !== "AI_ANALYSIS_REVIEW") {
+            throw this.applicationError(
+                "INVALID_REVIEW_TYPE",
+                "Artifact is not an AI Analysis Review.",
+                409
+            );
+        }
+        if (current.approvalStatus !== "pending") {
+            throw this.applicationError(
+                "ARTIFACT_NOT_PENDING",
+                "Only pending artifacts can be edited.",
+                409
+            );
+        }
+        if (!analysis || typeof analysis !== "object" || Array.isArray(analysis)) {
+            throw this.applicationError("INVALID_AI_ANALYSIS", "analysis must be an object.", 422);
+        }
+
+        const existing =
+            current.aiAnalysis && typeof current.aiAnalysis === "object" ? current.aiAnalysis : {};
+        const updatedAnalysis = { ...existing };
+
+        if (Object.hasOwn(analysis, "purpose")) {
+            if (typeof analysis.purpose !== "string" || !analysis.purpose.trim()) {
+                throw this.applicationError(
+                    "INVALID_AI_ANALYSIS_PURPOSE",
+                    "analysis purpose is required.",
+                    422
+                );
+            }
+            updatedAnalysis.purpose = analysis.purpose.trim();
+        }
+
+        return this.qaCopilot.workflowCoordinator.saveArtifact({
+            ...current,
+            aiAnalysis: updatedAnalysis,
+            purpose: updatedAnalysis.purpose ?? current.purpose ?? "",
+            updatedAt: new Date().toISOString()
+        });
     }
 
     getArtifacts({ sessionId } = {}) {
@@ -215,7 +283,95 @@ export default class QACopilotApplicationService {
             updatedAt: new Date().toISOString()
         };
 
+        if (current.artifactType === "TEST_CASE_REVIEW" && Array.isArray(updated.testCases)) {
+            updated.testCases = updated.testCases.map(testCase => {
+                const clone =
+                    testCase && typeof testCase === "object" && !Array.isArray(testCase)
+                        ? { ...testCase }
+                        : {};
+                clone.testData = normalizeTestData(clone.testData, clone);
+                clone.executionReadiness = resolveExecutionReadiness(clone.testData);
+                return clone;
+            });
+        }
+
         return this.qaCopilot.workflowCoordinator.saveArtifact(updated);
+    }
+
+    updateTestCaseReview({ sessionId, artifactId, testCases } = {}) {
+        this.requireSession(sessionId);
+        const current = this.requireArtifact(artifactId);
+        this.requireArtifactOwnership(current, sessionId);
+
+        if (current.artifactType !== "TEST_CASE_REVIEW") {
+            throw this.applicationError(
+                "INVALID_REVIEW_TYPE",
+                "Artifact is not a TestCase Review.",
+                409
+            );
+        }
+        if (current.approvalStatus !== "pending") {
+            throw this.applicationError(
+                "ARTIFACT_NOT_PENDING",
+                "Only pending artifacts can be edited.",
+                409
+            );
+        }
+        if (!Array.isArray(testCases)) {
+            throw this.applicationError(
+                "INVALID_TEST_CASE_BATCH",
+                "testCases must be an array.",
+                422
+            );
+        }
+
+        const existingById = new Map(
+            (Array.isArray(current.testCases) ? current.testCases : []).map(testCase => [
+                this.testCaseId(testCase),
+                testCase
+            ])
+        );
+        const seen = new Set();
+        const updatedTestCases = testCases.map(testCase => {
+            if (!testCase || typeof testCase !== "object" || Array.isArray(testCase)) {
+                throw this.applicationError(
+                    "INVALID_TEST_CASE",
+                    "Each testcase must be an object.",
+                    422
+                );
+            }
+
+            const id = this.testCaseId(testCase);
+            if (!id || !existingById.has(id)) {
+                throw this.applicationError(
+                    "UNSUPPORTED_TEST_CASE_ID",
+                    "Testcase must reference an existing testcase ID.",
+                    422
+                );
+            }
+            if (seen.has(id)) {
+                throw this.applicationError(
+                    "DUPLICATE_TEST_CASE_ID",
+                    `Duplicate testcase ID: ${id}`,
+                    422
+                );
+            }
+            seen.add(id);
+
+            const merged = {
+                ...this.cloneValue(existingById.get(id)),
+                ...this.cloneValue(testCase)
+            };
+            merged.testData = normalizeTestData(merged.testData, merged);
+            merged.executionReadiness = resolveExecutionReadiness(merged.testData);
+            return merged;
+        });
+
+        return this.qaCopilot.workflowCoordinator.saveArtifact({
+            ...current,
+            testCases: updatedTestCases,
+            updatedAt: new Date().toISOString()
+        });
     }
 
     approveReview({ sessionId, artifactId, approvedBy = "user" } = {}) {
@@ -491,6 +647,7 @@ export default class QACopilotApplicationService {
 
     stageFromArtifactType(artifactType) {
         const stages = {
+            AI_ANALYSIS_REVIEW: "clarificationReview",
             AI_CLARIFICATION_REVIEW: "clarificationReview",
             REQUIREMENT_REVIEW: "requirementReview",
             MODULE_REVIEW: "moduleReview",
@@ -506,6 +663,14 @@ export default class QACopilotApplicationService {
             );
         }
         return stage;
+    }
+
+    testCaseId(testCase) {
+        return String(testCase?.testcaseId ?? testCase?.testCaseId ?? testCase?.id ?? "").trim();
+    }
+
+    cloneValue(value) {
+        return value === undefined ? undefined : structuredClone(value);
     }
 
     applicationError(code, message, statusCode) {

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "",
+    "moduleId": "",
+    "functionId": "",
+    "function": "",
+    "module": "",
+    "feature": "Thiết bị",
+    "title": "Thêm thiết bị thành công",
+    "testScenario": "",
+    "type": "POSITIVE",
+    "testObjective": "",
+    "objective": "",
+    "requirementReference": "",
+    "requirementReferences": [],
+    "coveredRules": [],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": false,
+    "preconditions": [],
+    "testData": {
+      "requirement": "",
+      "value": ""
+    },
+    "executionReadiness": "READY",
+    "assertions": [],
+    "expectedResult": "",
+    "expectedResults": [
+      "Thêm thiết bị thành công"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "",
+      "scenarioId": ""
+    },
+    "source": "QA-Copilot",
+    "reason": "",
+    "riskCategory": "",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình",
+        "expected": ""
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu",
+        "expected": ""
+      },
+      {
+        "order": 3,
+        "action": "Nhấn Lưu",
+        "expected": ""
+      }
+    ],
+    "automationHints": {}
+  }
+]

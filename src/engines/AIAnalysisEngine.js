@@ -7,8 +7,7 @@ import RequirementAnalysisPromptBuilder from "../prompts/RequirementAnalysisProm
 class AIAnalysisEngine {
     constructor(aiProvider = null, options = {}) {
         this.aiProvider = aiProvider || AIProviderFactory.create();
-        this.promptBuilder =
-            options.promptBuilder || new RequirementAnalysisPromptBuilder();
+        this.promptBuilder = options.promptBuilder || new RequirementAnalysisPromptBuilder();
     }
 
     async analyze(requirement) {
@@ -27,7 +26,7 @@ class AIAnalysisEngine {
 
             this.assignAnalysisMetadata(result, {
                 analysisStatus: "SUCCESS",
-                analysisSource: this.getProviderName(),
+                analysisSource: "ai",
                 analysisError: ""
             });
 
@@ -51,37 +50,22 @@ class AIAnalysisEngine {
         }
     }
 
-    buildAnalysisResult(parsedResult, requirement) {
-        const result = new AIAnalysisResult();
-        result.requirementComplete = parsedResult?.requirementComplete === true;
-        result.featureUnderstanding =
-            this.getText(parsedResult?.featureUnderstanding) ||
-            this.getText(requirement?.module) ||
-            this.getText(requirement?.feature);
-
-        result.testFocus = this.normalizeTextArray(parsedResult?.testFocus);
-
-        result.riskAreas = this.normalizeTextArray(parsedResult?.riskAreas);
-
-        result.suggestedScenarios = this.normalizeSuggestedScenarios(
-            parsedResult?.suggestedScenarios,
-            requirement
-        );
-
-        result.questions = this.normalizeClarificationQuestions(parsedResult?.questions);
-
-        result.notes = this.normalizeTextArray(parsedResult?.notes);
-
-        result.confidence = this.normalizeConfidence(parsedResult?.confidence);
+    buildAnalysisResult(parsedResult) {
+        const result = new AIAnalysisResult({
+            purpose: this.getText(parsedResult?.purpose),
+            functions: this.normalizeKnowledgeFunctions(parsedResult?.functions),
+            risks: this.normalizeContextArray(parsedResult?.risks ?? parsedResult?.riskAreas),
+            clarificationQuestions: this.normalizeClarificationQuestions(
+                parsedResult?.clarificationQuestions ?? parsedResult?.questions
+            ),
+            requirementComplete: parsedResult?.requirementComplete === true,
+            confidence: this.normalizeConfidence(parsedResult?.confidence)
+        });
 
         /*
         Nếu AI trả JSON hợp lệ nhưng không có scenario,
         sử dụng fallback scenario thay vì trả mảng rỗng.
         */
-        if (result.suggestedScenarios.length === 0) {
-            result.suggestedScenarios = this.buildFallbackScenarios(requirement);
-        }
-
         return result;
     }
 
@@ -201,15 +185,20 @@ class AIAnalysisEngine {
         }
     }
 
-    isUsableAIResult(parsedResult, requirement) {
+    isUsableAIResult(parsedResult) {
         if (!parsedResult || typeof parsedResult !== "object" || Array.isArray(parsedResult)) {
             return false;
         }
 
-        return (
-            this.normalizeSuggestedScenarios(parsedResult.suggestedScenarios, requirement).length >
-            0
-        );
+        return [
+            "purpose",
+            "functions",
+            "risks",
+            "clarificationQuestions",
+            "requirementComplete",
+            "riskAreas",
+            "questions"
+        ].some(field => Object.prototype.hasOwnProperty.call(parsedResult, field));
     }
 
     assignAnalysisMetadata(result, metadata) {
@@ -327,29 +316,140 @@ class AIAnalysisEngine {
             .filter(Boolean);
     }
 
+    normalizeKnowledgeFunctions(functions) {
+        if (!Array.isArray(functions)) {
+            return [];
+        }
+
+        return functions
+            .map(item => {
+                if (!item || typeof item !== "object" || Array.isArray(item)) {
+                    return null;
+                }
+
+                const name = this.getText(item.name);
+                if (!name) {
+                    return null;
+                }
+
+                return {
+                    name,
+                    description: this.getText(item.description),
+                    businessRules: this.normalizeContextArray(item.businessRules),
+                    validationRules: this.normalizeContextArray(item.validationRules),
+                    permissions: this.normalizeContextArray(item.permissions),
+                    dependencies: this.normalizeContextArray(item.dependencies),
+                    assumptions: this.normalizeContextArray(item.assumptions),
+                    requirementReferences: this.normalizeContextArray(item.requirementReferences)
+                };
+            })
+            .filter(Boolean);
+    }
+
+    normalizeFallbackFunctions(requirement) {
+        if (!Array.isArray(requirement?.features)) {
+            return [];
+        }
+
+        return requirement.features
+            .map(feature => {
+                if (typeof feature === "string") {
+                    const name = this.getText(feature);
+                    return name
+                        ? {
+                              name,
+                              description: "",
+                              businessRules: [],
+                              validationRules: [],
+                              permissions: [],
+                              dependencies: [],
+                              assumptions: [],
+                              requirementReferences: []
+                          }
+                        : null;
+                }
+
+                if (!feature || typeof feature !== "object" || Array.isArray(feature)) {
+                    return null;
+                }
+
+                const name =
+                    this.getText(feature.name) ||
+                    this.getText(feature.feature) ||
+                    this.getText(feature.title);
+                if (!name) {
+                    return null;
+                }
+
+                const validationRules = [
+                    ...this.normalizeContextArray(feature.validationRules),
+                    ...(Array.isArray(feature.inputs)
+                        ? feature.inputs.flatMap(input => {
+                              if (!input || typeof input !== "object") return [];
+                              const inputName = this.getText(
+                                  input.name ?? input.inputName ?? input.fieldName
+                              );
+                              return this.normalizeContextArray([
+                                  input.validationRule,
+                                  input.validation,
+                                  input.description
+                              ]).map(rule =>
+                                  inputName &&
+                                  !this.normalizeText(rule)
+                                      .toLocaleLowerCase("vi")
+                                      .startsWith(
+                                          this.normalizeText(inputName).toLocaleLowerCase("vi")
+                                      )
+                                      ? `${inputName} ${rule}`
+                                      : rule
+                              );
+                          })
+                        : [])
+                ];
+                const permissions = [
+                    ...this.normalizeContextArray(feature.permissions ?? feature.permissionRules),
+                    ...(Array.isArray(feature.preconditions)
+                        ? feature.preconditions
+                              .filter(item => typeof item === "string" && /quyền/i.test(item))
+                              .map(item => this.normalizeText(item))
+                        : [])
+                ];
+                const requirementReferences = [
+                    ...this.normalizeContextArray(feature.requirementReferences),
+                    ...this.normalizeContextArray(feature.references),
+                    ...(Array.isArray(feature.businessRules) ? feature.businessRules : []).flatMap(
+                        rule =>
+                            rule && typeof rule === "object" && this.getText(rule.code)
+                                ? [this.getText(rule.code)]
+                                : []
+                    )
+                ];
+
+                return {
+                    name,
+                    description: this.getText(feature.description) || this.getText(feature.purpose),
+                    businessRules: this.normalizeContextArray(feature.businessRules),
+                    validationRules: [...new Set(validationRules)],
+                    permissions: [...new Set(permissions)],
+                    dependencies: this.normalizeContextArray(feature.dependencies),
+                    assumptions: this.normalizeContextArray(feature.assumptions),
+                    requirementReferences: [...new Set(requirementReferences)]
+                };
+            })
+            .filter(Boolean);
+    }
+
     fallbackAnalysis(requirement) {
-        const result = new AIAnalysisResult();
-        result.requirementComplete = false;
-        result.featureUnderstanding =
-            this.getText(requirement?.module) || this.getText(requirement?.feature);
-
-        result.testFocus = [
-            ...this.normalizeContextArray(requirement?.businessRules),
-            ...this.normalizeContextArray(requirement?.edgeCases),
-            ...this.normalizeContextArray(requirement?.exceptions)
-        ];
-
-        result.riskAreas = [...result.testFocus];
-
-        result.suggestedScenarios = this.buildFallbackScenarios(requirement);
-
-        result.questions = this.normalizeClarificationQuestions(requirement?.questions);
-
-        result.notes = this.normalizeTextArray(requirement?.notes);
-
-        result.confidence = 0.5;
-
-        return result;
+        return new AIAnalysisResult({
+            purpose: this.getText(requirement?.purpose) || this.getText(requirement?.pagePurpose),
+            functions: this.normalizeFallbackFunctions(requirement),
+            risks: this.normalizeContextArray(requirement?.risks ?? requirement?.riskAreas),
+            clarificationQuestions: this.normalizeClarificationQuestions(
+                requirement?.clarificationQuestions ?? requirement?.questions
+            ),
+            requirementComplete: false,
+            confidence: 0.5
+        });
     }
 
     buildFallbackScenarios(requirement) {
@@ -581,10 +681,7 @@ class AIAnalysisEngine {
                 break;
             }
 
-            const fallbackId = this.getNextClarificationId(
-                normalizedQuestions.length + 1,
-                usedIds
-            );
+            const fallbackId = this.getNextClarificationId(normalizedQuestions.length + 1, usedIds);
             let question = ClarificationQuestion.from(item, fallbackId);
 
             if (!question) {
@@ -608,7 +705,13 @@ class AIAnalysisEngine {
             }
 
             usedIds.add(question.id.toUpperCase());
-            normalizedQuestions.push(question.toJSON());
+            normalizedQuestions.push({
+                ...question.toJSON(),
+                requirementReferences:
+                    item && typeof item === "object" && !Array.isArray(item)
+                        ? this.normalizeContextArray(item.requirementReferences)
+                        : []
+            });
         }
 
         return normalizedQuestions;

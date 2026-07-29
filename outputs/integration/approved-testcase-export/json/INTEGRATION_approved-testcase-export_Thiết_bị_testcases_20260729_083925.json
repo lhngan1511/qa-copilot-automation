@@ -1,0 +1,5597 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "TestCase đã chỉnh sửa khi review",
+    "testScenario": "Thêm thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Xác nhận nội dung Approved TestCase được export",
+    "requirementReference": "Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06"
+    ],
+    "coveredRules": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06"
+    ],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "Approved TestCase export marker",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập dữ liệu hợp lệ cho các trường: Mã thiết bị, Tên thiết bị, Loại thiết bị, Trạng thái, Ghi chú",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Thiết bị được tạo thành công."
+      }
+    ],
+    "expectedResult": "Kết quả đã duyệt",
+    "expectedResults": [
+      "Kết quả đã duyệt"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thêm thiết bị",
+      "scenarioId": "SC001"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng thêm mới một thiết bị vào hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [],
+    "sourceCategories": [],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC001",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Nhập dữ liệu",
+        "target": "Mã thiết bị",
+        "value": "",
+        "expected": "Trường Mã thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 6,
+        "action": "Nhập dữ liệu",
+        "target": "Tên thiết bị",
+        "value": "",
+        "expected": "Trường Tên thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 7,
+        "action": "Chọn giá trị",
+        "target": "Loại thiết bị",
+        "value": "",
+        "expected": "Trường Loại thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 8,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 9,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị được tạo thành công."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Để trống Tên thiết bị khi thực hiện Thêm thiết bị",
+    "testScenario": "Để trống Tên thiết bị khi thực hiện Thêm thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh trường Tên thiết bị là bắt buộc",
+    "objective": "Xác minh trường Tên thiết bị là bắt buộc",
+    "requirementReference": "Tên thiết bị không được để trống",
+    "requirementReferences": [
+      "Tên thiết bị không được để trống"
+    ],
+    "coveredRules": [
+      "Tên thiết bị không được để trống"
+    ],
+    "sourceItem": {
+      "content": "Tên thiết bị không được để trống",
+      "source": "REQUIRED_VALIDATION",
+      "category": "REQUIRED_VALIDATION",
+      "code": "",
+      "reference": "Tên thiết bị không được để trống",
+      "text": "Tên thiết bị không được để trống",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Tên thiết bị",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Tên thiết bị",
+        "expected": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tên thiết bị không được để trống",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Tên thiết bị không được để trống",
+        "source": "REQUIRED_VALIDATION",
+        "category": "REQUIRED_VALIDATION",
+        "code": "",
+        "reference": "Tên thiết bị không được để trống",
+        "text": "Tên thiết bị không được để trống",
+        "classification": "REQUIRED"
+      }
+    ],
+    "sourceCategories": [
+      "REQUIRED_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC003",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Tên thiết bị",
+        "target": "Tên thiết bị",
+        "value": "",
+        "expected": "Tên thiết bị không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC004",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Để trống Loại thiết bị khi thực hiện Thêm thiết bị",
+    "testScenario": "Để trống Loại thiết bị khi thực hiện Thêm thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh trường Loại thiết bị là bắt buộc",
+    "objective": "Xác minh trường Loại thiết bị là bắt buộc",
+    "requirementReference": "Loại thiết bị không được để trống",
+    "requirementReferences": [
+      "Loại thiết bị không được để trống"
+    ],
+    "coveredRules": [
+      "Loại thiết bị không được để trống"
+    ],
+    "sourceItem": {
+      "content": "Loại thiết bị không được để trống",
+      "source": "REQUIRED_VALIDATION",
+      "category": "REQUIRED_VALIDATION",
+      "code": "",
+      "reference": "Loại thiết bị không được để trống",
+      "text": "Loại thiết bị không được để trống",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Loại thiết bị",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Loại thiết bị",
+        "expected": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Loại thiết bị là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Loại thiết bị là không hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Loại thiết bị là không hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Loại thiết bị không được để trống",
+      "scenarioId": "SC003"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Loại thiết bị không được để trống",
+        "source": "REQUIRED_VALIDATION",
+        "category": "REQUIRED_VALIDATION",
+        "code": "",
+        "reference": "Loại thiết bị không được để trống",
+        "text": "Loại thiết bị không được để trống",
+        "classification": "REQUIRED"
+      }
+    ],
+    "sourceCategories": [
+      "REQUIRED_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC004",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Loại thiết bị",
+        "target": "Loại thiết bị",
+        "value": "",
+        "expected": "Loại thiết bị không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Loại thiết bị là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC005",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Mã thiết bị phải là duy nhất.",
+    "testScenario": "Mã thiết bị phải là duy nhất.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Mã thiết bị phải là duy nhất.",
+    "objective": "Xác minh quy tắc: Mã thiết bị phải là duy nhất.",
+    "requirementReference": "Mã thiết bị phải là duy nhất.",
+    "requirementReferences": [
+      "Mã thiết bị phải là duy nhất.",
+      "Mã thiết bị đã tồn tại."
+    ],
+    "coveredRules": [
+      "Mã thiết bị phải là duy nhất.",
+      "Mã thiết bị đã tồn tại."
+    ],
+    "sourceItem": {
+      "content": "Mã thiết bị phải là duy nhất.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Mã thiết bị phải là duy nhất.",
+      "text": "Mã thiết bị phải là duy nhất.",
+      "classification": "DUPLICATE"
+    },
+    "ruleClassification": "DUPLICATE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng một giá trị Mã thiết bị đã tồn tại trong hệ thống",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "DUPLICATE",
+        "target": "Mã thiết bị",
+        "expected": "Hệ thống không tạo bản ghi mới bằng giá trị Mã thiết bị đã tồn tại; dữ liệu hiện có không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không tạo bản ghi mới bằng giá trị Mã thiết bị đã tồn tại; dữ liệu hiện có không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không tạo bản ghi mới bằng giá trị Mã thiết bị đã tồn tại; dữ liệu hiện có không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Mã thiết bị phải là duy nhất.",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Mã thiết bị phải là duy nhất.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Mã thiết bị phải là duy nhất.",
+        "text": "Mã thiết bị phải là duy nhất.",
+        "classification": "DUPLICATE"
+      },
+      {
+        "content": "Mã thiết bị đã tồn tại.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Mã thiết bị đã tồn tại.",
+        "text": "Mã thiết bị đã tồn tại.",
+        "classification": "DUPLICATE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC006"
+    ],
+    "mergedTestCaseIds": [
+      "TC014"
+    ],
+    "testcaseId": "TC005",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập giá trị đã tồn tại cho Mã thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không tạo bản ghi mới bằng giá trị Mã thiết bị đã tồn tại; dữ liệu hiện có không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC006",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+    "testScenario": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+    "objective": "Xác minh quy tắc: Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+    "requirementReference": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+    "requirementReferences": [
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Loại thiết bị không hợp lệ."
+    ],
+    "coveredRules": [
+      "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "Loại thiết bị không hợp lệ."
+    ],
+    "sourceItem": {
+      "content": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "text": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "classification": "INVALID_REFERENCE"
+    },
+    "ruleClassification": "INVALID_REFERENCE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": true,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng một giá trị Loại thiết bị không thuộc danh sách hợp lệ",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "INVALID_REFERENCE",
+        "target": "Loại thiết bị",
+        "expected": "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+        "text": "Loại thiết bị phải tồn tại trong danh mục loại thiết bị.",
+        "classification": "INVALID_REFERENCE"
+      },
+      {
+        "content": "Loại thiết bị không hợp lệ.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Loại thiết bị không hợp lệ.",
+        "text": "Loại thiết bị không hợp lệ.",
+        "classification": "INVALID_REFERENCE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC006"
+    ],
+    "mergedTestCaseIds": [
+      "TC016"
+    ],
+    "testcaseId": "TC006",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chọn giá trị không hợp lệ cho Loại thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC008",
+    "scenarioId": "SC004",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "testScenario": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "objective": "Xác minh quy tắc: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "requirementReference": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "requirementReferences": [
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+    ],
+    "coveredRules": [
+      "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+    ],
+    "sourceItem": {
+      "content": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "text": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Thêm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+      "scenarioId": "SC004"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+        "text": "Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC008",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC013",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Người dùng không có quyền thêm thiết bị.",
+    "testScenario": "Người dùng không có quyền thêm thiết bị.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Người dùng không có quyền thêm thiết bị.",
+    "objective": "Xác minh quy tắc: Người dùng không có quyền thêm thiết bị.",
+    "requirementReference": "Người dùng không có quyền thêm thiết bị.",
+    "requirementReferences": [
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng không có quyền thêm thiết bị."
+    ],
+    "coveredRules": [
+      "Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng có quyền thêm thiết bị.",
+      "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+      "Kiểm tra quyền thêm dữ liệu",
+      "Người dùng không có quyền thêm thiết bị."
+    ],
+    "sourceItem": {
+      "content": "Người dùng không có quyền thêm thiết bị.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Người dùng không có quyền thêm thiết bị.",
+      "text": "Người dùng không có quyền thêm thiết bị.",
+      "classification": "PERMISSION_DENIED"
+    },
+    "ruleClassification": "PERMISSION_DENIED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng tài khoản không có quyền thực hiện chức năng theo rule: Người dùng không có quyền thêm thiết bị.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "PERMISSION_DENIED",
+        "target": "Thêm thiết bị",
+        "expected": "Hệ thống không cho phép thực hiện Thêm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không cho phép thực hiện Thêm thiết bị; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không cho phép thực hiện Thêm thiết bị; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền thêm thiết bị.",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Người dùng phải có quyền thêm thiết bị.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Người dùng phải có quyền thêm thiết bị.",
+        "text": "Người dùng phải có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+        "text": "Kiểm tra Người dùng có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+        "text": "Kiểm tra Người dùng phải có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra quyền thêm dữ liệu",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra quyền thêm dữ liệu",
+        "text": "Kiểm tra quyền thêm dữ liệu",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng phải có quyền thêm thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Người dùng phải có quyền thêm thiết bị.",
+        "text": "Người dùng phải có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng không có quyền thêm thiết bị.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Người dùng không có quyền thêm thiết bị.",
+        "text": "Người dùng không có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng phải có quyền thêm thiết bị.",
+        "source": "RISK",
+        "category": "RISK",
+        "code": "",
+        "reference": "Người dùng phải có quyền thêm thiết bị.",
+        "text": "Người dùng phải có quyền thêm thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "PERMISSION",
+      "EXCEPTION",
+      "RISK"
+    ],
+    "relatedScenarioIds": [
+      "SC004",
+      "SC005",
+      "SC007"
+    ],
+    "mergedTestCaseIds": [
+      "TC007",
+      "TC009",
+      "TC010",
+      "TC011",
+      "TC012",
+      "TC019"
+    ],
+    "testcaseId": "TC013",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác bằng người dùng không có quyền",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không cho phép thực hiện Thêm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC015",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Để trống Trường bắt buộc khi thực hiện Thêm thiết bị",
+    "testScenario": "Để trống Trường bắt buộc khi thực hiện Thêm thiết bị",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh trường Trường bắt buộc là bắt buộc",
+    "objective": "Xác minh trường Trường bắt buộc là bắt buộc",
+    "requirementReference": "Trường bắt buộc bị bỏ trống.",
+    "requirementReferences": [
+      "Trường bắt buộc bị bỏ trống."
+    ],
+    "coveredRules": [
+      "Trường bắt buộc bị bỏ trống."
+    ],
+    "sourceItem": {
+      "content": "Trường bắt buộc bị bỏ trống.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Trường bắt buộc bị bỏ trống.",
+      "text": "Trường bắt buộc bị bỏ trống.",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Trường bắt buộc",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Trường bắt buộc",
+        "expected": "Chưa xác định trường bắt buộc cụ thể; cần clarification trước khi tạo dữ liệu kiểm thử."
+      }
+    ],
+    "expectedResult": "Chưa xác định trường bắt buộc cụ thể; cần clarification trước khi tạo dữ liệu kiểm thử.",
+    "expectedResults": [
+      "Chưa xác định trường bắt buộc cụ thể; cần clarification trước khi tạo dữ liệu kiểm thử."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Trường bắt buộc bị bỏ trống.",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Trường bắt buộc bị bỏ trống.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Trường bắt buộc bị bỏ trống.",
+        "text": "Trường bắt buộc bị bỏ trống.",
+        "classification": "REQUIRED"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC015",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Trường bắt buộc",
+        "target": "Trường bắt buộc",
+        "value": "",
+        "expected": "Trường bắt buộc không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Chưa xác định trường bắt buộc cụ thể; cần clarification trước khi tạo dữ liệu kiểm thử."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC017",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Dữ liệu vượt quá độ dài cho phép.",
+    "testScenario": "Dữ liệu vượt quá độ dài cho phép.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Dữ liệu vượt quá độ dài cho phép.",
+    "objective": "Xác minh quy tắc: Dữ liệu vượt quá độ dài cho phép.",
+    "requirementReference": "Dữ liệu vượt quá độ dài cho phép.",
+    "requirementReferences": [
+      "Dữ liệu vượt quá độ dài cho phép."
+    ],
+    "coveredRules": [
+      "Dữ liệu vượt quá độ dài cho phép."
+    ],
+    "sourceItem": {
+      "content": "Dữ liệu vượt quá độ dài cho phép.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Dữ liệu vượt quá độ dài cho phép.",
+      "text": "Dữ liệu vượt quá độ dài cho phép.",
+      "classification": "BOUNDARY_UNKNOWN"
+    },
+    "ruleClassification": "BOUNDARY_UNKNOWN",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Cần tester xác định dữ liệu biên sau khi làm rõ rule: Dữ liệu vượt quá độ dài cho phép.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "BOUNDARY_UNKNOWN",
+        "target": "Thêm thiết bị",
+        "expected": "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification."
+      }
+    ],
+    "expectedResult": "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification.",
+    "expectedResults": [
+      "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Dữ liệu vượt quá độ dài cho phép.",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Dữ liệu vượt quá độ dài cho phép.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Dữ liệu vượt quá độ dài cho phép.",
+        "text": "Dữ liệu vượt quá độ dài cho phép.",
+        "classification": "BOUNDARY_UNKNOWN"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC017",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị giá trị vượt giới hạn chưa được xác định",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC018",
+    "scenarioId": "SC006",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "objective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+    "requirementReferences": [
+      "Hệ thống xảy ra lỗi trong quá trình lưu."
+    ],
+    "coveredRules": [
+      "Hệ thống xảy ra lỗi trong quá trình lưu."
+    ],
+    "sourceItem": {
+      "content": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "text": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "classification": "SYSTEM_FAILURE"
+    },
+    "ruleClassification": "SYSTEM_FAILURE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": true,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị môi trường có thể mô phỏng lỗi xử lý được mô tả trong requirement",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SYSTEM_FAILURE",
+        "target": "Thêm thiết bị",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "expectedResult": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công.",
+    "expectedResults": [
+      "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+      "scenarioId": "SC006"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+        "text": "Hệ thống xảy ra lỗi trong quá trình lưu.",
+        "classification": "SYSTEM_FAILURE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC018",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Thêm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Kích hoạt fault injection tại thời điểm xử lý",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Thêm thiết bị",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Thêm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC020",
+    "scenarioId": "SC008",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Ngừng sử dụng thiết bị",
+    "testScenario": "Ngừng sử dụng thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Ngừng sử dụng thiết bị",
+    "requirementReferences": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20"
+    ],
+    "coveredRules": [
+      "3",
+      "Xóa thiết bị",
+      "BR10",
+      "BR11",
+      "BR12",
+      "BR13",
+      "BR14",
+      "BR15",
+      "EX14",
+      "EX15",
+      "EX16",
+      "EX17",
+      "EX18",
+      "EX19",
+      "EX20"
+    ],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "",
+      "value": ""
+    },
+    "executionReadiness": "READY",
+    "assertions": [],
+    "expectedResult": "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+    "expectedResults": [
+      "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Ngừng sử dụng thiết bị",
+      "scenarioId": "SC008"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng xóa một thiết bị khỏi hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [],
+    "sourceCategories": [],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC020",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 5,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 6,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 7,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Cho phép người dùng xóa một thiết bị khỏi hệ thống."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC021",
+    "scenarioId": "SC009",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+    "testScenario": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+    "objective": "Xác minh quy tắc: Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+    "requirementReference": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+    "requirementReferences": [
+      "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Thiết bị đang được sử dụng."
+    ],
+    "coveredRules": [
+      "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "Không được xóa thiết bị đang được sử dụng.",
+      "Thiết bị đang được sử dụng."
+    ],
+    "sourceItem": {
+      "content": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "text": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "classification": "STATE_RESTRICTION"
+    },
+    "ruleClassification": "STATE_RESTRICTION",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị.",
+      "Bản ghi mục tiêu ở trạng thái còn dữ liệu đang xử lý."
+    ],
+    "testData": {
+      "requirement": "Sử dụng bản ghi có trạng thái thỏa điều kiện bị chặn: Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "STATE_RESTRICTION",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+      "scenarioId": "SC009"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+        "text": "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý",
+        "classification": "STATE_RESTRICTION"
+      },
+      {
+        "content": "Không được xóa thiết bị đang được sử dụng.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Không được xóa thiết bị đang được sử dụng.",
+        "text": "Không được xóa thiết bị đang được sử dụng.",
+        "classification": "STATE_RESTRICTION"
+      },
+      {
+        "content": "Thiết bị đang được sử dụng.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Thiết bị đang được sử dụng.",
+        "text": "Thiết bị đang được sử dụng.",
+        "classification": "STATE_RESTRICTION"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE",
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC011",
+      "SC013"
+    ],
+    "mergedTestCaseIds": [
+      "TC026",
+      "TC036"
+    ],
+    "testcaseId": "TC021",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác với bản ghi ở trạng thái bị chặn",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC022",
+    "scenarioId": "SC010",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Để trống Thiết bị cần xóa khi thực hiện Ngừng sử dụng thiết bị",
+    "testScenario": "Để trống Thiết bị cần xóa khi thực hiện Ngừng sử dụng thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh trường Thiết bị cần xóa là bắt buộc",
+    "objective": "Xác minh trường Thiết bị cần xóa là bắt buộc",
+    "requirementReference": "Thiết bị cần xóa không được để trống",
+    "requirementReferences": [
+      "Thiết bị cần xóa không được để trống"
+    ],
+    "coveredRules": [
+      "Thiết bị cần xóa không được để trống"
+    ],
+    "sourceItem": {
+      "content": "Thiết bị cần xóa không được để trống",
+      "source": "REQUIRED_VALIDATION",
+      "category": "REQUIRED_VALIDATION",
+      "code": "",
+      "reference": "Thiết bị cần xóa không được để trống",
+      "text": "Thiết bị cần xóa không được để trống",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Thiết bị cần xóa",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Thiết bị cần xóa",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Thiết bị cần xóa là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Thiết bị cần xóa là không hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Thiết bị cần xóa là không hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị cần xóa không được để trống",
+      "scenarioId": "SC010"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Thiết bị cần xóa không được để trống",
+        "source": "REQUIRED_VALIDATION",
+        "category": "REQUIRED_VALIDATION",
+        "code": "",
+        "reference": "Thiết bị cần xóa không được để trống",
+        "text": "Thiết bị cần xóa không được để trống",
+        "classification": "REQUIRED"
+      }
+    ],
+    "sourceCategories": [
+      "REQUIRED_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC022",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Thiết bị cần xóa",
+        "target": "Thiết bị cần xóa",
+        "value": "",
+        "expected": "Thiết bị cần xóa không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Thiết bị cần xóa là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC023",
+    "scenarioId": "SC010",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Để trống Xác nhận xóa khi thực hiện Ngừng sử dụng thiết bị",
+    "testScenario": "Để trống Xác nhận xóa khi thực hiện Ngừng sử dụng thiết bị",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh trường Xác nhận xóa là bắt buộc",
+    "objective": "Xác minh trường Xác nhận xóa là bắt buộc",
+    "requirementReference": "Xác nhận xóa không được để trống",
+    "requirementReferences": [
+      "Xác nhận xóa không được để trống"
+    ],
+    "coveredRules": [
+      "Xác nhận xóa không được để trống"
+    ],
+    "sourceItem": {
+      "content": "Xác nhận xóa không được để trống",
+      "source": "REQUIRED_VALIDATION",
+      "category": "REQUIRED_VALIDATION",
+      "code": "",
+      "reference": "Xác nhận xóa không được để trống",
+      "text": "Xác nhận xóa không được để trống",
+      "classification": "REQUIRED"
+    },
+    "ruleClassification": "REQUIRED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu hợp lệ cho các trường còn lại và để trống trường Xác nhận xóa",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "FIELD_VALIDATION",
+        "target": "Xác nhận xóa",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Xác nhận xóa là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Xác nhận xóa là không hợp lệ; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Xác nhận xóa là không hợp lệ; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Xác nhận xóa không được để trống",
+      "scenarioId": "SC010"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Xác nhận xóa không được để trống",
+        "source": "REQUIRED_VALIDATION",
+        "category": "REQUIRED_VALIDATION",
+        "code": "",
+        "reference": "Xác nhận xóa không được để trống",
+        "text": "Xác nhận xóa không được để trống",
+        "classification": "REQUIRED"
+      }
+    ],
+    "sourceCategories": [
+      "REQUIRED_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC023",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Nhập dữ liệu hợp lệ cho các trường còn lại",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Các trường còn lại có dữ liệu hợp lệ"
+      },
+      {
+        "order": 3,
+        "action": "Để trống Xác nhận xóa",
+        "target": "Xác nhận xóa",
+        "value": "",
+        "expected": "Xác nhận xóa không có giá trị"
+      },
+      {
+        "order": 4,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 5,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và đánh dấu trường Xác nhận xóa là không hợp lệ; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC027",
+    "scenarioId": "SC011",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "testScenario": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "objective": "Xác minh quy tắc: Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "requirementReference": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+    "requirementReferences": [
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Thiết bị có dữ liệu liên quan."
+    ],
+    "coveredRules": [
+      "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "Thiết bị có dữ liệu liên quan."
+    ],
+    "sourceItem": {
+      "content": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "text": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "classification": "RELATED_DATA"
+    },
+    "ruleClassification": "RELATED_DATA",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị.",
+      "Bản ghi mục tiêu có dữ liệu liên quan."
+    ],
+    "testData": {
+      "requirement": "Sử dụng bản ghi đang có dữ liệu liên quan",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "RELATED_DATA",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và không làm mất dữ liệu liên quan."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và không làm mất dữ liệu liên quan.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị và không làm mất dữ liệu liên quan."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+        "text": "Không được xóa thiết bị có dữ liệu liên quan nếu hệ thống không cho phép.",
+        "classification": "RELATED_DATA"
+      },
+      {
+        "content": "Thiết bị có dữ liệu liên quan.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Thiết bị có dữ liệu liên quan.",
+        "text": "Thiết bị có dữ liệu liên quan.",
+        "classification": "RELATED_DATA"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC013"
+    ],
+    "mergedTestCaseIds": [
+      "TC037"
+    ],
+    "testcaseId": "TC027",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác với bản ghi có dữ liệu liên quan",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị và không làm mất dữ liệu liên quan."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC029",
+    "scenarioId": "SC011",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "testScenario": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "objective": "Xác minh quy tắc: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "requirementReference": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "requirementReferences": [
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+    ],
+    "coveredRules": [
+      "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+    ],
+    "sourceItem": {
+      "content": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "text": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+      "scenarioId": "SC011"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+        "text": "Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC029",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC033",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Người dùng không có quyền xóa thiết bị.",
+    "testScenario": "Người dùng không có quyền xóa thiết bị.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Người dùng không có quyền xóa thiết bị.",
+    "objective": "Xác minh quy tắc: Người dùng không có quyền xóa thiết bị.",
+    "requirementReference": "Người dùng không có quyền xóa thiết bị.",
+    "requirementReferences": [
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra quyền xóa dữ liệu",
+      "Người dùng không có quyền xóa thiết bị."
+    ],
+    "coveredRules": [
+      "Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng có quyền xóa thiết bị.",
+      "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+      "Kiểm tra quyền xóa dữ liệu",
+      "Người dùng không có quyền xóa thiết bị."
+    ],
+    "sourceItem": {
+      "content": "Người dùng không có quyền xóa thiết bị.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Người dùng không có quyền xóa thiết bị.",
+      "text": "Người dùng không có quyền xóa thiết bị.",
+      "classification": "PERMISSION_DENIED"
+    },
+    "ruleClassification": "PERMISSION_DENIED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng tài khoản không có quyền thực hiện chức năng theo rule: Người dùng không có quyền xóa thiết bị.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "PERMISSION_DENIED",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không cho phép thực hiện Ngừng sử dụng thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không cho phép thực hiện Ngừng sử dụng thiết bị; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không cho phép thực hiện Ngừng sử dụng thiết bị; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền xóa thiết bị.",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Người dùng phải có quyền xóa thiết bị.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Người dùng phải có quyền xóa thiết bị.",
+        "text": "Người dùng phải có quyền xóa thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+        "text": "Kiểm tra Người dùng có quyền xóa thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+        "text": "Kiểm tra Người dùng phải có quyền xóa thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra quyền xóa dữ liệu",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra quyền xóa dữ liệu",
+        "text": "Kiểm tra quyền xóa dữ liệu",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng không có quyền xóa thiết bị.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Người dùng không có quyền xóa thiết bị.",
+        "text": "Người dùng không có quyền xóa thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng phải có quyền xóa thiết bị.",
+        "source": "RISK",
+        "category": "RISK",
+        "code": "",
+        "reference": "Người dùng phải có quyền xóa thiết bị.",
+        "text": "Người dùng phải có quyền xóa thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "PERMISSION",
+      "EXCEPTION",
+      "RISK"
+    ],
+    "relatedScenarioIds": [
+      "SC011",
+      "SC012",
+      "SC014"
+    ],
+    "mergedTestCaseIds": [
+      "TC025",
+      "TC030",
+      "TC031",
+      "TC032",
+      "TC040"
+    ],
+    "testcaseId": "TC033",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác bằng người dùng không có quyền",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không cho phép thực hiện Ngừng sử dụng thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC034",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Thiết bị không tồn tại.",
+    "testScenario": "Thiết bị không tồn tại.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Thiết bị không tồn tại.",
+    "objective": "Xác minh quy tắc: Thiết bị không tồn tại.",
+    "requirementReference": "Thiết bị không tồn tại.",
+    "requirementReferences": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Thiết bị không tồn tại."
+    ],
+    "coveredRules": [
+      "Thiết bị cần xóa phải tồn tại.",
+      "Thiết bị không tồn tại."
+    ],
+    "sourceItem": {
+      "content": "Thiết bị không tồn tại.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Thiết bị không tồn tại.",
+      "text": "Thiết bị không tồn tại.",
+      "classification": "RECORD_NOT_FOUND"
+    },
+    "ruleClassification": "RECORD_NOT_FOUND",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng định danh của một bản ghi không tồn tại trong hệ thống",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "RECORD_NOT_FOUND",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị không tồn tại.",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Thiết bị cần xóa phải tồn tại.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Thiết bị cần xóa phải tồn tại.",
+        "text": "Thiết bị cần xóa phải tồn tại.",
+        "classification": "RECORD_NOT_FOUND"
+      },
+      {
+        "content": "Thiết bị không tồn tại.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Thiết bị không tồn tại.",
+        "text": "Thiết bị không tồn tại.",
+        "classification": "RECORD_NOT_FOUND"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC011"
+    ],
+    "mergedTestCaseIds": [
+      "TC024"
+    ],
+    "testcaseId": "TC034",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác với định danh không tồn tại",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC035",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Thiết bị đã bị người dùng khác xóa.",
+    "testScenario": "Thiết bị đã bị người dùng khác xóa.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Thiết bị đã bị người dùng khác xóa.",
+    "objective": "Xác minh quy tắc: Thiết bị đã bị người dùng khác xóa.",
+    "requirementReference": "Thiết bị đã bị người dùng khác xóa.",
+    "requirementReferences": [
+      "Thiết bị đã bị người dùng khác xóa."
+    ],
+    "coveredRules": [
+      "Thiết bị đã bị người dùng khác xóa."
+    ],
+    "sourceItem": {
+      "content": "Thiết bị đã bị người dùng khác xóa.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Thiết bị đã bị người dùng khác xóa.",
+      "text": "Thiết bị đã bị người dùng khác xóa.",
+      "classification": "CONCURRENT_CHANGE"
+    },
+    "ruleClassification": "CONCURRENT_CHANGE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị.",
+      "Bản ghi hợp lệ khi mở và bị thay đổi hoặc xóa trước khi gửi thao tác."
+    ],
+    "testData": {
+      "requirement": "Sử dụng bản ghi bị thay đổi hoặc xóa bởi tiến trình khác trước khi gửi thao tác",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "CONCURRENT_CHANGE",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không ghi đè dữ liệu không còn hợp lệ và yêu cầu tải lại trạng thái mới nhất."
+      }
+    ],
+    "expectedResult": "Hệ thống không ghi đè dữ liệu không còn hợp lệ và yêu cầu tải lại trạng thái mới nhất.",
+    "expectedResults": [
+      "Hệ thống không ghi đè dữ liệu không còn hợp lệ và yêu cầu tải lại trạng thái mới nhất."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thiết bị đã bị người dùng khác xóa.",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Thiết bị đã bị người dùng khác xóa.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Thiết bị đã bị người dùng khác xóa.",
+        "text": "Thiết bị đã bị người dùng khác xóa.",
+        "classification": "CONCURRENT_CHANGE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC035",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Gửi thao tác sau khi bản ghi đã bị thay đổi hoặc xóa",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không ghi đè dữ liệu không còn hợp lệ và yêu cầu tải lại trạng thái mới nhất."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC038",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Người dùng hủy xác nhận xóa.",
+    "testScenario": "Người dùng hủy xác nhận xóa.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Người dùng hủy xác nhận xóa.",
+    "objective": "Xác minh quy tắc: Người dùng hủy xác nhận xóa.",
+    "requirementReference": "Người dùng hủy xác nhận xóa.",
+    "requirementReferences": [
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Người dùng hủy xác nhận xóa."
+    ],
+    "coveredRules": [
+      "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+      "Người dùng hủy xác nhận xóa."
+    ],
+    "sourceItem": {
+      "content": "Người dùng hủy xác nhận xóa.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Người dùng hủy xác nhận xóa.",
+      "text": "Người dùng hủy xác nhận xóa.",
+      "classification": "CONFIRMATION"
+    },
+    "ruleClassification": "CONFIRMATION",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng bản ghi hợp lệ và không xác nhận thao tác",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "CONFIRMATION",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi người dùng không xác nhận; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi người dùng không xác nhận; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi người dùng không xác nhận; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng hủy xác nhận xóa.",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+        "text": "Hệ thống phải yêu cầu xác nhận trước khi xóa.",
+        "classification": "CONFIRMATION"
+      },
+      {
+        "content": "Người dùng hủy xác nhận xóa.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Người dùng hủy xác nhận xóa.",
+        "text": "Người dùng hủy xác nhận xóa.",
+        "classification": "CONFIRMATION"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC011"
+    ],
+    "mergedTestCaseIds": [
+      "TC028"
+    ],
+    "testcaseId": "TC038",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Không xác nhận thao tác",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Ngừng sử dụng thiết bị khi người dùng không xác nhận; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC039",
+    "scenarioId": "SC013",
+    "moduleId": "MOD001",
+    "functionId": "FUNC003",
+    "function": "Ngừng sử dụng thiết bị",
+    "module": "Tài sản",
+    "feature": "Ngừng sử dụng thiết bị",
+    "title": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "objective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+    "requirementReferences": [
+      "Hệ thống xảy ra lỗi trong quá trình xóa."
+    ],
+    "coveredRules": [
+      "Hệ thống xảy ra lỗi trong quá trình xóa."
+    ],
+    "sourceItem": {
+      "content": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "text": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "classification": "SYSTEM_FAILURE"
+    },
+    "ruleClassification": "SYSTEM_FAILURE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": true,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xóa thiết bị.",
+      "Thiết bị cần xóa đã tồn tại.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị môi trường có thể mô phỏng lỗi xử lý được mô tả trong requirement",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SYSTEM_FAILURE",
+        "target": "Ngừng sử dụng thiết bị",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "expectedResult": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công.",
+    "expectedResults": [
+      "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+      "scenarioId": "SC013"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+        "text": "Hệ thống xảy ra lỗi trong quá trình xóa.",
+        "classification": "SYSTEM_FAILURE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC039",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Ngừng sử dụng thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Kích hoạt fault injection tại thời điểm xử lý",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Ngừng sử dụng thiết bị",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Ngừng sử dụng thiết bị",
+        "value": "",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Ngừng sử dụng thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC041",
+    "scenarioId": "SC015",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Tìm kiếm thiết bị",
+    "testScenario": "Tìm kiếm thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Tìm kiếm thiết bị",
+    "requirementReferences": [
+      "4",
+      "Tìm kiếm thiết bị",
+      "BR16",
+      "BR17",
+      "BR18",
+      "BR19",
+      "BR20",
+      "EX21",
+      "EX22",
+      "EX23",
+      "EX24",
+      "EX25",
+      "CL001"
+    ],
+    "coveredRules": [
+      "4",
+      "Tìm kiếm thiết bị",
+      "BR16",
+      "BR17",
+      "BR18",
+      "BR19",
+      "BR20",
+      "EX21",
+      "EX22",
+      "EX23",
+      "EX24",
+      "EX25"
+    ],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập dữ liệu hợp lệ cho các trường: Mã thiết bị, Tên thiết bị, Loại thiết bị, Trạng thái",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Hệ thống hiển thị đúng các thiết bị phù hợp."
+      }
+    ],
+    "expectedResult": "Hệ thống hiển thị đúng các thiết bị phù hợp.",
+    "expectedResults": [
+      "Hệ thống hiển thị đúng các thiết bị phù hợp.",
+      "Không hiển thị thiết bị không thỏa mãn điều kiện.",
+      "Hiển thị thông báo phù hợp khi không có kết quả.",
+      "Kết quả tìm kiếm được phân trang đúng nếu có.",
+      "Dữ liệu hiển thị đúng và đầy đủ.",
+      "Điều kiện trước được đáp ứng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Tìm kiếm thiết bị",
+      "scenarioId": "SC015"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng tìm kiếm thiết bị theo một hoặc nhiều điều kiện.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [],
+    "sourceCategories": [],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC041",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Thực hiện tìm kiếm",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 6,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Hệ thống hiển thị đúng các thiết bị phù hợp."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC042",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "testScenario": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "objective": "Xác minh quy tắc: Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "requirementReference": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+    "requirementReferences": [
+      "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện."
+    ],
+    "coveredRules": [
+      "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện."
+    ],
+    "sourceItem": {
+      "content": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "text": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "classification": "SEARCH_MULTI"
+    },
+    "ruleClassification": "SEARCH_MULTI",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập nhiều điều kiện tìm kiếm theo rule đã được phê duyệt",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SEARCH_MULTI",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+      }
+    ],
+    "expectedResult": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả.",
+    "expectedResults": [
+      "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "text": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "classification": "SEARCH_MULTI"
+      },
+      {
+        "content": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "text": "Cho phép tìm kiếm bằng một hoặc nhiều điều kiện.",
+        "classification": "SEARCH_MULTI"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE",
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [
+      "SC017"
+    ],
+    "mergedTestCaseIds": [
+      "TC046"
+    ],
+    "testcaseId": "TC042",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Tìm kiếm bằng nhiều điều kiện",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC043",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+    "testScenario": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+    "objective": "Xác minh quy tắc: Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+    "requirementReference": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+    "requirementReferences": [
+      "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống."
+    ],
+    "coveredRules": [
+      "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống."
+    ],
+    "sourceItem": {
+      "content": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "text": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "classification": "SEARCH_MULTI"
+    },
+    "ruleClassification": "SEARCH_MULTI",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập nhiều điều kiện tìm kiếm theo rule đã được phê duyệt",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SEARCH_MULTI",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+      }
+    ],
+    "expectedResult": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả.",
+    "expectedResults": [
+      "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "text": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "classification": "SEARCH_MULTI"
+      },
+      {
+        "content": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "text": "Các điều kiện tìm kiếm được kết hợp theo quy tắc của hệ thống.",
+        "classification": "SEARCH_MULTI"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE",
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [
+      "SC017"
+    ],
+    "mergedTestCaseIds": [
+      "TC047"
+    ],
+    "testcaseId": "TC043",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Tìm kiếm bằng nhiều điều kiện",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC044",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "testScenario": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "objective": "Xác minh quy tắc: Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "requirementReference": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+    "requirementReferences": [
+      "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện."
+    ],
+    "coveredRules": [
+      "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện."
+    ],
+    "sourceItem": {
+      "content": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "text": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "classification": "EMPTY_SEARCH"
+    },
+    "ruleClassification": "EMPTY_SEARCH",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Để trống toàn bộ điều kiện tìm kiếm",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "EMPTY_SEARCH",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa thể xác định một kết quả duy nhất khi không nhập điều kiện; cần clarification được phê duyệt."
+      }
+    ],
+    "expectedResult": "Chưa thể xác định một kết quả duy nhất khi không nhập điều kiện; cần clarification được phê duyệt.",
+    "expectedResults": [
+      "Chưa thể xác định một kết quả duy nhất khi không nhập điều kiện; cần clarification được phê duyệt."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "text": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "classification": "EMPTY_SEARCH"
+      },
+      {
+        "content": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "text": "Khi không nhập điều kiện, hệ thống có thể hiển thị toàn bộ dữ liệu hoặc yêu cầu nhập điều kiện.",
+        "classification": "EMPTY_SEARCH"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE",
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [
+      "SC017"
+    ],
+    "mergedTestCaseIds": [
+      "TC048"
+    ],
+    "testcaseId": "TC044",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện tìm kiếm với toàn bộ điều kiện để trống",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa thể xác định một kết quả duy nhất khi không nhập điều kiện; cần clarification được phê duyệt."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC045",
+    "scenarioId": "SC016",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "testScenario": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "objective": "Xác minh quy tắc: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "requirementReference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "requirementReferences": [
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "coveredRules": [
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "sourceItem": {
+      "content": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "text": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "scenarioId": "SC016"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "text": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC045",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC049",
+    "scenarioId": "SC017",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "testScenario": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "objective": "Xác minh quy tắc: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReferences": [
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "coveredRules": [
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "sourceItem": {
+      "content": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "text": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "scenarioId": "SC017"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "text": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC049",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC050",
+    "scenarioId": "SC017",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "testScenario": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh quy tắc: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "objective": "Xác minh quy tắc: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "requirementReference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "requirementReferences": [
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "coveredRules": [
+      "Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "sourceItem": {
+      "content": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "source": "FORMAT_OR_VALUE_VALIDATION",
+      "category": "FORMAT_OR_VALUE_VALIDATION",
+      "code": "",
+      "reference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "text": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": true,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+      "scenarioId": "SC017"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "NEGATIVE from approved function",
+    "riskCategory": "NEGATIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "source": "FORMAT_OR_VALUE_VALIDATION",
+        "category": "FORMAT_OR_VALUE_VALIDATION",
+        "code": "",
+        "reference": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "text": "Kết quả có thể được phân trang khi số lượng dữ liệu lớn.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "FORMAT_OR_VALUE_VALIDATION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC050",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả có thể được phân trang khi số lượng dữ liệu lớn."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC052",
+    "scenarioId": "SC018",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "testScenario": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "type": "PERMISSION",
+    "testObjective": "Xác minh quy tắc: Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "objective": "Xác minh quy tắc: Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReference": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReferences": [
+      "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "coveredRules": [
+      "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "sourceItem": {
+      "content": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "source": "PERMISSION",
+      "category": "PERMISSION",
+      "code": "",
+      "reference": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "text": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "classification": "PERMISSION_DENIED"
+    },
+    "ruleClassification": "PERMISSION_DENIED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng tài khoản không có quyền thực hiện chức năng theo rule: Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "PERMISSION_DENIED",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "scenarioId": "SC018"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "PERMISSION from approved function",
+    "riskCategory": "PERMISSION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "text": "Kiểm tra Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "text": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "classification": "PERMISSION_DENIED"
+      }
+    ],
+    "sourceCategories": [
+      "PERMISSION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [
+      "TC054"
+    ],
+    "testcaseId": "TC052",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác bằng người dùng không có quyền",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC055",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Người dùng không có quyền xem thiết bị.",
+    "testScenario": "Người dùng không có quyền xem thiết bị.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Người dùng không có quyền xem thiết bị.",
+    "objective": "Xác minh quy tắc: Người dùng không có quyền xem thiết bị.",
+    "requirementReference": "Người dùng không có quyền xem thiết bị.",
+    "requirementReferences": [
+      "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+      "Kiểm tra quyền xem dữ liệu",
+      "Người dùng không có quyền xem thiết bị."
+    ],
+    "coveredRules": [
+      "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+      "Kiểm tra quyền xem dữ liệu",
+      "Người dùng không có quyền xem thiết bị."
+    ],
+    "sourceItem": {
+      "content": "Người dùng không có quyền xem thiết bị.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Người dùng không có quyền xem thiết bị.",
+      "text": "Người dùng không có quyền xem thiết bị.",
+      "classification": "PERMISSION_DENIED"
+    },
+    "ruleClassification": "PERMISSION_DENIED",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Sử dụng tài khoản không có quyền thực hiện chức năng theo rule: Người dùng không có quyền xem thiết bị.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "PERMISSION_DENIED",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Người dùng không có quyền xem thiết bị.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+        "text": "Kiểm tra Người dùng có quyền xem danh sách thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Kiểm tra quyền xem dữ liệu",
+        "source": "PERMISSION",
+        "category": "PERMISSION",
+        "code": "",
+        "reference": "Kiểm tra quyền xem dữ liệu",
+        "text": "Kiểm tra quyền xem dữ liệu",
+        "classification": "PERMISSION_DENIED"
+      },
+      {
+        "content": "Người dùng không có quyền xem thiết bị.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Người dùng không có quyền xem thiết bị.",
+        "text": "Người dùng không có quyền xem thiết bị.",
+        "classification": "PERMISSION_DENIED"
+      }
+    ],
+    "sourceCategories": [
+      "PERMISSION",
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [
+      "SC018"
+    ],
+    "mergedTestCaseIds": [
+      "TC051",
+      "TC053"
+    ],
+    "testcaseId": "TC055",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác bằng người dùng không có quyền",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC056",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Điều kiện tìm kiếm không hợp lệ.",
+    "testScenario": "Điều kiện tìm kiếm không hợp lệ.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Điều kiện tìm kiếm không hợp lệ.",
+    "objective": "Xác minh quy tắc: Điều kiện tìm kiếm không hợp lệ.",
+    "requirementReference": "Điều kiện tìm kiếm không hợp lệ.",
+    "requirementReferences": [
+      "Điều kiện tìm kiếm không hợp lệ."
+    ],
+    "coveredRules": [
+      "Điều kiện tìm kiếm không hợp lệ."
+    ],
+    "sourceItem": {
+      "content": "Điều kiện tìm kiếm không hợp lệ.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Điều kiện tìm kiếm không hợp lệ.",
+      "text": "Điều kiện tìm kiếm không hợp lệ.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Điều kiện tìm kiếm không hợp lệ.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Điều kiện tìm kiếm không hợp lệ."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Điều kiện tìm kiếm không hợp lệ.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Điều kiện tìm kiếm không hợp lệ."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Điều kiện tìm kiếm không hợp lệ.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Điều kiện tìm kiếm không hợp lệ.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Điều kiện tìm kiếm không hợp lệ.",
+        "text": "Điều kiện tìm kiếm không hợp lệ.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC056",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Điều kiện tìm kiếm không hợp lệ."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC057",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Không tìm thấy dữ liệu phù hợp.",
+    "testScenario": "Không tìm thấy dữ liệu phù hợp.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Không tìm thấy dữ liệu phù hợp.",
+    "objective": "Xác minh quy tắc: Không tìm thấy dữ liệu phù hợp.",
+    "requirementReference": "Không tìm thấy dữ liệu phù hợp.",
+    "requirementReferences": [
+      "Không tìm thấy dữ liệu phù hợp."
+    ],
+    "coveredRules": [
+      "Không tìm thấy dữ liệu phù hợp."
+    ],
+    "sourceItem": {
+      "content": "Không tìm thấy dữ liệu phù hợp.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Không tìm thấy dữ liệu phù hợp.",
+      "text": "Không tìm thấy dữ liệu phù hợp.",
+      "classification": "NO_RESULT"
+    },
+    "ruleClassification": "NO_RESULT",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập điều kiện tìm kiếm không khớp với bản ghi nào",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "NO_RESULT",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Hệ thống hiển thị trạng thái không có dữ liệu phù hợp và không hiển thị bản ghi sai điều kiện."
+      }
+    ],
+    "expectedResult": "Hệ thống hiển thị trạng thái không có dữ liệu phù hợp và không hiển thị bản ghi sai điều kiện.",
+    "expectedResults": [
+      "Hệ thống hiển thị trạng thái không có dữ liệu phù hợp và không hiển thị bản ghi sai điều kiện."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Không tìm thấy dữ liệu phù hợp.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Không tìm thấy dữ liệu phù hợp.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Không tìm thấy dữ liệu phù hợp.",
+        "text": "Không tìm thấy dữ liệu phù hợp.",
+        "classification": "NO_RESULT"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC057",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Tìm kiếm bằng tiêu chí không có bản ghi phù hợp",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống hiển thị trạng thái không có dữ liệu phù hợp và không hiển thị bản ghi sai điều kiện."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC058",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Ký tự đặc biệt gây lỗi xử lý.",
+    "testScenario": "Ký tự đặc biệt gây lỗi xử lý.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Ký tự đặc biệt gây lỗi xử lý.",
+    "objective": "Xác minh quy tắc: Ký tự đặc biệt gây lỗi xử lý.",
+    "requirementReference": "Ký tự đặc biệt gây lỗi xử lý.",
+    "requirementReferences": [
+      "Ký tự đặc biệt gây lỗi xử lý."
+    ],
+    "coveredRules": [
+      "Ký tự đặc biệt gây lỗi xử lý."
+    ],
+    "sourceItem": {
+      "content": "Ký tự đặc biệt gây lỗi xử lý.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Ký tự đặc biệt gây lỗi xử lý.",
+      "text": "Ký tự đặc biệt gây lỗi xử lý.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Ký tự đặc biệt gây lỗi xử lý.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Ký tự đặc biệt gây lỗi xử lý."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Ký tự đặc biệt gây lỗi xử lý.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Ký tự đặc biệt gây lỗi xử lý."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Ký tự đặc biệt gây lỗi xử lý.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Ký tự đặc biệt gây lỗi xử lý.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Ký tự đặc biệt gây lỗi xử lý.",
+        "text": "Ký tự đặc biệt gây lỗi xử lý.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC058",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Ký tự đặc biệt gây lỗi xử lý."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC059",
+    "scenarioId": "SC019",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "testScenario": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "type": "EXCEPTION",
+    "testObjective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "objective": "Xác minh quy tắc: Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "requirementReference": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+    "requirementReferences": [
+      "Hệ thống xảy ra lỗi trong quá trình truy vấn."
+    ],
+    "coveredRules": [
+      "Hệ thống xảy ra lỗi trong quá trình truy vấn."
+    ],
+    "sourceItem": {
+      "content": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "source": "EXCEPTION",
+      "category": "EXCEPTION",
+      "code": "",
+      "reference": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "text": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "classification": "SYSTEM_FAILURE"
+    },
+    "ruleClassification": "SYSTEM_FAILURE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": true,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị môi trường có thể mô phỏng lỗi xử lý được mô tả trong requirement",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SYSTEM_FAILURE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "expectedResult": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công.",
+    "expectedResults": [
+      "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+      "scenarioId": "SC019"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "EXCEPTION from approved function",
+    "riskCategory": "EXCEPTION",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+        "source": "EXCEPTION",
+        "category": "EXCEPTION",
+        "code": "",
+        "reference": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+        "text": "Hệ thống xảy ra lỗi trong quá trình truy vấn.",
+        "classification": "SYSTEM_FAILURE"
+      }
+    ],
+    "sourceCategories": [
+      "EXCEPTION"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC059",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Kích hoạt fault injection tại thời điểm xử lý",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống không tạo dữ liệu không hoàn chỉnh và thể hiện thao tác không thành công."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC060",
+    "scenarioId": "SC020",
+    "moduleId": "MOD001",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm thiết bị",
+    "module": "Tài sản",
+    "feature": "Tìm kiếm thiết bị",
+    "title": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "testScenario": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "type": "RISK",
+    "testObjective": "Xác minh quy tắc: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "objective": "Xác minh quy tắc: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "requirementReferences": [
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "coveredRules": [
+      "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "sourceItem": {
+      "content": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "source": "RISK",
+      "category": "RISK",
+      "code": "",
+      "reference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "text": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "classification": "GENERIC_RULE"
+    },
+    "ruleClassification": "GENERIC_RULE",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": true,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền xem danh sách thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Chuẩn bị dữ liệu thỏa điều kiện: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "GENERIC_RULE",
+        "target": "Tìm kiếm thiết bị",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "expectedResult": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+    "expectedResults": [
+      "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+      "scenarioId": "SC020"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "RISK from approved function",
+    "riskCategory": "RISK",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "source": "RISK",
+        "category": "RISK",
+        "code": "",
+        "reference": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "text": "Kết quả phải tuân thủ quyền xem dữ liệu của người dùng.",
+        "classification": "GENERIC_RULE"
+      }
+    ],
+    "sourceCategories": [
+      "RISK"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC060",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Tìm kiếm thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Chuẩn bị điều kiện kiểm thử",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Tìm kiếm thiết bị",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Tìm kiếm thiết bị",
+        "value": "",
+        "expected": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: Kết quả phải tuân thủ quyền xem dữ liệu của người dùng."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "SEARCH",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.searchButton",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC061",
+    "scenarioId": "SC021",
+    "moduleId": "MOD001",
+    "functionId": "FUNC005",
+    "function": "Khôi phục thiết bị",
+    "module": "Tài sản",
+    "feature": "Khôi phục thiết bị",
+    "title": "Khôi phục thiết bị",
+    "testScenario": "Khôi phục thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Khôi phục thiết bị",
+    "requirementReferences": [
+      "USER-EDIT-001"
+    ],
+    "coveredRules": [
+      "USER-EDIT-001"
+    ],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng."
+    ],
+    "testData": {
+      "requirement": "",
+      "value": ""
+    },
+    "executionReadiness": "READY",
+    "assertions": [],
+    "expectedResult": "Khôi phục trạng thái sử dụng",
+    "expectedResults": [
+      "Khôi phục trạng thái sử dụng",
+      "Yêu cầu được gửi để hệ thống xử lý"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Khôi phục thiết bị",
+      "scenarioId": "SC021"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Khôi phục trạng thái sử dụng",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [],
+    "sourceCategories": [],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC061",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện Khôi phục thiết bị",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 3,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Khôi phục trạng thái sử dụng"
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Khôi phục thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC062",
+    "scenarioId": "SC022",
+    "moduleId": "MOD001",
+    "functionId": "FUNC005",
+    "function": "Khôi phục thiết bị",
+    "module": "Tài sản",
+    "feature": "Khôi phục thiết bị",
+    "title": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+    "testScenario": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+    "type": "DATA_INTEGRITY",
+    "testObjective": "Xác minh quy tắc: Chỉ khôi phục thiết bị đã ngừng sử dụng",
+    "objective": "Xác minh quy tắc: Chỉ khôi phục thiết bị đã ngừng sử dụng",
+    "requirementReference": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+    "requirementReferences": [
+      "Chỉ khôi phục thiết bị đã ngừng sử dụng"
+    ],
+    "coveredRules": [
+      "Chỉ khôi phục thiết bị đã ngừng sử dụng"
+    ],
+    "sourceItem": {
+      "content": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+      "source": "BUSINESS_RULE",
+      "category": "BUSINESS_RULE",
+      "code": "",
+      "reference": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+      "text": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+      "classification": "STATE_RESTRICTION"
+    },
+    "ruleClassification": "STATE_RESTRICTION",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": true,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống.",
+      "Người dùng có quyền truy cập màn hình quản lý thiết bị.",
+      "Người dùng có quyền thực hiện chức năng tương ứng.",
+      "Bản ghi mục tiêu ở trạng thái đã ngừng sử dụng."
+    ],
+    "testData": {
+      "requirement": "Sử dụng bản ghi có trạng thái thỏa điều kiện bị chặn: Chỉ khôi phục thiết bị đã ngừng sử dụng",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "STATE_RESTRICTION",
+        "target": "Khôi phục thiết bị",
+        "expected": "Hệ thống không thực hiện Khôi phục thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+      }
+    ],
+    "expectedResult": "Hệ thống không thực hiện Khôi phục thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi.",
+    "expectedResults": [
+      "Hệ thống không thực hiện Khôi phục thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+      "scenarioId": "SC022"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "DATA_INTEGRITY from approved function",
+    "riskCategory": "DATA_INTEGRITY",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [
+      {
+        "content": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+        "source": "BUSINESS_RULE",
+        "category": "BUSINESS_RULE",
+        "code": "",
+        "reference": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+        "text": "Chỉ khôi phục thiết bị đã ngừng sử dụng",
+        "classification": "STATE_RESTRICTION"
+      }
+    ],
+    "sourceCategories": [
+      "BUSINESS_RULE"
+    ],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC062",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Khôi phục thiết bị được hiển thị"
+      },
+      {
+        "order": 2,
+        "action": "Thực hiện thao tác với bản ghi ở trạng thái bị chặn",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Điều kiện kiểm thử được thiết lập"
+      },
+      {
+        "order": 3,
+        "action": "Thực hiện Khôi phục thiết bị",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ"
+      },
+      {
+        "order": 4,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Khôi phục thiết bị",
+        "value": "",
+        "expected": "Hệ thống không thực hiện Khôi phục thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+      }
+    ],
+    "automationHints": {
+      "operation": "",
+      "screen": "Khôi phục thiết bị",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.operation",
+        "assertionLocator"
+      ]
+    }
+  },
+  {
+    "id": "TC063",
+    "scenarioId": "SC-USER",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Thêm thiết bị",
+    "module": "Tài sản",
+    "feature": "Thêm thiết bị",
+    "title": "Scenario người dùng thêm",
+    "testScenario": "Thêm thiết bị",
+    "type": "POSITIVE",
+    "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+    "requirementReference": "Thêm thiết bị",
+    "requirementReferences": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06"
+    ],
+    "coveredRules": [
+      "1",
+      "Thêm thiết bị",
+      "BR01",
+      "BR02",
+      "BR03",
+      "BR04",
+      "EX01",
+      "EX02",
+      "EX03",
+      "EX04",
+      "EX05",
+      "EX06"
+    ],
+    "sourceItem": null,
+    "ruleClassification": "",
+    "needsClarification": false,
+    "requiresRuntimeSupport": false,
+    "needsEnrichment": false,
+    "executable": false,
+    "postconditions": [],
+    "automationNotes": "",
+    "automationCandidate": true,
+    "preconditions": [
+      "Người dùng đã đăng nhập.",
+      "Người dùng có quyền thêm thiết bị.",
+      "Người dùng đang ở màn hình quản lý thiết bị."
+    ],
+    "testData": {
+      "requirement": "Nhập dữ liệu hợp lệ cho các trường: Mã thiết bị, Tên thiết bị, Loại thiết bị, Trạng thái, Ghi chú",
+      "value": ""
+    },
+    "executionReadiness": "DATA_REQUIRED",
+    "assertions": [
+      {
+        "type": "SUCCESS",
+        "target": "Thêm thiết bị",
+        "expected": "Thiết bị được tạo thành công."
+      }
+    ],
+    "expectedResult": "Kết quả người dùng thêm",
+    "expectedResults": [
+      "Kết quả người dùng thêm"
+    ],
+    "actualResult": "",
+    "status": "Not Tested",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "intelligence": null,
+    "traceability": {
+      "requirementId": "Thêm thiết bị",
+      "scenarioId": "SC-USER"
+    },
+    "source": "Requirement Intelligence Engine",
+    "reason": "Cho phép người dùng thêm mới một thiết bị vào hệ thống.",
+    "riskCategory": "POSITIVE",
+    "createdBy": "QA-Copilot",
+    "version": "1.1",
+    "sourceItems": [],
+    "sourceCategories": [],
+    "relatedScenarioIds": [],
+    "mergedTestCaseIds": [],
+    "testcaseId": "TC063",
+    "steps": [
+      {
+        "order": 1,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 2,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 3,
+        "action": "Thiết lập điều kiện trước",
+        "target": "Device",
+        "value": "",
+        "expected": "Điều kiện trước được đáp ứng"
+      },
+      {
+        "order": 4,
+        "action": "Mở màn hình hoặc chức năng",
+        "target": "Device",
+        "value": "",
+        "expected": "Màn hình hoặc chức năng được hiển thị"
+      },
+      {
+        "order": 5,
+        "action": "Nhập dữ liệu",
+        "target": "Mã thiết bị",
+        "value": "",
+        "expected": "Trường Mã thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 6,
+        "action": "Nhập dữ liệu",
+        "target": "Tên thiết bị",
+        "value": "",
+        "expected": "Trường Tên thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 7,
+        "action": "Chọn giá trị",
+        "target": "Loại thiết bị",
+        "value": "",
+        "expected": "Trường Loại thiết bị nhận giá trị đã nhập"
+      },
+      {
+        "order": 8,
+        "action": "Lưu dữ liệu",
+        "target": "Device",
+        "value": "",
+        "expected": "Yêu cầu được gửi để hệ thống xử lý"
+      },
+      {
+        "order": 9,
+        "action": "Kiểm tra kết quả nghiệp vụ",
+        "target": "Device",
+        "value": "",
+        "expected": "Thiết bị được tạo thành công."
+      }
+    ],
+    "automationHints": {
+      "screen": "Device",
+      "operation": "CREATE",
+      "route": "",
+      "authenticationRequired": null,
+      "navigation": [],
+      "controls": {},
+      "executable": false,
+      "missingMetadata": [
+        "routeOrNavigation",
+        "controls.saveButton",
+        "controls.Mã thiết bị",
+        "controls.Tên thiết bị",
+        "controls.Loại thiết bị",
+        "assertionLocator"
+      ]
+    }
+  }
+]

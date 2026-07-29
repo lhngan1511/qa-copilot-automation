@@ -1,7 +1,13 @@
 import fs from "node:fs";
+import path from "node:path";
 import assert from "node:assert/strict";
 import XLSX from "xlsx";
-import { exportResult } from "./approved-testcase-source-of-truth-test.js";
+
+const integrationOutputRoot = path.resolve("./outputs/integration/approved-testcase-export");
+process.env.QA_COPILOT_INTEGRATION_OUTPUT_ROOT = integrationOutputRoot;
+process.env.QA_COPILOT_INTEGRATION_OUTPUT_PREFIX = "INTEGRATION_approved-testcase-export";
+
+const { exportResult } = await import("./approved-testcase-source-of-truth-test.js");
 
 const expectedFields = [
     "testcaseId",
@@ -27,6 +33,16 @@ const expectedFields = [
 ];
 
 const json = JSON.parse(fs.readFileSync(exportResult.outputs.json, "utf8"));
+Object.values(exportResult.outputs).forEach(outputPath => {
+    assert.ok(
+        path.resolve(outputPath).startsWith(`${integrationOutputRoot}${path.sep}`),
+        `Integration output escaped its root: ${outputPath}`
+    );
+    assert.ok(
+        path.basename(outputPath).startsWith("INTEGRATION_approved-testcase-export_"),
+        `Integration output is missing its prefix: ${outputPath}`
+    );
+});
 assert.ok(json.length > 0);
 expectedFields.forEach(field =>
     assert.ok(Object.prototype.hasOwnProperty.call(json[0], field), `JSON missing ${field}`)

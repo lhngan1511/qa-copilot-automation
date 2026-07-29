@@ -31,6 +31,10 @@ export default class WorkflowRuntime {
         return this.workflowSessionManager.findById(sessionId);
     }
 
+    findSessions() {
+        return this.workflowSessionManager.findAll();
+    }
+
     saveArtifact(artifact) {
         return this.artifactManager.save(artifact);
     }

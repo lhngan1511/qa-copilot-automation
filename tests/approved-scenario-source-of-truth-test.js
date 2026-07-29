@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { app, scenarioResult } from "./approved-module-source-of-truth-test.js";
 export { app };
+const outputRoot = "./outputs/integration/approved-scenario-source-of-truth";
 const artifact = app.workflowCoordinator.findArtifact(scenarioResult.scenarioReview.artifactId);
 const deletedId = artifact.scenarios[1].id;
 artifact.scenarios = artifact.scenarios.filter(x => x.id !== deletedId);
@@ -29,7 +30,8 @@ app.aiTestCaseIntelligenceEngine.analyze = async () => ({
     testCases: []
 });
 export const testCaseResult = await app.run("./requirements/thiet-bi.md", {
-    workflowContext: scenarioResult.workflowContext
+    workflowContext: scenarioResult.workflowContext,
+    outputRoot
 });
 assert.equal(testCaseResult.status, "AWAITING_TEST_CASE_REVIEW");
 assert.deepEqual(testCaseResult.outputs, {});

@@ -19,22 +19,23 @@ const structuredInput = {
 };
 
 assert.deepEqual(engine.normalizeClarificationQuestions([structuredInput]), [
-    structuredInput
+    {
+        ...structuredInput,
+        requirementReferences: []
+    }
 ]);
 
-assert.deepEqual(
-    engine.normalizeClarificationQuestions(["Có cần xác nhận trước khi xóa không?"]),
-    [
-        {
-            id: "CL001",
-            category: "General",
-            priority: "Medium",
-            question: "Có cần xác nhận trước khi xóa không?",
-            reason: "",
-            options: ["Có", "Không", "Chưa xác định"]
-        }
-    ]
-);
+assert.deepEqual(engine.normalizeClarificationQuestions(["Có cần xác nhận trước khi xóa không?"]), [
+    {
+        id: "CL001",
+        category: "General",
+        priority: "Medium",
+        question: "Có cần xác nhận trước khi xóa không?",
+        reason: "",
+        options: ["Có", "Không", "Chưa xác định"],
+        requirementReferences: []
+    }
+]);
 
 const mixed = engine.normalizeClarificationQuestions([
     structuredInput,
@@ -128,46 +129,31 @@ const promptRequirement = {
 assert.equal(injectedEngine.buildPrompt(promptRequirement), "INJECTED PROMPT");
 assert.deepEqual(promptBuilderCalls, [promptRequirement]);
 
-const analysisResult = engine.buildAnalysisResult(
-    {
-        featureUnderstanding: "Hiểu requirement",
-        testFocus: ["Validation"],
-        riskAreas: ["Dữ liệu"],
-        suggestedScenarios: [
-            {
-                feature: "Tạo khách hàng",
-                title: "Tạo khách hàng thành công",
-                type: "POSITIVE"
-            }
-        ],
-        questions: [
-            structuredInput,
-            "Có cần xác nhận không?"
-        ],
-        notes: ["Ghi chú"],
-        confidence: 0.9
-    },
-    {
-        module: "Khách hàng",
-        features: [
-            {
-                name: "Tạo khách hàng"
-            }
-        ]
-    }
-);
+const analysisResult = engine.buildAnalysisResult({
+    purpose: "Hiểu requirement",
+    functions: [
+        {
+            name: "Tạo khách hàng",
+            description: "",
+            businessRules: [],
+            validationRules: ["Validation"],
+            permissions: [],
+            dependencies: [],
+            assumptions: [],
+            requirementReferences: []
+        }
+    ],
+    risks: ["Dữ liệu"],
+    clarificationQuestions: [structuredInput, "Có cần xác nhận không?"],
+    requirementComplete: false,
+    confidence: 0.9
+});
 
 assert.equal(typeof analysisResult.questions[0], "object");
 assert.equal(analysisResult.questions[0].category, "Business Rule");
 assert.equal(analysisResult.questions[0].priority, "High");
-assert.equal(
-    analysisResult.questions[0].reason,
-    "Câu trả lời quyết định expected result."
-);
-assert.deepEqual(
-    analysisResult.questions[0].options,
-    ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]
-);
+assert.equal(analysisResult.questions[0].reason, "Câu trả lời quyết định expected result.");
+assert.deepEqual(analysisResult.questions[0].options, ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]);
 
 const fallbackResult = engine.fallbackAnalysis({
     module: "Khách hàng",
@@ -181,7 +167,8 @@ assert.deepEqual(fallbackResult.questions[0], {
     priority: "Medium",
     question: "Có cần xác nhận không?",
     reason: "",
-    options: ["Có", "Không", "Chưa xác định"]
+    options: ["Có", "Không", "Chưa xác định"],
+    requirementReferences: []
 });
 
 [

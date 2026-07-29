@@ -71,7 +71,8 @@ export default function createApp({
         "/api/workflows",
         createWorkflowRoutes({
             controller: resolvedController,
-            outputDir
+            outputDir,
+            resolveRequirementFile: requirementId => requirementUploadService.resolve(requirementId)
         })
     );
     app.get("/", (_req, res, next) => {

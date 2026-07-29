@@ -1,8 +1,32 @@
 import QACopilotApplicationService from "../services/QACopilotApplicationService.js";
+import PublicWorkflowMapper from "../web/mappers/PublicWorkflowMapper.js";
+import PublicWorkflowListMapper from "../web/mappers/PublicWorkflowListMapper.js";
+import WorkflowListQueryValidator from "../web/validators/WorkflowListQueryValidator.js";
+import PublicAIAnalysisReviewMapper from "../web/mappers/PublicAIAnalysisReviewMapper.js";
+import PublicTestCaseReviewMapper from "../web/mappers/PublicTestCaseReviewMapper.js";
 
 export default class QACopilotController {
-    constructor({ applicationService } = {}) {
+    constructor({
+        applicationService,
+        publicWorkflowMapper,
+        publicWorkflowListMapper,
+        workflowListQueryValidator,
+        publicAIAnalysisReviewMapper,
+        publicTestCaseReviewMapper
+    } = {}) {
         this.applicationService = applicationService || new QACopilotApplicationService();
+        this.publicWorkflowMapper = publicWorkflowMapper || new PublicWorkflowMapper();
+        this.publicWorkflowListMapper =
+            publicWorkflowListMapper ||
+            new PublicWorkflowListMapper({
+                workflowMapper: this.publicWorkflowMapper
+            });
+        this.workflowListQueryValidator =
+            workflowListQueryValidator || new WorkflowListQueryValidator();
+        this.publicAIAnalysisReviewMapper =
+            publicAIAnalysisReviewMapper || new PublicAIAnalysisReviewMapper();
+        this.publicTestCaseReviewMapper =
+            publicTestCaseReviewMapper || new PublicTestCaseReviewMapper();
     }
 
     async start(input = {}) {
@@ -107,11 +131,122 @@ export default class QACopilotController {
     }
 
     async getWorkflow(input = {}) {
-        return this.invoke(() => this.applicationService.getWorkflow(input));
+        try {
+            const result = this.applicationService.getWorkflow(input);
+            const workflow = this.publicWorkflowMapper.map(result);
+
+            return this.successResponse({
+                result: {
+                    workflow,
+                    deprecated: {
+                        pipelineStatus: result.pipelineStatus ?? null,
+                        workflowContext: result.workflowContext ?? null
+                    }
+                },
+                mapPublicResponse: false
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
+    async getWorkflowState(input = {}) {
+        return this.invoke(() => this.applicationService.getWorkflow(input), {
+            mapPublicResponse: false
+        });
+    }
+
+    async listWorkflows(input = {}) {
+        try {
+            const query = this.workflowListQueryValidator.validate(input);
+            const records = this.applicationService.listWorkflows();
+            const result = this.publicWorkflowListMapper.map(records, query);
+
+            return this.successResponse({
+                result,
+                mapPublicResponse: false
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
     }
 
     async getCurrentReview(input = {}) {
         return this.invoke(() => this.applicationService.getCurrentReview(input));
+    }
+
+    async getAIAnalysisReview(input = {}) {
+        try {
+            const currentReview = this.applicationService.getCurrentReview(input);
+            const review =
+                currentReview.artifact?.artifactType === "AI_ANALYSIS_REVIEW"
+                    ? currentReview
+                    : {
+                          ...currentReview,
+                          artifact:
+                              this.applicationService
+                                  .getArtifacts(input)
+                                  .findLast(
+                                      artifact => artifact?.artifactType === "AI_ANALYSIS_REVIEW"
+                                  ) ?? null
+                      };
+            const workflow = this.publicWorkflowMapper.map(
+                this.applicationService.getWorkflow(input)
+            );
+
+            return this.successResponse({
+                result: this.publicAIAnalysisReviewMapper.map({ review, workflow }),
+                mapPublicResponse: false
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
+    async updateAIAnalysisReview(input = {}) {
+        try {
+            this.applicationService.updateAIAnalysisReview(input);
+            return this.getAIAnalysisReview({ sessionId: input.sessionId });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
+    async getTestCaseReview(input = {}) {
+        try {
+            const currentReview = this.applicationService.getCurrentReview(input);
+            const review =
+                currentReview.artifact?.artifactType === "TEST_CASE_REVIEW"
+                    ? currentReview
+                    : {
+                          ...currentReview,
+                          artifact:
+                              this.applicationService
+                                  .getArtifacts(input)
+                                  .findLast(
+                                      artifact => artifact?.artifactType === "TEST_CASE_REVIEW"
+                                  ) ?? null
+                      };
+            const workflow = this.publicWorkflowMapper.map(
+                this.applicationService.getWorkflow(input)
+            );
+
+            return this.successResponse({
+                result: this.publicTestCaseReviewMapper.map({ review, workflow }),
+                mapPublicResponse: false
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
+    async updateTestCaseReview(input = {}) {
+        try {
+            this.applicationService.updateTestCaseReview(input);
+            return this.getTestCaseReview({ sessionId: input.sessionId });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
     }
 
     async getArtifacts(input = {}) {
@@ -138,11 +273,18 @@ export default class QACopilotController {
         return this.invoke(() => this.applicationService.getOutputs(input));
     }
 
-    async invoke(operation) {
+    async getOutputsForDownload(input = {}) {
+        return this.invoke(() => this.applicationService.getOutputs(input), {
+            mapPublicResponse: false
+        });
+    }
+
+    async invoke(operation, { mapPublicResponse = true } = {}) {
         try {
             return this.successResponse({
                 statusCode: 200,
-                result: await operation()
+                result: await operation(),
+                mapPublicResponse
             });
         } catch (error) {
             return this.errorResponse(error);
@@ -180,13 +322,41 @@ export default class QACopilotController {
         return this[handler](input);
     }
 
-    successResponse({ statusCode = 200, message = "", result = null } = {}) {
+    successResponse({
+        statusCode = 200,
+        message = "",
+        result = null,
+        mapPublicResponse = true
+    } = {}) {
+        const canMapPublicResponse = mapPublicResponse && result && typeof result === "object";
+        const mappingSource = Array.isArray(result)
+            ? {
+                  sessionId: result[0]?.sessionId ?? "",
+                  artifacts: result,
+                  outputs:
+                      result.find(item => item?.outputs && typeof item.outputs === "object")
+                          ?.outputs ?? {}
+              }
+            : result;
+        const publicWorkflow = canMapPublicResponse
+            ? this.publicWorkflowMapper.map(mappingSource)
+            : null;
+        const publicResult =
+            publicWorkflow === null
+                ? result
+                : Array.isArray(result)
+                  ? this.publicWorkflowMapper.sanitizeLegacy(result, publicWorkflow)
+                  : {
+                        ...this.publicWorkflowMapper.sanitizeLegacy(result, publicWorkflow),
+                        workflow: publicWorkflow
+                    };
+
         return {
             success: true,
             statusCode,
             message,
-            data: result,
-            result,
+            data: publicResult,
+            result: publicResult,
             error: null
         };
     }

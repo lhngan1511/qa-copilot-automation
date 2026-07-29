@@ -130,6 +130,15 @@ class MarkdownExporter {
             return this.hasValues(data) ? this.renderValueBlock(data) : "- Không có\n";
         }
 
+        if (Object.hasOwn(data, "requirement") || Object.hasOwn(data, "value")) {
+            return (
+                [
+                    `- Yêu cầu dữ liệu: ${data.requirement || ""}`,
+                    `- Giá trị tester: ${data.value || ""}`
+                ].join("\n") + "\n"
+            );
+        }
+
         const validData = Object.prototype.hasOwnProperty.call(data, "inputs")
             ? data.inputs
             : data.valid;

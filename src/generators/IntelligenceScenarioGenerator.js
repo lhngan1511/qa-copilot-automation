@@ -96,6 +96,10 @@ class IntelligenceScenarioGenerator {
 
         scenario.coveredRules = Array.isArray(item.coveredRules) ? [...item.coveredRules] : [];
 
+        scenario.sourceItems = Array.isArray(item.sourceItems)
+            ? this.cloneValue(item.sourceItems)
+            : [];
+
         scenario.riskReason = item.riskReason ?? "";
 
         scenario.testDataHints = Array.isArray(item.testDataHints) ? [...item.testDataHints] : [];

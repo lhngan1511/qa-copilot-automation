@@ -3,20 +3,26 @@ export default class RequirementAnalysisPromptBuilder {
         const requirementData = JSON.stringify(requirement ?? {}, null, 2);
 
         return `
-You are acting as both a Senior Business Analyst and a Senior QA Engineer.
+You are acting as a Senior Business Analyst.
 
-Analyze the supplied requirement to:
-1. Understand its module and features.
-2. Identify the most important test focus.
-3. Identify risk areas.
-4. Suggest relevant test scenarios.
-5. Ask clarification questions only when they are genuinely necessary.
+Extract requirement knowledge from the supplied requirement.
+
+EVIDENCE RULES:
+- Extract only information supported by the requirement.
+- Do not assign or invent a module.
+- Do not create module IDs or function IDs.
+- Do not infer permissions that are not explicitly supported.
+- Do not create boundaries when the requirement has no explicit limit.
+- Do not infer technical dependencies, databases, APIs, services, or architecture.
+- Record an assumption only when the source explicitly presents it as an assumption.
+- Never present an assumption as a confirmed fact.
+- Preserve requirement references for functions and rules whenever they can be identified.
+- Do not generate testcases or test scenarios.
+- Do not generate suggestedScenarios, featureUnderstanding, or testFocus.
+- Do not decide approval.
 
 CLARIFICATION QUESTION RULES:
 - Ask only about missing information that directly affects testcase design or expected results.
-- Do not ask about technical architecture unless the requirement explicitly indicates that it matters.
-- Do not use difficult technical terms such as "audit log", "soft delete", "hard delete",
-  "referential integrity", or "constraint" without explaining them in clear business language.
 - Use short, clear questions that a business user can answer easily.
 - Each question must address exactly one issue.
 - Ask no more than 5 clarification questions.
@@ -26,70 +32,38 @@ CLARIFICATION QUESTION RULES:
 - The reason must briefly explain why the answer affects testcase design.
 - Do not answer clarification questions on the user's behalf.
 - Do not infer rules without evidence in the requirement.
-- If no clarification is needed, return an empty questions array.
-
-QUESTION QUALITY EXAMPLES:
-
-Bad:
-"Hệ thống sử dụng soft delete hay hard delete?"
-
-Good:
-"Khi xóa một bản ghi, hệ thống chỉ ẩn để có thể khôi phục sau này hay xóa hoàn toàn?"
-
-Options:
-[
-  "Chỉ ẩn và có thể khôi phục",
-  "Xóa hoàn toàn",
-  "Tùy trạng thái sử dụng",
-  "Chưa xác định"
-]
-
-Bad:
-"Audit log bao gồm những gì?"
-
-Good:
-"Khi người dùng thêm, sửa hoặc xóa dữ liệu, hệ thống có cần lưu lại lịch sử thao tác không?"
-
-Options:
-[
-  "Có, lưu người thao tác, thời gian và nội dung thay đổi",
-  "Có, chỉ lưu người thao tác và thời gian",
-  "Không cần lưu",
-  "Chưa xác định"
-]
-
-Do not ask either example question unless the requirement contains a relevant signal.
+- If no clarification is needed, return an empty clarificationQuestions array.
 
 OUTPUT CONTRACT:
 Return only valid JSON. Do not return Markdown, commentary, or code fences.
 Use exactly this structure:
 {
-  "featureUnderstanding": "string",
-  "testFocus": ["string"],
-  "riskAreas": ["string"],
-  "suggestedScenarios": [
+  "purpose": "string",
+  "functions": [
     {
-      "feature": "string",
-      "title": "string",
-      "type": "POSITIVE | NEGATIVE | BOUNDARY | PERMISSION | EXCEPTION",
-      "priority": "HIGH | MEDIUM | LOW",
-      "reason": "string",
-      "riskCategory": "FUNCTIONAL | VALIDATION | SECURITY | DATA | USABILITY",
-      "requirementReference": "string"
+      "name": "string",
+      "description": "string",
+      "businessRules": ["string"],
+      "validationRules": ["string"],
+      "permissions": ["string"],
+      "dependencies": ["string"],
+      "assumptions": ["string"],
+      "requirementReferences": ["string"]
     }
   ],
-  "questions": [
+  "risks": ["string"],
+  "clarificationQuestions": [
     {
       "id": "CL001",
       "category": "Business Rule | Validation | Permission | Boundary | Exception | General",
       "priority": "High | Medium | Low",
       "question": "string",
       "reason": "string",
-      "options": ["string", "string", "Chưa xác định"]
+      "options": ["string", "string", "Chưa xác định"],
+      "requirementReferences": ["string"]
     }
   ],
-  "notes": ["string"],
-  "confidence": 0.9
+  "requirementComplete": false
 }
 
 Clarification question IDs must be unique within the response and sequential:

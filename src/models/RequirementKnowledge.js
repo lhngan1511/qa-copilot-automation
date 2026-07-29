@@ -11,7 +11,8 @@ class RequirementKnowledge {
 
         // Existing intelligence collections keep their original semantics.
         this.validationRules = this.cloneArray(data.validationRules);
-        this.riskAreas = this.cloneArray(data.riskAreas);
+        this.riskAreas = this.cloneArray(data.riskAreas ?? data.risks);
+        this.defineArrayAlias("risks", "riskAreas");
         this.boundaryCases = this.cloneArray(data.boundaryCases);
         this.negativeCases = this.cloneArray(data.negativeCases);
         this.positiveCases = this.cloneArray(data.positiveCases);
@@ -19,15 +20,20 @@ class RequirementKnowledge {
         this.permissionCases = this.cloneArray(data.permissionCases);
         this.dataIntegrityCases = this.cloneArray(data.dataIntegrityCases);
         this.suggestedScenarios = this.cloneArray(data.suggestedScenarios);
-        this.questions = this.cloneArray(data.questions);
+        this.questions = this.cloneArray(data.questions ?? data.clarificationQuestions);
+        this.defineArrayAlias("clarificationQuestions", "questions");
 
         this.permissions = this.normalizeStringArray(data.permissions);
+        this.dependencies = this.normalizeStringArray(data.dependencies);
+        this.assumptions = this.normalizeStringArray(data.assumptions);
         this.exceptions = this.normalizeStringArray(data.exceptions);
         this.notes = this.normalizeStringArray(data.notes);
         this.clarificationAnswers = this.cloneObjectArray(data.clarificationAnswers);
+        this.approved = data.approved === true;
 
         this.confidence = typeof data.confidence === "number" ? data.confidence : 0;
-        this.source = typeof data.source === "string" ? data.source : "Requirement Intelligence Engine";
+        this.source =
+            typeof data.source === "string" ? data.source : "Requirement Intelligence Engine";
         this.version = typeof data.version === "string" ? data.version : "1.0";
 
         if (data.module !== undefined && data.module !== null) {
@@ -102,6 +108,26 @@ class RequirementKnowledge {
         return result;
     }
 
+    isApproved() {
+        return this.approved === true;
+    }
+
+    approve() {
+        this.approved = true;
+        return this;
+    }
+
+    reset() {
+        const empty = new RequirementKnowledge();
+
+        Object.keys(this).forEach(key => {
+            delete this[key];
+        });
+
+        Object.assign(this, empty);
+        return this;
+    }
+
     toJSON() {
         const result = {
             module: this.module ? this.cloneValue(this.module) : null,
@@ -111,9 +137,12 @@ class RequirementKnowledge {
             businessRules: [...this.businessRules],
             validationRules: this.cloneValue(this.validationRules),
             permissions: [...this.permissions],
+            dependencies: [...this.dependencies],
+            assumptions: [...this.assumptions],
             boundaryCases: this.cloneValue(this.boundaryCases),
             exceptions: [...this.exceptions],
             riskAreas: this.cloneValue(this.riskAreas),
+            risks: this.cloneValue(this.risks),
             negativeCases: this.cloneValue(this.negativeCases),
             positiveCases: this.cloneValue(this.positiveCases),
             securityCases: this.cloneValue(this.securityCases),
@@ -121,7 +150,9 @@ class RequirementKnowledge {
             dataIntegrityCases: this.cloneValue(this.dataIntegrityCases),
             suggestedScenarios: this.cloneValue(this.suggestedScenarios),
             questions: this.cloneValue(this.questions),
+            clarificationQuestions: this.cloneValue(this.clarificationQuestions),
             clarificationAnswers: this.cloneValue(this.clarificationAnswers),
+            approved: this.approved,
             notes: [...this.notes],
             confidence: this.confidence,
             source: this.source,
@@ -180,6 +211,17 @@ class RequirementKnowledge {
 
     normalizeComparison(value) {
         return this.normalizeString(value).toLowerCase();
+    }
+
+    defineArrayAlias(alias, source) {
+        Object.defineProperty(this, alias, {
+            configurable: true,
+            enumerable: true,
+            get: () => this[source],
+            set: value => {
+                this[source] = this.cloneArray(value);
+            }
+        });
     }
 
     cloneArray(value) {

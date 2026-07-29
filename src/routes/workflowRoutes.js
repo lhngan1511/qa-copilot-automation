@@ -2,7 +2,11 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 
-export default function createWorkflowRoutes({ controller, outputDir = "./outputs" }) {
+export default function createWorkflowRoutes({
+    controller,
+    outputDir = "./outputs",
+    resolveRequirementFile = null
+}) {
     if (!controller) throw new Error("controller is required.");
 
     const router = Router();
@@ -13,11 +17,39 @@ export default function createWorkflowRoutes({ controller, outputDir = "./output
             error: response.error
         });
 
+    router.get("/", async (req, res) => {
+        send(
+            res,
+            await controller.listWorkflows({
+                limit: req.query.limit,
+                offset: req.query.offset
+            })
+        );
+    });
+
     router.post("/", async (req, res) => {
+        let requirementFile = req.body?.requirementFile;
+
+        if (req.body?.requirementId && typeof resolveRequirementFile === "function") {
+            try {
+                requirementFile = resolveRequirementFile(req.body.requirementId);
+            } catch (error) {
+                return res.status(error.statusCode ?? 400).json({
+                    success: false,
+                    data: null,
+                    error: {
+                        code: error.code ?? "INVALID_REQUIREMENT_ID",
+                        message: error.message,
+                        details: error.details ?? null
+                    }
+                });
+            }
+        }
+
         send(
             res,
             await controller.start({
-                requirementFile: req.body?.requirementFile
+                requirementFile
             })
         );
     });
@@ -31,6 +63,46 @@ export default function createWorkflowRoutes({ controller, outputDir = "./output
             res,
             await controller.getCurrentReview({
                 sessionId: req.params.sessionId
+            })
+        );
+    });
+
+    router.get("/:sessionId/ai-analysis-review", async (req, res) => {
+        send(
+            res,
+            await controller.getAIAnalysisReview({
+                sessionId: req.params.sessionId
+            })
+        );
+    });
+
+    router.put("/:sessionId/ai-analysis-review", async (req, res) => {
+        send(
+            res,
+            await controller.updateAIAnalysisReview({
+                sessionId: req.params.sessionId,
+                artifactId: req.body?.artifactId,
+                analysis: req.body?.analysis
+            })
+        );
+    });
+
+    router.get("/:sessionId/test-case-review", async (req, res) => {
+        send(
+            res,
+            await controller.getTestCaseReview({
+                sessionId: req.params.sessionId
+            })
+        );
+    });
+
+    router.put("/:sessionId/test-case-review", async (req, res) => {
+        send(
+            res,
+            await controller.updateTestCaseReview({
+                sessionId: req.params.sessionId,
+                artifactId: req.body?.artifactId,
+                testCases: req.body?.testCases
             })
         );
     });
@@ -51,7 +123,9 @@ export default function createWorkflowRoutes({ controller, outputDir = "./output
     });
 
     router.post("/:sessionId/clarifications/:questionId", async (req, res) => {
-        const workflow = await controller.getWorkflow({ sessionId: req.params.sessionId });
+        const workflow = await controller.getWorkflowState({
+            sessionId: req.params.sessionId
+        });
         if (!workflow.success) return send(res, workflow);
 
         send(
@@ -98,7 +172,9 @@ export default function createWorkflowRoutes({ controller, outputDir = "./output
 
     router.get("/:sessionId/outputs/:format/download", async (req, res, next) => {
         try {
-            const response = await controller.getOutputs({ sessionId: req.params.sessionId });
+            const response = await controller.getOutputsForDownload({
+                sessionId: req.params.sessionId
+            });
             if (!response.success) return send(res, response);
 
             const filePath = response.data?.outputs?.[req.params.format];

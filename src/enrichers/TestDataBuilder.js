@@ -1,5 +1,21 @@
+import { normalizeTestData } from "../utils/TestDataReadiness.js";
+
 class TestDataBuilder {
     build(context = {}) {
+        const planningData = this.buildPlanningData(context);
+        return normalizeTestData(planningData, {
+            module: context?.identity?.module,
+            feature: context?.identity?.feature,
+            function: context?.identity?.feature,
+            title: context?.identity?.title,
+            type: context?.identity?.type,
+            sourceItem: context?.sourceItem,
+            inputDefinitions: context?.inputs,
+            testData: planningData
+        });
+    }
+
+    buildPlanningData(context = {}) {
         const testData = this.normalizeExistingTestData(context?.existing?.testData);
         const rule = this.detectRule(context);
 
@@ -194,7 +210,7 @@ class TestDataBuilder {
         this.populateValidRequiredInputs(testData, context, inputName);
 
         if (this.isKnownInputName(context, inputName)) {
-            this.setIfMissing(testData.invalid, inputName, "DEVICE_EXISTING_001");
+            this.setIfMissing(testData.invalid, inputName, "");
         }
 
         const updateSelector = this.findInput(context, candidate => {
@@ -204,7 +220,7 @@ class TestDataBuilder {
         });
 
         if (updateSelector?.name) {
-            this.setIfMissing(testData.inputs, updateSelector.name, "DEVICE_EXISTING_001");
+            this.setIfMissing(testData.inputs, updateSelector.name, "");
         }
 
         this.setIfMissing(testData.expected, "validationField", inputName);
@@ -219,7 +235,7 @@ class TestDataBuilder {
         this.populateValidRequiredInputs(testData, context, inputName);
 
         if (this.isKnownInputName(context, inputName)) {
-            this.setIfMissing(testData.invalid, inputName, "__INVALID_OPTION__");
+            this.setIfMissing(testData.invalid, inputName, "");
         }
 
         this.setIfMissing(testData.expected, "validationField", inputName);
@@ -234,7 +250,7 @@ class TestDataBuilder {
         });
 
         if (entityInput?.name) {
-            this.setIfMissing(testData.inputs, entityInput.name, "DEVICE_IN_USE_001");
+            this.setIfMissing(testData.inputs, entityInput.name, "");
         }
 
         this.setIfMissing(testData.expected, "entityState", "IN_USE");
@@ -260,7 +276,7 @@ class TestDataBuilder {
         const inputName = context?.sourceItem?.inputName || input?.name || "";
 
         if (this.isKnownInputName(context, inputName)) {
-            this.setIfMissing(testData.invalid, inputName, "<script>alert(1)</script>");
+            this.setIfMissing(testData.invalid, inputName, "");
         }
 
         this.setIfMissing(
@@ -305,43 +321,9 @@ class TestDataBuilder {
     }
 
     createValidValue(input, context) {
-        const name = this.normalizeForComparison(input?.name);
-        const controlType = this.normalizeForComparison(input?.controlType);
-        const operationType = this.normalizeForComparison(context?.operation?.type);
-
-        if (name.includes("cần sửa") || name.includes("cần xóa") || name.includes("cần xoá")) {
-            return "DEVICE_EXISTING_001";
-        }
-
-        if (this.isDropdown(input)) {
-            const dataSource = this.normalizeText(input?.dataSource);
-
-            return dataSource ? `${dataSource} - giá trị hợp lệ` : "__VALID_OPTION__";
-        }
-
-        if (name.includes("mã") || name.includes("code")) {
-            return operationType === "update" ? "CODE_UPDATED_001" : "DEVICE_NEW_001";
-        }
-
-        if (name.includes("tên") || name.includes("name")) {
-            const inputName = this.normalizeText(input?.name);
-
-            return inputName ? `${inputName} kiểm thử` : "Dữ liệu kiểm thử";
-        }
-
-        if (name.includes("ghi chú") || name.includes("note")) {
-            return "Dữ liệu kiểm thử hợp lệ";
-        }
-
-        if (controlType.includes("date")) {
-            return "2026-01-01";
-        }
-
-        if (controlType.includes("number")) {
-            return 1;
-        }
-
-        return "VALID_VALUE";
+        void input;
+        void context;
+        return "";
     }
 
     findRelevantInput(context, predicate) {

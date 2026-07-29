@@ -1,6 +1,7 @@
 import ScenarioContextBuilder from "../enrichers/ScenarioContextBuilder.js";
 import TestDataBuilder from "../enrichers/TestDataBuilder.js";
 import StepBuilder from "../enrichers/StepBuilder.js";
+import { normalizeTestData } from "../utils/TestDataReadiness.js";
 
 class ScenarioEnrichmentEngine {
     constructor({
@@ -43,8 +44,17 @@ class ScenarioEnrichmentEngine {
             requirement,
             knowledge
         });
-        const testData = this.testDataBuilder.build(context);
-        const steps = this.stepBuilder.build({ context, testData });
+        const planningData =
+            typeof this.testDataBuilder.buildPlanningData === "function"
+                ? this.testDataBuilder.buildPlanningData(context)
+                : this.testDataBuilder.build(context);
+        const testData = normalizeTestData(planningData, {
+            ...sourceScenario,
+            sourceItem: context.sourceItem,
+            inputDefinitions: context.inputs,
+            testData: planningData
+        });
+        const steps = this.stepBuilder.build({ context, testData: planningData });
         const expectedResult = this.resolveExpectedResult(sourceScenario, context, steps);
         const expectedResults = this.normalizeExpectedResults(
             sourceScenario,
@@ -62,6 +72,11 @@ class ScenarioEnrichmentEngine {
 
         return {
             ...sourceScenario,
+            inputDefinitions:
+                Array.isArray(sourceScenario.inputDefinitions) &&
+                sourceScenario.inputDefinitions.length > 0
+                    ? this.cloneValue(sourceScenario.inputDefinitions)
+                    : this.cloneValue(context.inputs),
             testData: this.cloneValue(testData),
             steps: this.cloneValue(steps),
             expectedResult,

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 class JsonExporter {
     export(testCases, outputPath) {
@@ -40,6 +41,8 @@ class JsonExporter {
         });
 
         canonical.testcaseId = source.testcaseId ?? source.testCaseId ?? source.id ?? "";
+        canonical.testData = normalizeTestData(source.testData, source);
+        canonical.executionReadiness = resolveExecutionReadiness(canonical.testData);
         canonical.steps = this.normalizeSteps(source.steps);
         canonical.expectedResult = this.resolveExpectedResult(source);
         canonical.expectedResults = this.resolveExpectedResults(source);

@@ -1,0 +1,212 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import createApp from "../src/server/createApp.js";
+
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const fixturePath = path.join(testDirectory, "fixtures", "web-ui-production-requirement.md");
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "qa-copilot-testcase-review-"));
+const originalCwd = process.cwd();
+const originalEnableAI = process.env.ENABLE_AI;
+let server;
+
+async function request(baseUrl, method, requestPath, body, headers = {}) {
+    const json = body !== undefined && !Buffer.isBuffer(body);
+    const response = await fetch(`${baseUrl}${requestPath}`, {
+        method,
+        headers: { ...(json ? { "content-type": "application/json" } : {}), ...headers },
+        body: body === undefined ? undefined : json ? JSON.stringify(body) : body
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    return {
+        status: response.status,
+        body: contentType.includes("application/json")
+            ? await response.json()
+            : Buffer.from(await response.arrayBuffer())
+    };
+}
+
+try {
+    process.chdir(tempRoot);
+    process.env.ENABLE_AI = "true";
+    const outputDir = path.join(tempRoot, "outputs");
+    const app = createApp({
+        repositoryType: "file",
+        dataDir: path.join(tempRoot, "data"),
+        outputDir
+    });
+    let providerCalls = 0;
+    app.locals.dependencies.qaCopilot.aiEngine.aiProvider = {
+        async generate() {
+            providerCalls += 1;
+            return JSON.stringify({
+                purpose: "Phân tích requirement phục vụ TestCase Review.",
+                functions: [
+                    {
+                        name: "Thêm thiết bị",
+                        description: "Thêm thiết bị mới.",
+                        businessRules: ["Mã thiết bị phải duy nhất."],
+                        validationRules: ["Mã thiết bị không được để trống."],
+                        permissions: [],
+                        dependencies: [],
+                        assumptions: [],
+                        requirementReferences: ["Thêm thiết bị"]
+                    }
+                ],
+                risks: [],
+                clarificationQuestions: [],
+                requirementComplete: true
+            });
+        }
+    };
+    server = await new Promise(resolve => {
+        const listener = app.listen(0, "127.0.0.1", () => resolve(listener));
+    });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+    const upload = await request(
+        baseUrl,
+        "POST",
+        "/api/requirements/upload",
+        fs.readFileSync(fixturePath),
+        { "content-type": "text/markdown", "x-file-name": "test-case-review.md" }
+    );
+    const started = await request(baseUrl, "POST", "/api/workflows", {
+        requirementId: upload.body.data.requirementId
+    });
+    const analysisWorkflowId = started.body.data.workflow.id;
+    const analysis = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${analysisWorkflowId}/ai-analysis-review`
+    );
+    await request(baseUrl, "POST", `/api/workflows/${analysisWorkflowId}/approve`, {
+        artifactId: analysis.body.data.artifactId,
+        approvedBy: "testcase-review-tester"
+    });
+    const generated = await request(baseUrl, "POST", `/api/workflows/${analysisWorkflowId}/resume`);
+    assert.equal(generated.status, 200);
+    assert.equal(generated.body.data.workflow.step, "TEST_CASE_REVIEW");
+    const workflowId = generated.body.data.workflow.id;
+
+    const review = await request(baseUrl, "GET", `/api/workflows/${workflowId}/test-case-review`);
+    assert.equal(review.status, 200);
+    assert.equal(review.body.data.step, "TEST_CASE_REVIEW");
+    assert.ok(review.body.data.testCases.length > 1);
+    assert.equal(review.body.data.summary.total, review.body.data.testCases.length);
+    assert.equal(
+        review.body.data.summary.ready + review.body.data.summary.requiresTesterInput,
+        review.body.data.summary.total
+    );
+    assert.equal(JSON.stringify(review.body.data).includes(tempRoot), false);
+    assert.equal("artifact" in review.body.data, false);
+    assert.equal("workflowContext" in review.body.data, false);
+
+    const blocked = await request(baseUrl, "POST", `/api/workflows/${workflowId}/resume`);
+    assert.equal(blocked.status, 409);
+
+    const unsupportedAdd = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: review.body.data.artifactId,
+            testCases: [...review.body.data.testCases, { id: "UI-LOCAL", title: "Added" }]
+        }
+    );
+    assert.equal(unsupportedAdd.status, 422);
+
+    const initialCases = review.body.data.testCases;
+    const editedTitle = `TESTER EDIT - ${initialCases[0].title}`;
+    const retainedCount = initialCases.length - 1;
+    const editedBatch = initialCases.slice(0, retainedCount).map((testCase, index) =>
+        index === 0
+            ? {
+                  ...testCase,
+                  title: editedTitle,
+                  testData: {
+                      ...testCase.testData,
+                      value: "TESTER-VALUE-001"
+                  }
+              }
+            : testCase
+    );
+    const updated = await request(baseUrl, "PUT", `/api/workflows/${workflowId}/test-case-review`, {
+        artifactId: review.body.data.artifactId,
+        testCases: editedBatch
+    });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.data.testCases.length, retainedCount);
+    assert.equal(updated.body.data.testCases[0].title, editedTitle);
+    assert.equal(updated.body.data.testCases[0].testData.value, "TESTER-VALUE-001");
+    assert.equal(updated.body.data.testCases[0].executionReadiness, "READY");
+
+    const reloaded = await request(baseUrl, "GET", `/api/workflows/${workflowId}/test-case-review`);
+    assert.equal(reloaded.body.data.testCases.length, retainedCount);
+    assert.equal(reloaded.body.data.testCases[0].title, editedTitle);
+
+    const approved = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {
+        artifactId: review.body.data.artifactId,
+        approvedBy: "testcase-review-tester"
+    });
+    assert.equal(approved.status, 200);
+
+    const approvedReview = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${workflowId}/test-case-review`
+    );
+    assert.equal(approvedReview.body.data.approvalStatus, "approved");
+    assert.deepEqual(approvedReview.body.data.allowedActions, ["RESUME_WORKFLOW"]);
+
+    const completed = await request(baseUrl, "POST", `/api/workflows/${workflowId}/resume`);
+    assert.equal(completed.status, 200);
+    assert.equal(completed.body.data.workflow.status, "COMPLETED");
+    assert.deepEqual(completed.body.data.workflow.allowedActions.sort(), [
+        "DOWNLOAD_EXCEL",
+        "DOWNLOAD_JSON"
+    ]);
+
+    const jsonDownload = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${workflowId}/outputs/json/download`
+    );
+    const excelDownload = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${workflowId}/outputs/excel/download`
+    );
+    assert.equal(jsonDownload.status, 200);
+    assert.equal(excelDownload.status, 200);
+    const approvedJson = Array.isArray(jsonDownload.body)
+        ? jsonDownload.body
+        : JSON.parse(jsonDownload.body.toString("utf8"));
+    assert.equal(approvedJson.length, retainedCount);
+    assert.equal(approvedJson[0].title, editedTitle);
+    assert.equal(approvedJson[0].testData.value, "TESTER-VALUE-001");
+    assert.equal(
+        approvedJson.some(testCase => testCase.id === initialCases.at(-1).id),
+        false
+    );
+    assert.equal(providerCalls, 1);
+
+    console.log("TestCase Review HTTP test PASSED");
+    console.log(`Approved testcases: ${approvedJson.length}`);
+    console.log("Add testcase: NOT SUPPORTED");
+    console.log("Remove testcase: SUPPORTED");
+    console.log(`JSON records: ${approvedJson.length}`);
+    console.log(`Excel bytes: ${excelDownload.body.length}`);
+} finally {
+    if (server) {
+        await new Promise((resolve, reject) =>
+            server.close(error => (error ? reject(error) : resolve()))
+        );
+    }
+    process.chdir(originalCwd);
+    if (originalEnableAI === undefined) delete process.env.ENABLE_AI;
+    else process.env.ENABLE_AI = originalEnableAI;
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+}

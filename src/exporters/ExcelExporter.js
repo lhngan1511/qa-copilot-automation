@@ -47,7 +47,7 @@ class ExcelExporter {
             "Tình huống kiểm tra": testCase?.testScenario ?? "",
             "Tiền điều kiện": this.arrayToText(testCase?.preconditions),
             "Chuẩn bị dữ liệu": this.valueToText(testCase?.setupData),
-            "Dữ liệu kiểm thử": this.objectToText(testCase?.testData),
+            "Dữ liệu kiểm thử": this.testDataToText(testCase?.testData),
             "Các bước kiểm thử": this.stepsToText(testCase?.steps),
             "Kết quả mong đợi": this.resolveExpectedResult(testCase),
             "Kết quả thực tế": this.valueToText(testCase?.actualResult),
@@ -137,6 +137,22 @@ class ExcelExporter {
         });
 
         return values.length > 0 ? values.join(", ") : "Chưa xác định";
+    }
+
+    testDataToText(testData) {
+        if (
+            testData &&
+            typeof testData === "object" &&
+            !Array.isArray(testData) &&
+            (Object.hasOwn(testData, "requirement") || Object.hasOwn(testData, "value"))
+        ) {
+            return [
+                `Yêu cầu dữ liệu: ${testData.requirement ?? ""}`,
+                `Giá trị tester: ${testData.value ?? ""}`
+            ].join("\n");
+        }
+
+        return this.objectToText(testData);
     }
 
     getVietnamLocalDateTime() {

@@ -13,7 +13,7 @@ const qaCopilot = new QACopilot();
 const initialResult = await qaCopilot.run("requirements/thiet-bi.md");
 
 assert.equal(initialResult.aiAnalysis?.analysisStatus, "SUCCESS");
-assert.equal(initialResult.aiAnalysis?.analysisSource, "gemini");
+assert.equal(initialResult.aiAnalysis?.analysisSource, "ai");
 assert.equal(initialResult.status, "AWAITING_AI_CLARIFICATION");
 assert.ok(initialResult.clarificationQuestions.length > 0);
 assert.ok(initialResult.clarificationQuestions.length <= 5);
@@ -111,10 +111,7 @@ const requirementArtifact = qaCopilot.workflowCoordinator.findArtifact(
     requirementReviewResult.requirementReview.artifactId
 );
 
-assert.equal(
-    requirementArtifact.clarifications.length,
-    artifactBeforeAnswers.questions.length
-);
+assert.equal(requirementArtifact.clarifications.length, artifactBeforeAnswers.questions.length);
 
 requirementArtifact.clarifications.forEach(clarification => {
     assert.match(clarification.questionId, /^CL\d{3,}$/);
@@ -134,8 +131,8 @@ console.log(
         {
             analysisStatus: capturedAIResult.analysisStatus,
             analysisSource: capturedAIResult.analysisSource,
-            featureUnderstanding: capturedAIResult.featureUnderstanding,
-            suggestedScenarioCount: capturedAIResult.suggestedScenarios.length,
+            purpose: capturedAIResult.purpose,
+            functionCount: capturedAIResult.functions.length,
             clarificationArtifactId: artifactId,
             questions: artifactBeforeAnswers.questions,
             clarificationApprovalStatus: approvalResult.artifact.approvalStatus,
@@ -146,8 +143,7 @@ console.log(
             outputsBeforeApproval: Object.keys(initialResult.outputs).length,
             scenariosAfterClarificationApproval: requirementReviewResult.scenarios.length,
             testCasesAfterClarificationApproval: requirementReviewResult.testCases.length,
-            outputsAfterClarificationApproval:
-                Object.keys(requirementReviewResult.outputs).length
+            outputsAfterClarificationApproval: Object.keys(requirementReviewResult.outputs).length
         },
         null,
         2

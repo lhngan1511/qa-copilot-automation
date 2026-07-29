@@ -1,0 +1,24 @@
+{
+    "name": "qa-copilot-web-ui",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "validate:new-workflow": "node scripts/validate-new-workflow.mjs",
+        "validate:ai-analysis-review": "node scripts/validate-ai-analysis-review.mjs",
+        "validate:test-case-review": "node scripts/validate-test-case-review.mjs"
+    },
+    "dependencies": {
+        "@tanstack/react-query": "^5.90.20",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-router-dom": "^7.13.1"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^5.1.4",
+        "vite": "^7.3.1"
+    }
+}

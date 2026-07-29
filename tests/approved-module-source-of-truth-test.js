@@ -22,7 +22,8 @@ app.aiScenarioIntelligenceEngine.analyze = async () => ({
     errors: ["Offline fallback"]
 });
 const requirementFile = "./requirements/thiet-bi.md";
-const requirementResult = await app.run(requirementFile);
+const outputRoot = "./outputs/integration/approved-module-source-of-truth";
+const requirementResult = await app.run(requirementFile, { outputRoot });
 app.reviewRequirement({
     sessionId: requirementResult.requirementReview.sessionId,
     feedback: "Approved"
@@ -32,22 +33,19 @@ app.approveRequirement({
     artifactId: requirementResult.requirementReview.artifactId
 });
 const moduleResult = await app.run(requirementFile, {
-    workflowContext: requirementResult.workflowContext
+    workflowContext: requirementResult.workflowContext,
+    outputRoot
 });
 assert.equal(moduleResult.status, "AWAITING_MODULE_REVIEW");
 assert.deepEqual(moduleResult.scenarios, []);
 assert.deepEqual(moduleResult.testCases, []);
 assert.deepEqual(moduleResult.outputs, {});
 
-const moduleArtifact = app.workflowCoordinator.findArtifact(
-    moduleResult.moduleReview.artifactId
-);
+const moduleArtifact = app.workflowCoordinator.findArtifact(moduleResult.moduleReview.artifactId);
 const renamed = moduleArtifact.functions.find(item => item.name === "Xóa thiết bị");
 renamed.name = "Ngừng sử dụng thiết bị";
 renamed.businessRules = ["Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý"];
-moduleArtifact.functions = moduleArtifact.functions.filter(
-    item => item.name !== "Sửa thiết bị"
-);
+moduleArtifact.functions = moduleArtifact.functions.filter(item => item.name !== "Sửa thiết bị");
 moduleArtifact.functions.push({
     id: "FUNC005",
     moduleId: moduleArtifact.module.id,
@@ -76,7 +74,8 @@ app.approveModule({
 
 process.env.ENABLE_AI = "true";
 export const scenarioResult = await app.run(requirementFile, {
-    workflowContext: moduleResult.workflowContext
+    workflowContext: moduleResult.workflowContext,
+    outputRoot
 });
 assert.equal(scenarioResult.status, "AWAITING_SCENARIO_REVIEW");
 assert.equal(aiCalls, 0);
@@ -85,19 +84,21 @@ assert.deepEqual(scenarioResult.testCases, []);
 assert.deepEqual(scenarioResult.outputs, {});
 assert.ok(scenarioResult.scenarios.length < 82);
 assert.ok(scenarioResult.scenarios.every(item => item.module === "Tài sản"));
-assert.ok(
-    scenarioResult.scenarios.some(item => item.feature === "Ngừng sử dụng thiết bị")
+assert.ok(scenarioResult.scenarios.some(item => item.feature === "Ngừng sử dụng thiết bị"));
+assert.equal(
+    scenarioResult.scenarios.some(item => item.feature === "Xóa thiết bị"),
+    false
 );
-assert.equal(scenarioResult.scenarios.some(item => item.feature === "Xóa thiết bị"), false);
-assert.equal(scenarioResult.scenarios.some(item => item.feature === "Sửa thiết bị"), false);
+assert.equal(
+    scenarioResult.scenarios.some(item => item.feature === "Sửa thiết bị"),
+    false
+);
 assert.ok(scenarioResult.scenarios.some(item => item.feature === "Khôi phục thiết bị"));
 assert.ok(
     scenarioResult.scenarios.some(
         item =>
             Array.isArray(item.coveredRules) &&
-            item.coveredRules.includes(
-                "Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý"
-            )
+            item.coveredRules.includes("Chỉ ngừng sử dụng khi không còn dữ liệu đang xử lý")
     )
 );
 assert.ok(
