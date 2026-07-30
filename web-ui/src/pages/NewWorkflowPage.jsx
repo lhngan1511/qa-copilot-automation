@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import RequirementFilePicker from "../components/RequirementFilePicker.jsx";
 import useCreateWorkflow from "../hooks/useCreateWorkflow.js";
 import { validateRequirementFile } from "../utils/requirementFileValidation.js";
@@ -55,19 +55,13 @@ export default function NewWorkflowPage() {
         }
     };
 
+    const fileIsValid = validateRequirementFile(file).valid;
+
     return (
         <section className="page page--narrow upload-page">
-            <Link className="back-link" to="/">
-                ← Back to Workflows
-            </Link>
-
             <header className="upload-page__heading">
-                <p className="eyebrow">Requirement intake</p>
+                <p className="eyebrow">AI Test Design</p>
                 <h2>AI Test Design</h2>
-                <p>
-                    Upload your requirement document and let QA Copilot prepare it for AI-powered
-                    test analysis.
-                </p>
             </header>
 
             <form className="new-workflow-form" onSubmit={handleSubmit} noValidate>
@@ -75,7 +69,7 @@ export default function NewWorkflowPage() {
                     <div className="form-section__heading">
                         <div>
                             <h3>Upload Requirement</h3>
-                            <p>Select a Markdown requirement document to begin.</p>
+                            <p>Upload a Markdown requirement to begin AI-powered test analysis.</p>
                         </div>
                     </div>
 
@@ -106,14 +100,12 @@ export default function NewWorkflowPage() {
                 )}
 
                 <div className="form-actions upload-actions">
-                    <Link className="button button--secondary" to="/">
-                        Cancel
-                    </Link>
                     <button
                         className="button button--primary upload-actions__primary"
                         type="submit"
-                        disabled={mutation.isPending}
+                        disabled={mutation.isPending || !fileIsValid}
                     >
+                        <span aria-hidden="true">✦</span>
                         {mutation.isPending ? "Starting analysis..." : "Start AI Analysis"}
                     </button>
                 </div>
