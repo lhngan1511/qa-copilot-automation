@@ -60,17 +60,13 @@ export default function NewWorkflowPage() {
     return (
         <section className="page page--narrow upload-page">
             <header className="upload-page__heading">
-                <p className="eyebrow">AI Test Design</p>
                 <h2>AI Test Design</h2>
             </header>
 
             <form className="new-workflow-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-section">
                     <div className="form-section__heading">
-                        <div>
-                            <h3>Upload Requirement</h3>
-                            <p>Upload a Markdown requirement to begin AI-powered test analysis.</p>
-                        </div>
+                        <h3>Upload Requirement</h3>
                     </div>
 
                     <RequirementFilePicker
