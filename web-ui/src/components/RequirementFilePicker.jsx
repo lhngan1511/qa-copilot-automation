@@ -26,14 +26,16 @@ export default function RequirementFilePicker({ file, error, disabled = false, o
             <label
                 className={`file-drop-zone ${dragActive ? "file-drop-zone--active" : ""} ${
                     error ? "file-drop-zone--error" : ""
-                }`}
+                } ${disabled ? "file-drop-zone--disabled" : ""}`}
                 htmlFor="requirement-file"
                 onDragEnter={event => {
                     event.preventDefault();
                     if (!disabled) setDragActive(true);
                 }}
                 onDragOver={event => event.preventDefault()}
-                onDragLeave={() => setDragActive(false)}
+                onDragLeave={event => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) setDragActive(false);
+                }}
                 onDrop={handleDrop}
             >
                 <input
@@ -50,19 +52,21 @@ export default function RequirementFilePicker({ file, error, disabled = false, o
                     }
                     onChange={event => selectFile(event.target.files?.[0])}
                 />
-                <span className="file-drop-zone__mark" aria-hidden="true">
-                    MD
+
+                <span className="file-drop-zone__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                    </svg>
                 </span>
-                <span>
-                    <strong>Kéo file Markdown vào đây</strong>
-                    <small>hoặc bấm để chọn file từ máy tính</small>
+                <span className="file-drop-zone__copy">
+                    <strong>Drag and drop your requirement file</strong>
+                    <small>or</small>
+                    <span className="file-drop-zone__button">Choose a file</span>
+                </span>
+                <span id="requirement-file-help" className="file-drop-zone__support">
+                    Supported: Markdown (.md) · Maximum file size: 2 MB
                 </span>
             </label>
-
-            <p id="requirement-file-help" className="field-help">
-                Chấp nhận file `.md`, tối đa 2 MB. Nội dung chỉ được gửi tới backend khi bạn tạo
-                workflow.
-            </p>
 
             {error && (
                 <p id="requirement-file-error" className="field-error" role="alert">
@@ -76,8 +80,9 @@ export default function RequirementFilePicker({ file, error, disabled = false, o
                         <span className="selected-file__icon" aria-hidden="true">
                             MD
                         </span>
-                        <span>
-                            <strong>{file.name}</strong>
+                        <span className="selected-file__details">
+                            <small>Selected file</small>
+                            <strong title={file.name}>{file.name}</strong>
                             <small>{formatFileSize(file.size)}</small>
                         </span>
                     </div>
@@ -87,7 +92,7 @@ export default function RequirementFilePicker({ file, error, disabled = false, o
                         disabled={disabled}
                         onClick={clearFile}
                     >
-                        Bỏ file
+                        Remove
                     </button>
                 </div>
             )}

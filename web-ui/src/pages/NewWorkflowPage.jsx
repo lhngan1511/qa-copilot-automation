@@ -56,31 +56,29 @@ export default function NewWorkflowPage() {
     };
 
     return (
-        <section className="page page--narrow">
+        <section className="page page--narrow upload-page">
             <Link className="back-link" to="/">
-                ← Quay lại Workflows
+                ← Back to Workflows
             </Link>
 
-            <div className="page-heading">
-                <div>
-                    <p className="eyebrow">Requirement intake</p>
-                    <h2>Tạo workflow mới</h2>
-                    <p>
-                        Chọn requirement Markdown. Backend sẽ lưu file, khởi tạo workflow và dừng
-                        tại review gate phù hợp.
-                    </p>
-                </div>
-            </div>
+            <header className="upload-page__heading">
+                <p className="eyebrow">Requirement intake</p>
+                <h2>AI Test Design</h2>
+                <p>
+                    Upload your requirement document and let QA Copilot prepare it for AI-powered
+                    test analysis.
+                </p>
+            </header>
 
             <form className="new-workflow-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-section">
                     <div className="form-section__heading">
-                        <span>01</span>
                         <div>
-                            <h3>Requirement Markdown</h3>
-                            <p>File được backend xác thực lại trước khi workflow bắt đầu.</p>
+                            <h3>Upload Requirement</h3>
+                            <p>Select a Markdown requirement document to begin.</p>
                         </div>
                     </div>
+
                     <RequirementFilePicker
                         file={file}
                         error={fileError}
@@ -89,19 +87,11 @@ export default function NewWorkflowPage() {
                     />
                 </div>
 
-                <aside className="form-note">
-                    <strong>Tên workflow</strong>
-                    <p>
-                        Backend hiện chưa hỗ trợ field tên workflow khi khởi tạo. Tên hiển thị sẽ
-                        được lấy từ public workflow DTO sau phân tích.
-                    </p>
-                </aside>
-
                 {mutation.isError && (
                     <div className="inline-alert" role="alert">
-                        <strong>Không thể tạo workflow</strong>
+                        <strong>Unable to start AI analysis</strong>
                         <span>{uploadErrorMessage(mutation.error)}</span>
-                        {mutation.error?.code && <small>Mã lỗi: {mutation.error.code}</small>}
+                        {mutation.error?.code && <small>Error code: {mutation.error.code}</small>}
                     </div>
                 )}
 
@@ -109,22 +99,22 @@ export default function NewWorkflowPage() {
                     <div className="processing-state" role="status" aria-live="polite">
                         <span className="loading-spinner" aria-hidden="true" />
                         <span>
-                            <strong>Đang tải và phân tích requirement</strong>
-                            <small>Không đóng trang cho đến khi workflow được khởi tạo.</small>
+                            <strong>Uploading and analyzing your requirement</strong>
+                            <small>Please keep this page open while the workflow is created.</small>
                         </span>
                     </div>
                 )}
 
-                <div className="form-actions">
+                <div className="form-actions upload-actions">
                     <Link className="button button--secondary" to="/">
-                        Hủy
+                        Cancel
                     </Link>
                     <button
-                        className="button button--primary"
+                        className="button button--primary upload-actions__primary"
                         type="submit"
                         disabled={mutation.isPending}
                     >
-                        {mutation.isPending ? "Đang tạo workflow..." : "Tạo workflow"}
+                        {mutation.isPending ? "Starting analysis..." : "Start AI Analysis"}
                     </button>
                 </div>
             </form>
