@@ -42,6 +42,18 @@ export default function WorkflowDetailPage() {
     }
 
     const workflow = query.data;
+    const isRequirementReview =
+        workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" ||
+        workflow.step === "AI_ANALYSIS_REVIEW";
+
+    if (isRequirementReview) {
+        return (
+            <section className="page requirement-review-page">
+                <AIAnalysisReviewPanel workflow={workflow} />
+            </section>
+        );
+    }
+
     const clarification = workflow?.clarification ?? {};
     const testCases = workflow?.testCases ?? {};
     const actions = workflow?.allowedActions ?? [];
@@ -86,11 +98,6 @@ export default function WorkflowDetailPage() {
                     detail={`${artifacts.length} artifact`}
                 />
             </div>
-
-            {(workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" ||
-                workflow.step === "AI_ANALYSIS_REVIEW") && (
-                <AIAnalysisReviewPanel workflow={workflow} />
-            )}
 
             {(workflow.status === "TEST_CASE_REVIEW_REQUIRED" ||
                 workflow.step === "TEST_CASE_REVIEW") && (

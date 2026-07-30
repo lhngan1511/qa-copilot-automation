@@ -1,23 +1,24 @@
 import { Link } from "react-router-dom";
-import WorkflowStatusBadge from "../WorkflowStatusBadge.jsx";
 import formatDate from "../../utils/formatDate.js";
 
-function visibleStepLabel(workflow) {
-    if (workflow.status === "COMPLETED" || workflow.step === "EXPORT") return "Completed";
+function visibleStatus(workflow) {
+    if (workflow.status === "COMPLETED" || workflow.step === "EXPORT") {
+        return { label: "Completed", tone: "success" };
+    }
     if (
         workflow.status === "TEST_CASE_REVIEW_REQUIRED" ||
         workflow.step === "TEST_CASE_REVIEW"
     ) {
-        return "TestCase Review";
+        return { label: "TestCase Review", tone: "warning" };
     }
     if (
         workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" ||
         workflow.status === "REVIEW_REQUIRED" ||
         workflow.step === "AI_ANALYSIS_REVIEW"
     ) {
-        return "Requirement Review";
+        return { label: "Requirement Review", tone: "primary" };
     }
-    return "Upload File";
+    return { label: "In progress", tone: "neutral" };
 }
 
 export default function RecentWorkflowsTable({ workflows }) {
@@ -27,73 +28,56 @@ export default function RecentWorkflowsTable({ workflows }) {
                 <caption className="visually-hidden">Danh sách workflow AI Test Design gần đây</caption>
                 <thead>
                     <tr>
-                        <th scope="col">Tên workflow</th>
-                        <th scope="col">Trạng thái</th>
-                        <th scope="col">Bước hiện tại</th>
-                        <th scope="col">Clarification</th>
-                        <th scope="col">Testcases</th>
-                        <th scope="col">Cập nhật cuối</th>
+                        <th scope="col">Workflow</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Last Updated</th>
                         <th scope="col" className="dashboard-table__actions-heading">
-                            Thao tác
+                            Action
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {workflows.map(workflow => {
-                        const clarification = workflow.clarification ?? {};
-                        const testCases = workflow.testCases ?? {};
+                        const name = workflow.name?.trim();
+                        const businessName = name && name !== workflow.id ? name : "Chưa có tên";
+                        const status = visibleStatus(workflow);
 
                         return (
                             <tr key={workflow.id}>
-                                <td data-label="Tên workflow">
+                                <td data-label="Workflow">
                                     <div className="dashboard-table__workflow">
                                         <span className="dashboard-table__file-icon" aria-hidden="true">
                                             <svg viewBox="0 0 24 24">
                                                 <path d="M6 3h8l4 4v14H6V3Zm8 0v5h5M9 13h6M9 17h6" />
                                             </svg>
                                         </span>
-                                        <span>
-                                            <strong>
-                                                {workflow.name || workflow.id || "Workflow chưa đặt tên"}
-                                            </strong>
-                                            <small>{workflow.id}</small>
-                                        </span>
+                                        <strong title={businessName}>{businessName}</strong>
                                     </div>
                                 </td>
-                                <td data-label="Trạng thái">
-                                    <WorkflowStatusBadge status={workflow.status} />
-                                </td>
-                                <td data-label="Bước hiện tại">
-                                    <span className="dashboard-table__step">
-                                        {visibleStepLabel(workflow)}
+                                <td data-label="Status">
+                                    <span
+                                        className={`dashboard-workflow-status dashboard-workflow-status--${status.tone}`}
+                                    >
+                                        <span aria-hidden="true" />
+                                        {status.label}
                                     </span>
                                 </td>
-                                <td data-label="Clarification">
-                                    <strong className="dashboard-table__metric">
-                                        {clarification.answered ?? 0}/{clarification.total ?? 0}
-                                    </strong>
-                                    <small className="dashboard-table__metric-note">đã trả lời</small>
-                                </td>
-                                <td data-label="Testcases">
-                                    <strong className="dashboard-table__metric">
-                                        {testCases.total ?? 0}
-                                    </strong>
-                                </td>
-                                <td data-label="Cập nhật cuối">
+                                <td data-label="Last Updated">
                                     <time dateTime={workflow.timestamps?.updatedAt ?? undefined}>
                                         {formatDate(workflow.timestamps?.updatedAt)}
                                     </time>
                                 </td>
-                                <td data-label="Thao tác" className="dashboard-table__actions">
+                                <td data-label="Action" className="dashboard-table__actions">
                                     <Link
                                         className="dashboard-table__view"
                                         to={`/workflows/${encodeURIComponent(workflow.id)}`}
+                                        aria-label={`Mở workflow ${businessName}`}
                                     >
                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                             <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
                                             <circle cx="12" cy="12" r="2.5" />
                                         </svg>
-                                        <span>Xem chi tiết</span>
+                                        <span>View</span>
                                     </Link>
                                 </td>
                             </tr>
