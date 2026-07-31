@@ -1,4 +1,5 @@
 import PublicTestCaseReviewDto from "../dtos/PublicTestCaseReviewDto.js";
+import TestStepNormalizer from "../../normalizers/TestStepNormalizer.js";
 
 const TEXT_FIELDS = [
     "id",
@@ -36,6 +37,10 @@ const ARRAY_FIELDS = [
 ];
 
 export default class PublicTestCaseReviewMapper {
+    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+        this.stepNormalizer = stepNormalizer;
+    }
+
     map({ review, workflow } = {}) {
         const artifact = review?.artifact;
         if (!artifact || artifact.artifactType !== "TEST_CASE_REVIEW") {
@@ -95,6 +100,11 @@ export default class PublicTestCaseReviewMapper {
         result.reviewStatus = ["APPROVED", "NEEDS_CHANGES", "REMOVED"].includes(source.reviewStatus)
             ? source.reviewStatus
             : "PENDING";
+        result.steps = this.stepNormalizer.normalize(result.steps, {
+            ...result,
+            preconditions: result.preconditions,
+            preserveManualSteps: true
+        });
 
         return result;
     }

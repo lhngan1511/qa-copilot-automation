@@ -1,10 +1,15 @@
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 import TestCaseReviewStatus from "../constants/TestCaseReviewStatus.js";
 import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 
 export default class ApprovedTestCaseMapper {
-    constructor({ contentNormalizer = new TestDesignContentNormalizer() } = {}) {
+    constructor({
+        contentNormalizer = new TestDesignContentNormalizer(),
+        stepNormalizer = new TestStepNormalizer()
+    } = {}) {
         this.contentNormalizer = contentNormalizer;
+        this.stepNormalizer = stepNormalizer;
     }
 
     map(testCaseArtifact) {
@@ -62,6 +67,10 @@ export default class ApprovedTestCaseMapper {
                     clone.preconditions,
                     { target: clone.feature ?? clone.function ?? "" }
                 );
+                clone.steps = this.stepNormalizer.normalize(clone.steps, {
+                    ...clone,
+                    preserveManualSteps: true
+                });
                 return { ...clone, id, testcaseId: id };
             });
     }

@@ -1,6 +1,11 @@
 import fs from "fs";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 
 class MarkdownExporter {
+    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+        this.stepNormalizer = stepNormalizer;
+    }
+
     export(testCases, outputPath) {
         const normalizedTestCases = Array.isArray(testCases) ? testCases : [];
         const modules = this.collectSummary(normalizedTestCases, "module");
@@ -52,7 +57,7 @@ class MarkdownExporter {
             markdown += "\n";
 
             markdown += "### Các bước kiểm thử\n\n";
-            markdown += this.renderSteps(testCase?.steps);
+            markdown += this.renderSteps(testCase?.steps, testCase);
             markdown += "\n";
 
             markdown += "### Kết quả mong đợi\n\n";
@@ -160,8 +165,8 @@ class MarkdownExporter {
             .join("\n");
     }
 
-    renderSteps(steps) {
-        const normalizedSteps = this.normalizeSteps(steps);
+    renderSteps(steps, context = {}) {
+        const normalizedSteps = this.normalizeSteps(steps, context);
         const hasExpected = normalizedSteps.some(step => this.hasValues(step.expected));
         let markdown = hasExpected
             ? "| Bước | Hành động | Kết quả mong đợi |\n|---|---|---|\n"
@@ -181,38 +186,11 @@ class MarkdownExporter {
         return markdown;
     }
 
-    normalizeSteps(steps) {
-        if (!Array.isArray(steps)) {
-            return [];
-        }
-
-        return steps
-            .map((step, index) => {
-                if (typeof step === "string") {
-                    return {
-                        order: index + 1,
-                        action: step,
-                        expected: ""
-                    };
-                }
-
-                if (!step || typeof step !== "object") {
-                    return null;
-                }
-
-                const action = this.valueToText(step.action);
-
-                if (!action) {
-                    return null;
-                }
-
-                return {
-                    order: step.order,
-                    action,
-                    expected: this.valueToText(step.expectedResult ?? step.expected)
-                };
-            })
-            .filter(Boolean);
+    normalizeSteps(steps, context = {}) {
+        return this.stepNormalizer.normalize(steps, {
+            ...context,
+            preserveManualSteps: true
+        });
     }
 
     renderExpectedResults(testCase) {

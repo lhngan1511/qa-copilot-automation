@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 import XLSX from "xlsx";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 
 class ExcelExporter {
+    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+        this.stepNormalizer = stepNormalizer;
+    }
+
     export(testCases = [], outputPath) {
         const normalizedTestCases = Array.isArray(testCases) ? testCases : [];
         const columns = [
@@ -51,7 +56,7 @@ class ExcelExporter {
             "Tiền điều kiện": this.arrayToText(testCase?.preconditions),
             "Chuẩn bị dữ liệu": this.valueToText(testCase?.setupData),
             "Dữ liệu kiểm thử": this.testDataToText(testCase?.testData),
-            "Các bước kiểm thử": this.stepsToText(testCase?.steps),
+            "Các bước kiểm thử": this.stepsToText(testCase?.steps, testCase),
             "Kết quả mong đợi": this.resolveExpectedResult(testCase),
             "Kết quả thực tế": this.valueToText(testCase?.actualResult),
             "Trạng thái": testCase?.status || "Not Tested",
@@ -267,36 +272,14 @@ class ExcelExporter {
         return true;
     }
 
-    stepsToText(steps) {
-        if (!Array.isArray(steps)) {
-            return "";
-        }
-
-        return steps
-            .map((step, index) => {
-                if (typeof step === "string") {
-                    const action = step.trim();
-                    return action ? `${index + 1}. ${action}` : "";
-                }
-
-                if (!step || typeof step !== "object") {
-                    return "";
-                }
-
-                const action = this.valueToText(step.action);
-
-                if (!action) {
-                    return "";
-                }
-
-                const order = this.hasValues(step.order) ? step.order : index + 1;
-                const expected = this.valueToText(step.expectedResult ?? step.expected);
-
-                return expected
-                    ? `${order}. ${action}\nKết quả: ${expected}`
-                    : `${order}. ${action}`;
-            })
-            .filter(Boolean)
+    stepsToText(steps, context = {}) {
+        return this.stepNormalizer
+            .normalize(steps, { ...context, preserveManualSteps: true })
+            .map(step =>
+                this.hasValues(step.expected)
+                    ? `${step.order}. ${step.action}\nKết quả: ${this.valueToText(step.expected)}`
+                    : `${step.order}. ${step.action}`
+            )
             .join("\n\n");
     }
 

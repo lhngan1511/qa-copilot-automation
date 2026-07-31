@@ -1,16 +1,19 @@
 import TestCase from "../models/TestCase.js";
 import RuleTestDataBuilder from "../builders/RuleTestDataBuilder.js";
 import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 class TestCaseGenerator {
     constructor({
         ruleTestDataBuilder = new RuleTestDataBuilder(),
-        contentNormalizer = new TestDesignContentNormalizer()
+        contentNormalizer = new TestDesignContentNormalizer(),
+        stepNormalizer = new TestStepNormalizer()
     } = {}) {
         this.counter = 1;
         this.ruleTestDataBuilder = ruleTestDataBuilder;
         this.contentNormalizer = contentNormalizer;
+        this.stepNormalizer = stepNormalizer;
     }
 
     generate(scenarios = []) {
@@ -198,6 +201,15 @@ class TestCaseGenerator {
                 testCase.reason = scenario.reason ?? "";
 
                 testCase.riskCategory = scenario.riskCategory ?? "";
+
+                testCase.steps = this.stepNormalizer.normalize(testCase.steps, {
+                    ...testCase,
+                    operation: scenario.operation ?? scenario.automation?.operation,
+                    inputDefinitions: scenario.inputDefinitions,
+                    testData: scenario.testData,
+                    sourceItem: scenario.sourceItem,
+                    preconditions: testCase.preconditions
+                });
 
                 return testCase;
             })

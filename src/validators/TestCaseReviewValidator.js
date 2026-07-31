@@ -1,8 +1,13 @@
 import TestCaseReviewStatus, {
     TEST_CASE_REVIEW_STATUSES
 } from "../constants/TestCaseReviewStatus.js";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 
 export default class TestCaseReviewValidator {
+    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+        this.stepNormalizer = stepNormalizer;
+    }
+
     normalize(testCase, { defaultStatus = TestCaseReviewStatus.PENDING } = {}) {
         const source =
             testCase && typeof testCase === "object" && !Array.isArray(testCase)
@@ -26,7 +31,10 @@ export default class TestCaseReviewValidator {
         source.scenario = scenario;
         source.testScenario = String(source.testScenario ?? scenario).trim();
         source.reviewStatus = reviewStatus;
-        source.steps = this.normalizeSteps(source.steps);
+        source.steps = this.stepNormalizer.normalize(source.steps, {
+            ...source,
+            preserveManualSteps: true
+        });
         return source;
     }
 
@@ -124,27 +132,6 @@ export default class TestCaseReviewValidator {
                 { testcaseIds: unresolved.map(testCase => testCase.id) }
             );
         }
-    }
-
-    normalizeSteps(steps) {
-        if (!Array.isArray(steps)) return [];
-        return steps
-            .map((step, index) => {
-                if (typeof step === "string") {
-                    const action = step.trim();
-                    return action ? { order: index + 1, action, expected: "" } : null;
-                }
-                if (!step || typeof step !== "object" || Array.isArray(step)) return null;
-                const action = String(step.action ?? step.description ?? "").trim();
-                if (!action) return null;
-                return {
-                    ...structuredClone(step),
-                    order: index + 1,
-                    action,
-                    expected: step.expected ?? step.expectedResult ?? ""
-                };
-            })
-            .filter(Boolean);
     }
 
     error(code, message, details = null) {

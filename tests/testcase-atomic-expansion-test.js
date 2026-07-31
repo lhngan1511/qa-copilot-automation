@@ -97,8 +97,14 @@ const permissionCases = generator.generate([
 ]);
 assert.equal(permissionCases.length, 1);
 assert.equal(
-    permissionCases[0].preconditions.some(value => /có quyền/i.test(value)),
+    permissionCases[0].preconditions.some(
+        value => /có quyền/i.test(value) && !/không có quyền/i.test(value)
+    ),
     false
+);
+assert.equal(
+    permissionCases[0].preconditions.some(value => /không có quyền/i.test(value)),
+    true
 );
 
 const approvedScenarios = [

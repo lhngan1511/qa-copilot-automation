@@ -336,6 +336,8 @@ export default class RuleTestDataBuilder {
         });
 
         const additions = {
+            DUPLICATE: "Đã có bản ghi sử dụng giá trị trùng cần kiểm thử.",
+            PERMISSION_DENIED: "Người dùng sử dụng tài khoản không có quyền thực hiện chức năng.",
             STATE_RESTRICTION: `Bản ghi mục tiêu ở trạng thái ${this.extractStateCondition(rule)}.`,
             RELATED_DATA: "Bản ghi mục tiêu có dữ liệu liên quan.",
             CONCURRENT_CHANGE:

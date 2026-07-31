@@ -100,8 +100,14 @@ const permission = generate("Người dùng không có quyền xóa tài sản",
 assert.equal(permission.ruleClassification, "PERMISSION_DENIED");
 assert.match(permission.testData.requirement, /tài khoản không có quyền/);
 assert.equal(
-    permission.preconditions.some(value => /có quyền/i.test(value)),
+    permission.preconditions.some(
+        value => /có quyền/i.test(value) && !/không có quyền/i.test(value)
+    ),
     false
+);
+assert.equal(
+    permission.preconditions.some(value => /không có quyền/i.test(value)),
+    true
 );
 
 const emptySearch = generate(

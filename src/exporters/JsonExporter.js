@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
+import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 
 class JsonExporter {
+    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+        this.stepNormalizer = stepNormalizer;
+    }
+
     export(testCases, outputPath) {
         const filePath = outputPath || "./outputs/json/testcases.json";
         const outputDir = path.dirname(filePath);
@@ -43,7 +48,7 @@ class JsonExporter {
         canonical.testcaseId = source.testcaseId ?? source.testCaseId ?? source.id ?? "";
         canonical.testData = normalizeTestData(source.testData, source);
         canonical.executionReadiness = resolveExecutionReadiness(canonical.testData);
-        canonical.steps = this.normalizeSteps(source.steps);
+        canonical.steps = this.normalizeSteps(source.steps, source);
         canonical.expectedResult = this.resolveExpectedResult(source);
         canonical.expectedResults = this.resolveExpectedResults(source);
         canonical.automationCandidate = this.resolveAutomationCandidate(source);
@@ -54,32 +59,11 @@ class JsonExporter {
         return canonical;
     }
 
-    normalizeSteps(steps) {
-        if (!Array.isArray(steps)) {
-            return [];
-        }
-
-        return steps
-            .map((step, index) => {
-                if (step && typeof step === "object" && !Array.isArray(step)) {
-                    return this.cloneValue(step);
-                }
-
-                if (
-                    typeof step === "string" ||
-                    typeof step === "number" ||
-                    typeof step === "boolean"
-                ) {
-                    return {
-                        order: index + 1,
-                        action: String(step),
-                        expected: ""
-                    };
-                }
-
-                return null;
-            })
-            .filter(Boolean);
+    normalizeSteps(steps, context = {}) {
+        return this.stepNormalizer.normalize(steps, {
+            ...context,
+            preserveManualSteps: true
+        });
     }
 
     resolveExpectedResults(testCase) {

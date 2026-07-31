@@ -83,6 +83,14 @@ const legacyArtifact = {
             testScenario: "BR07_Mã thiết bị phải duy nhất",
             requirementReferences: ["BR07"],
             businessRuleIds: [],
+            steps: [
+                "1. Mở trang Thiết bị",
+                { description: "Truy cập chức năng thiết bị" },
+                { step: "Nhập Mã thiết bị là TB001", target: "Mã thiết bị", value: "TB001" },
+                "Nhấn Lưu",
+                "Thực hiện lưu dữ liệu",
+                "Kiểm tra kết quả"
+            ],
             preconditions: [
                 "Người dùng đã đăng nhập vào hệ thống.",
                 "người dùng đã đăng nhập",
@@ -100,6 +108,10 @@ assert.deepEqual(approved[0].preconditions, [
     "Người dùng đã đăng nhập vào hệ thống",
     "Người dùng có quyền quản lý thiết bị"
 ]);
+assert.deepEqual(
+    approved[0].steps.map(step => step.action),
+    ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Thực hiện lưu dữ liệu"]
+);
 
 const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), "qa-natural-testcase-"));
 try {
@@ -110,12 +122,18 @@ try {
     const json = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
     assert.equal(/^\[?BR\d+/i.test(json[0].title), false);
     assert.deepEqual(json[0].businessRuleIds, ["BR07", "BR01"]);
+    assert.deepEqual(
+        json[0].steps.map(step => step.action),
+        ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Thực hiện lưu dữ liệu"]
+    );
     const rows = XLSX.utils.sheet_to_json(XLSX.readFile(excelPath).Sheets["Test Cases"], {
         range: 6
     });
     assert.equal(/^\[?BR\d+/i.test(rows[0]["Tình huống kiểm tra"]), false);
     assert.match(rows[0]["Requirement References"], /BR07/);
     assert.match(rows[0]["Business Rule IDs"], /BR07/);
+    assert.match(rows[0]["Các bước kiểm thử"], /Nhập Mã thiết bị là TB001/);
+    assert.doesNotMatch(rows[0]["Các bước kiểm thử"], /Kiểm tra kết quả/);
 } finally {
     fs.rmSync(outputRoot, { recursive: true, force: true });
 }
