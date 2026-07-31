@@ -28,8 +28,7 @@ export default function TestCaseEditor({
     onEdit,
     onCancel,
     onDraftChange,
-    onSave,
-    onDecision
+    onSave
 }) {
     if (!testCase) {
         return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
@@ -190,7 +189,7 @@ export default function TestCaseEditor({
                             type="button"
                             onClick={onCancel}
                         >
-                            Hủy
+                            Đóng
                         </button>
                         <button
                             className="button button--primary"
@@ -198,7 +197,7 @@ export default function TestCaseEditor({
                             disabled={disabled || invalid}
                             onClick={onSave}
                         >
-                            Lưu thay đổi
+                            Lưu
                         </button>
                     </div>
                 </div>
@@ -238,35 +237,6 @@ export default function TestCaseEditor({
                     <DetailList title="Test Steps" values={value.steps} />
                     <DetailList title="Preconditions" values={value.preconditions} />
                 </div>
-            )}
-
-            {!editing && (
-                <footer className="testcase-detail-panel__actions">
-                    <button
-                        className="button button--primary"
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => onDecision("APPROVED")}
-                    >
-                        Duyệt
-                    </button>
-                    <button
-                        className="button button--secondary"
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => onDecision("NEEDS_CHANGES")}
-                    >
-                        Cần chỉnh sửa
-                    </button>
-                    <button
-                        className="button button--danger"
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => onDecision("REMOVED")}
-                    >
-                        Loại bỏ
-                    </button>
-                </footer>
             )}
         </aside>
     );

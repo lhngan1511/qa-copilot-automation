@@ -358,7 +358,6 @@ export default function TestCaseReviewPanel({ workflow }) {
                             }}
                             onDraftChange={setEditDraft}
                             onSave={saveEdit}
-                            onDecision={status => applyDecision([selectedId], status)}
                         />
                     )}
                 </div>
