@@ -39,7 +39,7 @@ assert.deepEqual(
         "Nhập Mã thiết bị là TB001",
         "Nhập Tên thiết bị là Máy in văn phòng",
         "Chọn Loại thiết bị là Máy in",
-        "Thực hiện lưu dữ liệu"
+        "Lưu thông tin thiết bị"
     ]
 );
 
@@ -68,7 +68,7 @@ assert.deepEqual(
         "Để trống Tên thiết bị",
         "Nhập Mã thiết bị là TB001",
         "Chọn Loại thiết bị là Máy in",
-        "Thực hiện lưu dữ liệu"
+        "Lưu thông tin thiết bị"
     ]
 );
 
@@ -110,7 +110,7 @@ assert.deepEqual(
         "Chọn bản ghi",
         "Bắt đầu chỉnh sửa thiết bị",
         "Nhập Tên thiết bị là Máy in tầng 2",
-        "Thực hiện lưu dữ liệu"
+        "Lưu thông tin thiết bị"
     ]
 );
 
@@ -188,7 +188,7 @@ const deduplicated = normalizer.normalize(
     { feature: "Thiết bị", preserveManualSteps: true }
 );
 assert.equal(deduplicated.filter(step => /Mở chức năng/i.test(step.action)).length, 1);
-assert.equal(deduplicated.filter(step => /lưu dữ liệu/i.test(step.action)).length, 1);
+assert.equal(deduplicated.filter(step => /Nhấn Lưu|Lưu thông tin/i.test(step.action)).length, 1);
 assert.equal(deduplicated.filter(step => step.target === "Mã thiết bị").length, 1);
 assert.equal(deduplicated.filter(step => step.target === "Tên thiết bị").length, 1);
 assert.deepEqual(
@@ -222,5 +222,21 @@ assert.deepEqual(
     ["Mở chức năng Quản lý thiết bị"]
 );
 assert.deepEqual(normalizer.normalize(null), []);
+
+const saveOnlyRegression = normalizer.normalize([{ order: 1, action: "Thực hiện lưu dữ liệu" }], {
+    feature: "Chức năng chưa xác định",
+    preserveManualSteps: true
+});
+assert.equal(saveOnlyRegression.length, 1);
+assert.match(saveOnlyRegression[0].action, /Lưu thông tin/);
+
+const customActionRegression = normalizer.normalize(
+    [{ order: 1, action: "Kích hoạt đồng bộ dữ liệu" }],
+    { preserveManualSteps: true }
+);
+assert.deepEqual(
+    customActionRegression.map(step => step.action),
+    ["Kích hoạt đồng bộ dữ liệu"]
+);
 
 console.log("Test step normalizer test PASSED");

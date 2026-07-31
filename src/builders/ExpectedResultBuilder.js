@@ -38,7 +38,9 @@ export default class ExpectedResultBuilder {
             return `Hệ thống không lưu dữ liệu. Trường ${targetField || "giá trị lựa chọn"} được đánh dấu không hợp lệ. Dữ liệu hiện có không bị thay đổi.`;
         }
         if (classification === "BOUNDARY_UNKNOWN") {
-            return `Chưa thể xác định kết quả biên cho ${targetField || "trường dữ liệu"} vì requirement chưa cung cấp giới hạn cụ thể.`;
+            return `Hệ thống không lưu dữ liệu khi ${this.lowerFirst(
+                targetField || "giá trị"
+            )} vượt giới hạn cho phép. Trường dữ liệu được đánh dấu và hiển thị cảnh báo tương ứng.`;
         }
         if (/BOUNDARY/.test(classification)) {
             return this.boundaryResult({
@@ -60,7 +62,9 @@ export default class ExpectedResultBuilder {
             ["STATE_RESTRICTION", "RELATED_DATA"].includes(classification) ||
             (operation === "DELETE" && testData.recordState)
         ) {
-            const state = testData.recordState || "đang ở trạng thái không cho phép xóa";
+            const state = this.cleanBusinessText(
+                testData.recordState || "đang ở trạng thái không cho phép xóa"
+            );
             return `Hệ thống không xóa ${entity}${this.withValue(record)} và hiển thị cảnh báo ${this.lowerFirst(
                 state
             )}. Dữ liệu ${entity} vẫn được giữ nguyên.`;
@@ -153,6 +157,9 @@ export default class ExpectedResultBuilder {
     isGeneric(value) {
         const normalized = this.comparable(value);
         if (!normalized) return true;
+        if (/\bbr\d+\b|\brule\s*br\d+\b|theo rule|chua co du du lieu/.test(normalized)) {
+            return true;
+        }
         return [
             "he thong xu ly dung theo yeu cau",
             "ket qua dung",
@@ -165,7 +172,7 @@ export default class ExpectedResultBuilder {
     }
 
     targetField(testCase, scenario, fields) {
-        const explicit = this.text(
+        const explicit = this.cleanBusinessText(
             testCase.sourceItem?.fieldName ??
                 testCase.sourceItem?.inputName ??
                 scenario.sourceItem?.fieldName ??
@@ -226,6 +233,13 @@ export default class ExpectedResultBuilder {
 
     hasValue(value) {
         return value !== undefined && value !== null && String(value).trim() !== "";
+    }
+
+    cleanBusinessText(value) {
+        return this.text(value)
+            .replace(/^\s*\[?BR[\s_-]*\d+\]?\s*(?:[:\-_–—]\s*)?/i, "")
+            .replace(/[.!?;:,]+$/g, "")
+            .trim();
     }
 
     text(value) {

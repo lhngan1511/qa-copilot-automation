@@ -14,6 +14,11 @@ export default class TestStepNormalizer {
             normalized = this.reorderTemplate(normalized, context);
         }
         normalized = this.deduplicate(normalized);
+        if (normalized.length === 0) {
+            const fallback = parsed.find(step => this.isActionableFallback(step));
+            if (fallback)
+                normalized = [{ ...fallback, action: this.stripNumbering(fallback.action) }];
+        }
 
         return normalized.map((step, index) => {
             const result = { order: index + 1, action: step.action };
@@ -73,11 +78,14 @@ export default class TestStepNormalizer {
             const selectable = /dropdown|select|combobox|radio/.test(
                 this.comparable(definition?.controlType ?? definition?.type)
             );
+            const instruction = context.testData?.fields?.[field]?.instruction;
             return {
                 order: step.order,
-                action: selectable
-                    ? this.choiceAction(field, data[field])
-                    : this.inputAction(field, data[field]),
+                action: instruction
+                    ? `Chọn một ${field} hợp lệ`
+                    : selectable
+                      ? this.choiceAction(field, data[field])
+                      : this.inputAction(field, data[field]),
                 target: field,
                 value: data[field] ?? "",
                 expected: ""
@@ -93,9 +101,14 @@ export default class TestStepNormalizer {
         const value = step.value;
 
         if (/^(mo|truy cap|di den).*(man hinh|trang|chuc nang)/.test(normalized)) {
-            const navigationTarget =
+            const navigationTarget = this.displayTarget(
                 target ||
-                action.replace(/^(?:Mở|Truy cập|Đi đến)\s+(?:màn hình|trang|chức năng)\s+/i, "");
+                    action.replace(
+                        /^(?:Mở|Truy cập|Đi đến)\s+(?:màn hình|trang|chức năng)\s+/i,
+                        ""
+                    ),
+                context
+            );
             return {
                 ...step,
                 action: `Mở chức năng ${navigationTarget || feature}`,
@@ -124,7 +137,9 @@ export default class TestStepNormalizer {
             const instruction = context.testData?.fields?.[target]?.instruction;
             return {
                 ...step,
-                action: instruction || this.choiceAction(target, value),
+                action: instruction
+                    ? `Chọn một ${target} hợp lệ`
+                    : this.choiceAction(target, value),
                 target,
                 value
             };
@@ -193,11 +208,18 @@ export default class TestStepNormalizer {
                 value
             };
         }
+        if (/^nhan luu|^bam luu/.test(normalized)) {
+            return { ...step, action: "Nhấn Lưu", target: target || feature };
+        }
+        if (/^luu du lieu|^gui du lieu|^thuc hien luu du lieu/.test(normalized)) {
+            return {
+                ...step,
+                action: `Lưu thông tin ${this.entity(context)}`,
+                target: target || feature
+            };
+        }
         if (/^thuc hien thao tac$|^thuc hien chuc nang$|^thuc hien /.test(normalized)) {
             return this.operationStep(step, context);
-        }
-        if (/^luu du lieu|^nhan luu|^bam luu|^gui du lieu/.test(normalized)) {
-            return { ...step, action: "Thực hiện lưu dữ liệu", target: target || feature };
         }
         if (/^thuc hien tim kiem|^tim kiem$|^nhan tim kiem/.test(normalized)) {
             return { ...step, action: "Thực hiện tìm kiếm", target: target || feature };
@@ -244,7 +266,11 @@ export default class TestStepNormalizer {
     operationStep(step, context) {
         const operation = this.operation(context);
         if (["CREATE", "UPDATE", "SAVE"].includes(operation)) {
-            return { ...step, action: "Thực hiện lưu dữ liệu", target: this.feature(context) };
+            return {
+                ...step,
+                action: `Lưu thông tin ${this.entity(context)}`,
+                target: this.feature(context)
+            };
         }
         if (operation === "DELETE") {
             return {
@@ -312,11 +338,11 @@ export default class TestStepNormalizer {
             })
             .filter(input => input.name && !represented.has(this.comparable(input.name)))
             .map(input => ({
-                action:
-                    input.instruction ||
-                    (/dropdown|select|combobox|radio/.test(input.controlType)
-                        ? this.choiceAction(input.name, input.value)
-                        : this.inputAction(input.name, input.value)),
+                action: input.instruction
+                    ? `Chọn một ${input.name} hợp lệ`
+                    : /dropdown|select|combobox|radio/.test(input.controlType)
+                      ? this.choiceAction(input.name, input.value)
+                      : this.inputAction(input.name, input.value),
                 target: input.name,
                 value: input.value ?? ""
             }));
@@ -372,7 +398,9 @@ export default class TestStepNormalizer {
         if (/^(mo|truy cap|di den).*(chuc nang|man hinh|trang)/.test(action)) {
             return `navigation:${target || this.navigationTarget(action)}`;
         }
-        if (/luu du lieu|nhan luu|bam luu|gui du lieu/.test(action)) return "submit:save";
+        if (/luu du lieu|luu thong tin|nhan luu|bam luu|gui du lieu/.test(action)) {
+            return "submit:save";
+        }
         if (/thuc hien tim kiem|nhan tim kiem/.test(action)) return "submit:search";
         if (/thuc hien xoa/.test(action)) return `submit:delete:${target}`;
         if (/^nhap |^chon |^de trong /.test(action)) {
@@ -487,6 +515,29 @@ export default class TestStepNormalizer {
         );
     }
 
+    displayTarget(target, context) {
+        const value = this.clean(target);
+        const feature = this.feature(context);
+        const entity = this.entity(context);
+        const aliases = {
+            device: "Thiết bị",
+            unitofmeasure: "Đơn vị tính",
+            login: "Đăng nhập"
+        };
+        const alias = aliases[this.comparable(value).replace(/\s+/g, "")];
+        if (alias) return alias;
+        if (/^[a-z][a-z0-9_-]*$/i.test(value) && /[^a-z0-9_-]/i.test(feature)) {
+            return this.capitalize(entity);
+        }
+        return value;
+    }
+
+    isActionableFallback(step) {
+        const action = this.comparable(step?.action);
+        if (!action || this.isVerificationOnly(step)) return false;
+        return !/^thiet lap dieu kien truoc|^chuan bi (du lieu|tai khoan|tinh huong)/.test(action);
+    }
+
     navigationTarget(action) {
         return action.replace(/^(mo|truy cap|di den)\s+(chuc nang|man hinh|trang)\s+/, "");
     }
@@ -523,6 +574,11 @@ export default class TestStepNormalizer {
 
     hasValue(value) {
         return this.valueText(value) !== "";
+    }
+
+    capitalize(value) {
+        const text = this.clean(value);
+        return text ? text.charAt(0).toLocaleUpperCase("vi") + text.slice(1) : "";
     }
 
     clean(value) {

@@ -12,9 +12,14 @@ export default class TestDesignContentNormalizer {
             source.ruleClassification ?? source.sourceItem?.classification ?? ""
         ).toUpperCase();
         const searchable = this.comparable([title, rule, classification].filter(Boolean).join(" "));
-        const field = this.extractField(rule || title);
         const operation = this.operation(feature, title);
         const entity = this.entity(feature);
+        const extractedField = this.stripTraceabilityPrefix(this.extractField(rule || title));
+        const field = /bắt buộc|hợp lệ|không hợp lệ/i.test(extractedField)
+            ? entity && entity !== "dữ liệu"
+                ? `trường bắt buộc của ${entity}`
+                : "trường bắt buộc"
+            : extractedField;
 
         if (
             classification === "REQUIRED" ||
@@ -27,7 +32,7 @@ export default class TestDesignContentNormalizer {
             return `Không cho phép ${this.operationPhrase(operation, feature)} có ${target} đã tồn tại`;
         }
         if (
-            classification === "INVALID_OPTION" ||
+            ["INVALID_OPTION", "INVALID_REFERENCE"].includes(classification) ||
             /gia tri khong hop le|lua chon khong hop le/.test(searchable)
         ) {
             return `Không cho phép ${this.operationPhrase(operation, feature)} khi ${
@@ -115,7 +120,13 @@ export default class TestDesignContentNormalizer {
             ).replace(/[.!?;:,]+$/g, "");
             if (!text) continue;
             const key = this.preconditionKey(text, target);
-            if (!key) continue;
+            if (
+                !key ||
+                key.startsWith("page:") ||
+                /quyền truy cập (?:màn hình|chức năng)/i.test(text)
+            ) {
+                continue;
+            }
             const existingIndex = keys.get(key);
             if (existingIndex === undefined) {
                 keys.set(key, result.length);
@@ -129,7 +140,16 @@ export default class TestDesignContentNormalizer {
                 result[existingIndex] = text;
             }
         }
-        return result;
+        const hasSpecificPermission = result.some(value => {
+            const key = this.preconditionKey(value, target);
+            return key.startsWith("permission:positive:") && !key.endsWith(":general");
+        });
+        return result
+            .filter(value => {
+                if (!hasSpecificPermission) return true;
+                return this.preconditionKey(value, target) !== "permission:positive:general";
+            })
+            .map(value => `${value}.`);
     }
 
     extractBusinessRuleIds(...values) {

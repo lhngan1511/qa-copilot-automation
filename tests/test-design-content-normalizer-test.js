@@ -69,6 +69,14 @@ assert.deepEqual(
 assert.equal(normalizer.stripTraceabilityPrefix("BR01 - Nội dung"), "Nội dung");
 assert.equal(normalizer.stripTraceabilityPrefix("[BR02] Nội dung"), "Nội dung");
 assert.equal(normalizer.stripTraceabilityPrefix("BR03_Nội dung"), "Nội dung");
+assert.equal(
+    normalizer.normalizeTitle({
+        title: "Kiểm tra các trường bắt buộc hợp lệ",
+        feature: "Thêm thiết bị",
+        type: "NEGATIVE"
+    }),
+    "Hiển thị cảnh báo khi bỏ trống trường bắt buộc của thiết bị"
+);
 
 assert.deepEqual(
     normalizer.normalizePreconditions(
@@ -77,11 +85,12 @@ assert.deepEqual(
             " người dùng ĐÃ ĐĂNG NHẬP ",
             "Người dùng đang đăng nhập với tài khoản hợp lệ",
             "Người dùng có quyền quản lý thiết bị",
-            "Tài khoản có quyền truy cập chức năng Thiết bị"
+            "Tài khoản có quyền truy cập chức năng Thiết bị",
+            "Người dùng đang ở màn hình quản lý thiết bị"
         ],
         { target: "Thiết bị" }
     ),
-    ["Người dùng đã đăng nhập vào hệ thống", "Người dùng có quyền quản lý thiết bị"]
+    ["Người dùng đã đăng nhập vào hệ thống.", "Người dùng có quyền quản lý thiết bị."]
 );
 assert.deepEqual(
     normalizer.normalizePreconditions(
@@ -95,11 +104,11 @@ assert.deepEqual(
         { target: "Thiết bị" }
     ),
     [
-        "Thiết bị cần sửa đã tồn tại",
-        "Thiết bị đang được sử dụng",
-        "Thiết bị không được sử dụng",
-        "Hệ thống đang hoạt động",
-        "Người dùng chưa đăng nhập"
+        "Thiết bị cần sửa đã tồn tại.",
+        "Thiết bị đang được sử dụng.",
+        "Thiết bị không được sử dụng.",
+        "Hệ thống đang hoạt động.",
+        "Người dùng chưa đăng nhập."
     ]
 );
 assert.deepEqual(normalizer.normalizePreconditions(null), []);

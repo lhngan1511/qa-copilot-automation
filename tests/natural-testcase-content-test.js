@@ -88,7 +88,7 @@ const legacyArtifact = {
                 { description: "Truy cập chức năng thiết bị" },
                 { step: "Nhập Mã thiết bị là TB001", target: "Mã thiết bị", value: "TB001" },
                 "Nhấn Lưu",
-                "Thực hiện lưu dữ liệu",
+                "Lưu thông tin thiết bị",
                 "Kiểm tra kết quả"
             ],
             preconditions: [
@@ -105,12 +105,12 @@ const approved = new ApprovedTestCaseMapper().map(legacyArtifact);
 assert.equal(approved[0].title, "Không cho phép thêm thiết bị có mã thiết bị đã tồn tại");
 assert.deepEqual(approved[0].businessRuleIds, ["BR07", "BR01"]);
 assert.deepEqual(approved[0].preconditions, [
-    "Người dùng đã đăng nhập vào hệ thống",
-    "Người dùng có quyền quản lý thiết bị"
+    "Người dùng đã đăng nhập vào hệ thống.",
+    "Người dùng có quyền quản lý thiết bị."
 ]);
 assert.deepEqual(
     approved[0].steps.map(step => step.action),
-    ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Thực hiện lưu dữ liệu"]
+    ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Nhấn Lưu"]
 );
 
 const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), "qa-natural-testcase-"));
@@ -124,7 +124,7 @@ try {
     assert.deepEqual(json[0].businessRuleIds, ["BR07", "BR01"]);
     assert.deepEqual(
         json[0].steps.map(step => step.action),
-        ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Thực hiện lưu dữ liệu"]
+        ["Mở chức năng Thiết bị", "Nhập Mã thiết bị là TB001", "Nhấn Lưu"]
     );
     const rows = XLSX.utils.sheet_to_json(XLSX.readFile(excelPath).Sheets["Test Cases"], {
         range: 6

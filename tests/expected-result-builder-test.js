@@ -138,6 +138,14 @@ assert.match(
     }),
     /không lưu dữ liệu/i
 );
+assert.doesNotMatch(
+    builder.normalizeLegacy("Chưa có đủ dữ liệu để xử lý theo rule BR04.", {
+        feature: "Thêm thiết bị",
+        type: "NEGATIVE",
+        testData: { fields: {} }
+    }),
+    /BR04|theo rule|Chưa có đủ dữ liệu/i
+);
 assert.equal(
     builder.normalizeLegacy("Hệ thống hiển thị đúng dữ liệu do tester xác nhận.", {
         feature: "Thêm thiết bị",
