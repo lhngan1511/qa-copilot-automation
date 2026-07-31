@@ -130,10 +130,10 @@ try {
         range: 6
     });
     assert.equal(/^\[?BR\d+/i.test(rows[0]["Tình huống kiểm tra"]), false);
-    assert.match(rows[0]["Requirement References"], /BR07/);
-    assert.match(rows[0]["Business Rule IDs"], /BR07/);
-    assert.match(rows[0]["Các bước kiểm thử"], /Nhập Mã thiết bị là TB001/);
-    assert.doesNotMatch(rows[0]["Các bước kiểm thử"], /Kiểm tra kết quả/);
+    assert.equal(Object.hasOwn(rows[0], "Requirement References"), false);
+    assert.equal(Object.hasOwn(rows[0], "Business Rule IDs"), false);
+    assert.match(rows[0]["Các bước thực hiện"], /Nhập Mã thiết bị là TB001/);
+    assert.doesNotMatch(rows[0]["Các bước thực hiện"], /Kiểm tra kết quả/);
 } finally {
     fs.rmSync(outputRoot, { recursive: true, force: true });
 }

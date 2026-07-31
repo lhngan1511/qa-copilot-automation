@@ -97,7 +97,7 @@ try {
     const workbook = XLSX.readFile(result.outputs.excel);
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets["Test Cases"], { range: 6 });
     assert.equal(rows.length, json.length);
-    assert.ok(rows.every(row => row["Các bước kiểm thử"]));
+    assert.ok(rows.every(row => row["Các bước thực hiện"]));
     assert.ok(rows.every(row => row["Kết quả mong đợi"]));
 
     originalLog("Post AI-04 production quality test PASSED");

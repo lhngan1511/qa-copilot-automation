@@ -13,63 +13,29 @@ class ExcelExporter {
         const columns = [
             "STT",
             "Test Case ID",
-            "Scenario ID",
-            "Module ID",
-            "Module",
-            "Function ID",
-            "Function",
             "Chức năng",
-            "Mục tiêu kiểm thử",
+            "Loại kiểm tra",
             "Tình huống kiểm tra",
-            "Tiền điều kiện",
-            "Chuẩn bị dữ liệu",
-            "Dữ liệu kiểm thử",
-            "Các bước kiểm thử",
+            "Dữ liệu đầu vào",
+            "Các bước thực hiện",
             "Kết quả mong đợi",
             "Kết quả thực tế",
-            "Trạng thái",
-            "Review Status",
-            "Type",
-            "Priority",
-            "Severity",
-            "Automation",
-            "Automation Notes",
-            "Requirement References",
-            "Covered Rules",
-            "Business Rule IDs",
-            "Source"
+            "Trạng thái"
         ];
         const moduleSummary = this.collectSummary(normalizedTestCases, "module");
         const featureSummary = this.collectSummary(normalizedTestCases, "feature");
         const rows = normalizedTestCases.map((testCase, index) => ({
             STT: index + 1,
             "Test Case ID": testCase?.testcaseId ?? testCase?.id ?? "",
-            "Scenario ID": testCase?.scenarioId ?? "",
-            "Module ID": testCase?.moduleId ?? "",
-            Module: testCase?.module ?? "",
-            "Function ID": testCase?.functionId ?? "",
-            Function: testCase?.function ?? testCase?.feature ?? "",
-            "Chức năng": testCase?.feature ?? "",
-            "Mục tiêu kiểm thử": testCase?.objective ?? testCase?.testObjective ?? "",
+            "Chức năng": testCase?.feature || testCase?.function || "",
+            "Loại kiểm tra": testCase?.type ?? "",
             "Tình huống kiểm tra":
                 testCase?.scenario ?? testCase?.testScenario ?? testCase?.title ?? "",
-            "Tiền điều kiện": this.arrayToText(testCase?.preconditions),
-            "Chuẩn bị dữ liệu": this.valueToText(testCase?.setupData),
-            "Dữ liệu kiểm thử": this.testDataToText(testCase?.testData),
-            "Các bước kiểm thử": this.stepsToText(testCase?.steps, testCase),
+            "Dữ liệu đầu vào": this.testDataToText(testCase?.testData),
+            "Các bước thực hiện": this.stepsToText(testCase?.steps, testCase),
             "Kết quả mong đợi": this.resolveExpectedResult(testCase),
             "Kết quả thực tế": this.valueToText(testCase?.actualResult),
-            "Trạng thái": testCase?.status || "Not Tested",
-            "Review Status": testCase?.reviewStatus ?? "APPROVED",
-            Type: testCase?.type ?? "",
-            Priority: testCase?.priority ?? "",
-            Severity: testCase?.severity ?? "",
-            Automation: this.resolveAutomation(testCase),
-            "Automation Notes": testCase?.automationNotes ?? "",
-            "Requirement References": this.arrayToText(testCase?.requirementReferences),
-            "Covered Rules": this.arrayToText(testCase?.coveredRules),
-            "Business Rule IDs": this.arrayToText(testCase?.businessRuleIds),
-            Source: testCase?.source ?? ""
+            "Trạng thái": testCase?.status || "Not Tested"
         }));
         const metadataRows = [
             [`BỘ TEST CASE - ${moduleSummary}`],
@@ -87,27 +53,21 @@ class ExcelExporter {
             skipHeader: false
         });
 
-        worksheet["!merges"] = [XLSX.utils.decode_range("A1:AA1")];
+        worksheet["!merges"] = [XLSX.utils.decode_range("A1:J1")];
         worksheet["!autofilter"] = {
-            ref: `A7:AA${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
+            ref: `A7:J${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
         };
         worksheet["!cols"] = [
             { wch: 5 },
             { wch: 15 },
+            { wch: 35 },
             { wch: 18 },
-            { wch: 22 },
-            { wch: 35 },
-            { wch: 40 },
-            { wch: 35 },
-            { wch: 35 },
-            { wch: 45 },
             { wch: 60 },
             { wch: 45 },
+            { wch: 60 },
+            { wch: 60 },
             { wch: 25 },
-            { wch: 15 },
-            { wch: 12 },
-            { wch: 12 },
-            { wch: 12 }
+            { wch: 15 }
         ];
         worksheet["!rows"] = [
             { hpt: 28 },

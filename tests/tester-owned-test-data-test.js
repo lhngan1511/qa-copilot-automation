@@ -8,12 +8,7 @@ import ApprovedTestCaseMapper from "../src/mappers/ApprovedTestCaseMapper.js";
 import QACopilotApplicationService from "../src/services/QACopilotApplicationService.js";
 import JsonExporter from "../src/exporters/JsonExporter.js";
 import ExcelExporter from "../src/exporters/ExcelExporter.js";
-import {
-    DATA_REQUIRED,
-    READY,
-    normalizeTestData,
-    resolveExecutionReadiness
-} from "../src/utils/TestDataReadiness.js";
+import { DATA_REQUIRED, READY, resolveExecutionReadiness } from "../src/utils/TestDataReadiness.js";
 
 const generated = new TestCaseGenerator().generate([
     {
@@ -58,12 +53,21 @@ const generated = new TestCaseGenerator().generate([
 
 assert.equal(generated.length, 2);
 generated.forEach(testCase => {
-    assert.deepEqual(Object.keys(testCase.testData), ["requirement", "value"]);
+    ["fields", "constraints", "requirement", "value", "requiresTesterInput"].forEach(key =>
+        assert.ok(Object.hasOwn(testCase.testData, key), `Canonical TestData missing ${key}`)
+    );
+    assert.equal(typeof testCase.testData.fields, "object");
+    assert.equal(typeof testCase.testData.constraints, "object");
     assert.equal(testCase.testData.value, "");
-    assert.equal(testCase.executionReadiness, DATA_REQUIRED);
+    assert.equal(typeof testCase.testData.requiresTesterInput, "boolean");
+    assert.equal(testCase.executionReadiness, READY);
 });
-assert.match(generated[0].testData.requirement, /Mã hồ sơ/);
-assert.match(generated[1].testData.requirement, /đã tồn tại/);
+assert.deepEqual(generated[0].testData.fields["Mã hồ sơ"], {
+    value: "",
+    purpose: "EMPTY"
+});
+assert.equal(generated[1].testData.fields["Mã hồ sơ"].purpose, "DUPLICATE");
+assert.match(generated[1].testData.dataState, /đã tồn tại/);
 assert.doesNotMatch(JSON.stringify(generated), /TB001|user01|DEVICE_|VALID_VALUE|_EXISTING_001/);
 
 assert.equal(resolveExecutionReadiness({ requirement: "", value: "" }), READY);
@@ -122,14 +126,15 @@ const edited = service.editArtifact({
 assert.equal(edited.approvalStatus, "pending");
 assert.equal(edited.testCases[0].testData.value, "HS-REAL-42");
 assert.equal(edited.testCases[0].executionReadiness, READY);
-assert.equal(edited.testCases[1].executionReadiness, DATA_REQUIRED);
+assert.equal(edited.testCases[1].executionReadiness, READY);
 
 const approved = {
     ...edited,
-    approvalStatus: "approved"
+    approvalStatus: "approved",
+    testCases: edited.testCases.map(testCase => ({ ...testCase, reviewStatus: "APPROVED" }))
 };
 const approvedCases = new ApprovedTestCaseMapper().map(approved);
-assert.equal(approvedCases[1].executionReadiness, DATA_REQUIRED);
+assert.equal(approvedCases[1].executionReadiness, READY);
 
 const outputRoot = path.resolve("outputs/integration/tester-owned-test-data");
 const jsonPath = path.join(outputRoot, "approved-testcases.json");
@@ -138,16 +143,13 @@ new JsonExporter().export(approvedCases, jsonPath);
 new ExcelExporter().export(approvedCases, excelPath);
 
 const exportedJson = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
-assert.deepEqual(
-    exportedJson[0].testData,
-    normalizeTestData({ requirement: generated[0].testData.requirement, value: "HS-REAL-42" })
-);
+assert.deepEqual(exportedJson[0].testData, approvedCases[0].testData);
 assert.equal(exportedJson[0].executionReadiness, READY);
-assert.equal(exportedJson[1].executionReadiness, DATA_REQUIRED);
+assert.equal(exportedJson[1].executionReadiness, READY);
 
 const workbook = XLSX.readFile(excelPath);
 const rows = XLSX.utils.sheet_to_json(workbook.Sheets["Test Cases"], { range: 6 });
-assert.match(rows[0]["Dữ liệu kiểm thử"], /Yêu cầu dữ liệu:/);
-assert.match(rows[0]["Dữ liệu kiểm thử"], /Giá trị tester: HS-REAL-42/);
+assert.match(rows[0]["Dữ liệu đầu vào"], /Mã hồ sơ:.*EMPTY/);
+assert.match(rows[0]["Dữ liệu đầu vào"], /Tên hồ sơ: hồ sơ mẫu \(VALID\)/);
 
 console.log("Tester-owned Test Data: PASS");

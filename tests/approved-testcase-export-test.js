@@ -61,24 +61,21 @@ const markdown = fs.readFileSync(exportResult.outputs.markdown, "utf8");
 assert.ok(markdown.includes("TestCase đã chỉnh sửa khi review"));
 
 const workbook = XLSX.readFile(exportResult.outputs.excel);
-const rows = XLSX.utils.sheet_to_json(workbook.Sheets["Test Cases"], {
-    range: 6
-});
+const worksheet = workbook.Sheets["Test Cases"];
+const rows = XLSX.utils.sheet_to_json(worksheet, { range: 6 });
+const header = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 6 })[0];
 assert.ok(rows.length > 0);
-[
+assert.deepEqual(header, [
+    "STT",
     "Test Case ID",
-    "Scenario ID",
-    "Module ID",
-    "Function ID",
-    "Function",
-    "Severity",
-    "Automation",
-    "Review Status",
-    "Requirement References",
-    "Covered Rules",
-    "Business Rule IDs"
-].forEach(column =>
-    assert.ok(Object.prototype.hasOwnProperty.call(rows[0], column), `Excel missing ${column}`)
-);
+    "Chức năng",
+    "Loại kiểm tra",
+    "Tình huống kiểm tra",
+    "Dữ liệu đầu vào",
+    "Các bước thực hiện",
+    "Kết quả mong đợi",
+    "Kết quả thực tế",
+    "Trạng thái"
+]);
 
 console.log("Approved TestCase export test PASSED");
