@@ -10,14 +10,14 @@ const structuredQuestions = [
         priority: "High",
         question: "Khi nào dữ liệu được phép lưu?",
         reason: "Câu trả lời quyết định expected result.",
-        options: ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]
+        options: ["Khi hợp lệ", "Luôn lưu", "Requirement không đề cập"]
     },
     {
         category: "Validation",
         priority: "Medium",
         question: "Email có bắt buộc không?",
         reason: "Câu trả lời quyết định validation testcase.",
-        options: ["Có", "Không", "Chưa xác định"]
+        options: ["Có", "Không", "Requirement không đề cập"]
     },
     {
         id: "CL100",
@@ -25,7 +25,7 @@ const structuredQuestions = [
         priority: "High",
         question: "Ai được phép cập nhật?",
         reason: "Cần xác định permission testcase.",
-        options: ["Quản trị viên", "Người dùng", "Chưa xác định"]
+        options: ["Quản trị viên", "Người dùng", "Requirement không đề cập"]
     },
     "Có cần xác nhận thao tác không?",
     "Có giới hạn độ dài không?",
@@ -46,22 +46,17 @@ assert.equal(JSON.stringify(structuredQuestions), inputSnapshot);
 assert.equal(artifactQuestions[0].questionId, "CL100");
 assert.equal(artifactQuestions[0].category, "Business Rule");
 assert.equal(artifactQuestions[0].priority, "High");
-assert.equal(
-    artifactQuestions[0].reason,
-    "Câu trả lời quyết định expected result."
-);
-assert.deepEqual(
-    artifactQuestions[0].options,
-    ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]
-);
+assert.equal(artifactQuestions[0].reason, "Câu trả lời quyết định expected result.");
+assert.deepEqual(artifactQuestions[0].options, [
+    "Khi hợp lệ",
+    "Luôn lưu",
+    "Requirement không đề cập"
+]);
 assert.equal(artifactQuestions[1].questionId, "CL001");
 assert.equal(artifactQuestions[2].questionId, "CL002");
 assert.equal(artifactQuestions[3].category, "General");
 assert.equal(artifactQuestions[3].priority, "Medium");
-assert.deepEqual(
-    artifactQuestions[3].options,
-    ["Có", "Không", "Chưa xác định"]
-);
+assert.deepEqual(artifactQuestions[3].options, ["Có", "Không", "Requirement không đề cập"]);
 
 artifactQuestions.forEach(question => {
     assert.equal(question.answer, "");
@@ -104,10 +99,11 @@ try {
     const initialArtifactSnapshot = JSON.parse(JSON.stringify(initialArtifact));
 
     assert.equal(initialArtifact.questions[0].category, "Business Rule");
-    assert.deepEqual(
-        initialArtifact.questions[0].options,
-        ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]
-    );
+    assert.deepEqual(initialArtifact.questions[0].options, [
+        "Khi hợp lệ",
+        "Luôn lưu",
+        "Requirement không đề cập"
+    ]);
 
     qaCopilot.answerClarificationQuestion({
         sessionId,
@@ -123,10 +119,7 @@ try {
     assert.equal(partiallyAnswered.questions[0].category, "Business Rule");
     assert.equal(partiallyAnswered.questions[0].reason, initialArtifact.questions[0].reason);
     assert.deepEqual(partiallyAnswered.questions[0].options, initialArtifact.questions[0].options);
-    assert.deepEqual(
-        partiallyAnswered.questions[1],
-        initialArtifactSnapshot.questions[1]
-    );
+    assert.deepEqual(partiallyAnswered.questions[1], initialArtifactSnapshot.questions[1]);
 
     assert.throws(
         () =>
@@ -197,7 +190,7 @@ try {
             priority: "High",
             question: "Khi nào dữ liệu được phép lưu?",
             reason: "Câu trả lời quyết định expected result.",
-            options: ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"],
+            options: ["Khi hợp lệ", "Luôn lưu", "Requirement không đề cập"],
             answer: "Khi hợp lệ",
             status: "answered",
             answeredBy: "reviewer"

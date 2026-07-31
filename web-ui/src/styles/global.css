@@ -2230,6 +2230,21 @@ textarea:disabled {
     line-height: 1.55;
 }
 
+.requirement-question-card__free-text {
+    display: grid;
+    gap: 10px;
+}
+
+.requirement-question-card__free-text label {
+    color: #101828;
+    font-size: var(--font-size-card-title);
+    font-weight: 750;
+}
+
+.requirement-question-card__free-text .button {
+    width: fit-content;
+}
+
 .requirement-question-card__answers {
     display: grid;
     gap: 10px;

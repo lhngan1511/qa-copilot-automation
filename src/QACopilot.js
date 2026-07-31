@@ -1602,9 +1602,19 @@ class QACopilot {
 
                 question: item.question,
 
+                type: item.type,
+
                 reason: item.reason,
 
-                options: [...item.options],
+                targetField: item.targetField ?? "",
+
+                targetRule: item.targetRule ?? "",
+
+                ...(Array.isArray(item.options) && item.options.length > 0
+                    ? { options: [...item.options] }
+                    : {}),
+
+                allowNotSpecified: item.allowNotSpecified === true,
 
                 requirementReferences: Array.isArray(item.requirementReferences)
                     ? [...item.requirementReferences]
@@ -2114,7 +2124,7 @@ class QACopilot {
                     continue;
                 }
 
-                const comparisonKey = this.getComparableText(question.question);
+                const comparisonKey = ClarificationQuestion.deduplicationKey(question);
 
                 if (!comparisonKey || comparisonKeys.has(comparisonKey)) {
                     continue;

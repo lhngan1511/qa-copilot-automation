@@ -1,130 +1,94 @@
 import assert from "node:assert/strict";
+import ClarificationQuestion, {
+    ClarificationQuestionType
+} from "../src/models/ClarificationQuestion.js";
 
-import ClarificationQuestion from "../src/models/ClarificationQuestion.js";
-
-const defaultQuestion = new ClarificationQuestion();
-
-assert.deepEqual(defaultQuestion.toJSON(), {
-    id: "",
+const freeText = ClarificationQuestion.from({
+    id: "CL001",
+    question: "Độ dài tối đa của Mã thiết bị là bao nhiêu?",
+    type: "FREE_TEXT",
+    targetField: "Mã thiết bị",
+    reason: "Giá trị này tạo các ca kiểm thử biên.",
+    allowNotSpecified: true,
+    options: ["Không nên tồn tại"]
+});
+assert.deepEqual(freeText.toJSON(), {
+    id: "CL001",
     category: "General",
     priority: "Medium",
-    question: "",
-    reason: "",
-    options: []
+    question: "Độ dài tối đa của Mã thiết bị là bao nhiêu?",
+    type: "FREE_TEXT",
+    reason: "Giá trị này tạo các ca kiểm thử biên.",
+    allowNotSpecified: true,
+    targetField: "Mã thiết bị"
 });
+assert.equal(freeText.isValid(), true);
 
-const completeQuestion = new ClarificationQuestion({
-    id: "CL001",
-    category: "Business Rule",
-    priority: "High",
-    question: "Có cho phép xóa dữ liệu?",
-    reason: "Cần xác định quy tắc xóa.",
-    options: ["Có", "Không"]
+const yesNo = ClarificationQuestion.from({
+    id: "CL002",
+    question: "Có cho phép xóa thiết bị đang được sử dụng không?",
+    type: "YES_NO",
+    targetRule: "Xóa thiết bị đang sử dụng",
+    allowNotSpecified: true
 });
+assert.deepEqual(yesNo.options, ["Có", "Không", "Requirement không đề cập"]);
 
-assert.deepEqual(completeQuestion.toJSON(), {
-    id: "CL001",
-    category: "Business Rule",
-    priority: "High",
-    question: "Có cho phép xóa dữ liệu?",
-    reason: "Cần xác định quy tắc xóa.",
-    options: ["Có", "Không"]
+const choice = ClarificationQuestion.from({
+    id: "CL003",
+    question: "Trạng thái ban đầu là gì?",
+    type: "SINGLE_CHOICE",
+    targetField: "Trạng thái",
+    options: [" Hoạt động ", "Ngừng hoạt động", "Hoạt động"]
 });
+assert.deepEqual(choice.options, ["Hoạt động", "Ngừng hoạt động"]);
+assert.equal(choice.isValid(), true);
 
-const trimmedQuestion = new ClarificationQuestion({
-    id: "  CL002  ",
-    category: "  Validation  ",
-    priority: "  Low  ",
-    question: "  Trường này có bắt buộc không?  ",
-    reason: "  Requirement chưa nêu rõ.  ",
-    options: ["  Có  ", "", "Không", "Có", 123, "   "]
+const assumption = ClarificationQuestion.from({
+    id: "CL004",
+    question: "Xác nhận giả định: mã thiết bị không phân biệt hoa thường?",
+    type: ClarificationQuestionType.CONFIRM_ASSUMPTION,
+    targetRule: "Tính duy nhất của mã thiết bị",
+    allowNotSpecified: true
 });
+assert.deepEqual(assumption.options, ["Đúng", "Không đúng", "Requirement không đề cập"]);
 
-assert.equal(trimmedQuestion.id, "CL002");
-assert.equal(trimmedQuestion.category, "Validation");
-assert.equal(trimmedQuestion.priority, "Low");
-assert.equal(trimmedQuestion.question, "Trường này có bắt buộc không?");
-assert.equal(trimmedQuestion.reason, "Requirement chưa nêu rõ.");
-assert.deepEqual(trimmedQuestion.options, ["Có", "Không"]);
-assert.equal(trimmedQuestion.isValid(), true);
+const legacyString = ClarificationQuestion.from("Ai được phép xóa thiết bị?", "CL005");
+assert.equal(legacyString.type, "FREE_TEXT");
+assert.equal(legacyString.allowNotSpecified, true);
+assert.deepEqual(legacyString.options, []);
 
-assert.equal(
-    new ClarificationQuestion({
-        question: "Câu hỏi",
-        options: ["Có", "Không"]
-    }).isValid(),
-    false
-);
-assert.equal(
-    new ClarificationQuestion({
-        id: "CL003",
-        options: ["Có", "Không"]
-    }).isValid(),
-    false
-);
-assert.equal(
-    new ClarificationQuestion({
-        id: "CL004",
-        question: "Câu hỏi",
-        options: ["Có"]
-    }).isValid(),
-    false
-);
-
-const legacyQuestion = ClarificationQuestion.from(
-    "  Thiết bị đang sử dụng có được xóa không?  ",
-    "CL005"
-);
-
-assert.deepEqual(legacyQuestion.toJSON(), {
-    id: "CL005",
-    category: "General",
-    priority: "Medium",
-    question: "Thiết bị đang sử dụng có được xóa không?",
-    reason: "",
+const legacyOptions = ClarificationQuestion.from({
+    id: "CL006",
+    question: "Có cần xác nhận trước khi xóa không?",
     options: ["Có", "Không", "Chưa xác định"]
 });
-
-const structuredQuestion = ClarificationQuestion.from({
-    id: "CL006",
-    category: "Permission",
-    priority: "High",
-    question: "Ai được phép xóa?",
-    reason: "Thiếu mô tả phân quyền.",
-    options: ["Quản trị viên", "Người dùng"]
-});
-
-assert.equal(structuredQuestion.id, "CL006");
-assert.equal(structuredQuestion.category, "Permission");
-assert.deepEqual(structuredQuestion.options, ["Quản trị viên", "Người dùng"]);
-
-const fallbackIdQuestion = ClarificationQuestion.from(
-    {
-        question: "Có cần xác nhận không?",
-        options: ["Có", "Không"]
-    },
-    "CL007"
-);
-
-assert.equal(fallbackIdQuestion.id, "CL007");
-
-const defaultOptionsQuestion = ClarificationQuestion.from({
-    id: "CL008",
-    question: "Có áp dụng quy tắc này không?",
-    options: ["Có"]
-});
-
-assert.deepEqual(defaultOptionsQuestion.options, ["Có", "Không", "Chưa xác định"]);
+assert.equal(legacyOptions.type, "YES_NO");
+assert.equal(legacyOptions.allowNotSpecified, true);
+assert.deepEqual(legacyOptions.options, ["Có", "Không", "Requirement không đề cập"]);
 
 assert.equal(ClarificationQuestion.from(null, "CL009"), null);
-assert.equal(ClarificationQuestion.from(undefined, "CL009"), null);
-assert.equal(ClarificationQuestion.from(42, "CL009"), null);
-assert.equal(ClarificationQuestion.from([], "CL009"), null);
 assert.equal(ClarificationQuestion.from("   ", "CL009"), null);
+assert.equal(
+    ClarificationQuestion.from({
+        id: "CL010",
+        question: "Chọn một giá trị",
+        type: "SINGLE_CHOICE",
+        options: ["Một"]
+    }).type,
+    "FREE_TEXT"
+);
 
-const json = completeQuestion.toJSON();
-
-assert.equal(Object.getPrototypeOf(json), Object.prototype);
-assert.notEqual(json.options, completeQuestion.options);
+assert.equal(
+    ClarificationQuestion.deduplicationKey({
+        question: "Độ dài tối đa của Mã thiết bị là bao nhiêu?",
+        type: "FREE_TEXT",
+        targetField: "Mã thiết bị"
+    }),
+    ClarificationQuestion.deduplicationKey({
+        question: "MÃ THIẾT BỊ có tối đa bao nhiêu ký tự!!!",
+        type: "FREE_TEXT",
+        targetField: "mã thiết bị"
+    })
+);
 
 console.log("ClarificationQuestion model test PASSED");

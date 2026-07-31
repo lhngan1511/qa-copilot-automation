@@ -22,7 +22,10 @@ const review = parseAIAnalysisReview({
         {
             id: "CL001",
             required: true,
-            question: "Required?",
+            question: "Độ dài tối đa là bao nhiêu?",
+            type: "FREE_TEXT",
+            targetField: "Mã thiết bị",
+            allowNotSpecified: true,
             answer: "",
             status: "UNANSWERED",
             options: []
@@ -39,6 +42,27 @@ const review = parseAIAnalysisReview({
     summary: { total: 2, answered: 0, remaining: 2 },
     allowedActions: ["ANSWER_CLARIFICATIONS", "UPDATE_AI_ANALYSIS"]
 });
+
+assert.equal(review.clarifications[0].type, "FREE_TEXT");
+assert.deepEqual(review.clarifications[0].options, []);
+assert.equal(review.clarifications[0].targetField, "Mã thiết bị");
+assert.equal(review.clarifications[0].allowNotSpecified, true);
+
+const legacyReview = parseAIAnalysisReview({
+    ...review,
+    clarifications: [
+        {
+            id: "LEGACY",
+            required: true,
+            question: "Có cần xác nhận không?",
+            options: ["Có", "Không", "Chưa xác định"],
+            answer: "",
+            status: "UNANSWERED"
+        }
+    ]
+});
+assert.equal(legacyReview.clarifications[0].type, "YES_NO");
+assert.equal(legacyReview.clarifications[0].allowNotSpecified, true);
 
 assert.equal(
     validateClarificationAnswers(review.clarifications, {

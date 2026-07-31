@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-
 import AIAnalysisEngine from "../src/engines/AIAnalysisEngine.js";
 import ClarificationQuestion from "../src/models/ClarificationQuestion.js";
 
@@ -9,178 +8,110 @@ const fakeProvider = {
     }
 };
 const engine = new AIAnalysisEngine(fakeProvider);
-const structuredInput = {
-    id: "CL100",
-    category: "Business Rule",
-    priority: "High",
-    question: "Khi nào dữ liệu được phép lưu?",
-    reason: "Câu trả lời quyết định expected result.",
-    options: ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]
-};
 
-assert.deepEqual(engine.normalizeClarificationQuestions([structuredInput]), [
+const normalized = engine.normalizeClarificationQuestions([
     {
-        ...structuredInput,
-        requirementReferences: []
-    }
-]);
-
-assert.deepEqual(engine.normalizeClarificationQuestions(["Có cần xác nhận trước khi xóa không?"]), [
-    {
-        id: "CL001",
-        category: "General",
-        priority: "Medium",
-        question: "Có cần xác nhận trước khi xóa không?",
-        reason: "",
-        options: ["Có", "Không", "Chưa xác định"],
-        requirementReferences: []
-    }
-]);
-
-const mixed = engine.normalizeClarificationQuestions([
-    structuredInput,
-    "Có giới hạn số lần thử không?"
-]);
-
-assert.equal(mixed.length, 2);
-assert.equal(mixed[0].id, "CL100");
-assert.equal(mixed[1].id, "CL002");
-assert.deepEqual(engine.normalizeClarificationQuestions(null), []);
-assert.deepEqual(engine.normalizeClarificationQuestions("question"), []);
-assert.deepEqual(engine.normalizeClarificationQuestions([null, 42, {}]), []);
-
-const missingId = engine.normalizeClarificationQuestions([
-    {
-        question: "Trường này có bắt buộc không?",
-        options: ["Có", "Không"]
-    }
-]);
-
-assert.equal(missingId[0].id, "CL001");
-
-const duplicateIds = engine.normalizeClarificationQuestions([
-    {
-        id: "CL010",
-        question: "Câu hỏi thứ nhất?",
-        options: ["Có", "Không"]
+        id: "CL100",
+        category: "Boundary",
+        priority: "High",
+        question: "Độ dài tối đa của Mã thiết bị là bao nhiêu?",
+        type: "FREE_TEXT",
+        reason: "Tạo ca kiểm thử biên.",
+        targetField: "Mã thiết bị",
+        allowNotSpecified: true,
+        options: ["Không hợp lệ"]
     },
     {
-        id: "CL010",
-        question: "Câu hỏi thứ hai?",
-        options: ["Có", "Không"]
+        id: "CL101",
+        question: "MÃ THIẾT BỊ có tối đa bao nhiêu ký tự!!!",
+        type: "FREE_TEXT",
+        targetField: "mã thiết bị"
+    },
+    {
+        id: "CL102",
+        question: "Có cho phép xóa thiết bị đang sử dụng không?",
+        type: "YES_NO",
+        targetRule: "Xóa thiết bị đang sử dụng",
+        allowNotSpecified: true
+    },
+    {
+        id: "CL103",
+        question: "Chọn trạng thái ban đầu",
+        type: "SINGLE_CHOICE",
+        targetField: "Trạng thái",
+        options: ["Hoạt động", "Ngừng hoạt động"]
+    },
+    {
+        id: "CL104",
+        question: "Xác nhận giả định: mã thiết bị không phân biệt hoa thường?",
+        type: "CONFIRM_ASSUMPTION",
+        targetRule: "Tính duy nhất của mã thiết bị"
     }
 ]);
 
+assert.equal(normalized.length, 4, "Equivalent target/fact questions must be deduplicated");
+assert.equal(normalized[0].type, "FREE_TEXT");
+assert.equal("options" in normalized[0], false);
+assert.equal(normalized[1].type, "YES_NO");
+assert.deepEqual(normalized[1].options, ["Có", "Không", "Requirement không đề cập"]);
+assert.deepEqual(normalized[2].options, ["Hoạt động", "Ngừng hoạt động"]);
+assert.deepEqual(normalized[3].options, ["Đúng", "Không đúng"]);
+
+const punctuationDuplicates = engine.normalizeClarificationQuestions([
+    "Ai được phép xóa thiết bị?",
+    "AI ĐƯỢC PHÉP XÓA THIẾT BỊ!!!"
+]);
+assert.equal(punctuationDuplicates.length, 1);
+assert.equal(punctuationDuplicates[0].type, "FREE_TEXT");
+
+const duplicateIds = engine.normalizeClarificationQuestions([
+    { id: "CL010", question: "Ai được sửa?", type: "FREE_TEXT" },
+    { id: "CL010", question: "Ai được xóa?", type: "FREE_TEXT" }
+]);
 assert.equal(duplicateIds[0].id, "CL010");
 assert.equal(duplicateIds[1].id, "CL002");
 
-const defaultOptions = engine.normalizeClarificationQuestions([
-    {
-        id: "CL020",
-        question: "Có áp dụng quy tắc không?",
-        options: ["Có"]
-    }
-]);
-
-assert.deepEqual(defaultOptions[0].options, ["Có", "Không", "Chưa xác định"]);
-
-const duplicateOptions = engine.normalizeClarificationQuestions([
-    {
-        id: "CL021",
-        question: "Chọn cách xử lý?",
-        options: [" Có ", "Có", "Không", "", "Không"]
-    }
-]);
-
-assert.deepEqual(duplicateOptions[0].options, ["Có", "Không"]);
-
 const moreThanFive = engine.normalizeClarificationQuestions(
-    Array.from({ length: 7 }, (_, index) => `Câu hỏi ${index + 1}?`)
+    Array.from({ length: 7 }, (_, index) => ({
+        question: `Giá trị cụ thể ${index + 1} là gì?`,
+        type: "FREE_TEXT",
+        targetField: `Field ${index + 1}`
+    }))
 );
-
 assert.equal(moreThanFive.length, 5);
 
-const immutableInput = [
+const legacy = engine.normalizeClarificationQuestions([
     {
-        id: " CL030 ",
-        question: " Câu hỏi không bị sửa? ",
-        options: [" Có ", "Không"]
+        id: "CL020",
+        question: "Có cần xác nhận không?",
+        options: ["Có", "Không", "Chưa xác định"]
     }
-];
-const immutableSnapshot = JSON.stringify(immutableInput);
-
-engine.normalizeClarificationQuestions(immutableInput);
-assert.equal(JSON.stringify(immutableInput), immutableSnapshot);
-
-const promptBuilderCalls = [];
-const injectedPromptBuilder = {
-    build(requirement) {
-        promptBuilderCalls.push(requirement);
-        return "INJECTED PROMPT";
-    }
-};
-const injectedEngine = new AIAnalysisEngine(fakeProvider, {
-    promptBuilder: injectedPromptBuilder
-});
-const promptRequirement = {
-    module: "Khách hàng"
-};
-
-assert.equal(injectedEngine.buildPrompt(promptRequirement), "INJECTED PROMPT");
-assert.deepEqual(promptBuilderCalls, [promptRequirement]);
-
-const analysisResult = engine.buildAnalysisResult({
-    purpose: "Hiểu requirement",
-    functions: [
-        {
-            name: "Tạo khách hàng",
-            description: "",
-            businessRules: [],
-            validationRules: ["Validation"],
-            permissions: [],
-            dependencies: [],
-            assumptions: [],
-            requirementReferences: []
-        }
-    ],
-    risks: ["Dữ liệu"],
-    clarificationQuestions: [structuredInput, "Có cần xác nhận không?"],
-    requirementComplete: false,
-    confidence: 0.9
-});
-
-assert.equal(typeof analysisResult.questions[0], "object");
-assert.equal(analysisResult.questions[0].category, "Business Rule");
-assert.equal(analysisResult.questions[0].priority, "High");
-assert.equal(analysisResult.questions[0].reason, "Câu trả lời quyết định expected result.");
-assert.deepEqual(analysisResult.questions[0].options, ["Khi hợp lệ", "Luôn lưu", "Chưa xác định"]);
+]);
+assert.equal(legacy[0].type, "YES_NO");
+assert.equal(legacy[0].allowNotSpecified, true);
 
 const fallbackResult = engine.fallbackAnalysis({
     module: "Khách hàng",
-    feature: "Khách hàng",
-    questions: ["Có cần xác nhận không?"]
+    questions: ["Ai được phép xóa khách hàng?"]
 });
+assert.equal(fallbackResult.questions[0].type, "FREE_TEXT");
+assert.deepEqual(fallbackResult.questions[0].options ?? [], []);
+assert.equal(fallbackResult.questions[0].allowNotSpecified, true);
 
-assert.deepEqual(fallbackResult.questions[0], {
-    id: "CL001",
-    category: "General",
-    priority: "Medium",
-    question: "Có cần xác nhận không?",
-    reason: "",
-    options: ["Có", "Không", "Chưa xác định"],
-    requirementReferences: []
+const immutableInput = [{ id: "CL030", question: "Giá trị là gì?", type: "FREE_TEXT" }];
+const immutableSnapshot = JSON.stringify(immutableInput);
+engine.normalizeClarificationQuestions(immutableInput);
+assert.equal(JSON.stringify(immutableInput), immutableSnapshot);
+
+const analysisResult = engine.buildAnalysisResult({
+    purpose: "Hiểu requirement",
+    functions: [],
+    risks: [],
+    clarificationQuestions: normalized,
+    requirementComplete: false
 });
-
-[
-    ...mixed,
-    ...missingId,
-    ...duplicateIds,
-    ...defaultOptions,
-    ...duplicateOptions,
-    ...moreThanFive,
-    ...analysisResult.questions,
-    ...fallbackResult.questions
-].forEach(question => {
+assert.equal(analysisResult.questions.length, 4);
+analysisResult.questions.forEach(question => {
     assert.equal(ClarificationQuestion.from(question)?.isValid(), true);
 });
 

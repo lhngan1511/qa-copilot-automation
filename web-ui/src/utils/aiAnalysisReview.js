@@ -1,3 +1,27 @@
+const QUESTION_TYPES = new Set(["YES_NO", "SINGLE_CHOICE", "FREE_TEXT", "CONFIRM_ASSUMPTION"]);
+
+function normalizeQuestionType(item) {
+    const explicit = String(item?.type ?? "").toUpperCase();
+    if (QUESTION_TYPES.has(explicit)) return explicit;
+    const options = Array.isArray(item?.options) ? item.options : [];
+    if (options.length >= 2) {
+        const normalized = options.map(option => String(option).trim().toLocaleLowerCase("vi"));
+        return normalized.includes("có") && normalized.includes("không")
+            ? "YES_NO"
+            : "SINGLE_CHOICE";
+    }
+    return "FREE_TEXT";
+}
+
+function normalizeQuestionOptions(item, type) {
+    const options = Array.isArray(item?.options) ? [...item.options] : [];
+    if (type === "YES_NO" && options.length === 0) return ["Có", "Không"];
+    if (type === "CONFIRM_ASSUMPTION" && options.length === 0) {
+        return ["Đúng", "Không đúng"];
+    }
+    return type === "FREE_TEXT" ? [] : options;
+}
+
 export function parseAIAnalysisReview(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         throw new Error("Phản hồi AI Analysis Review không hợp lệ.");
@@ -24,10 +48,21 @@ export function parseAIAnalysisReview(value) {
                 : [],
             risks: Array.isArray(value.analysis.risks) ? [...value.analysis.risks] : []
         },
-        clarifications: value.clarifications.map(item => ({
-            ...item,
-            options: Array.isArray(item.options) ? [...item.options] : []
-        })),
+        clarifications: value.clarifications.map(item => {
+            const type = normalizeQuestionType(item);
+            return {
+                ...item,
+                type,
+                allowNotSpecified:
+                    item.allowNotSpecified === true ||
+                    normalizeQuestionOptions(item, type).some(option =>
+                        /chưa xác định|requirement không (đề cập|nói)/i.test(option)
+                    ),
+                targetField: typeof item.targetField === "string" ? item.targetField : "",
+                targetRule: typeof item.targetRule === "string" ? item.targetRule : "",
+                options: normalizeQuestionOptions(item, type)
+            };
+        }),
         allowedActions: [...value.allowedActions]
     };
 }

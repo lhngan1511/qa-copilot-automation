@@ -63,8 +63,11 @@ try {
                         category: "Business Rule",
                         priority: "High",
                         question: "Mã thiết bị có phân biệt chữ hoa và chữ thường không?",
+                        type: "YES_NO",
                         reason: "Cần xác định cách kiểm tra trùng mã.",
-                        options: ["Có", "Không", "Chưa xác định"]
+                        targetField: "Mã thiết bị",
+                        options: [],
+                        allowNotSpecified: true
                     }
                 ],
                 requirementComplete: false
@@ -99,6 +102,14 @@ try {
     assert.equal(review.body.data.step, "AI_ANALYSIS_REVIEW");
     assert.equal(review.body.data.clarifications.length, 1);
     assert.equal(review.body.data.clarifications[0].id, "CL001");
+    assert.equal(review.body.data.clarifications[0].type, "YES_NO");
+    assert.equal(review.body.data.clarifications[0].targetField, "Mã thiết bị");
+    assert.equal(review.body.data.clarifications[0].allowNotSpecified, true);
+    assert.deepEqual(review.body.data.clarifications[0].options, [
+        "Có",
+        "Không",
+        "Requirement không đề cập"
+    ]);
     assert.equal(review.body.data.clarifications[0].required, true);
     assert.equal(review.body.data.clarifications[0].status, "UNANSWERED");
     assert.equal(review.body.data.summary.remaining, 1);

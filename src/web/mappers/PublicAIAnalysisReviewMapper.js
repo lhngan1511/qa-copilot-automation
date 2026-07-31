@@ -25,9 +25,15 @@ export default class PublicAIAnalysisReviewMapper {
                 category: question?.category ?? "General",
                 priority: question?.priority ?? "Medium",
                 question: question?.question ?? "",
+                type: question?.type ?? "FREE_TEXT",
                 reason: question?.reason ?? "",
+                targetField: question?.targetField ?? "",
+                targetRule: question?.targetRule ?? "",
+                allowNotSpecified: question?.allowNotSpecified === true,
                 required: true,
-                options: Array.isArray(question?.options) ? [...question.options] : [],
+                ...(Array.isArray(question?.options) && question.options.length > 0
+                    ? { options: [...question.options] }
+                    : {}),
                 answer,
                 status: answered ? "ANSWERED" : "UNANSWERED",
                 answeredAt: answered ? (question?.answeredAt ?? null) : null,

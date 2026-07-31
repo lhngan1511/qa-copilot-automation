@@ -1,8 +1,11 @@
-const answerOptions = [
-    "Đồng ý, đúng như vậy",
-    "Không đúng / Requirement không nói",
-    "Requirement chưa rõ, cần AI làm rõ thêm"
-];
+const NOT_SPECIFIED = "Requirement không đề cập";
+
+function questionPrompt(type) {
+    if (type === "FREE_TEXT") return "Vui lòng cung cấp thông tin";
+    if (type === "CONFIRM_ASSUMPTION") return "Bạn xác nhận giả định này?";
+    if (type === "SINGLE_CHOICE") return "Vui lòng chọn một phương án";
+    return "Vui lòng chọn câu trả lời";
+}
 
 export default function ClarificationQuestionCard({
     clarification,
@@ -13,10 +16,19 @@ export default function ClarificationQuestionCard({
     onChange
 }) {
     const errorId = `clarification-${clarification.id}-error`;
+    const inputId = `clarification-${clarification.id}`;
     const reasonId = clarification.reason ? `clarification-${clarification.id}-reason` : undefined;
+    const options = [...(clarification.options ?? [])];
+    if (
+        clarification.allowNotSpecified &&
+        clarification.type !== "FREE_TEXT" &&
+        !options.includes(NOT_SPECIFIED)
+    ) {
+        options.push(NOT_SPECIFIED);
+    }
 
     return (
-        <article className="requirement-question-card" aria-labelledby={`clarification-${clarification.id}-title`}>
+        <article className="requirement-question-card" aria-labelledby={`${inputId}-title`}>
             <span className="requirement-question-card__badge">✦ Câu hỏi {questionNumber}</span>
 
             <div className="requirement-question-card__finding">
@@ -27,35 +39,65 @@ export default function ClarificationQuestionCard({
                     </svg>
                 </span>
                 <span>
-                    <strong>AI nhận thấy</strong>
+                    <strong>AI cần làm rõ</strong>
                     <p>{clarification.question}</p>
                 </span>
             </div>
 
-            <fieldset
-                className="requirement-question-card__answers"
-                aria-describedby={[reasonId, error ? errorId : null].filter(Boolean).join(" ") || undefined}
-                disabled={disabled}
-            >
-                <legend id={`clarification-${clarification.id}-title`}>
-                    Bạn xác nhận thông tin này?
-                </legend>
-                {answerOptions.map(option => (
-                    <label
-                        className={`requirement-answer-option ${value === option ? "requirement-answer-option--selected" : ""}`}
-                        key={option}
-                    >
-                        <input
-                            type="radio"
-                            name={`clarification-${clarification.id}`}
-                            value={option}
-                            checked={value === option}
-                            onChange={() => onChange(option)}
-                        />
-                        <span>{option}</span>
+            {clarification.type === "FREE_TEXT" ? (
+                <div className="requirement-question-card__free-text">
+                    <label id={`${inputId}-title`} htmlFor={inputId}>
+                        {questionPrompt(clarification.type)}
                     </label>
-                ))}
-            </fieldset>
+                    <textarea
+                        id={inputId}
+                        rows="4"
+                        value={value}
+                        disabled={disabled}
+                        aria-describedby={
+                            [reasonId, error ? errorId : null].filter(Boolean).join(" ") ||
+                            undefined
+                        }
+                        placeholder="Nhập câu trả lời cụ thể..."
+                        onChange={event => onChange(event.target.value)}
+                    />
+                    {clarification.allowNotSpecified && (
+                        <button
+                            className="button button--secondary"
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => onChange(NOT_SPECIFIED)}
+                        >
+                            Requirement không đề cập
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <fieldset
+                    className="requirement-question-card__answers"
+                    aria-describedby={
+                        [reasonId, error ? errorId : null].filter(Boolean).join(" ") || undefined
+                    }
+                    disabled={disabled}
+                >
+                    <legend id={`${inputId}-title`}>{questionPrompt(clarification.type)}</legend>
+                    {options.map(option => (
+                        <label
+                            className={`requirement-answer-option ${value === option ? "requirement-answer-option--selected" : ""}`}
+                            key={option}
+                        >
+                            <input
+                                type="radio"
+                                name={inputId}
+                                value={option}
+                                checked={value === option}
+                                onChange={() => onChange(option)}
+                            />
+                            <span>{option}</span>
+                        </label>
+                    ))}
+                </fieldset>
+            )}
 
             {clarification.reason && (
                 <aside id={reasonId} className="requirement-question-reason">

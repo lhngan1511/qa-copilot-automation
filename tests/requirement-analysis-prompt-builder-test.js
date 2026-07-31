@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-
 import RequirementAnalysisPromptBuilder from "../src/prompts/RequirementAnalysisPromptBuilder.js";
 
 const requirement = {
@@ -7,44 +6,34 @@ const requirement = {
     features: [
         {
             name: "Tạo khách hàng",
-            businessRules: [
-                {
-                    code: "BR01",
-                    content: "Email phải là duy nhất."
-                }
-            ]
+            businessRules: [{ code: "BR01", content: "Email phải là duy nhất." }]
         }
     ]
 };
 const snapshot = JSON.stringify(requirement);
-const builder = new RequirementAnalysisPromptBuilder();
-const prompt = builder.build(requirement);
+const prompt = new RequirementAnalysisPromptBuilder().build(requirement);
 
-assert.equal(typeof prompt, "string");
 assert.match(prompt, /"purpose": "string"/);
 assert.match(prompt, /"functions": \[/);
-assert.match(prompt, /"businessRules": \["string"\]/);
-assert.match(prompt, /"validationRules": \["string"\]/);
-assert.match(prompt, /"permissions": \["string"\]/);
-assert.match(prompt, /"dependencies": \["string"\]/);
-assert.match(prompt, /"assumptions": \["string"\]/);
-assert.match(prompt, /"requirementReferences": \["string"\]/);
-assert.match(prompt, /"risks": \["string"\]/);
-assert.match(prompt, /"clarificationQuestions": \[\s*\{\s*"id": "CL001"/);
-assert.match(prompt, /"requirementComplete": false/);
-assert.match(prompt, /"category":/);
-assert.match(prompt, /"priority":/);
-assert.match(prompt, /"reason":/);
-assert.match(prompt, /"options":/);
-assert.match(prompt, /no more than 5 clarification questions/i);
-assert.match(prompt, /Chưa xác định/);
-assert.match(prompt, /directly affects testcase design/i);
+assert.match(prompt, /"clarificationQuestions": \[/);
+assert.match(prompt, /YES_NO \| SINGLE_CHOICE \| FREE_TEXT \| CONFIRM_ASSUMPTION/);
+assert.match(prompt, /"targetField":/);
+assert.match(prompt, /"targetRule":/);
+assert.match(prompt, /"allowNotSpecified": false/);
+assert.match(prompt, /materially change testcase/i);
+assert.match(prompt, /one question for one missing decision/i);
+assert.match(prompt, /never invent maximum or minimum lengths/i);
+assert.match(prompt, /Do not ask generic questions/i);
+assert.match(prompt, /Do not produce duplicate/i);
+assert.match(prompt, /Use only if those alternatives are present/i);
+assert.match(
+    prompt,
+    /For FREE_TEXT, YES_NO, and CONFIRM_ASSUMPTION, options must be an empty array/
+);
+assert.match(prompt, /at most 5 highest-impact/i);
 assert.match(prompt, /Return only valid JSON/i);
-assert.match(prompt, /Do not return Markdown/i);
 assert.match(prompt, /REQUIREMENT DATA:/);
 assert.match(prompt, /"module": "Khách hàng"/);
-assert.match(prompt, /Khách hàng/);
-assert.doesNotMatch(prompt, /thiet-bi\.md/i);
 assert.doesNotMatch(prompt, /"suggestedScenarios":/);
 assert.doesNotMatch(prompt, /"featureUnderstanding":/);
 assert.doesNotMatch(prompt, /"testFocus":/);

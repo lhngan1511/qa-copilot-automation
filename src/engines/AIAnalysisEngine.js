@@ -675,6 +675,7 @@ class AIAnalysisEngine {
 
         const normalizedQuestions = [];
         const usedIds = new Set();
+        const deduplicationKeys = new Set();
 
         for (const item of questions) {
             if (normalizedQuestions.length >= 5) {
@@ -704,14 +705,14 @@ class AIAnalysisEngine {
                 continue;
             }
 
+            const deduplicationKey = ClarificationQuestion.deduplicationKey(question);
+            if (!deduplicationKey || deduplicationKeys.has(deduplicationKey)) {
+                continue;
+            }
+
             usedIds.add(question.id.toUpperCase());
-            normalizedQuestions.push({
-                ...question.toJSON(),
-                requirementReferences:
-                    item && typeof item === "object" && !Array.isArray(item)
-                        ? this.normalizeContextArray(item.requirementReferences)
-                        : []
-            });
+            deduplicationKeys.add(deduplicationKey);
+            normalizedQuestions.push(question.toJSON());
         }
 
         return normalizedQuestions;
