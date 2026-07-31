@@ -86,9 +86,9 @@ try {
 
     assert.equal(result.status, "COMPLETED");
     assert.deepEqual(Object.keys(result.outputs).sort(), ["excel", "json", "markdown"]);
-    assert.equal(path.basename(result.outputs.json), "approved-testcases.json");
-    assert.equal(path.basename(result.outputs.markdown), "approved-testcases.md");
-    assert.equal(path.basename(result.outputs.excel), "approved-testcases.xlsx");
+    assert.equal(path.basename(result.outputs.json), "thiet-bi-approved-testcases.json");
+    assert.equal(path.basename(result.outputs.markdown), "thiet-bi-testcases.md");
+    assert.equal(path.basename(result.outputs.excel), "thiet-bi-approved-testcases.xlsx");
     assert.ok(result.testCases.every(testCase => testCase.steps.length > 0));
 
     originalLog("Production core workflow test: PASS");

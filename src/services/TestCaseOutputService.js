@@ -1,8 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import ApprovedTestCaseFileName from "../utils/ApprovedTestCaseFileName.js";
 
 class TestCaseOutputService {
-    constructor({ outputManager, fileNameGenerator }) {
+    constructor({
+        outputManager,
+        fileNameGenerator,
+        approvedFileName = new ApprovedTestCaseFileName()
+    }) {
         if (!outputManager) {
             throw new Error("outputManager is required.");
         }
@@ -13,6 +18,7 @@ class TestCaseOutputService {
 
         this.outputManager = outputManager;
         this.fileNameGenerator = fileNameGenerator;
+        this.approvedFileName = approvedFileName;
     }
 
     export({
@@ -39,6 +45,7 @@ class TestCaseOutputService {
         const baseName = outputFileName
             ? this.toSafeFileName(outputFileName)
             : `${safePrefix}${safeFeature}_testcases_${timestamp}`;
+        const usesApprovedNaming = outputFileName === "approved-testcases";
         const outputDirectories = {
             json: path.join(outputRoot, "json"),
             markdown: path.join(outputRoot, "markdown"),
@@ -52,12 +59,17 @@ class TestCaseOutputService {
 
         enabledFormats.forEach(format => {
             fs.mkdirSync(outputDirectories[format], { recursive: true });
+            if (usesApprovedNaming) {
+                this.removePreviousExport(outputDirectories[format], format);
+            }
         });
+        const formatBaseName = format =>
+            usesApprovedNaming ? this.approvedFileName.baseName(normalizedTestCases, format) : baseName;
         const outputPaths = {
-            json: path.join(outputDirectories.json, `${baseName}.json`),
-            markdown: path.join(outputDirectories.markdown, `${baseName}.md`),
-            excel: path.join(outputDirectories.excel, `${baseName}.xlsx`),
-            csv: path.join(outputDirectories.csv, `${baseName}.csv`)
+            json: path.join(outputDirectories.json, `${formatBaseName("json")}.json`),
+            markdown: path.join(outputDirectories.markdown, `${formatBaseName("markdown")}.md`),
+            excel: path.join(outputDirectories.excel, `${formatBaseName("excel")}.xlsx`),
+            csv: path.join(outputDirectories.csv, `${formatBaseName("csv")}.csv`)
         };
 
         return Object.fromEntries(
@@ -67,6 +79,20 @@ class TestCaseOutputService {
                     outputPaths[format]
             ])
         );
+    }
+
+    removePreviousExport(directory, format) {
+        const extensions = {
+            json: ".json",
+            markdown: ".md",
+            excel: ".xlsx"
+        };
+        const extension = extensions[format];
+        if (!extension) return;
+
+        fs.readdirSync(directory, { withFileTypes: true })
+            .filter(entry => entry.isFile() && entry.name.toLowerCase().endsWith(extension))
+            .forEach(entry => fs.rmSync(path.join(directory, entry.name)));
     }
 
     toSafeFileName(value) {

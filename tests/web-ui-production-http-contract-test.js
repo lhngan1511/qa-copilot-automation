@@ -357,8 +357,18 @@ try {
         `/api/workflows/${testerStage.sessionId}/outputs/excel/download`
     );
 
-    const jsonPath = path.join(outputDir, "production", "json", "approved-testcases.json");
-    const excelPath = path.join(outputDir, "production", "excel", "approved-testcases.xlsx");
+    const jsonPath = path.join(
+        outputDir,
+        "production",
+        "json",
+        "quan-ly-thiet-bi-approved-testcases.json"
+    );
+    const excelPath = path.join(
+        outputDir,
+        "production",
+        "excel",
+        "quan-ly-thiet-bi-approved-testcases.xlsx"
+    );
     assert.ok(jsonPath.startsWith(outputDir));
     assert.ok(excelPath.startsWith(outputDir));
     assert.ok(fs.statSync(jsonPath).size > 0);
