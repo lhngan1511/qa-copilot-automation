@@ -6,7 +6,6 @@ import LoadingState from "../components/LoadingState.jsx";
 import WorkflowStepper from "../components/WorkflowStepper.jsx";
 import RecentWorkflowsTable from "../components/dashboard/RecentWorkflowsTable.jsx";
 import useWorkflows from "../hooks/useWorkflows.js";
-import cuscSoftwareLogo from "../assets/cusc-software-logo.png";
 
 const PAGE_SIZE = 6;
 
@@ -111,10 +110,6 @@ export default function DashboardPage() {
                     New AI Test Design
                 </Link>
             </header>
-
-            <section className="dashboard-branding" aria-label="CUSC Software">
-                <img src={cuscSoftwareLogo} alt="CUSC Software" />
-            </section>
 
             <section
                 className="dashboard-section dashboard-workflow-overview"

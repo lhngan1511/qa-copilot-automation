@@ -1,18 +1,10 @@
-function ProductMark() {
-    return (
-        <svg className="product-mark" viewBox="0 0 40 40" role="img" aria-label="CUSC QC">
-            <path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor" opacity=".16" />
-            <path d="M20 6.5 32 13v14L20 33.5 8 27V13L20 6.5Z" fill="none" stroke="currentColor" strokeWidth="3" />
-            <path d="M20 13 26 16.5v7L20 27l-6-3.5v-7L20 13Z" fill="currentColor" />
-        </svg>
-    );
-}
+import cuscSoftwareLogo from "../assets/cusc-software-logo.png";
 
 export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
     return (
         <header className="app-header">
             <div className="app-header__brand">
-                <ProductMark />
+                <img className="product-logo" src={cuscSoftwareLogo} alt="CUSC Software" />
                 <span>
                     <strong>CUSC QC Intelligence</strong>
                     <small>AI-powered Software Testing Platform</small>
