@@ -37,13 +37,16 @@ class TestCaseGenerator {
 
                 testCase.function = scenario.function ?? scenario.feature ?? "";
 
-                testCase.module = scenario.module === undefined ? "" : scenario.module;
+                testCase.module = scenario.module || scenario.moduleName || "Chưa xác định";
 
-                testCase.feature = scenario.feature === undefined ? "" : scenario.feature;
+                testCase.feature = scenario.feature || scenario.function || scenario.title || "Chưa xác định";
 
                 testCase.title = scenario.title === undefined ? "" : scenario.title;
 
-                testCase.testScenario = scenario.testScenario ?? scenario.title ?? "";
+                testCase.testScenario =
+                    scenario.testScenario || scenario.scenario || scenario.title || testCase.feature;
+
+                testCase.scenario = scenario.scenario || testCase.testScenario;
 
                 testCase.type = scenario.type ?? "";
 
@@ -104,7 +107,7 @@ class TestCaseGenerator {
                           );
 
                 testCase.expectedResult =
-                    scenario.expectedResult !== undefined
+                    typeof scenario.expectedResult === "string" && scenario.expectedResult.trim()
                         ? scenario.expectedResult
                         : Array.isArray(scenario.expectedResults)
                           ? (scenario.expectedResults.find(
@@ -118,6 +121,12 @@ class TestCaseGenerator {
                         : scenario.expectedResult !== undefined && scenario.expectedResult !== null
                           ? [scenario.expectedResult]
                           : [];
+
+                if (!this.hasMeaningfulSteps(testCase.steps)) {
+                    testCase.steps = this.buildFallbackSteps(testCase);
+                }
+
+                testCase.reviewStatus = "PENDING";
 
                 testCase.assertions = scenario.assertions === undefined ? [] : scenario.assertions;
 
@@ -374,6 +383,50 @@ class TestCaseGenerator {
         });
 
         return steps;
+    }
+
+    hasMeaningfulSteps(steps) {
+        return (
+            Array.isArray(steps) &&
+            steps.length > 0 &&
+            steps.every(step => String(step?.action ?? step?.description ?? step ?? "").trim())
+        );
+    }
+
+    buildFallbackSteps(testCase) {
+        const feature = testCase.feature || testCase.function;
+        const scenario = testCase.scenario || testCase.title;
+        const data = testCase.testData?.value || testCase.testData?.requirement || scenario;
+        return [
+            {
+                order: 1,
+                action: `Mở chức năng ${feature}`,
+                target: feature,
+                value: "",
+                expected: `${feature} sẵn sàng để kiểm thử`
+            },
+            {
+                order: 2,
+                action: `Thiết lập dữ liệu cho tình huống: ${scenario}`,
+                target: feature,
+                value: data,
+                expected: "Dữ liệu kiểm thử được nhập theo yêu cầu"
+            },
+            {
+                order: 3,
+                action: `Thực hiện ${feature}`,
+                target: feature,
+                value: "",
+                expected: "Yêu cầu được gửi để hệ thống xử lý"
+            },
+            {
+                order: 4,
+                action: "Kiểm tra kết quả nghiệp vụ",
+                target: feature,
+                value: "",
+                expected: testCase.expectedResult
+            }
+        ];
     }
 
     buildObjective(scenario) {

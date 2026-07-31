@@ -22,6 +22,7 @@ import SemanticTestCaseOverlapResolver from "./resolvers/SemanticTestCaseOverlap
 import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerger.js";
 import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
 import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
+import TestCaseReviewValidator from "./validators/TestCaseReviewValidator.js";
 
 import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
 
@@ -89,6 +90,7 @@ class QACopilot {
         );
         this.semanticTestCaseOverlapResolver = new SemanticTestCaseOverlapResolver();
         this.coreTestCaseCoverageValidator = new CoreTestCaseCoverageValidator();
+        this.testCaseReviewValidator = new TestCaseReviewValidator();
 
         this.requirementKnowledgeMerger = new RequirementKnowledgeMerger();
         this.requirementKnowledgeMapper = new RequirementKnowledgeMapper();
@@ -1037,6 +1039,11 @@ class QACopilot {
         =====================================================
         */
 
+        testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
+            defaultStatus:
+                existingTestCaseArtifact?.approvalStatus === "approved" ? "APPROVED" : "PENDING"
+        });
+        this.testCaseReviewValidator.validateBatch(testCases);
         const testCaseSummary = this.buildTestCaseReviewSummary(testCases);
 
         if (!testCaseReviewSessionId || !testCaseArtifactId) {
@@ -1332,6 +1339,11 @@ class QACopilot {
                 approvedFunctions: knowledge.functions
             });
         }
+        testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
+            defaultStatus:
+                existingTestCaseArtifact?.approvalStatus === "approved" ? "APPROVED" : "PENDING"
+        });
+        this.testCaseReviewValidator.validateBatch(testCases);
         const coverageSummary = this.coreTestCaseCoverageValidator.validate(knowledge, testCases);
 
         console.log(`✓ ${scenarios.length} core scenarios generated`);
@@ -1421,7 +1433,7 @@ class QACopilot {
             testCases,
             outputRoot: options.outputRoot ?? options.outputDirectory ?? "./outputs/production",
             outputFileName: "approved-testcases",
-            formats: ["json", "excel"]
+            formats: ["json", "markdown", "excel"]
         });
         this.workflowCoordinator.saveArtifact({
             ...approvedTestCaseArtifact,

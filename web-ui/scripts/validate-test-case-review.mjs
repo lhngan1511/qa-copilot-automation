@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import {
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
-    groupTestCases,
+    filterTestCases,
     parseTestCaseReview,
+    summarizeReview,
     testCaseWarnings
 } from "../src/utils/testCaseReview.js";
 
@@ -11,57 +12,56 @@ const baseCase = {
     id: "TC001",
     testcaseId: "TC001",
     module: "Thiết bị",
-    function: "Thêm thiết bị",
+    feature: "Thêm thiết bị",
+    scenario: "Mã thiết bị bắt buộc",
     type: "VALIDATION",
-    title: "Mã thiết bị bắt buộc",
     expectedResult: "Không lưu dữ liệu",
+    steps: [{ order: 1, action: "Mở chức năng", expected: "Màn hình hiển thị" }],
     testData: { requirement: "Để trống Mã thiết bị", value: "" },
     executionReadiness: "DATA_REQUIRED",
+    reviewStatus: "PENDING",
     hiddenMetadata: { keep: true }
 };
 const review = parseTestCaseReview({
     workflowId: "SESSION-001",
     artifactId: "ART-001",
     approvalStatus: "pending",
-    testCases: [baseCase],
+    testCases: [
+        baseCase,
+        { ...baseCase, id: "TC002", testcaseId: "TC002", type: "POSITIVE", reviewStatus: "REMOVED" }
+    ],
     allowedActions: ["UPDATE_TEST_CASES", "APPROVE_TEST_CASES"]
 });
 
-assert.equal(review.testCases.length, 1);
-assert.equal(review.testCases[0].executionReadiness, "DATA_REQUIRED");
-assert.equal(groupTestCases(review.testCases)["Thiết bị"]["Thêm thiết bị"].VALIDATION.length, 1);
-assert.equal(
-    canApproveTestCaseBatch({ review, dirty: true, pending: false, testCases: review.testCases }),
-    false
+assert.equal(review.testCases[0].reviewStatus, "PENDING");
+assert.equal(summarizeReview(review.testCases).removed, 1);
+assert.equal(filterTestCases(review.testCases, { type: "VALIDATION" }).length, 1);
+assert.equal(filterTestCases(review.testCases, { search: "mã thiết bị" }).length, 2);
+assert.equal(canApproveTestCaseBatch({ review, testCases: review.testCases }), false);
+
+const resolved = review.testCases.map(testCase =>
+    testCase.reviewStatus === "REMOVED" ? testCase : { ...testCase, reviewStatus: "APPROVED" }
 );
-assert.equal(
-    canApproveTestCaseBatch({ review, dirty: false, pending: false, testCases: review.testCases }),
-    true,
-    "DATA_REQUIRED must not block approval under the production contract"
-);
-assert.equal(
-    canApproveTestCaseBatch({
-        review: { ...review, allowedActions: ["UPDATE_TEST_CASES"] },
-        dirty: false,
-        testCases: review.testCases
-    }),
-    false
-);
+assert.equal(canApproveTestCaseBatch({ review, testCases: resolved }), true);
+assert.equal(canApproveTestCaseBatch({ review, dirty: true, testCases: resolved }), false);
 assert.ok(testCaseWarnings(review.testCases[0]).some(item => item.includes("tester")));
+assert.ok(
+    testCaseWarnings({ ...review.testCases[0], steps: [] }).some(item => item.includes("bước"))
+);
 
 const payload = buildTestCaseBatchPayload([
-    { ...review.testCases[0], _uiKey: "local-only", _dirty: true }
+    { ...resolved[0], _uiKey: "local-only", _dirty: true, _selected: true },
+    resolved[1]
 ]);
 assert.equal("_uiKey" in payload[0], false);
 assert.equal("_dirty" in payload[0], false);
+assert.equal("_selected" in payload[0], false);
+assert.equal(payload[0].reviewStatus, "APPROVED");
+assert.equal(payload[1].reviewStatus, "REMOVED");
 assert.deepEqual(payload[0].hiddenMetadata, { keep: true });
 
 assert.throws(
-    () =>
-        parseTestCaseReview({
-            testCases: [{ title: "Missing ID" }],
-            allowedActions: []
-        }),
+    () => parseTestCaseReview({ testCases: [{ title: "Missing ID" }], allowedActions: [] }),
     /thiếu ID/
 );
 assert.throws(() => parseTestCaseReview(null), /không hợp lệ/);

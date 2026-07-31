@@ -23,6 +23,7 @@ class ExcelExporter {
             "Kết quả mong đợi",
             "Kết quả thực tế",
             "Trạng thái",
+            "Review Status",
             "Type",
             "Priority",
             "Severity",
@@ -44,7 +45,8 @@ class ExcelExporter {
             Function: testCase?.function ?? testCase?.feature ?? "",
             "Chức năng": testCase?.feature ?? "",
             "Mục tiêu kiểm thử": testCase?.objective ?? testCase?.testObjective ?? "",
-            "Tình huống kiểm tra": testCase?.testScenario ?? "",
+            "Tình huống kiểm tra":
+                testCase?.scenario ?? testCase?.testScenario ?? testCase?.title ?? "",
             "Tiền điều kiện": this.arrayToText(testCase?.preconditions),
             "Chuẩn bị dữ liệu": this.valueToText(testCase?.setupData),
             "Dữ liệu kiểm thử": this.testDataToText(testCase?.testData),
@@ -52,6 +54,7 @@ class ExcelExporter {
             "Kết quả mong đợi": this.resolveExpectedResult(testCase),
             "Kết quả thực tế": this.valueToText(testCase?.actualResult),
             "Trạng thái": testCase?.status || "Not Tested",
+            "Review Status": testCase?.reviewStatus ?? "APPROVED",
             Type: testCase?.type ?? "",
             Priority: testCase?.priority ?? "",
             Severity: testCase?.severity ?? "",
@@ -77,9 +80,9 @@ class ExcelExporter {
             skipHeader: false
         });
 
-        worksheet["!merges"] = [XLSX.utils.decode_range("A1:Y1")];
+        worksheet["!merges"] = [XLSX.utils.decode_range("A1:Z1")];
         worksheet["!autofilter"] = {
-            ref: `A7:Y${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
+            ref: `A7:Z${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
         };
         worksheet["!cols"] = [
             { wch: 5 },

@@ -65,6 +65,12 @@ try {
     );
 
     const testerStage = result.workflowContext.testCaseReview;
+    const testCaseArtifact = app.workflowCoordinator.findArtifact(testerStage.artifactId);
+    testCaseArtifact.testCases = testCaseArtifact.testCases.map(testCase => ({
+        ...testCase,
+        reviewStatus: "APPROVED"
+    }));
+    app.workflowCoordinator.saveArtifact(testCaseArtifact);
     app.reviewTestCase({ sessionId: testerStage.sessionId });
     app.approveTestCase({
         sessionId: testerStage.sessionId,
@@ -79,9 +85,11 @@ try {
     });
 
     assert.equal(result.status, "COMPLETED");
-    assert.deepEqual(Object.keys(result.outputs).sort(), ["excel", "json"]);
+    assert.deepEqual(Object.keys(result.outputs).sort(), ["excel", "json", "markdown"]);
     assert.equal(path.basename(result.outputs.json), "approved-testcases.json");
+    assert.equal(path.basename(result.outputs.markdown), "approved-testcases.md");
     assert.equal(path.basename(result.outputs.excel), "approved-testcases.xlsx");
+    assert.ok(result.testCases.every(testCase => testCase.steps.length > 0));
 
     originalLog("Production core workflow test: PASS");
 } finally {

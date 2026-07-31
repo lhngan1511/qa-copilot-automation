@@ -12,6 +12,7 @@ const TEXT_FIELDS = [
     "feature",
     "title",
     "testScenario",
+    "scenario",
     "type",
     "testObjective",
     "objective",
@@ -20,7 +21,8 @@ const TEXT_FIELDS = [
     "severity",
     "source",
     "automationNotes",
-    "executionReadiness"
+    "executionReadiness",
+    "reviewStatus"
 ];
 
 const ARRAY_FIELDS = [
@@ -78,10 +80,22 @@ export default class PublicTestCaseReviewMapper {
             source.id ??
             `MISSING_ID_${String(index + 1)}`;
         result.testcaseId = source.testcaseId ?? source.testCaseId ?? source.id ?? "";
+        result.scenario =
+            source.scenario ??
+            source.testScenario ??
+            source.objective ??
+            source.testObjective ??
+            source.title ??
+            "";
         result.testData = this.mapTestData(source.testData);
         result.automationCandidate = source.automationCandidate === true;
         result.executionReadiness =
             source.executionReadiness === "DATA_REQUIRED" ? "DATA_REQUIRED" : "READY";
+        result.reviewStatus = ["APPROVED", "NEEDS_CHANGES", "REMOVED"].includes(
+            source.reviewStatus
+        )
+            ? source.reviewStatus
+            : "PENDING";
 
         return result;
     }
@@ -96,6 +110,12 @@ export default class PublicTestCaseReviewMapper {
 
     buildSummary(testCases) {
         const byType = {};
+        const byReviewStatus = {
+            PENDING: 0,
+            APPROVED: 0,
+            NEEDS_CHANGES: 0,
+            REMOVED: 0
+        };
         let ready = 0;
         let requiresTesterInput = 0;
 
@@ -105,6 +125,7 @@ export default class PublicTestCaseReviewMapper {
                     ? testCase.type.trim()
                     : "UNKNOWN";
             byType[type] = (byType[type] ?? 0) + 1;
+            byReviewStatus[testCase.reviewStatus] += 1;
             if (testCase.executionReadiness === "DATA_REQUIRED") {
                 requiresTesterInput += 1;
             } else {
@@ -112,7 +133,16 @@ export default class PublicTestCaseReviewMapper {
             }
         });
 
-        return { total: testCases.length, byType, ready, requiresTesterInput };
+        return {
+            total: testCases.length,
+            approved: byReviewStatus.APPROVED,
+            needsChanges: byReviewStatus.NEEDS_CHANGES,
+            removed: byReviewStatus.REMOVED,
+            pending: byReviewStatus.PENDING,
+            byType,
+            ready,
+            requiresTesterInput
+        };
     }
 
     error(code, message, statusCode) {

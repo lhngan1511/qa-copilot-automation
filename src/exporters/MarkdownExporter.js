@@ -24,7 +24,9 @@ class MarkdownExporter {
             markdown += `| Function ID | ${this.safeInline(testCase?.functionId)} |\n`;
             markdown += `| Function | ${this.safeInline(testCase?.function ?? testCase?.feature)} |\n`;
             markdown += `| Chức năng | ${this.safeInline(testCase?.feature)} |\n`;
+            markdown += `| Tình huống | ${this.safeInline(testCase?.scenario ?? testCase?.testScenario ?? testCase?.title)} |\n`;
             markdown += `| Loại | ${this.safeInline(testCase?.type)} |\n`;
+            markdown += `| Review Status | ${this.safeInline(testCase?.reviewStatus)} |\n`;
             markdown += `| Objective | ${this.safeInline(testCase?.objective ?? testCase?.testObjective)} |\n`;
             markdown += `| Priority | ${this.safeInline(testCase?.priority)} |\n`;
             markdown += `| Severity | ${this.safeInline(testCase?.severity)} |\n`;

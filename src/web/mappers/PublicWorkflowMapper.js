@@ -158,8 +158,8 @@ export default class PublicWorkflowMapper {
 
         return {
             total: normalized.length,
-            approved: normalized.filter(item => item?.approvalStatus === "approved").length,
-            rejected: normalized.filter(item => item?.approvalStatus === "rejected").length,
+            approved: normalized.filter(item => item?.reviewStatus === "APPROVED").length,
+            rejected: normalized.filter(item => item?.reviewStatus === "REMOVED").length,
             requiresTesterInput: normalized.filter(
                 item => item?.executionReadiness === "DATA_REQUIRED"
             ).length

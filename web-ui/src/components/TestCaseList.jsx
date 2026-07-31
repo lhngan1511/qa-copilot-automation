@@ -1,57 +1,145 @@
-import TestDataReadinessBadge from "./TestDataReadinessBadge.jsx";
-import { groupTestCases, testCaseId } from "../utils/testCaseReview.js";
+import { testCaseId } from "../utils/testCaseReview.js";
 
-export default function TestCaseList({ testCases, selectedId, dirtyIds, onSelect }) {
-    const groups = groupTestCases(testCases);
+const statusLabels = {
+    PENDING: "Chờ duyệt",
+    APPROVED: "Đã duyệt",
+    NEEDS_CHANGES: "Cần chỉnh sửa",
+    REMOVED: "Đã loại bỏ"
+};
 
+function compact(value, fallback = "—") {
+    const text = String(value ?? "").trim();
+    return text || fallback;
+}
+
+export default function TestCaseList({
+    testCases,
+    selectedId,
+    selectedIds,
+    allVisibleSelected,
+    disabled,
+    onSelect,
+    onToggle,
+    onToggleAll,
+    onDecision
+}) {
     return (
-        <nav className="testcase-list" aria-label="Danh sách testcase">
-            {Object.entries(groups).map(([module, features]) => (
-                <section key={module}>
-                    <h5>{module}</h5>
-                    {Object.entries(features).map(([feature, types]) => (
-                        <div className="testcase-group" key={`${module}-${feature}`}>
-                            <h6>{feature}</h6>
-                            {Object.entries(types).map(([type, cases]) => (
-                                <div key={`${module}-${feature}-${type}`}>
-                                    <p className="testcase-group__type">{type}</p>
-                                    <ul>
-                                        {cases.map(testCase => {
-                                            const id = testCaseId(testCase);
-                                            const selected = id === selectedId;
-                                            return (
-                                                <li key={id}>
-                                                    <button
-                                                        className={`testcase-list__item ${
-                                                            selected
-                                                                ? "testcase-list__item--selected"
-                                                                : ""
-                                                        }`}
-                                                        type="button"
-                                                        aria-current={selected ? "true" : undefined}
-                                                        onClick={() => onSelect(id)}
-                                                    >
-                                                        <span>
-                                                            <strong>{id}</strong>
-                                                            {dirtyIds.has(id) && <em>Chưa lưu</em>}
-                                                        </span>
-                                                        <span>
-                                                            {testCase.title || "Chưa có tiêu đề"}
-                                                        </span>
-                                                        <TestDataReadinessBadge
-                                                            status={testCase.executionReadiness}
-                                                        />
-                                                    </button>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
-                </section>
-            ))}
-        </nav>
+        <div className="testcase-table-wrap">
+            <table className="testcase-review-table">
+                <caption className="visually-hidden">Danh sách test case cần review</caption>
+                <thead>
+                    <tr>
+                        <th className="testcase-review-table__checkbox">
+                            <input
+                                type="checkbox"
+                                aria-label="Chọn tất cả test case đang hiển thị"
+                                checked={allVisibleSelected && testCases.length > 0}
+                                disabled={disabled || testCases.length === 0}
+                                onChange={onToggleAll}
+                            />
+                        </th>
+                        <th>ID</th>
+                        <th>Tình huống kiểm tra</th>
+                        <th>Loại</th>
+                        <th>Dữ liệu đầu vào</th>
+                        <th>Kết quả mong đợi</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {testCases.map(testCase => {
+                        const id = testCaseId(testCase);
+                        const active = id === selectedId;
+                        return (
+                            <tr
+                                className={`${active ? "testcase-review-table__row--active" : ""} ${
+                                    testCase.reviewStatus === "REMOVED"
+                                        ? "testcase-review-table__row--removed"
+                                        : ""
+                                }`}
+                                key={id}
+                            >
+                                <td data-label="Chọn" className="testcase-review-table__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        aria-label={`Chọn test case ${id}`}
+                                        checked={selectedIds.has(id)}
+                                        disabled={disabled}
+                                        onChange={() => onToggle(id)}
+                                    />
+                                </td>
+                                <td data-label="ID">
+                                    <button
+                                        className="testcase-table-link"
+                                        type="button"
+                                        onClick={() => onSelect(id)}
+                                    >
+                                        {id}
+                                    </button>
+                                </td>
+                                <td data-label="Tình huống kiểm tra">
+                                    <button
+                                        className="testcase-table-scenario"
+                                        type="button"
+                                        onClick={() => onSelect(id)}
+                                    >
+                                        {compact(testCase.scenario ?? testCase.title)}
+                                    </button>
+                                </td>
+                                <td data-label="Loại">
+                                    <span className="testcase-type-badge">
+                                        {compact(testCase.type)}
+                                    </span>
+                                </td>
+                                <td
+                                    data-label="Dữ liệu đầu vào"
+                                    title={
+                                        testCase.testData?.value || testCase.testData?.requirement
+                                    }
+                                >
+                                    <span className="testcase-table-truncate">
+                                        {compact(
+                                            testCase.testData?.value ||
+                                                testCase.testData?.requirement
+                                        )}
+                                    </span>
+                                </td>
+                                <td data-label="Kết quả mong đợi" title={testCase.expectedResult}>
+                                    <span className="testcase-table-truncate">
+                                        {compact(testCase.expectedResult)}
+                                    </span>
+                                </td>
+                                <td data-label="Trạng thái">
+                                    <span
+                                        className={`testcase-review-status testcase-review-status--${testCase.reviewStatus.toLowerCase()}`}
+                                    >
+                                        {statusLabels[testCase.reviewStatus]}
+                                    </span>
+                                </td>
+                                <td data-label="Thao tác">
+                                    <div className="testcase-row-actions">
+                                        <button
+                                            type="button"
+                                            disabled={disabled}
+                                            onClick={() => onDecision([id], "APPROVED")}
+                                        >
+                                            Duyệt
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={disabled}
+                                            onClick={() => onSelect(id)}
+                                        >
+                                            Chi tiết
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
     );
 }

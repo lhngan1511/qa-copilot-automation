@@ -1,68 +1,69 @@
-import TestDataReadinessBadge from "./TestDataReadinessBadge.jsx";
-import { testCaseWarnings } from "../utils/testCaseReview.js";
+import { normalizeSteps, testCaseWarnings } from "../utils/testCaseReview.js";
 
-function TextListEditor({ id, label, values, disabled, onChange }) {
-    const items = Array.isArray(values) ? values : [];
+function text(value, fallback = "Chưa có") {
+    const normalized = String(value ?? "").trim();
+    return normalized || fallback;
+}
+
+function DetailList({ title, values }) {
+    if (!Array.isArray(values) || values.length === 0) return null;
     return (
-        <fieldset className="array-editor" disabled={disabled}>
-            <legend>{label}</legend>
-            {items.map((value, index) => (
-                <div key={`${id}-${index}`}>
-                    <input
-                        aria-label={`${label} ${index + 1}`}
-                        value={typeof value === "string" ? value : (value?.action ?? "")}
-                        onChange={event => {
-                            const next = [...items];
-                            next[index] =
-                                typeof value === "string"
-                                    ? event.target.value
-                                    : { ...value, action: event.target.value };
-                            onChange(next);
-                        }}
-                    />
-                    <button
-                        className="text-button"
-                        type="button"
-                        onClick={() =>
-                            onChange(items.filter((_, itemIndex) => itemIndex !== index))
-                        }
-                    >
-                        Xóa
-                    </button>
-                </div>
-            ))}
-            <button className="text-button" type="button" onClick={() => onChange([...items, ""])}>
-                + Thêm
-            </button>
-        </fieldset>
+        <section className="testcase-detail-section">
+            <h4>{title}</h4>
+            <ol>
+                {values.map((value, index) => (
+                    <li key={`${title}-${index}`}>{text(value?.action ?? value)}</li>
+                ))}
+            </ol>
+        </section>
     );
 }
 
-export default function TestCaseEditor({ testCase, disabled, onChange, onRemove }) {
+export default function TestCaseEditor({
+    testCase,
+    editing,
+    editDraft,
+    disabled,
+    onEdit,
+    onCancel,
+    onDraftChange,
+    onSave,
+    onDecision
+}) {
     if (!testCase) {
-        return <p className="muted-copy">Chọn một testcase để review.</p>;
+        return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
     }
 
-    const set = (field, value) => onChange({ ...testCase, [field]: value });
-    const warnings = testCaseWarnings(testCase);
+    const value = editing ? editDraft : testCase;
+    const warnings = testCaseWarnings(value);
+    const invalid =
+        !String(value.scenario ?? value.title ?? "").trim() ||
+        !String(value.expectedResult ?? "").trim() ||
+        normalizeSteps(value.steps).length === 0;
+    const set = (field, next) => onDraftChange({ ...value, [field]: next });
 
     return (
-        <div className="testcase-editor">
-            <div className="testcase-editor__heading">
+        <aside className="testcase-detail-panel" aria-label={`Chi tiết test case ${testCase.id}`}>
+            <header className="testcase-detail-panel__header">
                 <div>
-                    <span className="workflow-id">{testCase.id}</span>
-                    <TestDataReadinessBadge status={testCase.executionReadiness} />
+                    <span>Testcase ID</span>
+                    <strong>{testCase.id}</strong>
                 </div>
-                {!disabled && (
-                    <button className="button button--danger" type="button" onClick={onRemove}>
-                        Loại khỏi danh sách review
+                {!editing && (
+                    <button
+                        className="button button--secondary"
+                        type="button"
+                        disabled={disabled}
+                        onClick={onEdit}
+                    >
+                        Chỉnh sửa
                     </button>
                 )}
-            </div>
+            </header>
 
             {warnings.length > 0 && (
                 <div className="editor-warning" role="status">
-                    <strong>Lưu ý</strong>
+                    <strong>Cần kiểm tra</strong>
                     <ul>
                         {warnings.map(item => (
                             <li key={item}>{item}</li>
@@ -71,137 +72,191 @@ export default function TestCaseEditor({ testCase, disabled, onChange, onRemove 
                 </div>
             )}
 
-            <div className="editor-grid">
-                <label>
-                    Module
-                    <input
-                        disabled={disabled}
-                        value={testCase.module ?? ""}
-                        onChange={e => set("module", e.target.value)}
-                    />
-                </label>
-                <label>
-                    Chức năng
-                    <input
-                        disabled={disabled}
-                        value={testCase.function ?? testCase.feature ?? ""}
-                        onChange={e =>
-                            set(
-                                testCase.function !== undefined ? "function" : "feature",
-                                e.target.value
-                            )
-                        }
-                    />
-                </label>
-                <label>
-                    Loại
-                    <input
-                        disabled={disabled}
-                        value={testCase.type ?? ""}
-                        onChange={e => set("type", e.target.value)}
-                    />
-                </label>
-                <label>
-                    Priority
-                    <input
-                        disabled={disabled}
-                        value={testCase.priority ?? ""}
-                        onChange={e => set("priority", e.target.value)}
-                    />
-                </label>
-                <label>
-                    Severity
-                    <input
-                        disabled={disabled}
-                        value={testCase.severity ?? ""}
-                        onChange={e => set("severity", e.target.value)}
-                    />
-                </label>
-                <label className="checkbox-field">
-                    <input
-                        type="checkbox"
-                        disabled={disabled}
-                        checked={testCase.automationCandidate === true}
-                        onChange={e => set("automationCandidate", e.target.checked)}
-                    />
-                    Automation candidate
-                </label>
-            </div>
+            {editing ? (
+                <div className="testcase-detail-form">
+                    <label>
+                        Scenario
+                        <textarea
+                            rows="3"
+                            value={value.scenario ?? ""}
+                            onChange={event => set("scenario", event.target.value)}
+                        />
+                    </label>
+                    <div className="testcase-detail-form__grid">
+                        <label>
+                            Module
+                            <input
+                                value={value.module ?? ""}
+                                onChange={event => set("module", event.target.value)}
+                            />
+                        </label>
+                        <label>
+                            Feature
+                            <input
+                                value={value.feature ?? value.function ?? ""}
+                                onChange={event => set("feature", event.target.value)}
+                            />
+                        </label>
+                        <label>
+                            Test Type
+                            <input
+                                value={value.type ?? ""}
+                                onChange={event => set("type", event.target.value)}
+                            />
+                        </label>
+                    </div>
+                    <label>
+                        Test Data
+                        <textarea
+                            rows="2"
+                            value={value.testData?.value ?? ""}
+                            onChange={event =>
+                                set("testData", { ...value.testData, value: event.target.value })
+                            }
+                        />
+                    </label>
+                    <label>
+                        Expected Result
+                        <textarea
+                            rows="3"
+                            value={value.expectedResult ?? ""}
+                            onChange={event => set("expectedResult", event.target.value)}
+                        />
+                    </label>
+                    <fieldset className="testcase-step-editor">
+                        <legend>Test Steps</legend>
+                        {(value.steps ?? []).map((step, index) => (
+                            <div key={`${testCase.id}-step-${index}`}>
+                                <span>{index + 1}</span>
+                                <input
+                                    aria-label={`Bước ${index + 1}`}
+                                    value={step.action ?? ""}
+                                    onChange={event => {
+                                        const steps = structuredClone(value.steps ?? []);
+                                        steps[index] = {
+                                            ...steps[index],
+                                            action: event.target.value
+                                        };
+                                        set("steps", steps);
+                                    }}
+                                />
+                                <button
+                                    className="text-button"
+                                    type="button"
+                                    onClick={() =>
+                                        set(
+                                            "steps",
+                                            value.steps.filter(
+                                                (_, itemIndex) => itemIndex !== index
+                                            )
+                                        )
+                                    }
+                                >
+                                    Xóa
+                                </button>
+                            </div>
+                        ))}
+                        <button
+                            className="text-button"
+                            type="button"
+                            onClick={() =>
+                                set("steps", [
+                                    ...(value.steps ?? []),
+                                    {
+                                        order: (value.steps?.length ?? 0) + 1,
+                                        action: "",
+                                        expected: ""
+                                    }
+                                ])
+                            }
+                        >
+                            + Thêm bước
+                        </button>
+                    </fieldset>
+                    <div className="testcase-detail-form__actions">
+                        <button
+                            className="button button--secondary"
+                            type="button"
+                            onClick={onCancel}
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            className="button button--primary"
+                            type="button"
+                            disabled={disabled || invalid}
+                            onClick={onSave}
+                        >
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="testcase-detail-content">
+                    <section className="testcase-detail-section">
+                        <h4>Scenario</h4>
+                        <p>{text(value.scenario ?? value.title)}</p>
+                    </section>
+                    <section className="testcase-detail-section">
+                        <h4>General Information</h4>
+                        <dl>
+                            <div>
+                                <dt>Module / Feature</dt>
+                                <dd>
+                                    {text(
+                                        [value.module, value.feature ?? value.function]
+                                            .filter(Boolean)
+                                            .join(" / ")
+                                    )}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Test Type</dt>
+                                <dd>{text(value.type)}</dd>
+                            </div>
+                        </dl>
+                    </section>
+                    <section className="testcase-detail-section">
+                        <h4>Test Data</h4>
+                        <p>{text(value.testData?.value || value.testData?.requirement)}</p>
+                    </section>
+                    <section className="testcase-detail-section">
+                        <h4>Expected Result</h4>
+                        <p>{text(value.expectedResult)}</p>
+                    </section>
+                    <DetailList title="Test Steps" values={value.steps} />
+                    <DetailList title="Preconditions" values={value.preconditions} />
+                </div>
+            )}
 
-            <label>
-                Tiêu đề
-                <input
-                    disabled={disabled}
-                    value={testCase.title ?? ""}
-                    onChange={e => set("title", e.target.value)}
-                />
-            </label>
-            <label>
-                Mục tiêu / scenario
-                <textarea
-                    disabled={disabled}
-                    rows="2"
-                    value={
-                        testCase.objective ?? testCase.testObjective ?? testCase.testScenario ?? ""
-                    }
-                    onChange={e =>
-                        set(
-                            testCase.objective !== undefined ? "objective" : "testObjective",
-                            e.target.value
-                        )
-                    }
-                />
-            </label>
-
-            <TextListEditor
-                id={`${testCase.id}-pre`}
-                label="Tiền điều kiện"
-                values={testCase.preconditions}
-                disabled={disabled}
-                onChange={value => set("preconditions", value)}
-            />
-            <TextListEditor
-                id={`${testCase.id}-step`}
-                label="Các bước"
-                values={testCase.steps}
-                disabled={disabled}
-                onChange={value => set("steps", value)}
-            />
-
-            <fieldset className="testdata-editor" disabled={disabled}>
-                <legend>Dữ liệu do tester sở hữu</legend>
-                <label>
-                    Yêu cầu dữ liệu
-                    <textarea
-                        rows="2"
-                        value={testCase.testData?.requirement ?? ""}
-                        onChange={e =>
-                            set("testData", { ...testCase.testData, requirement: e.target.value })
-                        }
-                    />
-                </label>
-                <label>
-                    Giá trị tester
-                    <textarea
-                        rows="2"
-                        value={testCase.testData?.value ?? ""}
-                        onChange={e =>
-                            set("testData", { ...testCase.testData, value: e.target.value })
-                        }
-                    />
-                </label>
-                <small>Readiness chỉ được cập nhật sau khi backend xác nhận batch save.</small>
-            </fieldset>
-
-            <label>
-                Kết quả mong đợi
-                <textarea
-                    disabled={disabled}
-                    rows="3"
-                    value={testCase.expectedResult ?? ""}
-                    onChange={e => set("expectedResult", e.target.value)}
-                />
-            </label>
-        </div>
+            {!editing && (
+                <footer className="testcase-detail-panel__actions">
+                    <button
+                        className="button button--primary"
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onDecision("APPROVED")}
+                    >
+                        Duyệt
+                    </button>
+                    <button
+                        className="button button--secondary"
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onDecision("NEEDS_CHANGES")}
+                    >
+                        Cần chỉnh sửa
+                    </button>
+                    <button
+                        className="button button--danger"
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onDecision("REMOVED")}
+                    >
+                        Loại bỏ
+                    </button>
+                </footer>
+            )}
+        </aside>
     );
 }

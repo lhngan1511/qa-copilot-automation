@@ -281,9 +281,11 @@ try {
     );
     const testerArtifact = testerReview.body.data.artifact;
     const approvedTitle = "TESTER APPROVED - " + testerArtifact.testCases[0].title;
-    const editedTestCases = testerArtifact.testCases.map((testCase, index) =>
-        index === 0 ? { ...testCase, title: approvedTitle } : testCase
-    );
+    const editedTestCases = testerArtifact.testCases.map((testCase, index) => ({
+        ...testCase,
+        title: index === 0 ? approvedTitle : testCase.title,
+        reviewStatus: "APPROVED"
+    }));
     const editedTestcaseArtifact = await request(
         baseUrl,
         "PUT",
@@ -329,10 +331,14 @@ try {
     assert.equal(completed.status, 200);
     result = completed.body.data;
     assert.equal(result.status, "COMPLETED");
-    assert.deepEqual(Object.keys(result.data.outputs).sort(), ["excel", "json"]);
+    assert.deepEqual(Object.keys(result.data.outputs).sort(), ["excel", "json", "markdown"]);
     assert.equal(result.workflow.status, "COMPLETED");
     assert.equal(result.workflow.step, "EXPORT");
-    assert.deepEqual(result.workflow.allowedActions.sort(), ["DOWNLOAD_EXCEL", "DOWNLOAD_JSON"]);
+    assert.deepEqual(result.workflow.allowedActions.sort(), [
+        "DOWNLOAD_EXCEL",
+        "DOWNLOAD_JSON",
+        "DOWNLOAD_MARKDOWN"
+    ]);
 
     assert.equal(JSON.stringify(result).includes(tempRoot), false);
     assert.equal(

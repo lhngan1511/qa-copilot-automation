@@ -54,6 +54,17 @@ export default function WorkflowDetailPage() {
         );
     }
 
+    const isTestCaseReview =
+        workflow.status === "TEST_CASE_REVIEW_REQUIRED" ||
+        workflow.step === "TEST_CASE_REVIEW";
+    if (isTestCaseReview) {
+        return (
+            <section className="page testcase-review-route">
+                <TestCaseReviewPanel workflow={workflow} />
+            </section>
+        );
+    }
+
     const clarification = workflow?.clarification ?? {};
     const testCases = workflow?.testCases ?? {};
     const actions = workflow?.allowedActions ?? [];
@@ -98,11 +109,6 @@ export default function WorkflowDetailPage() {
                     detail={`${artifacts.length} artifact`}
                 />
             </div>
-
-            {(workflow.status === "TEST_CASE_REVIEW_REQUIRED" ||
-                workflow.step === "TEST_CASE_REVIEW") && (
-                <TestCaseReviewPanel workflow={workflow} />
-            )}
 
             {workflow.isBlocking && (
                 <section className="detail-panel detail-panel--warning">

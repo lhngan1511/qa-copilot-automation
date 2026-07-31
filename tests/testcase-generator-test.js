@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import TestCaseGenerator 
 from "../src/generators/TestCaseGenerator.js";
 
@@ -141,6 +142,13 @@ console.log(
 );
 
 
+
+testCases.forEach(testCase => {
+    assert.ok(testCase.scenario, "Generated testcase must contain scenario");
+    assert.equal(testCase.reviewStatus, "PENDING");
+    assert.ok(testCase.steps.length > 0, "Generated testcase must contain execution steps");
+    assert.ok(testCase.steps.every(step => String(step.action ?? "").trim()));
+});
 
 console.log("\nJSON:");
 

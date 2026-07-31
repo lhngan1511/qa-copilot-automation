@@ -10,6 +10,10 @@ export default class PublicTestCaseReviewDto {
             : [];
         this.summary = {
             total: data.summary?.total ?? 0,
+            approved: data.summary?.approved ?? 0,
+            needsChanges: data.summary?.needsChanges ?? 0,
+            removed: data.summary?.removed ?? 0,
+            pending: data.summary?.pending ?? 0,
             byType: { ...(data.summary?.byType ?? {}) },
             ready: data.summary?.ready ?? 0,
             requiresTesterInput: data.summary?.requiresTesterInput ?? 0

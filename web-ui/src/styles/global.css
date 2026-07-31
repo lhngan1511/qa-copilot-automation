@@ -1850,6 +1850,85 @@ textarea:disabled {
 }
 
 
+/* Test Case Review */
+.testcase-review-route { width: min(1440px, 100%); }
+.testcase-review-page { display: grid; gap: 18px; }
+.testcase-review-page__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.testcase-review-page__header h2, .testcase-review-page__header p { margin: 0; }
+.testcase-review-page__header h2 { color: #101828; font-size: 2rem; letter-spacing: -0.03em; }
+.testcase-review-page__header p { margin-top: 7px; color: var(--muted); font-size: .82rem; }
+.testcase-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.testcase-summary-card { padding: 17px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+.testcase-summary-card span, .testcase-summary-card strong { display: block; }
+.testcase-summary-card span { color: var(--muted); font-size: .72rem; }
+.testcase-summary-card strong { margin-top: 6px; color: #101828; font-size: 1.6rem; }
+.testcase-summary-card--success { border-top: 3px solid var(--success); }
+.testcase-summary-card--warning { border-top: 3px solid var(--warning); }
+.testcase-summary-card--danger { border-top: 3px solid var(--danger); }
+.testcase-summary-card--neutral { border-top: 3px solid var(--primary); }
+.testcase-review-card { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.testcase-review-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.testcase-review-tabs { display: flex; min-width: 0; gap: 4px; overflow-x: auto; }
+.testcase-review-tabs button { min-width: max-content; padding: 7px 10px; border: 0; border-radius: 7px; color: #475467; background: transparent; cursor: pointer; font-size: .7rem; font-weight: 700; }
+.testcase-review-tabs button:hover, .testcase-review-tabs .testcase-review-tab--active { color: var(--primary-dark); background: var(--primary-soft); }
+.testcase-review-search input { width: min(290px, 30vw); padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--surface); font-size: .75rem; }
+.testcase-bulk-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 18px; color: var(--primary-dark); background: var(--primary-soft); border-bottom: 1px solid #c7d7fe; font-size: .72rem; }
+.testcase-bulk-actions > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.testcase-bulk-actions button, .testcase-row-actions button { padding: 5px 8px; border: 1px solid #b2ccff; border-radius: 6px; color: var(--primary-dark); background: var(--surface); cursor: pointer; font-size: .65rem; font-weight: 700; }
+.testcase-bulk-actions button:disabled, .testcase-row-actions button:disabled { cursor: not-allowed; opacity: .55; }
+.testcase-review-main { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, .7fr); min-height: 520px; }
+.testcase-review-main__table { min-width: 0; border-right: 1px solid var(--border); }
+.testcase-table-wrap { width: 100%; overflow-x: auto; }
+.testcase-review-table { width: 100%; min-width: 980px; border-collapse: collapse; }
+.testcase-review-table th, .testcase-review-table td { padding: 11px 10px; border-bottom: 1px solid #eaecf0; color: #475467; font-size: .69rem; text-align: left; vertical-align: middle; }
+.testcase-review-table th { color: #344054; background: #f8fafc; font-weight: 750; white-space: nowrap; }
+.testcase-review-table tbody tr:hover, .testcase-review-table__row--active { background: #f9fbff; }
+.testcase-review-table__row--removed { opacity: .62; }
+.testcase-review-table__checkbox { width: 38px; text-align: center !important; }
+.testcase-review-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--primary); }
+.testcase-table-link, .testcase-table-scenario { border: 0; color: var(--primary-dark); background: transparent; cursor: pointer; font: inherit; font-weight: 700; text-align: left; }
+.testcase-table-scenario { max-width: 230px; color: #101828; font-weight: 600; }
+.testcase-type-badge, .testcase-review-status { display: inline-flex; padding: 4px 7px; border-radius: 999px; font-size: .61rem; font-weight: 750; white-space: nowrap; }
+.testcase-type-badge { color: #475467; background: #f2f4f7; }
+.testcase-review-status--pending { color: #475467; background: #f2f4f7; }
+.testcase-review-status--approved { color: var(--success); background: var(--success-soft); }
+.testcase-review-status--needs_changes { color: var(--warning); background: var(--warning-soft); }
+.testcase-review-status--removed { color: var(--danger); background: var(--danger-soft); }
+.testcase-table-truncate { display: block; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.testcase-row-actions { display: flex; gap: 5px; }
+.testcase-review-empty { margin: 0; padding: 36px; color: var(--muted); text-align: center; }
+.testcase-review-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 13px; border-top: 1px solid var(--border); }
+.testcase-review-pagination span { color: var(--muted); font-size: .7rem; }
+.testcase-detail-panel { min-width: 0; padding: 19px; background: #fcfcfd; }
+.testcase-detail-panel__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+.testcase-detail-panel__header span, .testcase-detail-panel__header strong { display: block; }
+.testcase-detail-panel__header span { color: var(--muted); font-size: .65rem; }
+.testcase-detail-panel__header strong { margin-top: 3px; color: #101828; font-size: .88rem; }
+.testcase-detail-content, .testcase-detail-form { display: grid; gap: 14px; margin-top: 16px; }
+.testcase-detail-section { padding-bottom: 13px; border-bottom: 1px solid #eaecf0; }
+.testcase-detail-section h4, .testcase-detail-section p, .testcase-detail-section ol, .testcase-detail-section dl { margin: 0; }
+.testcase-detail-section h4 { margin-bottom: 7px; color: #344054; font-size: .72rem; }
+.testcase-detail-section p, .testcase-detail-section li, .testcase-detail-section dd { color: #475467; font-size: .72rem; line-height: 1.55; }
+.testcase-detail-section ol { display: grid; gap: 7px; padding-left: 20px; }
+.testcase-detail-section dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
+.testcase-detail-section dt { color: var(--muted); font-size: .68rem; }
+.testcase-detail-section dd { margin: 0; text-align: right; }
+.testcase-detail-panel__actions, .testcase-detail-form__actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 17px; }
+.testcase-detail-form label { display: grid; gap: 6px; color: #344054; font-size: .68rem; font-weight: 700; }
+.testcase-detail-form input, .testcase-detail-form textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 7px; color: var(--text); background: var(--surface); font: inherit; font-size: .72rem; }
+.testcase-detail-form__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.testcase-step-editor { display: grid; gap: 8px; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.testcase-step-editor legend { color: #344054; font-size: .7rem; font-weight: 750; }
+.testcase-step-editor > div { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 6px; }
+.testcase-detail-empty { display: grid; min-height: 300px; place-items: center; color: var(--muted); font-size: .75rem; text-align: center; }
+.testcase-final-action { position: sticky; bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 18px; border: 1px solid #b2ccff; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 10px 28px rgba(16,24,40,.12); }
+.testcase-final-action strong, .testcase-final-action span { display: block; }
+.testcase-final-action strong { color: #344054; font-size: .78rem; }
+.testcase-final-action span { margin-top: 3px; color: var(--muted); font-size: .68rem; }
+@media (max-width: 1100px) { .testcase-review-main { grid-template-columns: 1fr; } .testcase-review-main__table { border-right: 0; border-bottom: 1px solid var(--border); } }
+@media (max-width: 760px) { .testcase-review-page__header, .testcase-review-toolbar, .testcase-bulk-actions, .testcase-final-action { align-items: stretch; flex-direction: column; } .testcase-summary-grid { grid-template-columns: repeat(2, 1fr); } .testcase-review-search input { width: 100%; } .testcase-final-action { position: static; } }
+@media (max-width: 480px) { .testcase-summary-grid, .testcase-detail-form__grid { grid-template-columns: 1fr; } }
+
 /* Requirement Review */
 .requirement-review-page {
     width: min(900px, 100%);
@@ -2171,6 +2250,36 @@ textarea:disabled {
     gap: 12px;
     margin-top: 22px;
 }
+
+.requirement-confirmation-card {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 38px 28px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.requirement-confirmation-card__icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--success);
+    background: var(--success-soft);
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.requirement-confirmation-card h3,
+.requirement-confirmation-card p { margin: 0; }
+.requirement-confirmation-card h3 { color: #101828; font-size: 1.2rem; }
+.requirement-confirmation-card p { max-width: 560px; color: var(--muted); font-size: .8rem; line-height: 1.55; }
+.requirement-confirmation-card .button--primary { min-width: 260px; margin-top: 4px; }
 
 .requirement-review__privacy-note {
     display: flex;

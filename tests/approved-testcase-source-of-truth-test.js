@@ -30,7 +30,10 @@ assert.throws(
 
 const artifact = app.workflowCoordinator.findArtifact(testCaseResult.testCaseReview.artifactId);
 const deletedTestCaseId = artifact.testCases[1].id;
-artifact.testCases = artifact.testCases.filter(testCase => testCase.id !== deletedTestCaseId);
+artifact.testCases = artifact.testCases.map((testCase, index) => ({
+    ...testCase,
+    reviewStatus: index === 1 ? "REMOVED" : "APPROVED"
+}));
 artifact.testCases[0] = {
     ...artifact.testCases[0],
     title: "TestCase đã chỉnh sửa khi review",

@@ -3,10 +3,12 @@ import WorkflowExecutionContext from "../models/WorkflowExecutionContext.js";
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 import PipelineStatuses from "../constants/PipelineStatuses.js";
 import ApplicationActions from "../constants/ApplicationActions.js";
+import TestCaseReviewValidator from "../validators/TestCaseReviewValidator.js";
 
 export default class QACopilotApplicationService {
     constructor({ qaCopilot } = {}) {
         this.qaCopilot = qaCopilot || new QACopilot();
+        this.testCaseReviewValidator = new TestCaseReviewValidator();
     }
 
     async start({ requirementFile } = {}) {
@@ -325,12 +327,16 @@ export default class QACopilotApplicationService {
             );
         }
 
-        const existingById = new Map(
-            (Array.isArray(current.testCases) ? current.testCases : []).map(testCase => [
-                this.testCaseId(testCase),
-                testCase
-            ])
-        );
+        const existingCases = this.testCaseReviewValidator.normalizeBatch(current.testCases);
+        const existingById = new Map(existingCases.map(testCase => [testCase.id, testCase]));
+        if (testCases.length !== existingCases.length) {
+            throw this.applicationError(
+                "INCOMPLETE_TEST_CASE_BATCH",
+                "All existing testcases must be submitted; use reviewStatus REMOVED to exclude a testcase.",
+                422
+            );
+        }
+
         const seen = new Set();
         const updatedTestCases = testCases.map(testCase => {
             if (!testCase || typeof testCase !== "object" || Array.isArray(testCase)) {
@@ -358,18 +364,20 @@ export default class QACopilotApplicationService {
             }
             seen.add(id);
 
-            const merged = {
+            const merged = this.testCaseReviewValidator.normalize({
                 ...this.cloneValue(existingById.get(id)),
                 ...this.cloneValue(testCase)
-            };
+            });
             merged.testData = normalizeTestData(merged.testData, merged);
             merged.executionReadiness = resolveExecutionReadiness(merged.testData);
             return merged;
         });
 
+        this.testCaseReviewValidator.validateBatch(updatedTestCases);
         return this.qaCopilot.workflowCoordinator.saveArtifact({
             ...current,
             testCases: updatedTestCases,
+            summary: this.qaCopilot.buildTestCaseReviewSummary(updatedTestCases),
             updatedAt: new Date().toISOString()
         });
     }
@@ -385,6 +393,12 @@ export default class QACopilotApplicationService {
                 "Artifact is not pending approval.",
                 409
             );
+        }
+
+        if (artifact.artifactType === "TEST_CASE_REVIEW") {
+            const testCases = this.testCaseReviewValidator.normalizeBatch(artifact.testCases);
+            this.testCaseReviewValidator.validateBatch(testCases, { requireResolved: true });
+            this.qaCopilot.workflowCoordinator.saveArtifact({ ...artifact, testCases });
         }
 
         const stage = this.stageFromArtifactType(artifact.artifactType);

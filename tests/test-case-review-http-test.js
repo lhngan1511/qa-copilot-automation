@@ -119,33 +119,78 @@ try {
     assert.equal(unsupportedAdd.status, 422);
 
     const initialCases = review.body.data.testCases;
-    const editedTitle = `TESTER EDIT - ${initialCases[0].title}`;
-    const retainedCount = initialCases.length - 1;
-    const editedBatch = initialCases.slice(0, retainedCount).map((testCase, index) =>
-        index === 0
-            ? {
-                  ...testCase,
-                  title: editedTitle,
-                  testData: {
-                      ...testCase.testData,
-                      value: "TESTER-VALUE-001"
-                  }
-              }
-            : testCase
+    assert.ok(initialCases.every(testCase => testCase.reviewStatus === "PENDING"));
+    assert.ok(initialCases.every(testCase => testCase.steps.length > 0));
+
+    const incomplete = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: review.body.data.artifactId,
+            testCases: initialCases.slice(1)
+        }
     );
+    assert.equal(incomplete.status, 422);
+    assert.equal(incomplete.body.error.code, "INCOMPLETE_TEST_CASE_BATCH");
+
+    const invalidSteps = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: review.body.data.artifactId,
+            testCases: initialCases.map((testCase, index) =>
+                index === 0 ? { ...testCase, steps: [] } : testCase
+            )
+        }
+    );
+    assert.equal(invalidSteps.status, 422);
+    assert.equal(invalidSteps.body.error.code, "INVALID_TEST_STEPS");
+
+    const editedTitle = `TESTER EDIT - ${initialCases[0].title}`;
+    const decisions = initialCases.map((testCase, index) => ({
+        ...testCase,
+        title: index === 0 ? editedTitle : testCase.title,
+        testData:
+            index === 0 ? { ...testCase.testData, value: "TESTER-VALUE-001" } : testCase.testData,
+        reviewStatus: index === 0 ? "APPROVED" : index === 1 ? "NEEDS_CHANGES" : "REMOVED"
+    }));
     const updated = await request(baseUrl, "PUT", `/api/workflows/${workflowId}/test-case-review`, {
         artifactId: review.body.data.artifactId,
-        testCases: editedBatch
+        testCases: decisions
     });
     assert.equal(updated.status, 200);
-    assert.equal(updated.body.data.testCases.length, retainedCount);
+    assert.equal(updated.body.data.testCases.length, initialCases.length);
+    assert.equal(updated.body.data.summary.approved, 1);
+    assert.equal(updated.body.data.summary.needsChanges, 1);
+    assert.equal(updated.body.data.summary.removed, initialCases.length - 2);
     assert.equal(updated.body.data.testCases[0].title, editedTitle);
-    assert.equal(updated.body.data.testCases[0].testData.value, "TESTER-VALUE-001");
-    assert.equal(updated.body.data.testCases[0].executionReadiness, "READY");
 
     const reloaded = await request(baseUrl, "GET", `/api/workflows/${workflowId}/test-case-review`);
-    assert.equal(reloaded.body.data.testCases.length, retainedCount);
-    assert.equal(reloaded.body.data.testCases[0].title, editedTitle);
+    assert.deepEqual(
+        reloaded.body.data.testCases.map(testCase => testCase.reviewStatus),
+        decisions.map(testCase => testCase.reviewStatus)
+    );
+
+    const blockedApproval = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {
+        artifactId: review.body.data.artifactId,
+        approvedBy: "testcase-review-tester"
+    });
+    assert.equal(blockedApproval.status, 422);
+    assert.equal(blockedApproval.body.error.code, "TEST_CASE_REVIEW_UNRESOLVED");
+
+    const resolvedBatch = decisions.map(testCase =>
+        testCase.reviewStatus === "REMOVED" ? testCase : { ...testCase, reviewStatus: "APPROVED" }
+    );
+    const bulkApproved = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        { artifactId: review.body.data.artifactId, testCases: resolvedBatch }
+    );
+    assert.equal(bulkApproved.status, 200);
+    assert.equal(bulkApproved.body.data.summary.approved, 2);
 
     const approved = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {
         artifactId: review.body.data.artifactId,
@@ -153,20 +198,13 @@ try {
     });
     assert.equal(approved.status, 200);
 
-    const approvedReview = await request(
-        baseUrl,
-        "GET",
-        `/api/workflows/${workflowId}/test-case-review`
-    );
-    assert.equal(approvedReview.body.data.approvalStatus, "approved");
-    assert.deepEqual(approvedReview.body.data.allowedActions, ["RESUME_WORKFLOW"]);
-
     const completed = await request(baseUrl, "POST", `/api/workflows/${workflowId}/resume`);
     assert.equal(completed.status, 200);
     assert.equal(completed.body.data.workflow.status, "COMPLETED");
     assert.deepEqual(completed.body.data.workflow.allowedActions.sort(), [
         "DOWNLOAD_EXCEL",
-        "DOWNLOAD_JSON"
+        "DOWNLOAD_JSON",
+        "DOWNLOAD_MARKDOWN"
     ]);
 
     const jsonDownload = await request(
@@ -174,23 +212,30 @@ try {
         "GET",
         `/api/workflows/${workflowId}/outputs/json/download`
     );
+    const markdownDownload = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${workflowId}/outputs/markdown/download`
+    );
     const excelDownload = await request(
         baseUrl,
         "GET",
         `/api/workflows/${workflowId}/outputs/excel/download`
     );
     assert.equal(jsonDownload.status, 200);
+    assert.equal(markdownDownload.status, 200);
     assert.equal(excelDownload.status, 200);
     const approvedJson = Array.isArray(jsonDownload.body)
         ? jsonDownload.body
         : JSON.parse(jsonDownload.body.toString("utf8"));
-    assert.equal(approvedJson.length, retainedCount);
-    assert.equal(approvedJson[0].title, editedTitle);
-    assert.equal(approvedJson[0].testData.value, "TESTER-VALUE-001");
+    assert.equal(approvedJson.length, 2);
+    assert.ok(approvedJson.every(testCase => testCase.reviewStatus === "APPROVED"));
+    assert.ok(approvedJson.every(testCase => testCase.steps.length > 0));
     assert.equal(
-        approvedJson.some(testCase => testCase.id === initialCases.at(-1).id),
+        approvedJson.some(testCase => testCase.reviewStatus === "REMOVED"),
         false
     );
+    assert.ok(markdownDownload.body.toString("utf8").includes("Các bước kiểm thử"));
     assert.equal(providerCalls, 1);
 
     console.log("TestCase Review HTTP test PASSED");

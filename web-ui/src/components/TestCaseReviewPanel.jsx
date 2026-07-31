@@ -6,16 +6,36 @@ import {
     useTestCaseReview,
     useUpdateTestCaseReview
 } from "../hooks/useTestCaseReview.js";
-import { getWorkflowOutputUrl } from "../api/workflowApi.js";
 import {
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
-    testCaseId
+    filterTestCases,
+    summarizeReview,
+    testCaseId,
+    testCaseType
 } from "../utils/testCaseReview.js";
 import ErrorState from "./ErrorState.jsx";
 import LoadingState from "./LoadingState.jsx";
 import TestCaseEditor from "./TestCaseEditor.jsx";
 import TestCaseList from "./TestCaseList.jsx";
+
+const PAGE_SIZE = 8;
+const baseTabs = [
+    ["ALL", "Tất cả"],
+    ["POSITIVE", "Positive"],
+    ["NEGATIVE", "Negative"],
+    ["VALIDATION", "Validation"],
+    ["BUSINESS_RULE", "Business Rule"]
+];
+
+function SummaryCard({ label, value, tone }) {
+    return (
+        <article className={`testcase-summary-card testcase-summary-card--${tone}`}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+        </article>
+    );
+}
 
 export default function TestCaseReviewPanel({ workflow }) {
     const workflowId = workflow?.id ?? "";
@@ -26,114 +46,146 @@ export default function TestCaseReviewPanel({ workflow }) {
     const resume = useResumeTestCaseWorkflow(workflowId);
     const [draft, setDraft] = useState([]);
     const [selectedId, setSelectedId] = useState("");
-    const [dirtyIds, setDirtyIds] = useState(() => new Set());
+    const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [search, setSearch] = useState("");
+    const [activeType, setActiveType] = useState("ALL");
+    const [page, setPage] = useState(1);
+    const [editing, setEditing] = useState(false);
+    const [editDraft, setEditDraft] = useState(null);
     const [notice, setNotice] = useState("");
 
     useEffect(() => {
-        if (!query.data || dirtyIds.size > 0) return;
+        if (!query.data) return;
         setDraft(structuredClone(query.data.testCases));
         setSelectedId(current =>
             query.data.testCases.some(testCase => testCaseId(testCase) === current)
                 ? current
                 : testCaseId(query.data.testCases[0])
         );
-    }, [query.data, dirtyIds.size]);
+    }, [query.data]);
+
+    useEffect(() => {
+        setPage(1);
+        setSelectedIds(new Set());
+    }, [search, activeType]);
 
     useEffect(() => {
         const warn = event => {
-            if (dirtyIds.size > 0) {
+            if (editing) {
                 event.preventDefault();
                 event.returnValue = "";
             }
         };
         window.addEventListener("beforeunload", warn);
         return () => window.removeEventListener("beforeunload", warn);
-    }, [dirtyIds.size]);
+    }, [editing]);
 
     const selected = useMemo(
         () => draft.find(testCase => testCaseId(testCase) === selectedId) ?? null,
         [draft, selectedId]
     );
+    const filtered = useMemo(
+        () => filterTestCases(draft, { search, type: activeType }),
+        [draft, search, activeType]
+    );
+    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const summary = useMemo(() => summarizeReview(draft), [draft]);
+    const availableTypes = new Set(draft.map(testCaseType));
+    const tabs = [
+        ...baseTabs,
+        ...(availableTypes.has("BOUNDARY") ? [["BOUNDARY", "Boundary"]] : [])
+    ];
     const pending = update.isPending || approve.isPending || resume.isPending;
     const canEdit = query.data?.allowedActions?.includes("UPDATE_TEST_CASES") === true;
+    const canResume = query.data?.allowedActions?.includes("RESUME_WORKFLOW") === true;
     const canApprove = canApproveTestCaseBatch({
         review: query.data,
-        dirty: dirtyIds.size > 0,
         pending,
         testCases: draft
     });
-    const canResume = query.data?.allowedActions?.includes("RESUME_WORKFLOW") === true;
-    const exports = query.data?.exports ?? [];
+    const allFilteredSelected =
+        filtered.length > 0 && filtered.every(testCase => selectedIds.has(testCaseId(testCase)));
 
-    if (query.isPending) return <LoadingState message="Đang tải TestCase Review..." />;
+    if (query.isPending) return <LoadingState message="Đang tải Test Case Review..." />;
     if (query.isError) {
         return (
             <ErrorState
-                title="Không thể tải TestCase Review"
+                title="Không thể tải Test Case Review"
                 error={query.error}
                 onRetry={() => query.refetch()}
             />
         );
     }
 
-    const updateSelected = value => {
-        setDraft(items => items.map(item => (testCaseId(item) === selectedId ? value : item)));
-        setDirtyIds(ids => new Set(ids).add(selectedId));
+    const persistBatch = async (next, message) => {
         setNotice("");
-    };
-
-    const removeSelected = () => {
-        if (
-            !selected ||
-            !window.confirm(
-                "Loại testcase này khỏi danh sách review? Đây không phải thao tác reject."
-            )
-        )
-            return;
-        const next = draft.filter(item => testCaseId(item) !== selectedId);
-        setDraft(next);
-        setDirtyIds(ids => new Set(ids).add(selectedId));
-        setSelectedId(testCaseId(next[0]));
-        setNotice("Testcase đã được loại khỏi draft. Bấm Lưu batch để xác nhận.");
-    };
-
-    const saveBatch = async () => {
         try {
             const result = await update.mutateAsync({
                 artifactId: query.data.artifactId,
-                testCases: buildTestCaseBatchPayload(draft)
+                testCases: buildTestCaseBatchPayload(next)
             });
             setDraft(structuredClone(result.testCases));
-            setDirtyIds(new Set());
-            setNotice("Backend đã lưu toàn bộ batch testcase.");
+            setNotice(message);
+            return true;
         } catch {
-            setNotice("");
+            return false;
         }
     };
 
-    const approveBatch = async () => {
+    const applyDecision = async (ids, reviewStatus) => {
+        if (!canEdit || pending || ids.length === 0) return;
         if (
-            !canApprove ||
-            !window.confirm("Xác nhận phê duyệt toàn bộ danh sách testcase hiện tại?")
-        )
+            reviewStatus === "REMOVED" &&
+            !window.confirm(`Loại bỏ ${ids.length} test case khỏi kết quả cuối cùng?`)
+        ) {
             return;
-        try {
-            await approve.mutateAsync({
-                artifactId: query.data.artifactId,
-                approvedBy: "user"
-            });
-            setNotice(
-                "Batch testcase đã được phê duyệt. Export chưa chạy cho tới khi bạn tiếp tục workflow."
-            );
-        } catch {
-            setNotice("");
+        }
+        const idSet = new Set(ids);
+        const next = draft.map(testCase =>
+            idSet.has(testCaseId(testCase)) ? { ...testCase, reviewStatus } : testCase
+        );
+        const labels = {
+            APPROVED: "Đã lưu quyết định duyệt.",
+            NEEDS_CHANGES: "Đã đánh dấu test case cần chỉnh sửa.",
+            REMOVED: "Đã loại bỏ test case khỏi kết quả cuối cùng."
+        };
+        if (await persistBatch(next, labels[reviewStatus])) setSelectedIds(new Set());
+    };
+
+    const saveEdit = async () => {
+        if (!editDraft || !selected) return;
+        const next = draft.map(testCase =>
+            testCaseId(testCase) === selectedId
+                ? { ...editDraft, reviewStatus: "PENDING" }
+                : testCase
+        );
+        if (await persistBatch(next, "Đã lưu chỉnh sửa. Test case cần được duyệt lại.")) {
+            setEditing(false);
+            setEditDraft(null);
         }
     };
 
-    const continueWorkflow = async () => {
+    const approveAllEligible = () =>
+        applyDecision(
+            draft
+                .filter(testCase => testCase.reviewStatus !== "REMOVED")
+                .map(testCase => testCaseId(testCase)),
+            "APPROVED"
+        );
+
+    const confirmAndContinue = async () => {
+        if ((!canApprove && !canResume) || pending) return;
+        if (!window.confirm("Xác nhận toàn bộ test case đã duyệt và tiếp tục tạo output?")) return;
+        setNotice("");
         try {
+            if (!canResume) {
+                await approve.mutateAsync({
+                    artifactId: query.data.artifactId,
+                    approvedBy: "user"
+                });
+            }
             const result = await resume.mutateAsync();
-            setNotice("Workflow đã tiếp tục và hoàn tất export.");
             navigate(`/workflows/${encodeURIComponent(result.workflowId)}`, { replace: true });
         } catch {
             setNotice("");
@@ -143,61 +195,165 @@ export default function TestCaseReviewPanel({ workflow }) {
     const error = update.error || approve.error || resume.error;
 
     return (
-        <section
-            className="review-workspace testcase-review-workspace"
-            aria-labelledby="testcase-review-title"
-        >
-            <div className="review-workspace__header">
+        <section className="testcase-review-page" aria-labelledby="testcase-review-title">
+            <header className="testcase-review-page__header">
                 <div>
-                    <p className="workflow-id">Batch review · {query.data.artifactId}</p>
-                    <h3 id="testcase-review-title">Review testcase</h3>
-                    <p>
-                        Lưu và phê duyệt là hai thao tác riêng. DATA_REQUIRED không chặn approval
-                        theo contract hiện tại.
-                    </p>
+                    <h2 id="testcase-review-title">Test Case Review</h2>
+                    <p>Review, chỉnh sửa và phê duyệt test case trước khi tạo output cuối cùng.</p>
                 </div>
-                <span className="status-badge status-badge--warning">
-                    {query.data.approvalStatus}
-                </span>
-            </div>
+                <button
+                    className="button button--secondary"
+                    type="button"
+                    disabled={!canEdit || pending}
+                    onClick={approveAllEligible}
+                >
+                    Duyệt tất cả đủ điều kiện
+                </button>
+            </header>
 
-            <div className="review-workspace__summary">
-                <div>
-                    <strong>{query.data.summary.total}</strong>
-                    <span>Tổng testcase</span>
-                </div>
-                <div>
-                    <strong>{query.data.summary.ready}</strong>
-                    <span>Sẵn sàng</span>
-                </div>
-                <div>
-                    <strong>{query.data.summary.requiresTesterInput}</strong>
-                    <span>Cần tester nhập data</span>
-                </div>
-            </div>
+            <section className="testcase-summary-grid" aria-label="Tóm tắt review">
+                <SummaryCard label="Tổng test case" value={summary.total} tone="neutral" />
+                <SummaryCard label="Đã duyệt" value={summary.approved} tone="success" />
+                <SummaryCard label="Cần chỉnh sửa" value={summary.needsChanges} tone="warning" />
+                <SummaryCard label="Đã loại bỏ" value={summary.removed} tone="danger" />
+            </section>
 
-            <div className="testcase-review-layout">
-                <div className="testcase-review-sidebar">
-                    <TestCaseList
-                        testCases={draft}
-                        selectedId={selectedId}
-                        dirtyIds={dirtyIds}
-                        onSelect={setSelectedId}
-                    />
-                    <p className="review-workspace__notice">
-                        Backend chưa cấp ID cho testcase thêm mới, nên chức năng thêm thủ công chưa
-                        được bật.
-                    </p>
+            <section className="testcase-review-card">
+                <div className="testcase-review-toolbar">
+                    <div className="testcase-review-tabs" role="tablist" aria-label="Lọc theo loại">
+                        {tabs.map(([value, label]) => (
+                            <button
+                                className={
+                                    activeType === value ? "testcase-review-tab--active" : ""
+                                }
+                                type="button"
+                                role="tab"
+                                aria-selected={activeType === value}
+                                key={value}
+                                onClick={() => setActiveType(value)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <label className="testcase-review-search">
+                        <span className="visually-hidden">Tìm kiếm test case</span>
+                        <input
+                            type="search"
+                            value={search}
+                            placeholder="Tìm theo ID, scenario, module..."
+                            onChange={event => setSearch(event.target.value)}
+                        />
+                    </label>
                 </div>
-                <div className="testcase-review-editor">
+
+                {selectedIds.size > 0 && (
+                    <div className="testcase-bulk-actions">
+                        <strong>{selectedIds.size} test case đã chọn</strong>
+                        <div>
+                            <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => applyDecision([...selectedIds], "APPROVED")}
+                            >
+                                Duyệt đã chọn
+                            </button>
+                            <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => applyDecision([...selectedIds], "NEEDS_CHANGES")}
+                            >
+                                Cần chỉnh sửa đã chọn
+                            </button>
+                            <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => applyDecision([...selectedIds], "REMOVED")}
+                            >
+                                Loại bỏ đã chọn
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="testcase-review-main">
+                    <div className="testcase-review-main__table">
+                        <TestCaseList
+                            testCases={visible}
+                            selectedId={selectedId}
+                            selectedIds={selectedIds}
+                            allVisibleSelected={allFilteredSelected}
+                            disabled={!canEdit || pending}
+                            onSelect={id => {
+                                setSelectedId(id);
+                                setEditing(false);
+                            }}
+                            onToggle={id =>
+                                setSelectedIds(current => {
+                                    const next = new Set(current);
+                                    if (next.has(id)) next.delete(id);
+                                    else next.add(id);
+                                    return next;
+                                })
+                            }
+                            onToggleAll={() =>
+                                setSelectedIds(
+                                    allFilteredSelected
+                                        ? new Set()
+                                        : new Set(filtered.map(testCase => testCaseId(testCase)))
+                                )
+                            }
+                            onDecision={applyDecision}
+                        />
+                        {filtered.length === 0 && (
+                            <p className="testcase-review-empty">
+                                Không tìm thấy test case phù hợp.
+                            </p>
+                        )}
+                        <nav
+                            className="testcase-review-pagination"
+                            aria-label="Phân trang test case"
+                        >
+                            <button
+                                className="button button--secondary"
+                                type="button"
+                                disabled={page === 1}
+                                onClick={() => setPage(current => current - 1)}
+                            >
+                                Trước
+                            </button>
+                            <span>
+                                Trang {page} / {pageCount}
+                            </span>
+                            <button
+                                className="button button--secondary"
+                                type="button"
+                                disabled={page === pageCount}
+                                onClick={() => setPage(current => current + 1)}
+                            >
+                                Sau
+                            </button>
+                        </nav>
+                    </div>
                     <TestCaseEditor
                         testCase={selected}
+                        editing={editing}
+                        editDraft={editDraft}
                         disabled={!canEdit || pending}
-                        onChange={updateSelected}
-                        onRemove={removeSelected}
+                        onEdit={() => {
+                            setEditDraft(structuredClone(selected));
+                            setEditing(true);
+                        }}
+                        onCancel={() => {
+                            setEditing(false);
+                            setEditDraft(null);
+                        }}
+                        onDraftChange={setEditDraft}
+                        onSave={saveEdit}
+                        onDecision={status => applyDecision([selectedId], status)}
                     />
                 </div>
-            </div>
+            </section>
 
             {error && (
                 <div className="inline-alert" role="alert">
@@ -205,67 +361,30 @@ export default function TestCaseReviewPanel({ workflow }) {
                     <span>{error.message}</span>
                 </div>
             )}
-            <div className="visually-hidden" aria-live="polite">
-                {notice}
-            </div>
-            {notice && <p className="success-notice">{notice}</p>}
-
-            {exports.length > 0 && (
-                <div className="download-actions">
-                    {exports
-                        .filter(output => ["json", "excel"].includes(output.format))
-                        .map(output => (
-                            <a
-                                className="button button--secondary"
-                                key={output.format}
-                                href={getWorkflowOutputUrl(workflowId, output.format)}
-                            >
-                                Tải {output.format === "json" ? "approved JSON" : "Excel"}
-                            </a>
-                        ))}
-                </div>
+            {notice && (
+                <p className="success-notice" role="status">
+                    {notice}
+                </p>
             )}
 
-            <div className="review-action-bar">
+            <footer className="testcase-final-action">
                 <div>
-                    <strong>
-                        {dirtyIds.size > 0 ? "Có thay đổi chưa lưu" : "Draft đã đồng bộ"}
-                    </strong>
-                    <span>{draft.length} testcase trong batch hiện tại</span>
+                    <strong>Tester kiểm soát quyết định cuối cùng</strong>
+                    <span>
+                        {summary.pending + summary.needsChanges > 0
+                            ? `${summary.pending + summary.needsChanges} test case chưa đủ điều kiện.`
+                            : "Tất cả test case đang hoạt động đã được duyệt."}
+                    </span>
                 </div>
-                <div className="workflow-card__actions">
-                    {canEdit && (
-                        <button
-                            className="button button--secondary"
-                            type="button"
-                            disabled={dirtyIds.size === 0 || pending}
-                            onClick={saveBatch}
-                        >
-                            {update.isPending ? "Đang lưu..." : "Lưu toàn bộ batch"}
-                        </button>
-                    )}
-                    {query.data.allowedActions.includes("APPROVE_TEST_CASES") && (
-                        <button
-                            className="button button--primary"
-                            type="button"
-                            disabled={!canApprove}
-                            onClick={approveBatch}
-                        >
-                            {approve.isPending ? "Đang phê duyệt..." : "Phê duyệt toàn bộ batch"}
-                        </button>
-                    )}
-                    {canResume && (
-                        <button
-                            className="button button--primary"
-                            type="button"
-                            disabled={pending}
-                            onClick={continueWorkflow}
-                        >
-                            {resume.isPending ? "Đang export..." : "Tiếp tục để export"}
-                        </button>
-                    )}
-                </div>
-            </div>
+                <button
+                    className="button button--primary"
+                    type="button"
+                    disabled={(!canApprove && !canResume) || pending}
+                    onClick={confirmAndContinue}
+                >
+                    {pending ? "Đang xử lý..." : "Xác nhận & Tiếp tục"}
+                </button>
+            </footer>
         </section>
     );
 }

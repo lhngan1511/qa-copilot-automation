@@ -1,4 +1,4 @@
-import { API_ORIGIN, ApiError, apiClient } from "./apiClient.js";
+import { API_BASE_URL, API_ORIGIN, ApiError, apiClient } from "./apiClient.js";
 import { extractWorkflowId } from "../utils/workflowResponse.js";
 import { parseAIAnalysisReview } from "../utils/aiAnalysisReview.js";
 import { parseTestCaseReview } from "../utils/testCaseReview.js";

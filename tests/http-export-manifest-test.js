@@ -14,6 +14,20 @@ try {
         const before = await api.request("GET", `/api/workflows/${current.sessionId}/outputs`);
         assert.equal(Object.keys(before.body.data.outputs).length, 0);
 
+        if (result.currentStage === "testCaseReview") {
+            const review = await api.request(
+                "GET",
+                `/api/workflows/${current.sessionId}/test-case-review`
+            );
+            await api.request("PUT", `/api/workflows/${current.sessionId}/test-case-review`, {
+                artifactId: current.artifactId,
+                testCases: review.body.data.testCases.map(testCase => ({
+                    ...testCase,
+                    reviewStatus: "APPROVED"
+                }))
+            });
+        }
+
         const approved = await api.request("POST", `/api/workflows/${current.sessionId}/approve`, {
             artifactId: current.artifactId,
             approvedBy: "export-test"
@@ -24,10 +38,10 @@ try {
         result = resumed.body.data;
     }
 
-    assert.deepEqual(Object.keys(result.data.outputs).sort(), ["excel", "json"]);
+    assert.deepEqual(Object.keys(result.data.outputs).sort(), ["excel", "json", "markdown"]);
     const context = result.workflowContext.testCaseReview;
     const outputs = await api.request("GET", `/api/workflows/${context.sessionId}/outputs`);
-    assert.deepEqual(Object.keys(outputs.body.data.outputs).sort(), ["excel", "json"]);
+    assert.deepEqual(Object.keys(outputs.body.data.outputs).sort(), ["excel", "json", "markdown"]);
     const completedStatus = await api.request("GET", `/api/workflows/${context.sessionId}`);
     assert.equal(completedStatus.body.data.workflow.status, "COMPLETED");
 

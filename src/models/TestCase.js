@@ -36,6 +36,8 @@ class TestCase {
 
         this.testScenario = "";
 
+        this.scenario = "";
+
         this.type = "";
 
         this.testObjective = "";
@@ -183,6 +185,8 @@ class TestCase {
         this.actualResult = "";
 
         this.status = "Not Tested";
+
+        this.reviewStatus = "PENDING";
 
         /*
         =====================================================
