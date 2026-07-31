@@ -31,7 +31,8 @@ const ARRAY_FIELDS = [
     "expectedResults",
     "assertions",
     "requirementReferences",
-    "coveredRules"
+    "coveredRules",
+    "businessRuleIds"
 ];
 
 export default class PublicTestCaseReviewMapper {
@@ -91,9 +92,7 @@ export default class PublicTestCaseReviewMapper {
         result.automationCandidate = source.automationCandidate === true;
         result.executionReadiness =
             source.executionReadiness === "DATA_REQUIRED" ? "DATA_REQUIRED" : "READY";
-        result.reviewStatus = ["APPROVED", "NEEDS_CHANGES", "REMOVED"].includes(
-            source.reviewStatus
-        )
+        result.reviewStatus = ["APPROVED", "NEEDS_CHANGES", "REMOVED"].includes(source.reviewStatus)
             ? source.reviewStatus
             : "PENDING";
 

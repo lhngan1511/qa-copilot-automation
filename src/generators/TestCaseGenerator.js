@@ -1,11 +1,16 @@
 import TestCase from "../models/TestCase.js";
 import RuleTestDataBuilder from "../builders/RuleTestDataBuilder.js";
+import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 class TestCaseGenerator {
-    constructor({ ruleTestDataBuilder = new RuleTestDataBuilder() } = {}) {
+    constructor({
+        ruleTestDataBuilder = new RuleTestDataBuilder(),
+        contentNormalizer = new TestDesignContentNormalizer()
+    } = {}) {
         this.counter = 1;
         this.ruleTestDataBuilder = ruleTestDataBuilder;
+        this.contentNormalizer = contentNormalizer;
     }
 
     generate(scenarios = []) {
@@ -39,12 +44,13 @@ class TestCaseGenerator {
 
                 testCase.module = scenario.module || scenario.moduleName || "Chưa xác định";
 
-                testCase.feature = scenario.feature || scenario.function || scenario.title || "Chưa xác định";
+                testCase.feature =
+                    scenario.feature || scenario.function || scenario.title || "Chưa xác định";
 
-                testCase.title = scenario.title === undefined ? "" : scenario.title;
+                testCase.title = scenario.title ?? scenario.testScenario ?? "";
 
                 testCase.testScenario =
-                    scenario.testScenario || scenario.scenario || scenario.title || testCase.feature;
+                    scenario.testScenario || scenario.scenario || testCase.title;
 
                 testCase.scenario = scenario.scenario || testCase.testScenario;
 
@@ -65,6 +71,22 @@ class TestCaseGenerator {
                 testCase.coveredRules = Array.isArray(scenario.coveredRules)
                     ? this.cloneValue(scenario.coveredRules)
                     : [];
+
+                testCase.businessRuleIds = [
+                    ...new Set([
+                        ...(Array.isArray(scenario.businessRuleIds)
+                            ? scenario.businessRuleIds
+                            : []),
+                        ...this.contentNormalizer.extractBusinessRuleIds(
+                            scenario.title,
+                            scenario.requirementReference,
+                            scenario.requirementReferences,
+                            scenario.coveredRules,
+                            scenario.sourceItem,
+                            scenario.sourceItems
+                        )
+                    ])
+                ];
 
                 testCase.sourceItem =
                     scenario.sourceItem === undefined ? null : this.cloneValue(scenario.sourceItem);
@@ -87,8 +109,9 @@ class TestCaseGenerator {
 
                 testCase.automationCandidate = scenario.automationCandidate ?? false;
 
-                testCase.preconditions =
-                    scenario.preconditions === undefined ? [] : scenario.preconditions;
+                testCase.preconditions = Array.isArray(scenario.preconditions)
+                    ? this.cloneValue(scenario.preconditions)
+                    : [];
 
                 testCase.testData =
                     scenario.testData === undefined ? testCase.testData : scenario.testData;
@@ -234,6 +257,12 @@ class TestCaseGenerator {
         atomic.objective = this.buildAtomicObjective(rule, fieldName, required);
         atomic.testObjective = atomic.objective;
         atomic.coveredRules = [rule];
+        atomic.businessRuleIds = [
+            ...new Set([
+                ...(Array.isArray(scenario.businessRuleIds) ? scenario.businessRuleIds : []),
+                ...this.contentNormalizer.extractBusinessRuleIds(item, rule)
+            ])
+        ];
         atomic.requirementReferences = this.atomicReferences(scenario, item, rule);
         atomic.requirementReference = atomic.requirementReferences[0] ?? "";
         atomic.sourceItem = {
@@ -317,10 +346,20 @@ class TestCaseGenerator {
     }
 
     buildAtomicTitle(scenario, rule, fieldName, required) {
-        if (required && fieldName) {
-            return `Để trống ${fieldName} khi thực hiện ${scenario.feature || scenario.function}`;
-        }
-        return rule;
+        return this.contentNormalizer.normalizeTitle({
+            ...scenario,
+            title: rule,
+            rule,
+            ruleClassification: required
+                ? "REQUIRED"
+                : (scenario.ruleClassification ?? scenario.sourceItem?.classification),
+            sourceItem: {
+                ...(scenario.sourceItem ?? {}),
+                content: rule,
+                inputName: fieldName || scenario.sourceItem?.inputName,
+                classification: required ? "REQUIRED" : scenario.sourceItem?.classification
+            }
+        });
     }
 
     buildAtomicObjective(rule, fieldName, required) {

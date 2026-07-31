@@ -1,7 +1,12 @@
 import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 import TestCaseReviewStatus from "../constants/TestCaseReviewStatus.js";
+import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
 
 export default class ApprovedTestCaseMapper {
+    constructor({ contentNormalizer = new TestDesignContentNormalizer() } = {}) {
+        this.contentNormalizer = contentNormalizer;
+    }
+
     map(testCaseArtifact) {
         if (testCaseArtifact?.artifactType !== "TEST_CASE_REVIEW") {
             throw new Error("Artifact must be a TEST_CASE_REVIEW artifact.");
@@ -34,6 +39,29 @@ export default class ApprovedTestCaseMapper {
                 clone.testData = normalizeTestData(clone.testData, clone);
                 clone.executionReadiness = resolveExecutionReadiness(clone.testData);
                 clone.reviewStatus = TestCaseReviewStatus.APPROVED;
+                clone.businessRuleIds = [
+                    ...new Set([
+                        ...(Array.isArray(clone.businessRuleIds) ? clone.businessRuleIds : []),
+                        ...this.contentNormalizer.extractBusinessRuleIds(
+                            clone.title,
+                            clone.requirementReference,
+                            clone.requirementReferences,
+                            clone.coveredRules,
+                            clone.sourceItem
+                        )
+                    ])
+                ];
+                clone.title = this.contentNormalizer.normalizeTitle(clone);
+                clone.testScenario = this.contentNormalizer.stripTraceabilityPrefix(
+                    clone.testScenario || clone.title
+                );
+                clone.scenario = this.contentNormalizer.stripTraceabilityPrefix(
+                    clone.scenario || clone.testScenario || clone.title
+                );
+                clone.preconditions = this.contentNormalizer.normalizePreconditions(
+                    clone.preconditions,
+                    { target: clone.feature ?? clone.function ?? "" }
+                );
                 return { ...clone, id, testcaseId: id };
             });
     }

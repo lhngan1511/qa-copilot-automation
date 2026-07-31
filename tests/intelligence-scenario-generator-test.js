@@ -24,7 +24,7 @@ new RequirementLoader();
 
 const markdown =
 loader.load(
-"REQUIREMENTS/thiet-bi.md"
+"requirements/thiet-bi.md"
 );
 
 

@@ -1,4 +1,10 @@
+import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
+
 class ScenarioContextBuilder {
+    constructor({ contentNormalizer = new TestDesignContentNormalizer() } = {}) {
+        this.contentNormalizer = contentNormalizer;
+    }
+
     build({ scenario, requirement, knowledge } = {}) {
         const sourceScenario = scenario && typeof scenario === "object" ? scenario : {};
         const sourceRequirement = requirement && typeof requirement === "object" ? requirement : {};
@@ -8,10 +14,21 @@ class ScenarioContextBuilder {
         const sourceItem = this.findSourceItem(sourceScenario, sourceKnowledge);
         const feature = this.normalizeFeature(owningFeature, sourceRequirement);
         const inputs = this.cloneValue(feature.inputs);
-        const preconditions =
-            feature.preconditions.length > 0
-                ? this.cloneValue(feature.preconditions)
-                : this.cloneValue(sourceScenario.preconditions ?? []);
+        const preconditions = this.contentNormalizer.normalizePreconditions(
+            [
+                ...(Array.isArray(sourceRequirement.preconditions)
+                    ? sourceRequirement.preconditions
+                    : []),
+                ...(Array.isArray(sourceRequirement.permissions)
+                    ? sourceRequirement.permissions
+                    : []),
+                ...(Array.isArray(sourceScenario.preconditions)
+                    ? sourceScenario.preconditions
+                    : []),
+                ...feature.preconditions
+            ],
+            { target: feature.name || sourceScenario.feature || "" }
+        );
 
         return {
             identity: {

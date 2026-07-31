@@ -31,6 +31,7 @@ class ExcelExporter {
             "Automation Notes",
             "Requirement References",
             "Covered Rules",
+            "Business Rule IDs",
             "Source"
         ];
         const moduleSummary = this.collectSummary(normalizedTestCases, "module");
@@ -62,6 +63,7 @@ class ExcelExporter {
             "Automation Notes": testCase?.automationNotes ?? "",
             "Requirement References": this.arrayToText(testCase?.requirementReferences),
             "Covered Rules": this.arrayToText(testCase?.coveredRules),
+            "Business Rule IDs": this.arrayToText(testCase?.businessRuleIds),
             Source: testCase?.source ?? ""
         }));
         const metadataRows = [
@@ -80,9 +82,9 @@ class ExcelExporter {
             skipHeader: false
         });
 
-        worksheet["!merges"] = [XLSX.utils.decode_range("A1:Z1")];
+        worksheet["!merges"] = [XLSX.utils.decode_range("A1:AA1")];
         worksheet["!autofilter"] = {
-            ref: `A7:Z${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
+            ref: `A7:AA${normalizedTestCases.length > 0 ? normalizedTestCases.length + 7 : 7}`
         };
         worksheet["!cols"] = [
             { wch: 5 },

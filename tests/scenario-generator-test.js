@@ -51,7 +51,7 @@ const generator =
 
 const scenarios =
     generator.generate(
-        aiResult
+        aiResult.suggestedScenarios
     );
 
 

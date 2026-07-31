@@ -34,6 +34,7 @@ class MarkdownExporter {
             markdown += `| Automation Notes | ${this.safeInline(testCase?.automationNotes)} |\n`;
             markdown += `| Requirement References | ${this.safeInline(testCase?.requirementReferences)} |\n`;
             markdown += `| Covered Rules | ${this.safeInline(testCase?.coveredRules)} |\n`;
+            markdown += `| Business Rule IDs | ${this.safeInline(testCase?.businessRuleIds)} |\n`;
             markdown += `| Source | ${this.safeInline(testCase?.source)} |\n\n`;
 
             markdown += "### Tiền điều kiện\n\n";

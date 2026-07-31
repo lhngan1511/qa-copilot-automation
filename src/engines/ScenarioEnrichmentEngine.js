@@ -1,17 +1,20 @@
 import ScenarioContextBuilder from "../enrichers/ScenarioContextBuilder.js";
 import TestDataBuilder from "../enrichers/TestDataBuilder.js";
 import StepBuilder from "../enrichers/StepBuilder.js";
+import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
 import { normalizeTestData } from "../utils/TestDataReadiness.js";
 
 class ScenarioEnrichmentEngine {
     constructor({
         contextBuilder = new ScenarioContextBuilder(),
         testDataBuilder = new TestDataBuilder(),
-        stepBuilder = new StepBuilder()
+        stepBuilder = new StepBuilder(),
+        contentNormalizer = new TestDesignContentNormalizer()
     } = {}) {
         this.contextBuilder = contextBuilder;
         this.testDataBuilder = testDataBuilder;
         this.stepBuilder = stepBuilder;
+        this.contentNormalizer = contentNormalizer;
     }
 
     enrich({ scenarios, requirement, knowledge } = {}) {
@@ -70,8 +73,27 @@ class ScenarioEnrichmentEngine {
             assertions
         );
 
+        const title = this.contentNormalizer.normalizeTitle({
+            ...sourceScenario,
+            sourceItem: context.sourceItem,
+            operation: context.operation
+        });
+        const preconditions = this.cloneValue(context.preconditions);
+        const businessRuleIds = this.contentNormalizer.extractBusinessRuleIds(
+            sourceScenario.title,
+            sourceScenario.requirementReference,
+            sourceScenario.requirementReferences,
+            sourceScenario.coveredRules,
+            sourceScenario.sourceItems,
+            context.sourceItem
+        );
+
         return {
             ...sourceScenario,
+            title,
+            testScenario: title,
+            preconditions,
+            businessRuleIds,
             inputDefinitions:
                 Array.isArray(sourceScenario.inputDefinitions) &&
                 sourceScenario.inputDefinitions.length > 0

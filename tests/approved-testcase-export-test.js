@@ -28,6 +28,7 @@ const expectedFields = [
     "reviewStatus",
     "requirementReferences",
     "coveredRules",
+    "businessRuleIds",
     "automationCandidate",
     "automationNotes",
     "source"
@@ -52,8 +53,8 @@ assert.ok(json.every(testCase => testCase.reviewStatus === "APPROVED"));
 assert.ok(json.every(testCase => testCase.steps.length > 0));
 
 const markdown = fs.readFileSync(exportResult.outputs.markdown, "utf8");
-["Scenario ID", "Tình huống", "Review Status", "Function", "Severity", "Automation"].forEach(value =>
-    assert.ok(markdown.includes(value), `Markdown missing ${value}`)
+["Scenario ID", "Tình huống", "Review Status", "Function", "Severity", "Automation"].forEach(
+    value => assert.ok(markdown.includes(value), `Markdown missing ${value}`)
 );
 assert.ok(markdown.includes("TestCase đã chỉnh sửa khi review"));
 
@@ -72,7 +73,8 @@ assert.ok(rows.length > 0);
     "Automation",
     "Review Status",
     "Requirement References",
-    "Covered Rules"
+    "Covered Rules",
+    "Business Rule IDs"
 ].forEach(column =>
     assert.ok(Object.prototype.hasOwnProperty.call(rows[0], column), `Excel missing ${column}`)
 );

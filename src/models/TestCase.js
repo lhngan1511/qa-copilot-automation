@@ -56,6 +56,8 @@ class TestCase {
 
         this.coveredRules = [];
 
+        this.businessRuleIds = [];
+
         this.sourceItem = null;
 
         this.ruleClassification = "";
