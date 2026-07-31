@@ -100,6 +100,10 @@ class IntelligenceScenarioGenerator {
             ? [...item.businessRuleIds]
             : [];
 
+        scenario.clarificationAnswers = Array.isArray(item.clarificationAnswers)
+            ? this.cloneValue(item.clarificationAnswers)
+            : [];
+
         scenario.sourceItems = Array.isArray(item.sourceItems)
             ? this.cloneValue(item.sourceItems)
             : [];

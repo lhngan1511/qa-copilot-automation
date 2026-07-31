@@ -1,15 +1,21 @@
-import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
+import { resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 import TestCaseReviewStatus from "../constants/TestCaseReviewStatus.js";
 import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
+import TestDataFactory from "../factories/TestDataFactory.js";
+import ExpectedResultBuilder from "../builders/ExpectedResultBuilder.js";
 
 export default class ApprovedTestCaseMapper {
     constructor({
         contentNormalizer = new TestDesignContentNormalizer(),
-        stepNormalizer = new TestStepNormalizer()
+        stepNormalizer = new TestStepNormalizer(),
+        testDataFactory = new TestDataFactory(),
+        expectedResultBuilder = new ExpectedResultBuilder()
     } = {}) {
         this.contentNormalizer = contentNormalizer;
         this.stepNormalizer = stepNormalizer;
+        this.testDataFactory = testDataFactory;
+        this.expectedResultBuilder = expectedResultBuilder;
     }
 
     map(testCaseArtifact) {
@@ -41,7 +47,7 @@ export default class ApprovedTestCaseMapper {
             .map(testCase => {
                 const clone = this.clone(testCase);
                 const id = clone?.testcaseId ?? clone?.testCaseId ?? clone?.id ?? "";
-                clone.testData = normalizeTestData(clone.testData, clone);
+                clone.testData = this.testDataFactory.normalizeLegacy(clone.testData, clone);
                 clone.executionReadiness = resolveExecutionReadiness(clone.testData);
                 clone.reviewStatus = TestCaseReviewStatus.APPROVED;
                 clone.businessRuleIds = [
@@ -66,6 +72,10 @@ export default class ApprovedTestCaseMapper {
                 clone.preconditions = this.contentNormalizer.normalizePreconditions(
                     clone.preconditions,
                     { target: clone.feature ?? clone.function ?? "" }
+                );
+                clone.expectedResult = this.expectedResultBuilder.normalizeLegacy(
+                    clone.expectedResult,
+                    clone
                 );
                 clone.steps = this.stepNormalizer.normalize(clone.steps, {
                     ...clone,

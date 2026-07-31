@@ -60,6 +60,8 @@ class TestScenario {
 
         this.businessRuleIds = [];
 
+        this.clarificationAnswers = [];
+
         this.sourceItems = [];
 
         this.riskReason = "";

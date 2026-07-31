@@ -151,6 +151,22 @@ class ExcelExporter {
 
     testDataToText(testData) {
         if (
+            testData?.fields &&
+            typeof testData.fields === "object" &&
+            !Array.isArray(testData.fields)
+        ) {
+            const lines = Object.entries(testData.fields).map(([name, field]) => {
+                const value = field?.requiresTesterInput
+                    ? field.instruction || "Tester cung cấp giá trị"
+                    : this.valueToText(field?.value);
+                return `${name}: ${value} (${field?.purpose ?? "VALID"})`;
+            });
+            if (testData.recordState) lines.push(`Trạng thái bản ghi: ${testData.recordState}`);
+            if (testData.dataState) lines.push(`Trạng thái dữ liệu: ${testData.dataState}`);
+            return lines.join("\n");
+        }
+
+        if (
             testData &&
             typeof testData === "object" &&
             !Array.isArray(testData) &&

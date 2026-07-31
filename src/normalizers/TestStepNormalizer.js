@@ -121,9 +121,10 @@ export default class TestStepNormalizer {
         }
         if (/^chon gia tri/.test(normalized)) {
             if (!target) return null;
+            const instruction = context.testData?.fields?.[target]?.instruction;
             return {
                 ...step,
-                action: this.choiceAction(target, value),
+                action: instruction || this.choiceAction(target, value),
                 target,
                 value
             };
@@ -163,6 +164,7 @@ export default class TestStepNormalizer {
                 context.sourceItem?.fieldName ?? context.sourceItem?.inputName ?? target
             );
             const boundaryValue =
+                context.testData?.fields?.[field]?.value ??
                 context.sourceItem?.boundaryValue ??
                 context.testData?.invalid?.boundaryValue ??
                 value;
@@ -299,16 +301,22 @@ export default class TestStepNormalizer {
                 )
         );
         const missing = definitions
-            .map(input => ({
-                name: this.clean(input.name ?? input.inputName ?? input.fieldName),
-                controlType: this.comparable(input.controlType ?? input.type),
-                value: data[input.name ?? input.inputName ?? input.fieldName]
-            }))
+            .map(input => {
+                const name = this.clean(input.name ?? input.inputName ?? input.fieldName);
+                return {
+                    name,
+                    controlType: this.comparable(input.controlType ?? input.type),
+                    value: data[name],
+                    instruction: context.testData?.fields?.[name]?.instruction
+                };
+            })
             .filter(input => input.name && !represented.has(this.comparable(input.name)))
             .map(input => ({
-                action: /dropdown|select|combobox|radio/.test(input.controlType)
-                    ? this.choiceAction(input.name, input.value)
-                    : this.inputAction(input.name, input.value),
+                action:
+                    input.instruction ||
+                    (/dropdown|select|combobox|radio/.test(input.controlType)
+                        ? this.choiceAction(input.name, input.value)
+                        : this.inputAction(input.name, input.value)),
                 target: input.name,
                 value: input.value ?? ""
             }));
@@ -407,7 +415,17 @@ export default class TestStepNormalizer {
     fieldData(context) {
         const source = context.testData;
         if (!source || typeof source !== "object" || Array.isArray(source)) return {};
-        const nested = [source.inputs, source.valid, source.invalid].filter(
+        const canonicalFields =
+            source.fields && typeof source.fields === "object" && !Array.isArray(source.fields)
+                ? Object.fromEntries(
+                      Object.entries(source.fields)
+                          .filter(
+                              ([, field]) => field?.value !== undefined && field?.value !== null
+                          )
+                          .map(([name, field]) => [name, field.value])
+                  )
+                : {};
+        const nested = [canonicalFields, source.inputs, source.valid, source.invalid].filter(
             value => value && typeof value === "object" && !Array.isArray(value)
         );
         const direct = Object.fromEntries(

@@ -246,6 +246,13 @@ try {
     assert.equal(result.workflow.step, "TEST_CASE_REVIEW");
     assert.deepEqual(result.workflow.allowedActions, ["UPDATE_TEST_CASES", "APPROVE_TEST_CASES"]);
     assert.ok(result.data.testCases.length > 0);
+    assert.ok(result.data.testCases.every(testCase => testCase.testData?.fields));
+    assert.ok(
+        result.data.testCases.every(
+            testCase =>
+                typeof testCase.expectedResult === "string" && testCase.expectedResult.trim()
+        )
+    );
     assert.ok(result.data.testCases.some(testCase => testCase.type === "POSITIVE"));
     assert.ok(
         result.data.testCases.some(testCase =>

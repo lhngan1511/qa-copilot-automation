@@ -38,16 +38,17 @@ function generate(rule, source = "BUSINESS_RULE", overrides = {}) {
 
 const required = generate("Mã tài sản không được để trống", "REQUIRED_VALIDATION");
 assert.equal(required.ruleClassification, "REQUIRED");
-assert.match(required.testData.requirement, /Mã tài sản/);
-assert.equal(required.testData.value, "");
+assert.equal(required.testData.fields["Mã tài sản"].value, "");
+assert.equal(required.testData.fields["Mã tài sản"].purpose, "EMPTY");
 assert.equal(required.executionReadiness, "DATA_REQUIRED");
 
 const duplicate = generate("Mã tài sản phải là duy nhất", "BUSINESS_RULE", {
     code: "BR01"
 });
 assert.equal(duplicate.ruleClassification, "DUPLICATE");
-assert.match(duplicate.testData.requirement, /đã tồn tại/);
-assert.match(duplicate.expectedResult, /không tạo bản ghi mới/i);
+assert.equal(duplicate.testData.fields["Mã tài sản"].purpose, "DUPLICATE");
+assert.match(duplicate.testData.dataState, /đã tồn tại/);
+assert.match(duplicate.expectedResult, /không lưu tài sản mới/i);
 assert.equal(duplicate.sourceItem.code, "BR01");
 
 const invalidReference = generate(
@@ -55,14 +56,15 @@ const invalidReference = generate(
     "FORMAT_OR_VALUE_VALIDATION"
 );
 assert.equal(invalidReference.ruleClassification, "INVALID_REFERENCE");
-assert.match(invalidReference.testData.requirement, /không thuộc danh sách hợp lệ/);
+assert.equal(invalidReference.testData.fields["Loại tài sản"].purpose, "NOT_ALLOWED");
+assert.equal(invalidReference.testData.fields["Loại tài sản"].requiresTesterInput, true);
 
 const recordNotFound = generate("Bản ghi cần xóa phải tồn tại", "BUSINESS_RULE", {
     feature: "Xóa tài sản",
     function: "Xóa tài sản"
 });
 assert.equal(recordNotFound.ruleClassification, "RECORD_NOT_FOUND");
-assert.match(recordNotFound.testData.requirement, /không tồn tại/);
+assert.equal(recordNotFound.testData.fields.targetIdentifier.value, "NON_EXISTING_RECORD");
 assert.equal(
     recordNotFound.preconditions.some(value => /đã tồn tại|phải tồn tại/i.test(value)),
     false
@@ -73,23 +75,22 @@ const stateRestriction = generate("Không được xóa tài sản đang đượ
     function: "Xóa tài sản"
 });
 assert.equal(stateRestriction.ruleClassification, "STATE_RESTRICTION");
-assert.match(stateRestriction.testData.requirement, /trạng thái/);
-assert.match(stateRestriction.expectedResult, /dữ liệu không thay đổi/i);
+assert.match(stateRestriction.testData.recordState, /đang được sử dụng/i);
+assert.match(stateRestriction.expectedResult, /vẫn được giữ nguyên/i);
 
 const relatedData = generate("Không được xóa tài sản có dữ liệu liên quan", "BUSINESS_RULE", {
     feature: "Xóa tài sản",
     function: "Xóa tài sản"
 });
 assert.equal(relatedData.ruleClassification, "RELATED_DATA");
-assert.match(relatedData.testData.requirement, /dữ liệu liên quan/);
-assert.match(relatedData.expectedResult, /không làm mất dữ liệu liên quan/i);
+assert.match(relatedData.testData.recordState, /dữ liệu liên quan/i);
+assert.match(relatedData.expectedResult, /vẫn được giữ nguyên/i);
 
 const confirmation = generate("Người dùng phải xác nhận trước khi xóa", "BUSINESS_RULE", {
     feature: "Xóa tài sản",
     function: "Xóa tài sản"
 });
 assert.equal(confirmation.ruleClassification, "CONFIRMATION");
-assert.match(confirmation.testData.requirement, /không xác nhận/);
 assert.match(confirmation.expectedResult, /không xác nhận/i);
 
 const permission = generate("Người dùng không có quyền xóa tài sản", "PERMISSION", {
@@ -98,7 +99,7 @@ const permission = generate("Người dùng không có quyền xóa tài sản",
     type: "PERMISSION"
 });
 assert.equal(permission.ruleClassification, "PERMISSION_DENIED");
-assert.match(permission.testData.requirement, /tài khoản không có quyền/);
+assert.match(permission.expectedResult, /không có quyền thực hiện chức năng/);
 assert.equal(
     permission.preconditions.some(
         value => /có quyền/i.test(value) && !/không có quyền/i.test(value)
@@ -123,17 +124,18 @@ const systemFailure = generate("Hệ thống xảy ra lỗi trong quá trình l�
 assert.equal(systemFailure.ruleClassification, "SYSTEM_FAILURE");
 assert.equal(systemFailure.requiresRuntimeSupport, true);
 assert.equal(systemFailure.executable, false);
-assert.match(systemFailure.testData.requirement, /môi trường/);
+assert.match(systemFailure.expectedResult, /không tạo dữ liệu không hoàn chỉnh/i);
 
 const unknownBoundary = generate("Dữ liệu vượt quá độ dài cho phép", "EXCEPTION");
 assert.equal(unknownBoundary.ruleClassification, "BOUNDARY_UNKNOWN");
 assert.equal(unknownBoundary.needsClarification, true);
-assert.match(unknownBoundary.testData.requirement, /Cần tester xác định/);
+assert.match(unknownBoundary.testData.requirement, /Xác định giá trị biên cụ thể/);
+assert.equal(unknownBoundary.testData.requiresTesterInput, true);
 assert.equal(JSON.stringify(unknownBoundary.testData).match(/\b(?:255|256|1000)\b/), null);
 
 const concurrentChange = generate("Bản ghi đã bị người dùng khác xóa", "EXCEPTION");
 assert.equal(concurrentChange.ruleClassification, "CONCURRENT_CHANGE");
-assert.match(concurrentChange.testData.requirement, /tiến trình khác/);
+assert.match(concurrentChange.expectedResult, /không ghi đè dữ liệu/i);
 
 assert.ok(
     [

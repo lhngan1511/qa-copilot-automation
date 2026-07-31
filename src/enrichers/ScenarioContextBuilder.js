@@ -59,6 +59,10 @@ class ScenarioContextBuilder {
 
             preconditions,
 
+            clarificationAnswers: Array.isArray(sourceKnowledge.clarificationAnswers)
+                ? this.cloneValue(sourceKnowledge.clarificationAnswers)
+                : [],
+
             existing: {
                 testData:
                     sourceScenario.testData === undefined

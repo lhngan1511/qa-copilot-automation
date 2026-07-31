@@ -2,10 +2,18 @@ import TestCaseReviewStatus, {
     TEST_CASE_REVIEW_STATUSES
 } from "../constants/TestCaseReviewStatus.js";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
+import TestDataFactory from "../factories/TestDataFactory.js";
+import ExpectedResultBuilder from "../builders/ExpectedResultBuilder.js";
 
 export default class TestCaseReviewValidator {
-    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+    constructor({
+        stepNormalizer = new TestStepNormalizer(),
+        testDataFactory = new TestDataFactory(),
+        expectedResultBuilder = new ExpectedResultBuilder()
+    } = {}) {
         this.stepNormalizer = stepNormalizer;
+        this.testDataFactory = testDataFactory;
+        this.expectedResultBuilder = expectedResultBuilder;
     }
 
     normalize(testCase, { defaultStatus = TestCaseReviewStatus.PENDING } = {}) {
@@ -31,6 +39,11 @@ export default class TestCaseReviewValidator {
         source.scenario = scenario;
         source.testScenario = String(source.testScenario ?? scenario).trim();
         source.reviewStatus = reviewStatus;
+        source.testData = this.testDataFactory.normalizeLegacy(source.testData, source);
+        source.expectedResult = this.expectedResultBuilder.normalizeLegacy(
+            source.expectedResult,
+            source
+        );
         source.steps = this.stepNormalizer.normalize(source.steps, {
             ...source,
             preserveManualSteps: true

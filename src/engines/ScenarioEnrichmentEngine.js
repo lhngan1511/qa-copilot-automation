@@ -2,19 +2,21 @@ import ScenarioContextBuilder from "../enrichers/ScenarioContextBuilder.js";
 import TestDataBuilder from "../enrichers/TestDataBuilder.js";
 import StepBuilder from "../enrichers/StepBuilder.js";
 import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
-import { normalizeTestData } from "../utils/TestDataReadiness.js";
+import TestDataFactory from "../factories/TestDataFactory.js";
 
 class ScenarioEnrichmentEngine {
     constructor({
         contextBuilder = new ScenarioContextBuilder(),
         testDataBuilder = new TestDataBuilder(),
         stepBuilder = new StepBuilder(),
-        contentNormalizer = new TestDesignContentNormalizer()
+        contentNormalizer = new TestDesignContentNormalizer(),
+        testDataFactory = new TestDataFactory()
     } = {}) {
         this.contextBuilder = contextBuilder;
         this.testDataBuilder = testDataBuilder;
         this.stepBuilder = stepBuilder;
         this.contentNormalizer = contentNormalizer;
+        this.testDataFactory = testDataFactory;
     }
 
     enrich({ scenarios, requirement, knowledge } = {}) {
@@ -51,11 +53,14 @@ class ScenarioEnrichmentEngine {
             typeof this.testDataBuilder.buildPlanningData === "function"
                 ? this.testDataBuilder.buildPlanningData(context)
                 : this.testDataBuilder.build(context);
-        const testData = normalizeTestData(planningData, {
-            ...sourceScenario,
-            sourceItem: context.sourceItem,
+        const testData = this.testDataFactory.create({
+            source: planningData,
+            scenario: {
+                ...sourceScenario,
+                sourceItem: context.sourceItem
+            },
             inputDefinitions: context.inputs,
-            testData: planningData
+            clarificationAnswers: context.clarificationAnswers
         });
         const steps = this.stepBuilder.build({ context, testData: planningData });
         const expectedResult = this.resolveExpectedResult(sourceScenario, context, steps);
@@ -94,6 +99,7 @@ class ScenarioEnrichmentEngine {
             testScenario: title,
             preconditions,
             businessRuleIds,
+            clarificationAnswers: this.cloneValue(context.clarificationAnswers),
             inputDefinitions:
                 Array.isArray(sourceScenario.inputDefinitions) &&
                 sourceScenario.inputDefinitions.length > 0

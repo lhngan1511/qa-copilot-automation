@@ -42,11 +42,19 @@ export function parseTestCaseReview(value) {
             reviewStatus,
             steps: normalizeSteps(testCase.steps),
             testData: {
+                ...(testCase.testData && typeof testCase.testData === "object"
+                    ? structuredClone(testCase.testData)
+                    : {}),
+                fields:
+                    testCase.testData?.fields && typeof testCase.testData.fields === "object"
+                        ? structuredClone(testCase.testData.fields)
+                        : {},
                 requirement:
                     typeof testCase.testData?.requirement === "string"
                         ? testCase.testData.requirement
                         : "",
-                value: typeof testCase.testData?.value === "string" ? testCase.testData.value : ""
+                value: typeof testCase.testData?.value === "string" ? testCase.testData.value : "",
+                requiresTesterInput: testCase.testData?.requiresTesterInput === true
             },
             executionReadiness: READINESS.has(testCase.executionReadiness)
                 ? testCase.executionReadiness

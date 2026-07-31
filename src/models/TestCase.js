@@ -91,9 +91,13 @@ class TestCase {
         */
 
         this.testData = {
+            fields: {},
+
             requirement: "",
 
-            value: ""
+            value: "",
+
+            requiresTesterInput: false
         };
 
         this.executionReadiness = "READY";

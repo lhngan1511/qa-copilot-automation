@@ -138,6 +138,18 @@ class MarkdownExporter {
             return this.hasValues(data) ? this.renderValueBlock(data) : "- Không có\n";
         }
 
+        if (data.fields && typeof data.fields === "object") {
+            const rows = Object.entries(data.fields).map(([name, field]) => {
+                const value = field?.requiresTesterInput
+                    ? field.instruction || "Tester cung cấp giá trị"
+                    : field?.value;
+                return `- ${name}: ${this.valueToText(value)} (${field?.purpose ?? "VALID"})`;
+            });
+            if (data.recordState) rows.push(`- Trạng thái bản ghi: ${data.recordState}`);
+            if (data.dataState) rows.push(`- Trạng thái dữ liệu: ${data.dataState}`);
+            return `${rows.join("\n")}\n`;
+        }
+
         if (Object.hasOwn(data, "requirement") || Object.hasOwn(data, "value")) {
             return (
                 [

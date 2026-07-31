@@ -51,6 +51,8 @@ expectedFields.forEach(field =>
 );
 assert.ok(json.every(testCase => testCase.reviewStatus === "APPROVED"));
 assert.ok(json.every(testCase => testCase.steps.length > 0));
+assert.ok(json.every(testCase => testCase.testData?.fields));
+assert.ok(json.every(testCase => typeof testCase.expectedResult === "string"));
 
 const markdown = fs.readFileSync(exportResult.outputs.markdown, "utf8");
 ["Scenario ID", "Tình huống", "Review Status", "Function", "Severity", "Automation"].forEach(

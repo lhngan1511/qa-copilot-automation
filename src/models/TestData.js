@@ -1,46 +1,13 @@
 class TestData {
-
-    constructor() {
-
-        // ==========================
-        // Input Data
-        // ==========================
-
-        this.inputs = {};
-
-        // Ví dụ:
-        // {
-        //     deviceCode: "TB001",
-        //     deviceName: "Laptop Dell",
-        //     category: "Laptop"
-        // }
-
-        // ==========================
-        // Expected Data
-        // ==========================
-
-        this.expected = {};
-
-        // Ví dụ:
-        // {
-        //     message: "Thêm thiết bị thành công"
-        // }
-
-        // ==========================
-        // Invalid Data
-        // ==========================
-
-        this.invalid = {};
-
-        // Ví dụ:
-        // {
-        //     deviceCode: "",
-        //     email: "abc",
-        //     quantity: -1
-        // }
-
+    constructor({ fields = {}, requirement = "", value = "", requiresTesterInput = false } = {}) {
+        this.fields =
+            fields && typeof fields === "object" && !Array.isArray(fields)
+                ? structuredClone(fields)
+                : {};
+        this.requirement = typeof requirement === "string" ? requirement.trim() : "";
+        this.value = typeof value === "string" ? value.trim() : "";
+        this.requiresTesterInput = requiresTesterInput === true;
     }
-
 }
 
 export default TestData;

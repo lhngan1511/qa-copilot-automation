@@ -33,13 +33,19 @@ assert.equal(new Set(requiredCases.map(testCase => testCase.id)).size, 3);
 assert.ok(requiredCases.every(testCase => testCase.scenarioId === "SC-REQUIRED"));
 assert.ok(requiredCases.every(testCase => testCase.coveredRules.length === 1));
 assert.deepEqual(
-    requiredCases.map(
-        testCase => testCase.testData.requirement.match(/để trống trường (.+)$/)?.[1]
-    ),
+    requiredCases.map(testCase => testCase.sourceItem.fieldName),
     ["Mã khách hàng", "Tên khách hàng", "Loại khách hàng"]
 );
-assert.ok(requiredCases.every(testCase => testCase.testData.value === ""));
-assert.ok(requiredCases.every(testCase => testCase.executionReadiness === "DATA_REQUIRED"));
+assert.ok(
+    requiredCases.every(testCase => {
+        const field = testCase.sourceItem.fieldName;
+        return (
+            testCase.testData.fields[field].value === "" &&
+            testCase.testData.fields[field].purpose === "EMPTY"
+        );
+    })
+);
+assert.ok(requiredCases.every(testCase => testCase.executionReadiness === "READY"));
 assert.equal(new Set(requiredCases.map(testCase => testCase.expectedResult)).size, 3);
 
 const businessRuleScenario = {
@@ -62,9 +68,8 @@ assert.deepEqual(
 assert.ok(
     businessRuleCases.every(
         testCase =>
-            testCase.testData.requirement &&
-            testCase.testData.value === "" &&
-            testCase.executionReadiness === "DATA_REQUIRED"
+            Object.keys(testCase.testData.fields).length > 0 &&
+            testCase.executionReadiness === "READY"
     )
 );
 

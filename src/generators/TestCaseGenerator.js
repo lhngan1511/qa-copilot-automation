@@ -1,19 +1,25 @@
 import TestCase from "../models/TestCase.js";
 import RuleTestDataBuilder from "../builders/RuleTestDataBuilder.js";
+import ExpectedResultBuilder from "../builders/ExpectedResultBuilder.js";
+import TestDataFactory from "../factories/TestDataFactory.js";
 import TestDesignContentNormalizer from "../normalizers/TestDesignContentNormalizer.js";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
-import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
+import { resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 class TestCaseGenerator {
     constructor({
         ruleTestDataBuilder = new RuleTestDataBuilder(),
         contentNormalizer = new TestDesignContentNormalizer(),
-        stepNormalizer = new TestStepNormalizer()
+        stepNormalizer = new TestStepNormalizer(),
+        testDataFactory = new TestDataFactory(),
+        expectedResultBuilder = new ExpectedResultBuilder()
     } = {}) {
         this.counter = 1;
         this.ruleTestDataBuilder = ruleTestDataBuilder;
         this.contentNormalizer = contentNormalizer;
         this.stepNormalizer = stepNormalizer;
+        this.testDataFactory = testDataFactory;
+        this.expectedResultBuilder = expectedResultBuilder;
     }
 
     generate(scenarios = []) {
@@ -116,10 +122,12 @@ class TestCaseGenerator {
                     ? this.cloneValue(scenario.preconditions)
                     : [];
 
-                testCase.testData =
-                    scenario.testData === undefined ? testCase.testData : scenario.testData;
-
-                testCase.testData = normalizeTestData(testCase.testData, scenario);
+                testCase.testData = this.testDataFactory.create({
+                    source: scenario.testData ?? testCase.testData,
+                    scenario,
+                    inputDefinitions: scenario.inputDefinitions,
+                    clarificationAnswers: scenario.clarificationAnswers
+                });
 
                 testCase.executionReadiness = resolveExecutionReadiness(testCase.testData);
 
@@ -147,6 +155,14 @@ class TestCaseGenerator {
                         : scenario.expectedResult !== undefined && scenario.expectedResult !== null
                           ? [scenario.expectedResult]
                           : [];
+
+                testCase.expectedResult = this.expectedResultBuilder.build({
+                    testCase,
+                    scenario,
+                    testData: testCase.testData,
+                    existing: testCase.expectedResult
+                });
+                testCase.expectedResults = [testCase.expectedResult];
 
                 if (!this.hasMeaningfulSteps(testCase.steps)) {
                     testCase.steps = this.buildFallbackSteps(testCase);
@@ -206,7 +222,7 @@ class TestCaseGenerator {
                     ...testCase,
                     operation: scenario.operation ?? scenario.automation?.operation,
                     inputDefinitions: scenario.inputDefinitions,
-                    testData: scenario.testData,
+                    testData: testCase.testData,
                     sourceItem: scenario.sourceItem,
                     preconditions: testCase.preconditions
                 });
@@ -283,6 +299,7 @@ class TestCaseGenerator {
             code: item.code ?? item.requirementReference ?? item.id ?? "",
             reference: atomic.requirementReferences[0] ?? "",
             text: rule,
+            fieldName,
             classification: specialized.classification
         };
         atomic.ruleClassification = specialized.classification;
@@ -292,7 +309,7 @@ class TestCaseGenerator {
         atomic.executable = specialized.executable;
         atomic.expectedResult = specialized.expectedResult;
         atomic.expectedResults = [atomic.expectedResult];
-        atomic.testData = specialized.testData;
+        atomic.testData = specialized.planningData;
         atomic.preconditions = specialized.preconditions;
         atomic.steps = this.buildAtomicSteps(scenario, specialized, atomic.expectedResult);
         atomic.assertions = [

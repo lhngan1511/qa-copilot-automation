@@ -8,7 +8,9 @@ function normalizeText(value) {
 function resolveExecutionReadiness(testData) {
     const requirement = normalizeText(testData?.requirement);
     const value = normalizeText(testData?.value);
-    return requirement && !value ? DATA_REQUIRED : READY;
+    return testData?.requiresTesterInput === true || (requirement && !value)
+        ? DATA_REQUIRED
+        : READY;
 }
 
 function normalizeTestData(testData, context = {}) {
@@ -16,11 +18,25 @@ function normalizeTestData(testData, context = {}) {
         testData &&
         typeof testData === "object" &&
         !Array.isArray(testData) &&
-        (Object.hasOwn(testData, "requirement") || Object.hasOwn(testData, "value"))
+        (Object.hasOwn(testData, "requirement") ||
+            Object.hasOwn(testData, "value") ||
+            Object.hasOwn(testData, "fields"))
     ) {
         return {
+            ...structuredClone(testData),
+            fields:
+                testData.fields &&
+                typeof testData.fields === "object" &&
+                !Array.isArray(testData.fields)
+                    ? structuredClone(testData.fields)
+                    : {},
             requirement: normalizeText(testData.requirement),
-            value: normalizeText(testData.value)
+            value: normalizeText(testData.value),
+            requiresTesterInput:
+                testData.requiresTesterInput === true ||
+                Object.values(testData.fields ?? {}).some(
+                    field => field?.requiresTesterInput === true
+                )
         };
     }
 

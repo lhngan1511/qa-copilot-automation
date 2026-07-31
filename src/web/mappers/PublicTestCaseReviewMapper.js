@@ -1,5 +1,6 @@
 import PublicTestCaseReviewDto from "../dtos/PublicTestCaseReviewDto.js";
 import TestStepNormalizer from "../../normalizers/TestStepNormalizer.js";
+import TestDataFactory from "../../factories/TestDataFactory.js";
 
 const TEXT_FIELDS = [
     "id",
@@ -37,8 +38,12 @@ const ARRAY_FIELDS = [
 ];
 
 export default class PublicTestCaseReviewMapper {
-    constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
+    constructor({
+        stepNormalizer = new TestStepNormalizer(),
+        testDataFactory = new TestDataFactory()
+    } = {}) {
         this.stepNormalizer = stepNormalizer;
+        this.testDataFactory = testDataFactory;
     }
 
     map({ review, workflow } = {}) {
@@ -110,11 +115,7 @@ export default class PublicTestCaseReviewMapper {
     }
 
     mapTestData(value) {
-        const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-        return {
-            requirement: typeof source.requirement === "string" ? source.requirement : "",
-            value: typeof source.value === "string" ? source.value : ""
-        };
+        return this.testDataFactory.normalizeLegacy(value);
     }
 
     buildSummary(testCases) {
