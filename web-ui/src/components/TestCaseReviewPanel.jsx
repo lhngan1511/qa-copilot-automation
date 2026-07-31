@@ -176,7 +176,6 @@ export default function TestCaseReviewPanel({ workflow }) {
 
     const confirmAndContinue = async () => {
         if ((!canApprove && !canResume) || pending) return;
-        if (!window.confirm("Xác nhận toàn bộ test case đã được review và tiếp tục tạo output?")) return;
         setNotice("");
         try {
             if (!canResume) {
