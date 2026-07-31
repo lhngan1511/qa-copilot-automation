@@ -1876,13 +1876,17 @@ textarea:disabled {
 .testcase-bulk-actions > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .testcase-bulk-actions button, .testcase-row-actions button { padding: 5px 8px; border: 1px solid #b2ccff; border-radius: 6px; color: var(--primary-dark); background: var(--surface); cursor: pointer; font-size: .65rem; font-weight: 700; }
 .testcase-bulk-actions button:disabled, .testcase-row-actions button:disabled { cursor: not-allowed; opacity: .55; }
-.testcase-review-main { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, .7fr); min-height: 520px; }
-.testcase-review-main__table { min-width: 0; border-right: 1px solid var(--border); }
+.testcase-review-main { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 520px; }
+.testcase-review-main--drawer-open { grid-template-columns: minmax(0, 1.65fr) minmax(320px, .7fr); }
+.testcase-review-main__table { min-width: 0; }
+.testcase-review-main--drawer-open .testcase-review-main__table { border-right: 1px solid var(--border); }
 .testcase-table-wrap { width: 100%; overflow-x: auto; }
 .testcase-review-table { width: 100%; min-width: 980px; border-collapse: collapse; }
 .testcase-review-table th, .testcase-review-table td { padding: 11px 10px; border-bottom: 1px solid #eaecf0; color: #475467; font-size: .69rem; text-align: left; vertical-align: middle; }
 .testcase-review-table th { color: #344054; background: #f8fafc; font-weight: 750; white-space: nowrap; }
-.testcase-review-table tbody tr:hover, .testcase-review-table__row--active { background: #f9fbff; }
+.testcase-review-table tbody tr { cursor: pointer; }
+.testcase-review-table tbody tr:hover, .testcase-review-table tbody tr:focus-visible, .testcase-review-table__row--active { background: #f9fbff; }
+.testcase-review-table tbody tr:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .testcase-review-table__row--removed { opacity: .62; }
 .testcase-review-table__checkbox { width: 38px; text-align: center !important; }
 .testcase-review-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--primary); }
@@ -1901,6 +1905,9 @@ textarea:disabled {
 .testcase-review-pagination span { color: var(--muted); font-size: .7rem; }
 .testcase-detail-panel { min-width: 0; padding: 19px; background: #fcfcfd; }
 .testcase-detail-panel__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+.testcase-detail-panel__header-actions { display: flex; align-items: center; gap: 8px; }
+.testcase-detail-panel__close { display: grid; width: 36px; height: 36px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 8px; color: #344054; background: var(--surface); cursor: pointer; font-size: 1.35rem; line-height: 1; }
+.testcase-detail-panel__close:hover { color: var(--danger); border-color: #fecdca; background: var(--danger-soft); }
 .testcase-detail-panel__header span, .testcase-detail-panel__header strong { display: block; }
 .testcase-detail-panel__header span { color: var(--muted); font-size: .65rem; }
 .testcase-detail-panel__header strong { margin-top: 3px; color: #101828; font-size: .88rem; }
@@ -1928,6 +1935,113 @@ textarea:disabled {
 @media (max-width: 1100px) { .testcase-review-main { grid-template-columns: 1fr; } .testcase-review-main__table { border-right: 0; border-bottom: 1px solid var(--border); } }
 @media (max-width: 760px) { .testcase-review-page__header, .testcase-review-toolbar, .testcase-bulk-actions, .testcase-final-action { align-items: stretch; flex-direction: column; } .testcase-summary-grid { grid-template-columns: repeat(2, 1fr); } .testcase-review-search input { width: 100%; } .testcase-final-action { position: static; } }
 @media (max-width: 480px) { .testcase-summary-grid, .testcase-detail-form__grid { grid-template-columns: 1fr; } }
+
+/* Completed workflow */
+.completed-workflow-page {
+    width: min(820px, 100%);
+    min-height: calc(100vh - 72px);
+    display: grid;
+    place-items: center;
+}
+
+.completed-workflow {
+    display: grid;
+    width: 100%;
+    justify-items: center;
+    gap: 22px;
+    padding: 48px 36px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.completed-workflow__icon {
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--success);
+    background: var(--success-soft);
+}
+
+.completed-workflow__icon svg {
+    width: 36px;
+    height: 36px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.completed-workflow__heading h2,
+.completed-workflow__heading p {
+    margin: 0;
+}
+
+.completed-workflow__heading h2 {
+    color: #101828;
+    font-size: clamp(1.75rem, 4vw, 2.35rem);
+    letter-spacing: -0.035em;
+}
+
+.completed-workflow__heading p {
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.completed-workflow__count {
+    min-width: 160px;
+    padding: 14px 20px;
+    border: 1px solid #abefc6;
+    border-radius: 10px;
+    background: var(--success-soft);
+}
+
+.completed-workflow__count strong,
+.completed-workflow__count span {
+    display: block;
+}
+
+.completed-workflow__count strong {
+    color: var(--success);
+    font-size: 1.65rem;
+}
+
+.completed-workflow__count span {
+    margin-top: 3px;
+    color: #475467;
+    font-size: 0.7rem;
+}
+
+.completed-workflow__downloads {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.completed-workflow__downloads .button {
+    min-width: 130px;
+    min-height: 44px;
+}
+
+@media (max-width: 560px) {
+    .completed-workflow {
+        padding: 34px 20px;
+    }
+
+    .completed-workflow__downloads,
+    .completed-workflow__downloads .button,
+    .completed-workflow > .button--secondary {
+        width: 100%;
+    }
+}
 
 /* Requirement Review */
 .requirement-review-page {

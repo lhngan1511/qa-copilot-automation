@@ -103,8 +103,6 @@ function InteractiveReview({ workflowId, review }) {
             errorSummaryRef.current?.focus();
             return;
         }
-        if (!window.confirm("Xác nhận requirement và bắt đầu tạo test case?")) return;
-
         setNotice("");
         try {
             if (answerUpdates.length > 0) await saveAnswers.mutateAsync(answerUpdates);

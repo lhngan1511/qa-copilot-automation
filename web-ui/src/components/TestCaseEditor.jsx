@@ -24,6 +24,7 @@ export default function TestCaseEditor({
     editing,
     editDraft,
     disabled,
+    onClose,
     onEdit,
     onCancel,
     onDraftChange,
@@ -49,16 +50,26 @@ export default function TestCaseEditor({
                     <span>Testcase ID</span>
                     <strong>{testCase.id}</strong>
                 </div>
-                {!editing && (
+                <div className="testcase-detail-panel__header-actions">
+                    {!editing && (
+                        <button
+                            className="button button--secondary"
+                            type="button"
+                            disabled={disabled}
+                            onClick={onEdit}
+                        >
+                            Chỉnh sửa
+                        </button>
+                    )}
                     <button
-                        className="button button--secondary"
+                        className="testcase-detail-panel__close"
                         type="button"
-                        disabled={disabled}
-                        onClick={onEdit}
+                        aria-label="Đóng chi tiết test case"
+                        onClick={onClose}
                     >
-                        Chỉnh sửa
+                        ×
                     </button>
-                )}
+                </div>
             </header>
 
             {warnings.length > 0 && (

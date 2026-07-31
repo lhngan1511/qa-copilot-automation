@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import AIAnalysisReviewPanel from "../components/AIAnalysisReviewPanel.jsx";
 import TestCaseReviewPanel from "../components/TestCaseReviewPanel.jsx";
+import CompletedWorkflowPanel from "../components/CompletedWorkflowPanel.jsx";
 import ErrorState from "../components/ErrorState.jsx";
 import LoadingState from "../components/LoadingState.jsx";
 import WorkflowStatusBadge from "../components/WorkflowStatusBadge.jsx";
@@ -43,8 +44,7 @@ export default function WorkflowDetailPage() {
 
     const workflow = query.data;
     const isRequirementReview =
-        workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" ||
-        workflow.step === "AI_ANALYSIS_REVIEW";
+        workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" || workflow.step === "AI_ANALYSIS_REVIEW";
 
     if (isRequirementReview) {
         return (
@@ -55,12 +55,19 @@ export default function WorkflowDetailPage() {
     }
 
     const isTestCaseReview =
-        workflow.status === "TEST_CASE_REVIEW_REQUIRED" ||
-        workflow.step === "TEST_CASE_REVIEW";
+        workflow.status === "TEST_CASE_REVIEW_REQUIRED" || workflow.step === "TEST_CASE_REVIEW";
     if (isTestCaseReview) {
         return (
             <section className="page testcase-review-route">
                 <TestCaseReviewPanel workflow={workflow} />
+            </section>
+        );
+    }
+
+    if (workflow.status === "COMPLETED" || workflow.step === "EXPORT") {
+        return (
+            <section className="page completed-workflow-page">
+                <CompletedWorkflowPanel workflow={workflow} />
             </section>
         );
     }

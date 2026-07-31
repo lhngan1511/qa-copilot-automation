@@ -59,6 +59,14 @@ export default function TestCaseList({
                                         : ""
                                 }`}
                                 key={id}
+                                tabIndex="0"
+                                onClick={() => onSelect(id)}
+                                onKeyDown={event => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        onSelect(id);
+                                    }
+                                }}
                             >
                                 <td data-label="Chọn" className="testcase-review-table__checkbox">
                                     <input
@@ -66,6 +74,7 @@ export default function TestCaseList({
                                         aria-label={`Chọn test case ${id}`}
                                         checked={selectedIds.has(id)}
                                         disabled={disabled}
+                                        onClick={event => event.stopPropagation()}
                                         onChange={() => onToggle(id)}
                                     />
                                 </td>
@@ -73,7 +82,10 @@ export default function TestCaseList({
                                     <button
                                         className="testcase-table-link"
                                         type="button"
-                                        onClick={() => onSelect(id)}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            onSelect(id);
+                                        }}
                                     >
                                         {id}
                                     </button>
@@ -82,7 +94,10 @@ export default function TestCaseList({
                                     <button
                                         className="testcase-table-scenario"
                                         type="button"
-                                        onClick={() => onSelect(id)}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            onSelect(id);
+                                        }}
                                     >
                                         {compact(testCase.scenario ?? testCase.title)}
                                     </button>
@@ -122,14 +137,20 @@ export default function TestCaseList({
                                         <button
                                             type="button"
                                             disabled={disabled}
-                                            onClick={() => onDecision([id], "APPROVED")}
+                                            onClick={event => {
+                                                event.stopPropagation();
+                                                onDecision([id], "APPROVED");
+                                            }}
                                         >
                                             Duyệt
                                         </button>
                                         <button
                                             type="button"
                                             disabled={disabled}
-                                            onClick={() => onSelect(id)}
+                                            onClick={event => {
+                                                event.stopPropagation();
+                                                onSelect(id);
+                                            }}
                                         >
                                             Chi tiết
                                         </button>

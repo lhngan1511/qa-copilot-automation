@@ -58,9 +58,7 @@ export default function TestCaseReviewPanel({ workflow }) {
         if (!query.data) return;
         setDraft(structuredClone(query.data.testCases));
         setSelectedId(current =>
-            query.data.testCases.some(testCase => testCaseId(testCase) === current)
-                ? current
-                : testCaseId(query.data.testCases[0])
+            query.data.testCases.some(testCase => testCaseId(testCase) === current) ? current : ""
         );
     }, [query.data]);
 
@@ -276,7 +274,11 @@ export default function TestCaseReviewPanel({ workflow }) {
                     </div>
                 )}
 
-                <div className="testcase-review-main">
+                <div
+                    className={`testcase-review-main ${
+                        selected ? "testcase-review-main--drawer-open" : ""
+                    }`}
+                >
                     <div className="testcase-review-main__table">
                         <TestCaseList
                             testCases={visible}
@@ -335,23 +337,30 @@ export default function TestCaseReviewPanel({ workflow }) {
                             </button>
                         </nav>
                     </div>
-                    <TestCaseEditor
-                        testCase={selected}
-                        editing={editing}
-                        editDraft={editDraft}
-                        disabled={!canEdit || pending}
-                        onEdit={() => {
-                            setEditDraft(structuredClone(selected));
-                            setEditing(true);
-                        }}
-                        onCancel={() => {
-                            setEditing(false);
-                            setEditDraft(null);
-                        }}
-                        onDraftChange={setEditDraft}
-                        onSave={saveEdit}
-                        onDecision={status => applyDecision([selectedId], status)}
-                    />
+                    {selected && (
+                        <TestCaseEditor
+                            testCase={selected}
+                            editing={editing}
+                            editDraft={editDraft}
+                            disabled={!canEdit || pending}
+                            onClose={() => {
+                                setSelectedId("");
+                                setEditing(false);
+                                setEditDraft(null);
+                            }}
+                            onEdit={() => {
+                                setEditDraft(structuredClone(selected));
+                                setEditing(true);
+                            }}
+                            onCancel={() => {
+                                setEditing(false);
+                                setEditDraft(null);
+                            }}
+                            onDraftChange={setEditDraft}
+                            onSave={saveEdit}
+                            onDecision={status => applyDecision([selectedId], status)}
+                        />
+                    )}
                 </div>
             </section>
 
