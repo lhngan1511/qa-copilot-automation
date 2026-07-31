@@ -4,6 +4,7 @@ import {
     canApproveTestCaseBatch,
     filterTestCases,
     parseTestCaseReview,
+    reviewCompletionMessage,
     summarizeReview,
     testCaseWarnings
 } from "../src/utils/testCaseReview.js";
@@ -39,11 +40,34 @@ assert.equal(filterTestCases(review.testCases, { type: "VALIDATION" }).length, 1
 assert.equal(filterTestCases(review.testCases, { search: "mã thiết bị" }).length, 2);
 assert.equal(canApproveTestCaseBatch({ review, testCases: review.testCases }), false);
 
+const casesByStatus = statuses =>
+    statuses.map((reviewStatus, index) => ({
+        ...baseCase,
+        id: `TC00${index + 1}`,
+        testcaseId: `TC00${index + 1}`,
+        reviewStatus
+    }));
+const allApproved = casesByStatus(["APPROVED", "APPROVED", "APPROVED"]);
+const approvedAndRemoved = casesByStatus(["APPROVED", "APPROVED", "REMOVED"]);
+const pendingDecision = casesByStatus(["APPROVED", "REMOVED", "PENDING"]);
+const allRemoved = casesByStatus(["REMOVED", "REMOVED", "REMOVED"]);
+
+assert.equal(canApproveTestCaseBatch({ review, testCases: allApproved }), true);
+assert.equal(canApproveTestCaseBatch({ review, testCases: approvedAndRemoved }), true);
+assert.equal(canApproveTestCaseBatch({ review, testCases: pendingDecision }), false);
+assert.equal(canApproveTestCaseBatch({ review, testCases: allRemoved }), true);
+assert.equal(canApproveTestCaseBatch({ review, dirty: true, testCases: allApproved }), false);
+assert.equal(
+    reviewCompletionMessage(summarizeReview(pendingDecision)),
+    "Còn 1 test case chưa có quyết định."
+);
+assert.equal(
+    reviewCompletionMessage(summarizeReview(approvedAndRemoved)),
+    "Đã review toàn bộ 3 test case. 2 đã duyệt · 1 đã loại bỏ."
+);
 const resolved = review.testCases.map(testCase =>
     testCase.reviewStatus === "REMOVED" ? testCase : { ...testCase, reviewStatus: "APPROVED" }
 );
-assert.equal(canApproveTestCaseBatch({ review, testCases: resolved }), true);
-assert.equal(canApproveTestCaseBatch({ review, dirty: true, testCases: resolved }), false);
 assert.ok(testCaseWarnings(review.testCases[0]).some(item => item.includes("tester")));
 assert.ok(
     testCaseWarnings({ ...review.testCases[0], steps: [] }).some(item => item.includes("bước"))

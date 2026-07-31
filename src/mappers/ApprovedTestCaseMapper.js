@@ -39,11 +39,7 @@ export default class ApprovedTestCaseMapper {
         }
 
         return testCaseArtifact.testCases
-            .filter(
-                testCase =>
-                    testCase.reviewStatus === undefined ||
-                    testCase.reviewStatus === TestCaseReviewStatus.APPROVED
-            )
+            .filter(testCase => testCase.reviewStatus === TestCaseReviewStatus.APPROVED)
             .map(testCase => {
                 const clone = this.clone(testCase);
                 const id = clone?.testcaseId ?? clone?.testCaseId ?? clone?.id ?? "";

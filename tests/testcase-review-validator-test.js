@@ -34,12 +34,11 @@ assert.throws(
         }),
     error => error.code === "TEST_CASE_REVIEW_UNRESOLVED"
 );
-assert.throws(
-    () =>
-        validator.validateBatch([{ ...base, reviewStatus: "REMOVED" }], {
-            requireResolved: true
-        }),
-    error => error.code === "NO_APPROVED_TEST_CASES"
+assert.equal(
+    validator.validateBatch([{ ...base, reviewStatus: "REMOVED" }], {
+        requireResolved: true
+    }),
+    true
 );
 assert.equal(
     validator.validateBatch(

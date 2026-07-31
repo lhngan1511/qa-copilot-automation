@@ -6,5 +6,9 @@ const TestCaseReviewStatus = Object.freeze({
 });
 
 export const TEST_CASE_REVIEW_STATUSES = new Set(Object.values(TestCaseReviewStatus));
+export const FINAL_TEST_CASE_REVIEW_STATUSES = new Set([
+    TestCaseReviewStatus.APPROVED,
+    TestCaseReviewStatus.REMOVED
+]);
 
 export default TestCaseReviewStatus;

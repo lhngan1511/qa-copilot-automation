@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import XLSX from "xlsx";
 import createApp from "../src/server/createApp.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -235,7 +236,18 @@ try {
         approvedJson.some(testCase => testCase.reviewStatus === "REMOVED"),
         false
     );
-    assert.ok(markdownDownload.body.toString("utf8").includes("Các bước kiểm thử"));
+    const removedIds = resolvedBatch
+        .filter(testCase => testCase.reviewStatus === "REMOVED")
+        .map(testCase => testCase.testcaseId ?? testCase.id);
+    const markdown = markdownDownload.body.toString("utf8");
+    const workbook = XLSX.read(excelDownload.body, { type: "buffer" });
+    const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets["Test Cases"], { range: 6 });
+    removedIds.forEach(id => {
+        assert.equal(approvedJson.some(testCase => testCase.id === id), false);
+        assert.equal(markdown.includes(id), false);
+        assert.equal(excelRows.some(row => row["Test Case ID"] === id), false);
+    });
+    assert.ok(markdown.includes("Các bước kiểm thử"));
     assert.equal(providerCalls, 1);
 
     console.log("TestCase Review HTTP test PASSED");

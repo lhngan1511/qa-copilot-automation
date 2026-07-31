@@ -1,4 +1,5 @@
 import TestCaseReviewStatus, {
+    FINAL_TEST_CASE_REVIEW_STATUSES,
     TEST_CASE_REVIEW_STATUSES
 } from "../constants/TestCaseReviewStatus.js";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
@@ -125,23 +126,13 @@ export default class TestCaseReviewValidator {
     }
 
     validateFinalApproval(testCases) {
-        const active = testCases.filter(
-            testCase => testCase.reviewStatus !== TestCaseReviewStatus.REMOVED
-        );
-        if (active.length === 0) {
-            throw this.error(
-                "NO_APPROVED_TEST_CASES",
-                "At least one active testcase is required for final approval."
-            );
-        }
-
-        const unresolved = active.filter(
-            testCase => testCase.reviewStatus !== TestCaseReviewStatus.APPROVED
+        const unresolved = testCases.filter(
+            testCase => !FINAL_TEST_CASE_REVIEW_STATUSES.has(testCase.reviewStatus)
         );
         if (unresolved.length > 0) {
             throw this.error(
                 "TEST_CASE_REVIEW_UNRESOLVED",
-                "All active testcases must be APPROVED before final approval.",
+                "Every testcase must have an APPROVED or REMOVED final decision.",
                 { testcaseIds: unresolved.map(testCase => testCase.id) }
             );
         }

@@ -156,15 +156,22 @@ export function canApproveTestCaseBatch({
     pending = false,
     testCases = []
 }) {
-    const active = testCases.filter(testCase => testCase.reviewStatus !== "REMOVED");
+    const summary = summarizeReview(testCases);
     return (
         review?.allowedActions?.includes("APPROVE_TEST_CASES") === true &&
         review?.approvalStatus === "pending" &&
-        active.length > 0 &&
-        active.every(testCase => testCase.reviewStatus === "APPROVED") &&
+        summary.total > 0 &&
+        summary.pending + summary.needsChanges === 0 &&
         !dirty &&
         !pending
     );
+}
+
+export function reviewCompletionMessage(summary) {
+    const unresolved = summary.pending + summary.needsChanges;
+    if (unresolved > 0) return `Còn ${unresolved} test case chưa có quyết định.`;
+
+    return `Đã review toàn bộ ${summary.total} test case. ${summary.approved} đã duyệt · ${summary.removed} đã loại bỏ.`;
 }
 
 export function testCaseWarnings(testCase) {

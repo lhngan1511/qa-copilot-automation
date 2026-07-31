@@ -10,6 +10,7 @@ import {
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
     filterTestCases,
+    reviewCompletionMessage,
     summarizeReview,
     testCaseId,
     testCaseType
@@ -175,7 +176,7 @@ export default function TestCaseReviewPanel({ workflow }) {
 
     const confirmAndContinue = async () => {
         if ((!canApprove && !canResume) || pending) return;
-        if (!window.confirm("Xác nhận toàn bộ test case đã duyệt và tiếp tục tạo output?")) return;
+        if (!window.confirm("Xác nhận toàn bộ test case đã được review và tiếp tục tạo output?")) return;
         setNotice("");
         try {
             if (!canResume) {
@@ -382,11 +383,7 @@ export default function TestCaseReviewPanel({ workflow }) {
             <footer className="testcase-final-action">
                 <div>
                     <strong>Tester kiểm soát quyết định cuối cùng</strong>
-                    <span>
-                        {summary.pending + summary.needsChanges > 0
-                            ? `${summary.pending + summary.needsChanges} test case chưa đủ điều kiện.`
-                            : "Tất cả test case đang hoạt động đã được duyệt."}
-                    </span>
+                    <span>{reviewCompletionMessage(summary)}</span>
                 </div>
                 <button
                     className="button button--primary"
