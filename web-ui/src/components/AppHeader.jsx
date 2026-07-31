@@ -6,7 +6,7 @@ export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
             <div className="app-header__brand">
                 <img className="product-logo" src={cuscSoftwareLogo} alt="CUSC Software" />
                 <span>
-                    <strong>CUSC QC Intelligence</strong>
+                    <strong>QC Intelligence</strong>
                     <small>AI-powered Software Testing Platform</small>
                 </span>
             </div>

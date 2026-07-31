@@ -122,13 +122,6 @@ export default function DashboardPage() {
                         </span>
                         <h3 id="workflow-overview-title">AI Test Design Workflow</h3>
                     </div>
-                    <span className="dashboard-control-badge">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3 5 6v5c0 4.7 2.8 8.1 7 10 4.2-1.9 7-5.3 7-10V6l-7-3Z" />
-                            <path d="m9 12 2 2 4-4" />
-                        </svg>
-                        Tester-controlled
-                    </span>
                 </header>
                 <WorkflowStepper />
             </section>
@@ -147,13 +140,6 @@ export default function DashboardPage() {
                             <p>Theo dõi các phiên AI Test Design đang xử lý hoặc đã hoàn thành.</p>
                         </span>
                     </div>
-                    <a
-                        className="button button--secondary dashboard-recent__all"
-                        href="#recent-workflows-table"
-                    >
-                        Xem tất cả
-                        <span aria-hidden="true">→</span>
-                    </a>
                 </header>
 
                 {query.isPending && <LoadingState message="Đang tải danh sách workflow..." />}
