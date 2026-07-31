@@ -398,58 +398,66 @@ class TestCaseGenerator {
         return `Xác minh quy tắc: ${rule}`;
     }
 
-    buildAtomicSteps(scenario, specialized, expectedResult) {
+    buildAtomicSteps(scenario, specialized) {
         const feature = scenario.feature || scenario.function || "chức năng";
-        const steps = [
-            {
-                order: 1,
-                action: "Mở màn hình hoặc chức năng",
-                target: feature,
-                value: "",
-                expected: `${feature} được hiển thị`
-            }
-        ];
+        const confirmedActions = (Array.isArray(scenario.steps) ? scenario.steps : [])
+            .map(step =>
+                String(
+                    typeof step === "string"
+                        ? step
+                        : (step?.action ?? step?.description ?? step?.step ?? "")
+                ).trim()
+            )
+            .filter(Boolean);
+        const navigation = confirmedActions.find(action =>
+            /^(mở|truy cập|đi đến)\b/i.test(action)
+        );
+        const mainAction = [...confirmedActions]
+            .reverse()
+            .find(action =>
+                /\b(lưu|xóa|xoá|tìm kiếm|đăng nhập|xác nhận|sinh mã|tạo mã|chọn chức năng)\b/i.test(
+                    action
+                )
+            );
+        const preparationActions = confirmedActions.filter(
+            action =>
+                action !== navigation &&
+                action !== mainAction &&
+                !/^(nhập|điền|thay đổi|xem)\b/i.test(action)
+        );
+        const steps = [];
+        if (navigation) {
+            steps.push({ order: steps.length + 1, action: navigation, target: feature });
+        }
+        preparationActions.forEach(action =>
+            steps.push({ order: steps.length + 1, action, target: feature })
+        );
 
         if (specialized.classification === "REQUIRED" && specialized.fieldName) {
             steps.push({
-                order: 2,
+                order: steps.length + 1,
                 action: "Nhập dữ liệu hợp lệ cho các trường còn lại",
                 target: feature,
-                value: "",
-                expected: "Các trường còn lại có dữ liệu hợp lệ"
+                value: ""
             });
             steps.push({
-                order: 3,
+                order: steps.length + 1,
                 action: specialized.trigger.action,
                 target: specialized.fieldName,
-                value: "",
-                expected: `${specialized.fieldName} không có giá trị`
+                value: ""
             });
         } else {
             steps.push({
-                order: 2,
+                order: steps.length + 1,
                 action: specialized.trigger.action,
-                target: feature,
-                value: this.cloneValue(specialized.trigger.value),
-                expected: "Điều kiện kiểm thử được thiết lập"
+                target: specialized.fieldName || feature,
+                value: this.cloneValue(specialized.trigger.value)
             });
         }
 
-        steps.push({
-            order: steps.length + 1,
-            action: `Thực hiện ${feature}`,
-            target: feature,
-            value: "",
-            expected: "Hệ thống kiểm tra điều kiện nghiệp vụ"
-        });
-        steps.push({
-            order: steps.length + 1,
-            action: "Kiểm tra kết quả nghiệp vụ",
-            target: feature,
-            value: "",
-            expected: expectedResult
-        });
-
+        if (mainAction && !steps.some(step => step.action === mainAction)) {
+            steps.push({ order: steps.length + 1, action: mainAction, target: feature });
+        }
         return steps;
     }
 
@@ -461,46 +469,20 @@ class TestCaseGenerator {
         );
     }
 
-    buildFallbackSteps(testCase) {
-        const feature = testCase.feature || testCase.function;
-        const scenario = testCase.scenario || testCase.title;
-        const data = testCase.testData?.value || testCase.testData?.requirement || scenario;
-        return [
-            {
-                order: 1,
-                action: `Mở chức năng ${feature}`,
-                target: feature,
-                value: "",
-                expected: `${feature} sẵn sàng để kiểm thử`
-            },
-            {
-                order: 2,
-                action: `Thiết lập dữ liệu cho tình huống: ${scenario}`,
-                target: feature,
-                value: data,
-                expected: "Dữ liệu kiểm thử được nhập theo yêu cầu"
-            },
-            {
-                order: 3,
-                action: `Thực hiện ${feature}`,
-                target: feature,
-                value: "",
-                expected: "Yêu cầu được gửi để hệ thống xử lý"
-            },
-            {
-                order: 4,
-                action: "Kiểm tra kết quả nghiệp vụ",
-                target: feature,
-                value: "",
-                expected: testCase.expectedResult
-            }
-        ];
+    buildFallbackSteps() {
+        return [];
     }
 
     buildObjective(scenario) {
         switch (scenario.type) {
+            case "VALIDATION":
+                return "Kiểm tra quy tắc nhập liệu";
+
             case "NEGATIVE":
-                return "Kiểm tra xử lý dữ liệu không hợp lệ";
+                return "Kiểm tra thao tác hoặc dữ liệu không hợp lệ";
+
+            case "BUSINESS_RULE":
+                return "Kiểm tra quy định nghiệp vụ đã xác nhận";
 
             case "BOUNDARY":
                 return "Kiểm tra giới hạn dữ liệu";

@@ -43,8 +43,8 @@ export default function testerFacingText(value) {
     if (!result) return "";
 
     result = result
-        .replace(/\[?\b(?:BR|FUNC|MOD)[-_]?\d+\b\]?/gi, "")
-        .replace(/\bRule[-_\s]*\d+\b/gi, "");
+        .replace(/\[?\b(?:BR|FUNC|MOD)[-_]?\d+\b\]?\s*(?:[:\-_–—]\s*)?/gi, "")
+        .replace(/\bRule[-_\s]*\d+\b\s*(?:[:\-_–—]\s*)?/gi, "");
 
     TECHNICAL_REPLACEMENTS.forEach(([pattern, replacement]) => {
         result = result.replace(pattern, replacement);

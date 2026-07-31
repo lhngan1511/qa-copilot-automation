@@ -58,9 +58,15 @@ try {
     });
     assert.ok(
         result.scenarios.every(scenario =>
-            ["POSITIVE", "NEGATIVE", "DATA_INTEGRITY", "PERMISSION", "BOUNDARY"].includes(
-                scenario.type
-            )
+            [
+                "POSITIVE",
+                "VALIDATION",
+                "NEGATIVE",
+                "BUSINESS_RULE",
+                "DATA_INTEGRITY",
+                "PERMISSION",
+                "BOUNDARY"
+            ].includes(scenario.type)
         )
     );
 

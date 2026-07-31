@@ -1,4 +1,8 @@
-import { normalizeSteps, testCaseWarnings } from "../utils/testCaseReview.js";
+import {
+    formatTestData,
+    normalizeSteps,
+    testCaseWarnings
+} from "../utils/testCaseReview.js";
 
 function text(value, fallback = "Chưa có") {
     const normalized = String(value ?? "").trim();
@@ -229,10 +233,10 @@ export default function TestCaseEditor({
                             </div>
                         </dl>
                     </section>
-                    <section className="testcase-detail-section">
-                        <h4>Test Data</h4>
-                        <p>{text(value.testData?.value || value.testData?.requirement)}</p>
-                    </section>
+                    <DetailList
+                        title="Test Data"
+                        values={formatTestData(value.testData).split("\n").filter(Boolean)}
+                    />
                     <section className="testcase-detail-section">
                         <h4>Expected Result</h4>
                         <p>{text(value.expectedResult)}</p>

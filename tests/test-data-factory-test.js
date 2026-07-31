@@ -18,12 +18,12 @@ const positive = factory.create({
     scenario: { feature: "Thêm thiết bị", type: "POSITIVE" },
     inputDefinitions: deviceInputs
 });
-assert.deepEqual(positive.fields, {
-    "Mã thiết bị": { value: "TB001", purpose: "VALID" },
-    "Tên thiết bị": { value: "Máy in văn phòng", purpose: "VALID" },
-    "Loại thiết bị": { value: "Máy in", purpose: "VALID" },
-    "Số lượng": { value: 10, purpose: "VALID" }
-});
+assert.equal(positive.fields["Mã thiết bị"].value, null);
+assert.equal(positive.fields["Tên thiết bị"].value, null);
+assert.equal(positive.fields["Số lượng"].value, null);
+assert.equal(positive.fields["Loại thiết bị"].value, "Máy in");
+assert.equal(positive.fields["Mã thiết bị"].requiresTesterInput, true);
+assert.match(positive.fields["Mã thiết bị"].instruction, /theo requirement/);
 
 const required = factory.create({
     source: { inputs: { "Mã thiết bị": "TB001" }, invalid: { "Tên thiết bị": "" } },
@@ -56,9 +56,10 @@ const update = factory.create({
     scenario: { feature: "Sửa thiết bị", type: "POSITIVE" },
     inputDefinitions: deviceInputs
 });
-assert.equal(update.existing["Mã thiết bị"], "TB001");
-assert.equal(update.updated["Tên thiết bị"], "Máy in tầng 2");
+assert.equal(update.existing["Mã thiết bị"], null);
+assert.equal(update.updated["Tên thiết bị"], null);
 assert.equal(update.fields["Tên thiết bị"].purpose, "UPDATED_VALUE");
+assert.equal(update.fields["Tên thiết bị"].requiresTesterInput, true);
 
 const deleteRestriction = factory.create({
     source: { inputs: { "Mã thiết bị": "TB001" }, expected: { entityState: "IN_USE" } },

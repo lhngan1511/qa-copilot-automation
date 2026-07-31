@@ -3,6 +3,7 @@ import {
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
     filterTestCases,
+    formatTestData,
     parseTestCaseReview,
     reviewCompletionMessage,
     summarizeReview,
@@ -35,6 +36,16 @@ const review = parseTestCaseReview({
 });
 
 assert.equal(review.testCases[0].reviewStatus, "PENDING");
+assert.equal(
+    formatTestData({
+        fields: {
+            "Mã thiết bị": { value: "", purpose: "EMPTY" },
+            "Tên thiết bị": { value: "Thiết bị mẫu", purpose: "VALID" }
+        }
+    }),
+    "Mã thiết bị: Để trống (Để trống)\nTên thiết bị: Thiết bị mẫu (Hợp lệ)"
+);
+assert.doesNotMatch(formatTestData(review.testCases[0].testData), /VALID|EMPTY|DUPLICATE/);
 assert.equal(summarizeReview(review.testCases).removed, 1);
 assert.equal(filterTestCases(review.testCases, { type: "VALIDATION" }).length, 1);
 assert.equal(filterTestCases(review.testCases, { search: "mã thiết bị" }).length, 2);

@@ -141,6 +141,8 @@ class IntelligenceScenarioGenerator {
                 ? this.generateSteps(scenario)
                 : item.steps;
 
+        scenario.operation = item.operation ?? item.automation?.operation ?? "";
+
         if (Object.prototype.hasOwnProperty.call(item, "testData")) {
             scenario.testData = item.testData;
         }
@@ -404,96 +406,26 @@ class IntelligenceScenarioGenerator {
         return preconditions;
     }
 
-    generateSteps(scenario) {
-        const expectedResults = Array.isArray(scenario.expectedResults)
-            ? scenario.expectedResults
-            : [];
-
-        return [
-            {
-                order: 1,
-
-                actionType: "NAVIGATION",
-
-                action: `Mở chức năng ${scenario.feature}`,
-
-                expected: "Màn hình chức năng hiển thị"
-            },
-
-            {
-                order: 2,
-
-                actionType: "INPUT",
-
-                action: `Chuẩn bị dữ liệu cho tình huống: ${scenario.title}`,
-
-                expected: "Dữ liệu kiểm tra được chuẩn bị"
-            },
-
-            {
-                order: 3,
-
-                actionType: "ACTION",
-
-                action: `Thực hiện ${scenario.feature}`,
-
-                expected: this.getProcessExpected(scenario.type)
-            },
-
-            {
-                order: 4,
-
-                actionType: "ASSERT",
-
-                action: "Kiểm tra kết quả thực tế",
-
-                expected: expectedResults.join("; ")
-            }
-        ];
+    generateSteps() {
+        return [];
     }
 
-    generateExpectedResults(scenario) {
-        switch (scenario.type) {
-            case "NEGATIVE":
-                return [
-                    "Hệ thống không chấp nhận dữ liệu hoặc thao tác không hợp lệ",
-                    "Hiển thị thông báo phù hợp với điều kiện kiểm tra"
-                ];
-
-            case "PERMISSION":
-                return [
-                    "Hệ thống từ chối thao tác khi người dùng không có quyền",
-                    "Hiển thị thông báo không có quyền phù hợp"
-                ];
-
-            case "DATA_INTEGRITY":
-                return [
-                    "Hệ thống bảo toàn tính toàn vẹn dữ liệu",
-                    "Không tạo dữ liệu trùng hoặc dữ liệu không hợp lệ"
-                ];
-
-            case "BOUNDARY":
-                return [
-                    "Hệ thống xử lý đúng dữ liệu tại giá trị biên",
-                    "Không phát sinh lỗi ngoài dự kiến"
-                ];
-
-            case "SECURITY":
-                return [
-                    "Hệ thống ngăn chặn dữ liệu hoặc thao tác không an toàn",
-                    "Dữ liệu và quyền truy cập được bảo vệ"
-                ];
-
-            default:
-                return [
-                    "Hệ thống thực hiện thành công thao tác",
-                    "Dữ liệu được cập nhật và hiển thị đúng"
-                ];
-        }
+    generateExpectedResults() {
+        return [];
     }
 
     getProcessExpected(type) {
-        if (["NEGATIVE", "DATA_INTEGRITY", "PERMISSION", "BOUNDARY", "SECURITY"].includes(type)) {
+        if (
+            [
+                "VALIDATION",
+                "NEGATIVE",
+                "BUSINESS_RULE",
+                "DATA_INTEGRITY",
+                "PERMISSION",
+                "BOUNDARY",
+                "SECURITY"
+            ].includes(type)
+        ) {
             return "Hệ thống thực hiện kiểm tra điều kiện nghiệp vụ";
         }
 
@@ -501,7 +433,11 @@ class IntelligenceScenarioGenerator {
     }
 
     calculateSeverity(type) {
-        if (["NEGATIVE", "PERMISSION", "DATA_INTEGRITY", "SECURITY"].includes(type)) {
+        if (
+            ["VALIDATION", "NEGATIVE", "BUSINESS_RULE", "PERMISSION", "DATA_INTEGRITY", "SECURITY"].includes(
+                type
+            )
+        ) {
             return "HIGH";
         }
 
@@ -518,7 +454,11 @@ class IntelligenceScenarioGenerator {
         const supportedTypes = [
             "POSITIVE",
 
+            "VALIDATION",
+
             "NEGATIVE",
+
+            "BUSINESS_RULE",
 
             "PERMISSION",
 

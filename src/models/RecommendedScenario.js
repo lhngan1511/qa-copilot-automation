@@ -62,6 +62,8 @@ class RecommendedScenario {
 
         steps = [],
 
+        operation = "",
+
         // Expected Results
 
         expectedResult = "",
@@ -194,6 +196,8 @@ class RecommendedScenario {
         */
 
         this.steps = Array.isArray(steps) ? steps : [];
+
+        this.operation = typeof operation === "string" ? operation.trim() : "";
 
         /*
         =====================================================

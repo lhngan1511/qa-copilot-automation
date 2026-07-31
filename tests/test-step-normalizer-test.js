@@ -35,7 +35,6 @@ assert.deepEqual(
     positive.map(step => step.action),
     [
         "Mở chức năng Quản lý thiết bị",
-        "Bắt đầu thêm mới thiết bị",
         "Nhập Mã thiết bị là TB001",
         "Nhập Tên thiết bị là Máy in văn phòng",
         "Chọn Loại thiết bị là Máy in",
@@ -64,7 +63,6 @@ assert.deepEqual(
     required.map(step => step.action),
     [
         "Mở chức năng Thêm thiết bị",
-        "Bắt đầu thêm mới thiết bị",
         "Để trống Tên thiết bị",
         "Nhập Mã thiết bị là TB001",
         "Chọn Loại thiết bị là Máy in",
@@ -108,7 +106,6 @@ assert.deepEqual(
     [
         "Mở chức năng Quản lý thiết bị",
         "Chọn bản ghi",
-        "Bắt đầu chỉnh sửa thiết bị",
         "Nhập Tên thiết bị là Máy in tầng 2",
         "Lưu thông tin thiết bị"
     ]
@@ -160,7 +157,7 @@ const permission = normalizer.normalize(
 );
 assert.deepEqual(
     permission.map(step => step.action),
-    ["Mở chức năng Quản lý thiết bị", "Bắt đầu thêm mới thiết bị"]
+    ["Mở chức năng Quản lý thiết bị"]
 );
 
 const boundary = normalizer.normalize(

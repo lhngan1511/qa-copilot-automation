@@ -12,6 +12,9 @@ export default class ExpectedResultBuilder {
         let classification = String(
             testCase.ruleClassification ?? scenario.ruleClassification ?? ""
         ).toUpperCase();
+        if (!classification && this.text(existing) && !this.isGeneric(existing)) {
+            return this.text(existing);
+        }
         const operation = this.operation(testCase, scenario);
         const entity = this.entity(testCase.feature ?? testCase.function ?? scenario.feature);
         const fields = testData?.fields ?? {};
@@ -27,15 +30,24 @@ export default class ExpectedResultBuilder {
         const record = testData.record ?? identifier?.value ?? entity;
 
         if (classification === "REQUIRED") {
-            return `Hệ thống không lưu ${entity} mới. Trường ${targetField || "bắt buộc"} được đánh dấu bắt buộc và hiển thị cảnh báo không được để trống.`;
+            const functionName = this.lowerFirst(
+                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
+            );
+            return `Hệ thống không cho phép hoàn tất ${functionName} khi ${
+                targetField || "trường bắt buộc"
+            } để trống.`;
         }
         if (classification === "DUPLICATE") {
-            return `Hệ thống không lưu ${entity} mới và hiển thị cảnh báo ${
-                targetField || identifier?.name || "giá trị định danh"
-            }${this.withValue(targetValue ?? identifier?.value)} đã tồn tại. Dữ liệu hiện có không bị thay đổi.`;
+            return `Hệ thống không cho phép hoàn tất ${this.lowerFirst(
+                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
+            )} khi ${targetField || identifier?.name || "giá trị định danh"}${
+                this.withValue(targetValue ?? identifier?.value)
+            } đã tồn tại.`;
         }
         if (["INVALID_OPTION", "INVALID_REFERENCE"].includes(classification)) {
-            return `Hệ thống không lưu dữ liệu. Trường ${targetField || "giá trị lựa chọn"} được đánh dấu không hợp lệ. Dữ liệu hiện có không bị thay đổi.`;
+            return `Hệ thống không cho phép hoàn tất ${this.lowerFirst(
+                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
+            )} khi ${targetField || "giá trị lựa chọn"} không thuộc danh sách cho phép.`;
         }
         if (classification === "BOUNDARY_UNKNOWN") {
             return `Hệ thống không lưu dữ liệu khi ${this.lowerFirst(
@@ -56,7 +68,7 @@ export default class ExpectedResultBuilder {
             classification === "PERMISSION_DENIED" ||
             String(testCase.type).toUpperCase() === "PERMISSION"
         ) {
-            return `Hệ thống từ chối ${this.operationText(operation, entity)}. Người dùng không thể thay đổi dữ liệu và nhận được thông báo không có quyền thực hiện chức năng.`;
+            return `Hệ thống không cho phép người dùng thực hiện ${this.operationText(operation, entity)}.`;
         }
         if (
             ["STATE_RESTRICTION", "RELATED_DATA"].includes(classification) ||
@@ -65,7 +77,7 @@ export default class ExpectedResultBuilder {
             const state = this.cleanBusinessText(
                 testData.recordState || "đang ở trạng thái không cho phép xóa"
             );
-            return `Hệ thống không xóa ${entity}${this.withValue(record)} và hiển thị cảnh báo ${this.lowerFirst(
+            return `Hệ thống không xóa ${entity}${this.withValue(record)} khi ${this.lowerFirst(
                 state
             )}. Dữ liệu ${entity} vẫn được giữ nguyên.`;
         }
@@ -125,22 +137,18 @@ export default class ExpectedResultBuilder {
         const limit = rule.match(/\d+(?:[.,]\d+)?/)?.[0] ?? constraint?.max ?? constraint?.min;
         const rejected = /ABOVE_MAX|BELOW_MIN|MAX_PLUS|MIN_MINUS/.test(classification);
         if (rejected) {
-            return `Hệ thống không lưu dữ liệu. Trường ${targetField || "giá trị"} hiển thị cảnh báo${
-                limit ? ` không được vượt quá ${limit}` : " giá trị nằm ngoài giới hạn cho phép"
-            }${/ky tu|ký tự/i.test(rule) || constraint?.kind === "TEXT_LENGTH" ? " ký tự" : ""}. Dữ liệu hiện có không bị thay đổi.`;
+            return `Hệ thống không chấp nhận ${targetField || "giá trị"}${
+                limit ? ` vượt giới hạn ${limit}` : " nằm ngoài giới hạn đã xác nhận"
+            }${/ky tu|ký tự/i.test(rule) || constraint?.kind === "TEXT_LENGTH" ? " ký tự" : ""}.`;
         }
         return `Hệ thống chấp nhận ${targetField || "giá trị"} tại giới hạn${
             limit ? ` ${limit}` : " đã xác định"
         } và lưu ${entity} thành công.`;
     }
 
-    normalizeExisting(existing, { entity, operation }) {
+    normalizeExisting(existing) {
         const value = this.text(existing);
-        if (!this.isGeneric(value)) return value;
-        if (operation === "DELETE") {
-            return `Hệ thống không thay đổi dữ liệu ${entity} khi điều kiện xóa không được đáp ứng.`;
-        }
-        return `Hệ thống không lưu dữ liệu khi điều kiện kiểm thử không được đáp ứng. Dữ liệu hiện có không bị thay đổi.`;
+        return this.isGeneric(value) ? "" : value;
     }
 
     isManualExpected(value) {
@@ -222,7 +230,7 @@ export default class ExpectedResultBuilder {
 
     entity(feature) {
         const value = this.text(feature)
-            .replace(/^(thêm|tạo mới|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
+            .replace(/^(thêm mới|tạo mới|thêm|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
             .trim();
         return this.lowerFirst(value || "dữ liệu");
     }

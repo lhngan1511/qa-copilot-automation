@@ -2,7 +2,7 @@ import { normalizeTestData } from "../utils/TestDataReadiness.js";
 
 export default class RuleTestDataBuilder {
     classify({ rule = "", source = "", scenario = {} } = {}) {
-        const text = this.normalize(rule);
+        const text = this.normalize(this.businessText(rule));
         const sourceCategory = this.normalize(source);
         const functionName = this.normalize(scenario.feature ?? scenario.function);
 
@@ -24,6 +24,9 @@ export default class RuleTestDataBuilder {
         if (/không tìm thấy|không có kết quả/.test(text)) {
             return "NO_RESULT";
         }
+        if (/không có dữ liệu.*(?:hiển thị|trạng thái)|hiển thị trạng thái.*không có dữ liệu/.test(text)) {
+            return "EMPTY_RESULT";
+        }
         if (/một hoặc nhiều điều kiện|kết hợp.*điều kiện|điều kiện.*kết hợp/.test(text)) {
             return "SEARCH_MULTI";
         }
@@ -43,13 +46,17 @@ export default class RuleTestDataBuilder {
             return "RELATED_DATA";
         }
         if (
-            /đang được sử dụng|đang sử dụng|đã ngừng sử dụng|trạng thái|không còn dữ liệu đang xử lý/.test(
+            /đang được sử dụng|đang sử dụng|đã ngừng sử dụng|trạng thái (?:không cho phép|bị chặn)|không còn dữ liệu đang xử lý/.test(
                 text
             )
         ) {
             return "STATE_RESTRICTION";
         }
-        if (/xác nhận|hủy xác nhận/.test(text)) {
+        if (
+            /(?:yêu cầu|cần|phải) xác nhận|xác nhận trước khi|hủy xác nhận (?:thao tác|xóa)|người dùng (?:không )?xác nhận/.test(
+                text
+            )
+        ) {
             return "CONFIRMATION";
         }
         if (
@@ -143,6 +150,9 @@ export default class RuleTestDataBuilder {
                 }
                 testData.context.matchingRecords = [];
                 break;
+            case "EMPTY_RESULT":
+                testData.context.matchingRecords = [];
+                break;
             case "PERMISSION_DENIED":
                 testData.context.userHasRequiredPermission = false;
                 break;
@@ -204,7 +214,7 @@ export default class RuleTestDataBuilder {
                 rule,
                 scenario
             }),
-            trigger: this.buildTrigger(classification, fieldName, rule, testData),
+            trigger: this.buildTrigger(classification, fieldName, rule, testData, scenario),
             ...flags,
             executable:
                 !flags.needsClarification && !flags.requiresRuntimeSupport && !flags.needsEnrichment
@@ -304,6 +314,8 @@ export default class RuleTestDataBuilder {
                     : "Kết quả chỉ gồm các bản ghi phù hợp với điều kiện tìm kiếm.";
             case "NO_RESULT":
                 return "Hệ thống hiển thị trạng thái không có dữ liệu phù hợp và không hiển thị bản ghi sai điều kiện.";
+            case "EMPTY_RESULT":
+                return "Hệ thống hiển thị trạng thái phù hợp khi không có dữ liệu.";
             case "PERMISSION_DENIED":
                 return `Hệ thống không cho phép thực hiện ${operation}; dữ liệu không thay đổi.`;
             case "CONCURRENT_CHANGE":
@@ -350,7 +362,7 @@ export default class RuleTestDataBuilder {
         return [...new Set(filtered)];
     }
 
-    buildTrigger(classification, fieldName, rule, testData) {
+    buildTrigger(classification, fieldName, rule, testData, scenario = {}) {
         const actions = {
             REQUIRED: `Để trống ${fieldName}`,
             DUPLICATE: `Nhập giá trị đã tồn tại cho ${fieldName || "trường định danh"}`,
@@ -363,6 +375,7 @@ export default class RuleTestDataBuilder {
             SEARCH_SINGLE: "Tìm kiếm bằng một điều kiện",
             SEARCH_MULTI: "Tìm kiếm bằng nhiều điều kiện",
             NO_RESULT: "Tìm kiếm bằng tiêu chí không có bản ghi phù hợp",
+            EMPTY_RESULT: "",
             PERMISSION_DENIED: "Thực hiện thao tác bằng người dùng không có quyền",
             CONCURRENT_CHANGE: "Gửi thao tác sau khi bản ghi đã bị thay đổi hoặc xóa",
             SYSTEM_FAILURE: "Kích hoạt fault injection tại thời điểm xử lý",
@@ -389,7 +402,7 @@ export default class RuleTestDataBuilder {
             INVALID_REFERENCE:
                 /^(.+?)(?:\s+phải tồn tại trong danh mục|\s+phải.*giá trị hợp lệ|\s+không hợp lệ)/i
         };
-        return String(rule).match(patterns[classification])?.[1]?.trim() ?? "";
+        return this.businessText(rule).match(patterns[classification])?.[1]?.trim() ?? "";
     }
 
     extractStateCondition(rule) {
@@ -431,6 +444,12 @@ export default class RuleTestDataBuilder {
 
     findIdentifierField(scenario) {
         return this.inputNames(scenario).find(name => /mã|code|id/i.test(name)) ?? "";
+    }
+
+    businessText(value) {
+        return String(value ?? "")
+            .replace(/^\s*\[?(?:BR|VR|PR)[\s_-]*\d+\]?\s*(?:[:\-_–—]\s*)?/i, "")
+            .trim();
     }
 
     slug(value) {

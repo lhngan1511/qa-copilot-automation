@@ -1,4 +1,4 @@
-import { testCaseId } from "../utils/testCaseReview.js";
+import { formatTestData, testCaseId } from "../utils/testCaseReview.js";
 
 const statusLabels = {
     PENDING: "Chờ duyệt",
@@ -109,15 +109,10 @@ export default function TestCaseList({
                                 </td>
                                 <td
                                     data-label="Dữ liệu đầu vào"
-                                    title={
-                                        testCase.testData?.value || testCase.testData?.requirement
-                                    }
+                                    title={formatTestData(testCase.testData)}
                                 >
                                     <span className="testcase-table-truncate">
-                                        {compact(
-                                            testCase.testData?.value ||
-                                                testCase.testData?.requirement
-                                        )}
+                                        {compact(formatTestData(testCase.testData))}
                                     </span>
                                 </td>
                                 <td data-label="Kết quả mong đợi" title={testCase.expectedResult}>

@@ -48,7 +48,7 @@ const duplicate = generate("Mã tài sản phải là duy nhất", "BUSINESS_RUL
 assert.equal(duplicate.ruleClassification, "DUPLICATE");
 assert.equal(duplicate.testData.fields["Mã tài sản"].purpose, "DUPLICATE");
 assert.match(duplicate.testData.dataState, /đã tồn tại/);
-assert.match(duplicate.expectedResult, /không lưu tài sản mới/i);
+assert.match(duplicate.expectedResult, /không cho phép hoàn tất thêm tài sản/i);
 assert.equal(duplicate.sourceItem.code, "BR01");
 
 const invalidReference = generate(
@@ -64,7 +64,9 @@ const recordNotFound = generate("Bản ghi cần xóa phải tồn tại", "BUSI
     function: "Xóa tài sản"
 });
 assert.equal(recordNotFound.ruleClassification, "RECORD_NOT_FOUND");
-assert.equal(recordNotFound.testData.fields.targetIdentifier.value, "NON_EXISTING_RECORD");
+assert.equal(recordNotFound.testData.fields["Mã tài sản"].value, null);
+assert.equal(recordNotFound.testData.fields["Mã tài sản"].purpose, "NOT_ALLOWED");
+assert.match(recordNotFound.testData.fields["Mã tài sản"].instruction, /không tồn tại/);
 assert.equal(
     recordNotFound.preconditions.some(value => /đã tồn tại|phải tồn tại/i.test(value)),
     false
@@ -99,7 +101,7 @@ const permission = generate("Người dùng không có quyền xóa tài sản",
     type: "PERMISSION"
 });
 assert.equal(permission.ruleClassification, "PERMISSION_DENIED");
-assert.match(permission.expectedResult, /không có quyền thực hiện chức năng/);
+assert.match(permission.expectedResult, /không cho phép người dùng thực hiện thao tác xóa tài sản/);
 assert.equal(
     permission.preconditions.some(
         value => /có quyền/i.test(value) && !/không có quyền/i.test(value)

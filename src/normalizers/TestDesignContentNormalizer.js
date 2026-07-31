@@ -258,7 +258,7 @@ export default class TestDesignContentNormalizer {
 
     entity(feature) {
         const entity = this.cleanText(feature)
-            .replace(/^(thêm|tạo mới|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
+            .replace(/^(thêm mới|tạo mới|thêm|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
             .trim();
         return this.lowerFirst(entity || "dữ liệu");
     }

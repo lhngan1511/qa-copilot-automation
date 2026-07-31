@@ -174,6 +174,38 @@ export function reviewCompletionMessage(summary) {
     return `Đã review toàn bộ ${summary.total} test case. ${summary.approved} đã duyệt · ${summary.removed} đã loại bỏ.`;
 }
 
+export function formatTestData(testData) {
+    const fields =
+        testData?.fields && typeof testData.fields === "object" && !Array.isArray(testData.fields)
+            ? testData.fields
+            : {};
+    const labels = {
+        VALID: "Hợp lệ",
+        EMPTY: "Để trống",
+        DUPLICATE: "Giá trị đã tồn tại",
+        INVALID: "Không hợp lệ",
+        BELOW_MIN: "Nhỏ hơn giới hạn tối thiểu",
+        AT_MIN: "Bằng giới hạn tối thiểu",
+        ABOVE_MAX: "Lớn hơn giới hạn tối đa",
+        AT_MAX: "Bằng giới hạn tối đa",
+        NOT_ALLOWED: "Không thuộc danh sách cho phép",
+        SEARCH_CRITERIA: "Điều kiện tìm kiếm",
+        EXISTING_VALUE: "Giá trị hiện có",
+        UPDATED_VALUE: "Giá trị cập nhật"
+    };
+    const lines = Object.entries(fields).map(([name, field]) => {
+        const value = field?.requiresTesterInput
+            ? field.instruction || "Tester cần cung cấp dữ liệu"
+            : field?.value === ""
+              ? "Để trống"
+              : String(field?.value ?? "");
+        const purpose = labels[String(field?.purpose ?? "VALID").toUpperCase()] ?? "Dữ liệu kiểm thử";
+        return `${name}: ${value} (${purpose})`;
+    });
+    if (lines.length > 0) return lines.join("\n");
+    return String(testData?.value || testData?.requirement || "").trim();
+}
+
 export function testCaseWarnings(testCase) {
     const warnings = [];
     if (!testCaseId(testCase)) warnings.push("Thiếu testcase ID.");

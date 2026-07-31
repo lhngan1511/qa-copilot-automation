@@ -9,7 +9,6 @@ export default class TestStepNormalizer {
             .filter(step => !this.isVerificationOnly(step));
 
         if (context.preserveManualSteps !== true) {
-            normalized = this.insertOperationStart(normalized, context);
             normalized = this.insertKnownFieldActions(normalized, context);
             normalized = this.reorderTemplate(normalized, context);
         }
@@ -82,7 +81,7 @@ export default class TestStepNormalizer {
             return {
                 order: step.order,
                 action: instruction
-                    ? `Chọn một ${field} hợp lệ`
+                    ? this.testerInputAction(field, context.testData?.fields?.[field])
                     : selectable
                       ? this.choiceAction(field, data[field])
                       : this.inputAction(field, data[field]),
@@ -138,7 +137,7 @@ export default class TestStepNormalizer {
             return {
                 ...step,
                 action: instruction
-                    ? `Chọn một ${target} hợp lệ`
+                    ? this.testerInputAction(target, context.testData?.fields?.[target])
                     : this.choiceAction(target, value),
                 target,
                 value
@@ -282,39 +281,26 @@ export default class TestStepNormalizer {
         if (operation === "SEARCH") {
             return { ...step, action: "Thực hiện tìm kiếm", target: this.feature(context) };
         }
+        if (["AUTHENTICATE", "GENERATE", "NAVIGATE"].includes(operation)) {
+            return {
+                ...step,
+                action: `Chọn ${this.feature(context)}`,
+                target: this.feature(context)
+            };
+        }
+        if (operation === "VIEW") {
+            return {
+                ...step,
+                action: `Mở chức năng ${this.feature(context)}`,
+                target: this.feature(context)
+            };
+        }
         return null;
-    }
-
-    insertOperationStart(steps, context) {
-        const operation = this.operation(context);
-        if (!["CREATE", "UPDATE"].includes(operation)) return steps;
-        const hasStart = steps.some(step => {
-            const action = this.comparable(step.action);
-            return /bat dau (them moi|chinh sua)|chon (them moi|sua)|mo bieu mau/.test(action);
-        });
-        if (hasStart) return steps;
-
-        const navigationIndex = steps.findIndex(step =>
-            this.semanticKey(step).startsWith("navigation:")
-        );
-        const entity = this.entity(context);
-        const start = {
-            action:
-                operation === "CREATE"
-                    ? `Bắt đầu thêm mới ${entity}`
-                    : `Bắt đầu chỉnh sửa ${entity}`,
-            target: this.feature(context)
-        };
-        const result = [...steps];
-        result.splice(navigationIndex >= 0 ? navigationIndex + 1 : 0, 0, start);
-        return result;
     }
 
     insertKnownFieldActions(steps, context) {
         if (!["CREATE", "UPDATE"].includes(this.operation(context))) return steps;
-        const definitions = this.inputDefinitions(context).filter(
-            input => input.required !== false
-        );
+        const definitions = this.inputDefinitions(context).filter(input => input.required !== false);
         if (definitions.length === 0) return steps;
         const data = this.fieldData(context);
         const represented = new Set(
@@ -333,13 +319,14 @@ export default class TestStepNormalizer {
                     name,
                     controlType: this.comparable(input.controlType ?? input.type),
                     value: data[name],
-                    instruction: context.testData?.fields?.[name]?.instruction
+                    instruction: context.testData?.fields?.[name]?.instruction,
+                    purpose: context.testData?.fields?.[name]?.purpose
                 };
             })
             .filter(input => input.name && !represented.has(this.comparable(input.name)))
             .map(input => ({
                 action: input.instruction
-                    ? `Chọn một ${input.name} hợp lệ`
+                    ? this.testerInputAction(input.name, input)
                     : /dropdown|select|combobox|radio/.test(input.controlType)
                       ? this.choiceAction(input.name, input.value)
                       : this.inputAction(input.name, input.value),
@@ -411,7 +398,9 @@ export default class TestStepNormalizer {
 
     isPreconditionStep(step, context) {
         const action = this.comparable(step.action);
-        if (/dang nhap|tai khoan.*quyen|nguoi dung.*quyen/.test(action)) return true;
+        if (/^(nguoi dung )?(da|chua|dang) dang nhap|tai khoan.*quyen|nguoi dung.*quyen/.test(action)) {
+            return true;
+        }
         if (/dam bao|thiet lap|chuan bi/.test(action)) return true;
         const preconditions = Array.isArray(context.preconditions) ? context.preconditions : [];
         const actionKey = this.comparable(step.action);
@@ -427,9 +416,31 @@ export default class TestStepNormalizer {
     }
 
     isVerificationOnly(step) {
-        return /^(kiem tra|xac minh|doi chieu) (ket qua|thong bao|du lieu)/.test(
+        return /^(?:kiem tra|xac minh|doi chieu) (?:ket qua|thong bao|du lieu)|^xem (?:thong tin|ket qua|du lieu)/.test(
             this.comparable(step.action)
         );
+    }
+
+    testerInputAction(field, data = {}) {
+        if (/^nhập giá trị mới/i.test(String(data?.instruction ?? ""))) {
+            return `Nhập giá trị mới cho ${field}`;
+        }
+        if (/khớp với dữ liệu đang tồn tại/i.test(String(data?.instruction ?? ""))) {
+            return `Nhập ${field} khớp với dữ liệu đang tồn tại`;
+        }
+        if (/^nhập /i.test(String(data?.instruction ?? ""))) {
+            return `Nhập ${field} hợp lệ`;
+        }
+        if (/^chọn .*đang tồn tại/i.test(String(data?.instruction ?? ""))) {
+            return `Chọn một ${field} đang tồn tại`;
+        }
+        if (/không tồn tại/i.test(String(data?.instruction ?? ""))) {
+            return `Nhập một ${field} không tồn tại trong hệ thống`;
+        }
+        if (["NOT_ALLOWED", "INVALID"].includes(String(data?.purpose ?? "").toUpperCase())) {
+            return `Nhập hoặc chọn một ${field} không thuộc danh sách cho phép`;
+        }
+        return `Chọn một ${field} hợp lệ`;
     }
 
     inputAction(field, value) {
@@ -487,7 +498,25 @@ export default class TestStepNormalizer {
         )
             .trim()
             .toUpperCase();
-        if (["CREATE", "UPDATE", "DELETE", "SEARCH"].includes(explicit)) return explicit;
+        const explicitOperations = {
+            CREATE: "CREATE",
+            ADD: "CREATE",
+            UPDATE: "UPDATE",
+            EDIT: "UPDATE",
+            DELETE: "DELETE",
+            REMOVE: "DELETE",
+            SEARCH: "SEARCH",
+            FIND: "SEARCH",
+            LOGIN: "AUTHENTICATE",
+            AUTHENTICATE: "AUTHENTICATE",
+            VIEW: "VIEW",
+            DISPLAY: "VIEW",
+            LOAD: "VIEW",
+            GENERATE: "GENERATE",
+            GENERATE_CODE: "GENERATE",
+            NAVIGATE: "NAVIGATE"
+        };
+        if (explicitOperations[explicit]) return explicitOperations[explicit];
         const text = this.comparable(
             `${context.feature ?? context.function ?? ""} ${context.title ?? ""} ${context.expectedResult ?? ""}`
         );
@@ -507,7 +536,7 @@ export default class TestStepNormalizer {
         return (
             this.feature(context)
                 .replace(
-                    /^(thêm|tạo mới|sửa|cập nhật|chỉnh sửa|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i,
+                    /^(thêm mới|tạo mới|thêm|sửa|cập nhật|chỉnh sửa|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i,
                     ""
                 )
                 .trim()

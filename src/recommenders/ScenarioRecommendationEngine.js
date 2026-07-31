@@ -90,6 +90,8 @@ class ScenarioRecommendationEngine {
                 functionName,
                 preconditions: this.getArray(functionKnowledge.preconditions),
                 inputDefinitions: this.getArray(reviewedFunction?.inputs),
+                steps: this.userSteps(reviewedFunction?.flow),
+                operation: this.getText(reviewedFunction?.automation?.operation),
                 requirementReferences: this.getArray(functionKnowledge.requirementReferences),
                 source: knowledge.source || "Approved Module Artifact"
             };
@@ -128,7 +130,7 @@ class ScenarioRecommendationEngine {
                 this.buildGroupedCandidate(
                     businessRules,
                     context,
-                    "DATA_INTEGRITY",
+                    "BUSINESS_RULE",
                     "HIGH",
                     `Kiểm tra quy tắc nghiệp vụ của ${functionName}`,
                     "BUSINESS_RULE"
@@ -136,7 +138,7 @@ class ScenarioRecommendationEngine {
                 this.buildGroupedCandidate(
                     requiredValidations,
                     context,
-                    "NEGATIVE",
+                    "VALIDATION",
                     "HIGH",
                     `Kiểm tra các trường bắt buộc của ${functionName}`,
                     "REQUIRED_VALIDATION"
@@ -144,7 +146,7 @@ class ScenarioRecommendationEngine {
                 this.buildGroupedCandidate(
                     valueValidations,
                     context,
-                    "NEGATIVE",
+                    "VALIDATION",
                     "HIGH",
                     `Kiểm tra định dạng hoặc giá trị không hợp lệ của ${functionName}`,
                     "FORMAT_OR_VALUE_VALIDATION"
@@ -271,16 +273,28 @@ class ScenarioRecommendationEngine {
         });
     }
 
+    userSteps(flow) {
+        return this.getArray(flow)
+            .filter(value => typeof value === "string" && /^người dùng\b/i.test(value.trim()))
+            .map(value => {
+                const action = value
+                    .trim()
+                    .replace(/^người dùng\s+/i, "")
+                    .replace(/[.!?;:,]+$/g, "");
+                return action
+                    ? action.charAt(0).toLocaleUpperCase("vi") + action.slice(1)
+                    : "";
+            })
+            .filter(Boolean);
+    }
+
     resolvePositiveExpectedResults(reviewedFunction, functionKnowledge, functionName) {
         const reviewedResults = this.getArray(reviewedFunction?.expectedResults).filter(
             value => typeof value === "string" && value.trim()
         );
         if (reviewedResults.length > 0) return reviewedResults;
 
-        const description = this.getText(functionKnowledge.description);
-        if (description) return [description];
-
-        return [`Kết quả của ${functionName} được hiển thị theo requirement đã duyệt`];
+        return [];
     }
 
     filterTestableRisks(values) {
@@ -435,6 +449,8 @@ class ScenarioRecommendationEngine {
                     */
 
                 steps: this.getArray(item?.steps),
+
+                operation: this.getText(item?.operation),
 
                 /*
                     Kết quả nghiệp vụ tổng hợp

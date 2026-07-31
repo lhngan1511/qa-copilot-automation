@@ -22,7 +22,7 @@ export default class TestDataFactory {
         const planning = this.normalizeLegacyPlanning(source);
         const definitions = Array.isArray(inputDefinitions) ? inputDefinitions : [];
         let classification = this.classification(scenario, planning);
-        const targetField = this.targetField(scenario, planning, definitions);
+        const targetField = this.targetField(scenario, planning, definitions, classification);
         const clarificationFacts = this.clarificationFacts(clarificationAnswers);
         if (
             classification === "BOUNDARY_UNKNOWN" &&
@@ -37,29 +37,42 @@ export default class TestDataFactory {
         const fields = {};
 
         for (const input of definitions) {
+            if (classification === "EMPTY_RESULT") continue;
             const name = this.text(input?.name ?? input?.inputName ?? input?.fieldName);
             if (!name || input?.required === false) continue;
             const explicit = this.findExistingValue(name, planning);
             const clarificationValue = clarificationFacts.fields.get(this.key(name));
             const purpose = this.fieldPurpose(name, targetField, classification);
+            const hasExplicitValue =
+                explicit !== undefined && (purpose === "EMPTY" || this.hasValue(explicit));
             fields[name] = this.fieldEntry({
                 name,
                 input,
-                value: explicit !== undefined ? explicit : clarificationValue,
-                explicitValue: explicit !== undefined,
+                value: hasExplicitValue ? explicit : clarificationValue,
+                explicitValue: hasExplicitValue,
                 purpose,
-                clarificationFacts
+                clarificationFacts,
+                classification
             });
         }
 
-        this.addUnmodeledFields(fields, planning, classification, targetField);
+        if (classification !== "EMPTY_RESULT") {
+            this.addUnmodeledFields(fields, planning, classification, targetField);
+        }
         if (targetField && !fields[targetField]) {
+            const existingValue = this.findExistingValue(targetField, planning);
+            const purpose = this.fieldPurpose(targetField, targetField, classification);
+            const hasExplicitValue =
+                existingValue !== undefined &&
+                (purpose === "EMPTY" || this.hasValue(existingValue));
             fields[targetField] = this.fieldEntry({
                 name: targetField,
                 input: {},
-                value: this.findExistingValue(targetField, planning),
-                purpose: this.fieldPurpose(targetField, targetField, classification),
-                clarificationFacts
+                value: hasExplicitValue ? existingValue : undefined,
+                explicitValue: hasExplicitValue,
+                purpose,
+                clarificationFacts,
+                classification
             });
         }
 
@@ -150,7 +163,15 @@ export default class TestDataFactory {
         return { fields: {}, requirement: "", value: "", requiresTesterInput: false };
     }
 
-    fieldEntry({ name, input, value, explicitValue = false, purpose, clarificationFacts }) {
+    fieldEntry({
+        name,
+        input,
+        value,
+        explicitValue = false,
+        purpose,
+        clarificationFacts,
+        classification = ""
+    }) {
         if (purpose === "EMPTY") return { value: "", purpose };
         if (purpose === "INVALID" && !this.hasKnownBoundary(clarificationFacts, name)) {
             return {
@@ -158,6 +179,23 @@ export default class TestDataFactory {
                 purpose,
                 requiresTesterInput: true,
                 instruction: `Xác định giá trị biên cụ thể cho ${name} từ requirement đã làm rõ`
+            };
+        }
+
+        if (purpose === "DUPLICATE" && !explicitValue) {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction: `Nhập một ${name} đang tồn tại trong hệ thống`
+            };
+        }
+        if (purpose === "SEARCH_CRITERIA" && !explicitValue) {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction: `Nhập ${name} khớp với dữ liệu đang tồn tại`
             };
         }
 
@@ -187,35 +225,74 @@ export default class TestDataFactory {
 
         const options = this.options(input);
         const selectable = this.isSelect(input) || /^(loại|trạng thái|danh mục)/i.test(name);
-        if (selectable && options.length > 0) return { value: options[0], purpose };
+        if (selectable && options.length > 0) {
+            if (["NOT_ALLOWED", "INVALID"].includes(purpose)) {
+                return {
+                    value: null,
+                    purpose,
+                    requiresTesterInput: true,
+                    instruction: `Chuẩn bị một giá trị ${name} không thuộc danh sách cho phép`
+                };
+            }
+            return { value: options[0], purpose };
+        }
         if (selectable) {
+            const invalid = ["NOT_ALLOWED", "INVALID"].includes(purpose);
             return {
                 value: null,
                 purpose,
                 requiresTesterInput: true,
-                instruction: `Chọn một ${name} hợp lệ đang tồn tại trong hệ thống`
+                instruction: invalid
+                    ? `Chuẩn bị một giá trị ${name} không thuộc danh sách cho phép`
+                    : `Chọn một ${name} hợp lệ đang tồn tại trong hệ thống`
+            };
+        }
+        if (purpose === "NOT_ALLOWED") {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction:
+                    classification === "RECORD_NOT_FOUND"
+                        ? `Chuẩn bị một giá trị ${name} không tồn tại trong hệ thống`
+                        : `Chuẩn bị một giá trị ${name} không hợp lệ theo requirement`
+            };
+        }
+        const normalizedName = this.comparable(name);
+        if (/can sua|can xoa|ban ghi|doi tuong can/.test(normalizedName)) {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction: `Chọn một ${name} đang tồn tại trong hệ thống`
+            };
+        }
+        if (/^xac nhan|^confirm/.test(normalizedName)) {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction: `Thực hiện ${name} theo requirement`
+            };
+        }
+        if (/tai khoan|username|user name|mat khau|password/.test(normalizedName)) {
+            return {
+                value: null,
+                purpose,
+                requiresTesterInput: true,
+                instruction: `Nhập ${name} hợp lệ do tester chuẩn bị`
             };
         }
 
-        return { value: this.deterministicValue(name, input, purpose), purpose };
-    }
-
-    deterministicValue(name, input, purpose) {
-        const normalized = this.comparable(name);
-        if (/email|thu dien tu/.test(normalized)) return "tester@example.com";
-        if (/dien thoai|so dt|phone|mobile/.test(normalized)) return "0901234567";
-        if (/ngay bat dau|start date/.test(normalized)) return "01/08/2026";
-        if (/ngay ket thuc|end date/.test(normalized)) return "02/08/2026";
-        if (/so luong|quantity/.test(normalized)) return 10;
-        if (/ma thiet bi/.test(normalized)) return "TB001";
-        if (/ten thiet bi/.test(normalized)) {
-            return purpose === "UPDATED_VALUE" ? "Máy in tầng 2" : "Máy in văn phòng";
-        }
-        if (/ma |code|\bid\b/.test(normalized)) return `${this.initials(name)}001`;
-        if (/ten |name/.test(normalized)) return `${name.replace(/^Tên\s+/i, "")} mẫu`;
-        if (/tu khoa|keyword|tim kiem/.test(normalized)) return "TB001";
-        if (/number|integer|decimal|numeric/.test(this.comparable(input?.controlType))) return 10;
-        return `${name} mẫu`;
+        return {
+            value: null,
+            purpose,
+            requiresTesterInput: true,
+            instruction:
+                purpose === "UPDATED_VALUE"
+                    ? `Nhập giá trị mới cho ${name} theo requirement`
+                    : `Nhập ${name} hợp lệ theo requirement`
+        };
     }
 
     hasKnownBoundary(facts, name) {
@@ -290,6 +367,7 @@ export default class TestDataFactory {
             DUPLICATE: "DUPLICATE",
             INVALID_OPTION: "NOT_ALLOWED",
             INVALID_REFERENCE: "NOT_ALLOWED",
+            RECORD_NOT_FOUND: "NOT_ALLOWED",
             BOUNDARY_UNKNOWN: "INVALID",
             SEARCH_SINGLE: "SEARCH_CRITERIA",
             SEARCH_MULTI: "SEARCH_CRITERIA",
@@ -324,15 +402,25 @@ export default class TestDataFactory {
         return String(scenario.type ?? "POSITIVE").toUpperCase();
     }
 
-    targetField(scenario, planning, definitions) {
+    targetField(scenario, planning, definitions, classification = "") {
+        if (classification === "EMPTY_RESULT") return "";
         const explicit = this.text(
             scenario.sourceItem?.fieldName ??
                 scenario.sourceItem?.inputName ??
                 planning?.expected?.validationField ??
-                planning?.expectedState?.targetField ??
-                Object.keys(planning?.invalid ?? {})[0]
+                planning?.expectedState?.targetField
         );
         if (explicit) return explicit;
+        if (classification === "RECORD_NOT_FOUND") {
+            const recordField = definitions.find(input =>
+                /cần sửa|cần xóa|định danh|mã|code|\bid\b/i.test(this.text(input?.name))
+            );
+            if (recordField?.name) return recordField.name;
+        }
+        const planningField = Object.keys(planning?.invalid ?? {}).find(
+            name => !/^(targetIdentifier|boundaryValue|condition)$/i.test(name)
+        );
+        if (planningField) return planningField;
         if (/sua|cap nhat/.test(this.comparable(scenario.feature ?? scenario.function))) {
             const updated = definitions.find(input => {
                 const name = this.comparable(input?.name);
@@ -356,7 +444,8 @@ export default class TestDataFactory {
             result.record = identifierValue || "Bản ghi mục tiêu";
             if (/STATE_RESTRICTION|RELATED_DATA/.test(classification)) {
                 result.recordState = this.text(
-                    scenario.sourceItem?.content ??
+                    planning?.context?.targetRecord?.statusCondition ??
+                        scenario.sourceItem?.content ??
                         planning?.expected?.entityState ??
                         "Đang được sử dụng"
                 );
@@ -384,7 +473,13 @@ export default class TestDataFactory {
         );
         collections.forEach(collection => {
             Object.entries(collection).forEach(([name, value]) => {
-                if (name === "userContext" || fields[name]) return;
+                if (
+                    name === "userContext" ||
+                    /^(targetIdentifier|boundaryValue|condition|searchCriteria)$/i.test(name) ||
+                    fields[name]
+                ) {
+                    return;
+                }
                 fields[name] = {
                     value: this.clone(value),
                     purpose: this.fieldPurpose(name, targetField, classification)
@@ -468,16 +563,8 @@ export default class TestDataFactory {
         return /text|input|textarea/.test(control) || /ten|ma|code|noi dung/.test(field);
     }
 
-    initials(value) {
-        const initials = this.text(value)
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .split(/\s+/)
-            .map(part => part[0])
-            .join("")
-            .replace(/[^a-z0-9]/gi, "")
-            .toUpperCase();
-        return initials || "ID";
+    hasValue(value) {
+        return value !== undefined && value !== null && String(value).trim() !== "";
     }
 
     key(value) {

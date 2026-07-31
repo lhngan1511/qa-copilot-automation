@@ -27,7 +27,7 @@ assert.equal(
             fields: { ...fields, "Tên thiết bị": { value: "", purpose: "EMPTY" } }
         }
     }),
-    "Hệ thống không lưu thiết bị mới. Trường Tên thiết bị được đánh dấu bắt buộc và hiển thị cảnh báo không được để trống."
+    "Hệ thống không cho phép hoàn tất thêm thiết bị khi Tên thiết bị để trống."
 );
 assert.equal(
     builder.build({
@@ -41,7 +41,7 @@ assert.equal(
             fields: { "Mã thiết bị": { value: "TB001", purpose: "DUPLICATE" } }
         }
     }),
-    "Hệ thống không lưu thiết bị mới và hiển thị cảnh báo Mã thiết bị TB001 đã tồn tại. Dữ liệu hiện có không bị thay đổi."
+    "Hệ thống không cho phép hoàn tất thêm thiết bị khi Mã thiết bị TB001 đã tồn tại."
 );
 assert.equal(
     builder.build({
@@ -73,7 +73,7 @@ assert.equal(
         },
         testData: { fields, record: "TB001", recordState: "Đang được sử dụng" }
     }),
-    "Hệ thống không xóa thiết bị TB001 và hiển thị cảnh báo đang được sử dụng. Dữ liệu thiết bị vẫn được giữ nguyên."
+    "Hệ thống không xóa thiết bị TB001 khi đang được sử dụng. Dữ liệu thiết bị vẫn được giữ nguyên."
 );
 assert.equal(
     builder.build({
@@ -93,7 +93,7 @@ assert.equal(
         },
         testData: { fields: {} }
     }),
-    "Hệ thống từ chối thao tác xóa thiết bị. Người dùng không thể thay đổi dữ liệu và nhận được thông báo không có quyền thực hiện chức năng."
+    "Hệ thống không cho phép người dùng thực hiện thao tác xóa thiết bị."
 );
 assert.match(
     builder.build({
@@ -108,7 +108,7 @@ assert.match(
         },
         testData: { fields: {} }
     }),
-    /không được vượt quá 50 ký tự/
+    /không chấp nhận Tên thiết bị vượt giới hạn 50 ký tự/
 );
 assert.doesNotMatch(
     builder.build({
@@ -130,13 +130,13 @@ assert.doesNotMatch(
     }),
     /".*"/
 );
-assert.match(
+assert.equal(
     builder.normalizeLegacy("Kết quả đúng", {
         feature: "Thêm thiết bị",
         type: "NEGATIVE",
         testData: { fields: {} }
     }),
-    /không lưu dữ liệu/i
+    ""
 );
 assert.doesNotMatch(
     builder.normalizeLegacy("Chưa có đủ dữ liệu để xử lý theo rule BR04.", {

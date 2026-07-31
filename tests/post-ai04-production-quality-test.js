@@ -59,17 +59,23 @@ try {
         )
     );
 
-    const tc006 = result.testCases.find(testCase => testCase.id === "TC006");
-    assert.ok(tc006);
-    assert.ok(tc006.steps.length > 0);
-    assert.deepEqual(tc006.preconditions, [
+    const requiredNameCase = result.testCases.find(
+        testCase =>
+            testCase.ruleClassification === "REQUIRED" &&
+            testCase.testData.fields["Tên thiết bị"]?.purpose === "EMPTY" &&
+            /thêm thiết bị/i.test(testCase.function)
+    );
+    assert.ok(requiredNameCase);
+    assert.ok(requiredNameCase.steps.length > 0);
+    assert.deepEqual(requiredNameCase.preconditions, [
         "Người dùng đã đăng nhập vào hệ thống.",
         "Người dùng có quyền thêm thiết bị."
     ]);
-    assert.ok(tc006.steps.some(step => step.action === "Chọn một Loại thiết bị hợp lệ"));
-    assert.ok(tc006.steps.some(step => step.action === "Lưu thông tin thiết bị"));
-    assert.equal(tc006.testData.fields["Tên thiết bị"].purpose, "EMPTY");
-    assert.match(tc006.expectedResult, /Hệ thống không lưu thiết bị mới/);
+    assert.ok(
+        requiredNameCase.steps.some(step => /Chọn một Loại thiết bị/.test(step.action))
+    );
+    assert.ok(requiredNameCase.steps.some(step => step.action === "Lưu thông tin thiết bị"));
+    assert.match(requiredNameCase.expectedResult, /không cho phép hoàn tất thêm thiết bị/i);
 
     const reviewStage = result.workflowContext.testCaseReview;
     const artifact = app.workflowCoordinator.findArtifact(reviewStage.artifactId);

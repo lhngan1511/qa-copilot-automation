@@ -1,5 +1,6 @@
 import fs from "fs";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
+import testDataPurposeLabel from "../utils/TestDataPurposeLabel.js";
 
 class MarkdownExporter {
     constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
@@ -143,7 +144,7 @@ class MarkdownExporter {
                 const value = field?.requiresTesterInput
                     ? field.instruction || "Tester cung cấp giá trị"
                     : field?.value;
-                return `- ${name}: ${this.valueToText(value)} (${field?.purpose ?? "VALID"})`;
+                return `- ${name}: ${this.valueToText(value)} (${testDataPurposeLabel(field?.purpose)})`;
             });
             if (data.recordState) rows.push(`- Trạng thái bản ghi: ${data.recordState}`);
             if (data.dataState) rows.push(`- Trạng thái dữ liệu: ${data.dataState}`);

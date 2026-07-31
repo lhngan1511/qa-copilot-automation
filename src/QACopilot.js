@@ -23,6 +23,7 @@ import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerge
 import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
 import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
 import TestCaseReviewValidator from "./validators/TestCaseReviewValidator.js";
+import ProductionTestCaseQualityGate from "./quality/ProductionTestCaseQualityGate.js";
 
 import ScenarioRecommendationEngine from "./recommenders/ScenarioRecommendationEngine.js";
 
@@ -91,6 +92,7 @@ class QACopilot {
         this.semanticTestCaseOverlapResolver = new SemanticTestCaseOverlapResolver();
         this.coreTestCaseCoverageValidator = new CoreTestCaseCoverageValidator();
         this.testCaseReviewValidator = new TestCaseReviewValidator();
+        this.productionTestCaseQualityGate = new ProductionTestCaseQualityGate();
 
         this.requirementKnowledgeMerger = new RequirementKnowledgeMerger();
         this.requirementKnowledgeMapper = new RequirementKnowledgeMapper();
@@ -1013,12 +1015,21 @@ class QACopilot {
                     maxStepsPerTestCase: testCaseInput.constraints.maxStepsPerTestCase
                 }
             );
-            testCases = this.semanticTestCaseOverlapResolver.resolve(mergedTestCases.testCases, {
-                approvedFunctions: approvedModuleArtifact?.functions
+            const overlapResolved = this.semanticTestCaseOverlapResolver.resolve(
+                mergedTestCases.testCases,
+                {
+                    approvedFunctions: approvedModuleArtifact?.functions
+                }
+            );
+            const qualityResult = this.productionTestCaseQualityGate.apply(overlapResolved, {
+                requirement,
+                knowledge
             });
+            testCases = qualityResult.testCases;
             testCaseQualitySummary = mergedTestCases.summary;
             testCaseQualitySummary.overlapResolution =
                 this.semanticTestCaseOverlapResolver.lastSummary;
+            testCaseQualitySummary.productionQuality = qualityResult.summary;
             testCaseQualitySummary.finalCount = testCases.length;
             console.log(`✓ ${testCases.length} testcases generated`);
         }
@@ -1328,6 +1339,7 @@ class QACopilot {
             ? this.workflowCoordinator.findArtifact(testCaseArtifactId)
             : null;
         let testCases = [];
+        let productionQualitySummary = existingTestCaseArtifact?.qualitySummary?.productionQuality ?? null;
 
         if (existingTestCaseArtifact) {
             testCases = Array.isArray(existingTestCaseArtifact.testCases)
@@ -1335,9 +1347,15 @@ class QACopilot {
                 : [];
         } else {
             const generatedTestCases = this.testCaseGenerator.generate(scenarios);
-            testCases = this.semanticTestCaseOverlapResolver.resolve(generatedTestCases, {
+            const overlapResolved = this.semanticTestCaseOverlapResolver.resolve(generatedTestCases, {
                 approvedFunctions: knowledge.functions
             });
+            const qualityResult = this.productionTestCaseQualityGate.apply(overlapResolved, {
+                requirement: confirmedRequirement,
+                knowledge
+            });
+            testCases = qualityResult.testCases;
+            productionQualitySummary = qualityResult.summary;
         }
         testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
             defaultStatus:
@@ -1361,6 +1379,7 @@ class QACopilot {
                 summary: this.buildTestCaseReviewSummary(testCases),
                 qualitySummary: {
                     overlapResolution: this.semanticTestCaseOverlapResolver.lastSummary,
+                    productionQuality: productionQualitySummary,
                     coverage: coverageSummary,
                     finalCount: testCases.length
                 },
@@ -1472,13 +1491,13 @@ class QACopilot {
 
         if (type === "POSITIVE") return true;
         if (
-            type === "DATA_INTEGRITY" &&
+            type === "BUSINESS_RULE" &&
             (groupType === "BUSINESS_RULE" || sourceTypes.includes("BUSINESS_RULE"))
         ) {
             return true;
         }
         if (
-            type === "NEGATIVE" &&
+            type === "VALIDATION" &&
             [groupType, ...sourceTypes].some(value =>
                 ["REQUIRED_VALIDATION", "FORMAT_OR_VALUE_VALIDATION"].includes(value)
             )

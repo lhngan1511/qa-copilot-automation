@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import XLSX from "xlsx";
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
+import testDataPurposeLabel from "../utils/TestDataPurposeLabel.js";
 
 class ExcelExporter {
     constructor({ stepNormalizer = new TestStepNormalizer() } = {}) {
@@ -119,7 +120,7 @@ class ExcelExporter {
                 const value = field?.requiresTesterInput
                     ? field.instruction || "Tester cung cấp giá trị"
                     : this.valueToText(field?.value);
-                return `${name}: ${value} (${field?.purpose ?? "VALID"})`;
+                return `${name}: ${value} (${testDataPurposeLabel(field?.purpose)})`;
             });
             if (testData.recordState) lines.push(`Trạng thái bản ghi: ${testData.recordState}`);
             if (testData.dataState) lines.push(`Trạng thái dữ liệu: ${testData.dataState}`);
