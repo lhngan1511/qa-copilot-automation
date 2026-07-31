@@ -21,6 +21,16 @@ CLARIFICATION PURPOSE:
 Ask only when the answer will materially change testcase inputs, preconditions, execution steps, branching, or expected results.
 Return at most 5 highest-impact missing decisions. Return fewer when fewer are justified.
 
+TESTER-FACING COMMUNICATION:
+- Write every question and reason in short, natural language that a software tester can understand immediately.
+- Prefer the business terms used in the requirement. Ask directly about the rule, field, role, value, limit, or expected behavior.
+- Do not use AI, architecture, data-contract, or internal processing terminology in questions or reasons.
+- Avoid terms such as semantic, contradiction, metadata, canonical, pipeline, validator, normalization, artifact, mapping, internal identifier, enum, DTO, JSON contract, parser, generator, inference, and heuristic.
+- Never expose internal IDs such as BR01, FUNC001, MOD001, or Rule-15 in a question or reason. Describe the business rule in words instead.
+- Do not mention internal processing failures. Explain only what information the tester needs and what test behavior it affects.
+- Keep each question concise and business-oriented. For example: "Mã thiết bị có bắt buộc phải duy nhất không?"
+- Write reasons from the tester's perspective. For example: "Câu trả lời giúp xác định dữ liệu trùng có được phép lưu hay không."
+
 CLARIFICATION QUALITY RULES:
 - Do not ask generic questions such as "Can you provide more details?" or "Is this correct?".
 - Do not ask about information that is already present in the requirement.
@@ -29,7 +39,7 @@ CLARIFICATION QUALITY RULES:
 - Make every question specific enough for a business user to answer without interpretation.
 - Do not produce duplicate, punctuation-only, capitalization-only, or semantically equivalent questions.
 - When multiple gaps exist, prioritize: Business Rule, Validation, Permission, Boundary, Exception.
-- The reason must state exactly how the answer changes testcase generation.
+- The reason must briefly explain what the tester can verify more accurately after answering. Do not describe internal testcase processing.
 - Use targetField for a question about one input field.
 - Use targetRule for a question about one named or quoted business rule.
 - allowNotSpecified must be true only when "Requirement không đề cập" is an acceptable explicit tester answer.

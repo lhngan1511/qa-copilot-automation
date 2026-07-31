@@ -30,7 +30,7 @@ export function parseAIAnalysisReview(value) {
         throw new Error("AI Analysis Review thiếu workflow ID.");
     }
     if (typeof value.artifactId !== "string" || !value.artifactId.trim()) {
-        throw new Error("AI Analysis Review thiếu artifact ID.");
+        throw new Error("Thiếu thông tin để mở bước làm rõ requirement.");
     }
     if (!value.analysis || typeof value.analysis !== "object") {
         throw new Error("AI Analysis Review thiếu nội dung analysis.");

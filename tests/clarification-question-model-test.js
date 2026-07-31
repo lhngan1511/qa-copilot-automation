@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import ClarificationQuestion, {
     ClarificationQuestionType
 } from "../src/models/ClarificationQuestion.js";
+import testerFacingText from "../src/utils/TesterFacingText.js";
 
 const freeText = ClarificationQuestion.from({
     id: "CL001",
@@ -89,6 +90,25 @@ assert.equal(
         type: "FREE_TEXT",
         targetField: "mã thiết bị"
     })
+);
+
+const testerFacing = ClarificationQuestion.from({
+    id: "CL011",
+    question: "BR05: Mã thiết bị có bắt buộc phải duy nhất không?",
+    reason: "Rule-15: The testcase contains contradictory test data.",
+    type: "YES_NO",
+    options: ["FUNC001: Có", "MOD001: Không"]
+});
+assert.equal(testerFacing.question, "Mã thiết bị có bắt buộc phải duy nhất không?");
+assert.equal(testerFacing.reason, "Một trường đang có hai giá trị kiểm thử khác nhau.");
+assert.deepEqual(testerFacing.options, ["Có", "Không"]);
+assert.equal(
+    testerFacingText("Expected result mismatch."),
+    "Kết quả mong đợi chưa phù hợp với tình huống kiểm thử."
+);
+assert.doesNotMatch(
+    JSON.stringify(testerFacing.toJSON()),
+    /BR05|FUNC001|MOD001|Rule-15|contradictory/i
 );
 
 console.log("ClarificationQuestion model test PASSED");

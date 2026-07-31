@@ -25,6 +25,10 @@ assert.match(prompt, /one question for one missing decision/i);
 assert.match(prompt, /never invent maximum or minimum lengths/i);
 assert.match(prompt, /Do not ask generic questions/i);
 assert.match(prompt, /Do not produce duplicate/i);
+assert.match(prompt, /tester can understand immediately/i);
+assert.match(prompt, /Never expose internal IDs such as BR01, FUNC001, MOD001, or Rule-15/i);
+assert.match(prompt, /Mã thiết bị có bắt buộc phải duy nhất không/);
+assert.match(prompt, /Do not describe internal testcase processing/i);
 assert.match(prompt, /Use only if those alternatives are present/i);
 assert.match(
     prompt,

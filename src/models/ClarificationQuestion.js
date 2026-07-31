@@ -1,3 +1,5 @@
+import testerFacingText from "../utils/TesterFacingText.js";
+
 export const ClarificationQuestionType = Object.freeze({
     YES_NO: "YES_NO",
     SINGLE_CHOICE: "SINGLE_CHOICE",
@@ -30,9 +32,9 @@ export default class ClarificationQuestion {
         this.id = ClarificationQuestion.normalizeString(id, "");
         this.category = ClarificationQuestion.normalizeString(category, "General");
         this.priority = ClarificationQuestion.normalizeString(priority, "Medium");
-        this.question = ClarificationQuestion.normalizeString(question, "");
+        this.question = testerFacingText(question);
         this.type = ClarificationQuestion.normalizeType(type);
-        this.reason = ClarificationQuestion.normalizeString(reason, "");
+        this.reason = testerFacingText(reason);
         this.targetField = ClarificationQuestion.normalizeString(targetField, "");
         this.targetRule = ClarificationQuestion.normalizeString(targetRule, "");
         this.allowNotSpecified = allowNotSpecified === true;

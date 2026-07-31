@@ -118,7 +118,7 @@ assert.deepEqual(
 );
 assert.throws(
     () => parseAIAnalysisReview({ workflowId: "SESSION-001" }),
-    /artifact ID|nội dung analysis/
+    /thông tin để mở bước làm rõ requirement|nội dung analysis/
 );
 
 console.log("AI Analysis Review frontend validation PASSED");

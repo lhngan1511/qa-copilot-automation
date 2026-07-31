@@ -124,7 +124,8 @@ function InteractiveReview({ workflowId, review }) {
                 <div>
                     <h2>Requirement Review</h2>
                     <p>
-                        AI đã phân tích requirement và đặt câu hỏi. Vui lòng xác nhận để tiếp tục.
+                        Hệ thống đã đọc requirement và tổng hợp các điểm cần làm rõ. Vui lòng xác
+                        nhận để tiếp tục.
                     </p>
                 </div>
                 <div
@@ -211,8 +212,8 @@ function InteractiveReview({ workflowId, review }) {
                     </span>
                     <h3>Sẵn sàng tạo test case</h3>
                     <p>
-                        Tester đã hoàn tất câu hỏi clarification. Hãy xác nhận requirement để hệ
-                        thống tạo test case cho bước review tiếp theo.
+                        Bạn đã trả lời toàn bộ câu hỏi. Hãy xác nhận requirement để hệ thống chuẩn
+                        bị test case cho bước review tiếp theo.
                     </p>
                     <div
                         ref={errorSummaryRef}

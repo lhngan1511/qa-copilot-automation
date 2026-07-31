@@ -39,7 +39,7 @@ export default function ClarificationQuestionCard({
                     </svg>
                 </span>
                 <span>
-                    <strong>AI cần làm rõ</strong>
+                    <strong>Thông tin cần làm rõ</strong>
                     <p>{clarification.question}</p>
                 </span>
             </div>
@@ -103,7 +103,7 @@ export default function ClarificationQuestionCard({
                 <aside id={reasonId} className="requirement-question-reason">
                     <span aria-hidden="true">i</span>
                     <div>
-                        <strong>Vì sao AI hỏi câu này?</strong>
+                        <strong>Vì sao cần thông tin này?</strong>
                         <p>{clarification.reason}</p>
                     </div>
                 </aside>
