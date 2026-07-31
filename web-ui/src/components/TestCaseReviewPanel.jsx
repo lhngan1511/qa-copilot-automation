@@ -158,7 +158,8 @@ export default function TestCaseReviewPanel({ workflow }) {
                 ? { ...editDraft, reviewStatus: "PENDING" }
                 : testCase
         );
-        if (await persistBatch(next, "Đã lưu chỉnh sửa. Test case cần được duyệt lại.")) {
+        if (await persistBatch(next, "Đã lưu chỉnh sửa test case.")) {
+            setSelectedId("");
             setEditing(false);
             setEditDraft(null);
         }
@@ -343,6 +344,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                             editing={editing}
                             editDraft={editDraft}
                             disabled={!canEdit || pending}
+                            saving={update.isPending}
                             onClose={() => {
                                 setSelectedId("");
                                 setEditing(false);
@@ -353,6 +355,8 @@ export default function TestCaseReviewPanel({ workflow }) {
                                 setEditing(true);
                             }}
                             onCancel={() => {
+                                if (update.isPending) return;
+                                setSelectedId("");
                                 setEditing(false);
                                 setEditDraft(null);
                             }}

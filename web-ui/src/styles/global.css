@@ -80,12 +80,12 @@ a {
     min-height: 100vh;
     grid-template:
         "header header" 72px
-        "sidebar main" minmax(0, 1fr) / 280px minmax(0, 1fr);
+        "sidebar main" minmax(0, 1fr) / 300px minmax(0, 1fr);
     transition: grid-template-columns 180ms ease;
 }
 
 .app-shell--sidebar-collapsed {
-    grid-template-columns: 0 minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
 }
 
 .app-header {
@@ -95,7 +95,7 @@ a {
     grid-area: header;
     display: grid;
     min-width: 0;
-    grid-template-columns: 280px auto minmax(0, 1fr);
+    grid-template-columns: 300px auto minmax(0, 1fr);
     align-items: center;
     min-height: 72px;
     color: var(--text);
@@ -105,7 +105,7 @@ a {
 }
 
 .app-shell--sidebar-collapsed .app-header {
-    grid-template-columns: 0 auto minmax(0, 1fr);
+    grid-template-columns: 72px auto minmax(0, 1fr);
 }
 
 .app-header__brand {
@@ -115,14 +115,22 @@ a {
     align-items: center;
     gap: 11px;
     overflow: hidden;
-    padding: 0 24px;
+    padding: 0 22px;
     border-right: 1px solid var(--border);
-    white-space: nowrap;
+}
+
+.app-header__brand > span {
+    min-width: 0;
 }
 
 .app-shell--sidebar-collapsed .app-header__brand {
+    justify-content: center;
     padding: 0;
-    opacity: 0;
+    opacity: 1;
+}
+
+.app-shell--sidebar-collapsed .app-header__brand > span {
+    display: none;
 }
 
 .product-mark {
@@ -147,9 +155,17 @@ a {
 }
 
 .app-header__brand small {
+    display: -webkit-box;
+    max-width: 210px;
+    overflow: hidden;
     margin-top: 3px;
     color: var(--muted);
     font-size: 0.68rem;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .app-header__icon-button,
@@ -248,7 +264,7 @@ a {
     top: 72px;
     grid-area: sidebar;
     display: flex;
-    width: 280px;
+    width: 300px;
     height: calc(100vh - 72px);
     min-height: 0;
     flex-direction: column;
@@ -262,8 +278,22 @@ a {
 }
 
 .app-shell--sidebar-collapsed .app-sidebar {
-    visibility: hidden;
-    transform: translateX(-100%);
+    width: 72px;
+    visibility: visible;
+    padding-inline: 10px;
+    transform: none;
+}
+
+.app-shell--sidebar-collapsed .app-sidebar__group h2,
+.app-shell--sidebar-collapsed .app-sidebar__item-copy,
+.app-shell--sidebar-collapsed .app-sidebar__principle {
+    display: none;
+}
+
+.app-shell--sidebar-collapsed .app-sidebar__item {
+    justify-content: center;
+    padding-inline: 7px;
+    box-shadow: none;
 }
 
 .app-sidebar__navigation {
@@ -2472,6 +2502,38 @@ textarea:disabled {
     }
 }
 
+/* Dashboard branding */
+.dashboard-branding {
+    display: flex;
+    min-height: 132px;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.dashboard-branding img {
+    display: block;
+    width: auto;
+    max-width: min(100%, 360px);
+    height: 100px;
+    object-fit: contain;
+}
+
+@media (max-width: 620px) {
+    .dashboard-branding {
+        min-height: 108px;
+        padding: 12px 18px;
+    }
+
+    .dashboard-branding img {
+        height: 82px;
+    }
+}
+
 /* Dashboard */
 .dashboard-page {
     display: grid;
@@ -3062,6 +3124,24 @@ textarea:disabled {
         opacity: 1;
     }
 
+    .app-shell--sidebar-collapsed .app-header__brand > span {
+        display: block;
+    }
+
+    .app-shell--sidebar-collapsed .app-sidebar__group h2,
+    .app-shell--sidebar-collapsed .app-sidebar__item-copy {
+        display: block;
+    }
+
+    .app-shell--sidebar-collapsed .app-sidebar__principle {
+        display: flex;
+    }
+
+    .app-shell--sidebar-collapsed .app-sidebar__item {
+        justify-content: flex-start;
+        padding-inline: 10px;
+    }
+
     .app-header__menu-button {
         margin-left: 0;
     }
@@ -3076,7 +3156,7 @@ textarea:disabled {
         top: 72px;
         bottom: 0;
         left: 0;
-        width: min(280px, calc(100vw - 48px));
+        width: min(300px, calc(100vw - 48px));
         height: auto;
         visibility: hidden;
         box-shadow: 18px 0 36px rgba(16, 24, 40, 0.12);

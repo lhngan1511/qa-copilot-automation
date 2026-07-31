@@ -6,19 +6,24 @@ import LoadingState from "../components/LoadingState.jsx";
 import WorkflowStepper from "../components/WorkflowStepper.jsx";
 import RecentWorkflowsTable from "../components/dashboard/RecentWorkflowsTable.jsx";
 import useWorkflows from "../hooks/useWorkflows.js";
+import cuscSoftwareLogo from "../assets/cusc-software-logo.png";
 
 const PAGE_SIZE = 6;
 
 function DashboardIcon({ name }) {
     const paths = {
-        workflow: <path d="M5 6h4v4H5V6Zm10 8h4v4h-4v-4ZM5 14h4v4H5v-4Zm4-6h4a3 3 0 0 1 3 3v3M9 16h6" />,
+        workflow: (
+            <path d="M5 6h4v4H5V6Zm10 8h4v4h-4v-4ZM5 14h4v4H5v-4Zm4-6h4a3 3 0 0 1 3 3v3M9 16h6" />
+        ),
         clock: (
             <>
                 <circle cx="12" cy="12" r="8.5" />
                 <path d="M12 7v5l3 2" />
             </>
         ),
-        folder: <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />,
+        folder: (
+            <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+        ),
         review: (
             <>
                 <circle cx="12" cy="12" r="8.5" />
@@ -98,13 +103,23 @@ export default function DashboardPage() {
                         AI.
                     </p>
                 </div>
-                <Link className="button button--primary dashboard-page__primary-action" to="/workflows/new">
+                <Link
+                    className="button button--primary dashboard-page__primary-action"
+                    to="/workflows/new"
+                >
                     <span aria-hidden="true">+</span>
                     New AI Test Design
                 </Link>
             </header>
 
-            <section className="dashboard-section dashboard-workflow-overview" aria-labelledby="workflow-overview-title">
+            <section className="dashboard-branding" aria-label="CUSC Software">
+                <img src={cuscSoftwareLogo} alt="CUSC Software" />
+            </section>
+
+            <section
+                className="dashboard-section dashboard-workflow-overview"
+                aria-labelledby="workflow-overview-title"
+            >
                 <header className="dashboard-section__header">
                     <div>
                         <span className="dashboard-section__heading-icon">
@@ -123,7 +138,10 @@ export default function DashboardPage() {
                 <WorkflowStepper />
             </section>
 
-            <section className="dashboard-section dashboard-recent" aria-labelledby="recent-workflows-title">
+            <section
+                className="dashboard-section dashboard-recent"
+                aria-labelledby="recent-workflows-title"
+            >
                 <header className="dashboard-section__header dashboard-section__header--recent">
                     <div>
                         <span className="dashboard-section__heading-icon">
@@ -134,14 +152,19 @@ export default function DashboardPage() {
                             <p>Theo dõi các phiên AI Test Design đang xử lý hoặc đã hoàn thành.</p>
                         </span>
                     </div>
-                    <a className="button button--secondary dashboard-recent__all" href="#recent-workflows-table">
+                    <a
+                        className="button button--secondary dashboard-recent__all"
+                        href="#recent-workflows-table"
+                    >
                         Xem tất cả
                         <span aria-hidden="true">→</span>
                     </a>
                 </header>
 
                 {query.isPending && <LoadingState message="Đang tải danh sách workflow..." />}
-                {query.isError && <ErrorState error={query.error} onRetry={() => query.refetch()} />}
+                {query.isError && (
+                    <ErrorState error={query.error} onRetry={() => query.refetch()} />
+                )}
                 {query.isSuccess && items.length === 0 && <EmptyState />}
                 {query.isSuccess && items.length > 0 && (
                     <>
@@ -151,7 +174,9 @@ export default function DashboardPage() {
                                 className="button button--secondary"
                                 type="button"
                                 disabled={offset === 0 || query.isFetching}
-                                onClick={() => setOffset(current => Math.max(0, current - PAGE_SIZE))}
+                                onClick={() =>
+                                    setOffset(current => Math.max(0, current - PAGE_SIZE))
+                                }
                             >
                                 Previous
                             </button>
@@ -173,7 +198,10 @@ export default function DashboardPage() {
             </section>
 
             {query.isSuccess && items.length > 0 && (
-                <section className="dashboard-summary" aria-label="Tóm tắt các workflow đang hiển thị">
+                <section
+                    className="dashboard-summary"
+                    aria-label="Tóm tắt các workflow đang hiển thị"
+                >
                     <DashboardSummaryCard
                         icon="folder"
                         tone="purple"

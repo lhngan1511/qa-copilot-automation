@@ -24,6 +24,7 @@ export default function TestCaseEditor({
     editing,
     editDraft,
     disabled,
+    saving = false,
     onClose,
     onEdit,
     onCancel,
@@ -64,6 +65,7 @@ export default function TestCaseEditor({
                         className="testcase-detail-panel__close"
                         type="button"
                         aria-label="Đóng chi tiết test case"
+                        disabled={saving}
                         onClick={onClose}
                     >
                         ×
@@ -187,6 +189,7 @@ export default function TestCaseEditor({
                         <button
                             className="button button--secondary"
                             type="button"
+                            disabled={saving}
                             onClick={onCancel}
                         >
                             Đóng
@@ -194,10 +197,10 @@ export default function TestCaseEditor({
                         <button
                             className="button button--primary"
                             type="button"
-                            disabled={disabled || invalid}
+                            disabled={disabled || invalid || saving}
                             onClick={onSave}
                         >
-                            Lưu
+                            {saving ? "Đang lưu..." : "Lưu"}
                         </button>
                     </div>
                 </div>
