@@ -251,6 +251,56 @@ test("Code dùng import ES module được chấp nhận", async () => {
     assert.ok(goodCode.includes("import { test, expect }"), "goodCode dùng import");
 });
 
+// ---- Validation testcase: chỉ yêu cầu env credential khi thực sự điền field ----
+function makeMapping(stepTargets) {
+    return {
+        testCaseId: "TCX",
+        route: { value: "/user/login", status: "APPROVED" },
+        stepMappings: stepTargets.map((t, i) => ({
+            stepOrder: i + 1,
+            businessStep: `Bước ${i + 1}`,
+            actionType: "FILL",
+            target: t,
+            locator: `page.getByRole('textbox', { name: '${t}' })`,
+            status: "APPROVED"
+        })),
+        assertionMappings: []
+    };
+}
+
+test("TC002 (bỏ trống Tài khoản): chỉ cần LOGIN_PASSWORD, không bắt buộc LOGIN_USERNAME", async () => {
+    // Mapping: bỏ trống tài khoản (không điền) + nhập mật khẩu + nhập mã xác nhận
+    const m = makeMapping(["Mã xác nhận", "Mật khẩu"]);
+    // code chỉ dùng LOGIN_PASSWORD (không dùng LOGIN_USERNAME) — đúng cho TC002
+    const code = goodCode.replace("process.env.LOGIN_USERNAME", "'không cần'");
+    const fake = new FakeAIProvider({ defaultResponse: code });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping: m, codegenFile });
+    assert.ok(!validation.errors.some((e) => e.includes("LOGIN_USERNAME")), "không yêu cầu LOGIN_USERNAME");
+});
+
+test("TC003 (bỏ trống Mật khẩu): chỉ cần LOGIN_USERNAME, không bắt buộc LOGIN_PASSWORD", async () => {
+    const m = makeMapping(["Tài khoản", "Mã xác nhận"]);
+    const code = goodCode.replace("process.env.LOGIN_PASSWORD", "'không cần'");
+    const fake = new FakeAIProvider({ defaultResponse: code });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping: m, codegenFile });
+    assert.ok(!validation.errors.some((e) => e.includes("LOGIN_PASSWORD")), "không yêu cầu LOGIN_PASSWORD");
+});
+
+test("Bước 'để trống Tài khoản' không bị coi là cần LOGIN_USERNAME", () => {
+    const codegen = new AIAutomationCodegen(new FakeAIProvider({}), { env: {} });
+    const m = {
+        stepMappings: [
+            { stepOrder: 1, businessStep: "Để trống Tài khoản", actionType: "FILL", target: "Tài khoản" },
+            { stepOrder: 2, businessStep: "Nhập Mật khẩu hợp lệ", actionType: "FILL", target: "Mật khẩu" }
+        ]
+    };
+    const env = codegen.requiredCredentialEnv(m);
+    assert.ok(!env.has("LOGIN_USERNAME"), "để trống tài khoản -> không cần username");
+    assert.ok(env.has("LOGIN_PASSWORD"), "nhập mật khẩu -> cần password");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

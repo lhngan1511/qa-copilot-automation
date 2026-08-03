@@ -97,6 +97,29 @@ export default class AIAutomationCodegen {
     }
 
     /**
+     * Xác định env credential nào BẮT BUỘC phải có trong code, dựa vào stepMappings.
+     * - Có bước fill target chứa "Tài khoản"/"username" -> cần LOGIN_USERNAME.
+     * - Có bước fill target chứa "Mật khẩu"/"password" -> cần LOGIN_PASSWORD.
+     * Validation testcase bỏ trống field sẽ không yêu cầu env đó.
+     * @returns {Set<string>}
+     */
+    requiredCredentialEnv(mapping) {
+        const set = new Set();
+        const steps = mapping?.stepMappings ?? [];
+        for (const s of steps) {
+            const business = String(s.businessStep ?? "").toLowerCase();
+            const text = `${business} ${s.target ?? ""}`.toLowerCase();
+            const isFill = String(s.actionType ?? "").toUpperCase() === "FILL";
+            // Bước "để trống / bỏ trống" KHÔNG điền giá trị thật -> không cần env credential cho field đó
+            const isEmptyStep = /để trống|bỏ trống|để trống field/.test(business);
+            if (!isFill || isEmptyStep) continue;
+            if (/tài khoản|username|account/.test(text)) set.add("LOGIN_USERNAME");
+            if (/mật khẩu|password/.test(text)) set.add("LOGIN_PASSWORD");
+        }
+        return set;
+    }
+
+    /**
      * Validate code sau khi sinh.
      * Trả về errors (rỗng = OK).
      */
@@ -151,10 +174,13 @@ export default class AIAutomationCodegen {
                 errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD). Phải dùng process.env.");
             }
         }
-        if (!code.includes("process.env.LOGIN_USERNAME")) {
+        // Chỉ yêu cầu env khi mapping CÓ bước fill field tương ứng
+        // (TC002 bỏ trống Tài khoản -> không cần LOGIN_USERNAME; TC003 bỏ trống Mật khẩu -> không cần LOGIN_PASSWORD).
+        const requiredEnv = this.requiredCredentialEnv(mapping);
+        if (requiredEnv.has("LOGIN_USERNAME") && !code.includes("process.env.LOGIN_USERNAME")) {
             errors.push("Code không dùng process.env.LOGIN_USERNAME cho Tài khoản.");
         }
-        if (!code.includes("process.env.LOGIN_PASSWORD")) {
+        if (requiredEnv.has("LOGIN_PASSWORD") && !code.includes("process.env.LOGIN_PASSWORD")) {
             errors.push("Code không dùng process.env.LOGIN_PASSWORD cho Mật khẩu.");
         }
 
