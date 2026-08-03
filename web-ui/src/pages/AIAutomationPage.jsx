@@ -30,8 +30,15 @@ export default function AIAutomationPage() {
     const [generateError, setGenerateError] = useState("");
     const [filePath, setFilePath] = useState("");
 
+    // generate-all: map testCaseId -> { filePath, validation, ok }
+    const [generatedFiles, setGeneratedFiles] = useState({});
+    const [generatingAll, setGeneratingAll] = useState(false);
+
     const [runResult, setRunResult] = useState(null);
     const [running, setRunning] = useState(false);
+    // run-all: map testCaseId -> { status, durationMs, error, diagnostic }
+    const [batchRunResults, setBatchRunResults] = useState({});
+    const [runningAll, setRunningAll] = useState(false);
 
     function handleLoadInputs() {
         try {
@@ -118,15 +125,22 @@ export default function AIAutomationPage() {
         (activeMap.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
         (activeMap.assertionMappings ?? []).every((a) => a.status === "APPROVED");
 
+    // kiểm tra 1 testcase đã approve đủ route + step + assertion
+    function isTcApproved(tc) {
+        return (
+            tc?.route?.status === "APPROVED" &&
+            (tc.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
+            (tc.assertionMappings ?? []).every((a) => a.status === "APPROVED")
+        );
+    }
+
+    // danh sách mapping đã approve đủ
+    const approvedMappings = (moduleMap?.testCaseMappings ?? []).filter((tc) => isTcApproved(tc));
+
     // tất cả testcase đã approved
     const allApproved =
         moduleMap?.testCaseMappings?.length > 0 &&
-        moduleMap.testCaseMappings.every(
-            (tc) =>
-                tc.route?.status === "APPROVED" &&
-                (tc.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
-                (tc.assertionMappings ?? []).every((a) => a.status === "APPROVED")
-        );
+        moduleMap.testCaseMappings.every(isTcApproved);
 
     async function handleGenerate() {
         if (!activeMap || !mappingReady) return;
@@ -151,6 +165,36 @@ export default function AIAutomationPage() {
         }
     }
 
+    async function handleGenerateAll() {
+        if (approvedMappings.length === 0) return;
+        setGeneratingAll(true);
+        setGenerateError("");
+        const results = {};
+        for (const mapping of approvedMappings) {
+            const tc = testCases.find((t) => t.id === mapping.testCaseId);
+            try {
+                const r = await generateCode({
+                    testCase: tc,
+                    mapping,
+                    codegenText,
+                    confirmedFacts: CONFIRMED_FACTS
+                });
+                results[mapping.testCaseId] = {
+                    filePath: r.filePath,
+                    validation: r.validation,
+                    ok: r.validation?.ok ?? false
+                };
+            } catch (e) {
+                results[mapping.testCaseId] = { filePath: null, validation: null, ok: false, error: e.message };
+            }
+        }
+        setGeneratedFiles(results);
+        // cập nhật state active nếu chưa có file
+        setCode("");
+        setRunResult(null);
+        setGeneratingAll(false);
+    }
+
     async function handleRun() {
         if (!filePath) return;
         setRunning(true);
@@ -162,6 +206,28 @@ export default function AIAutomationPage() {
         } finally {
             setRunning(false);
         }
+    }
+
+    async function handleRunAll() {
+        const targets = Object.entries(generatedFiles).filter(([, v]) => v.filePath && v.ok);
+        if (targets.length === 0) return;
+        setRunningAll(true);
+        const results = {};
+        for (const [tcId, v] of targets) {
+            try {
+                const r = await runGeneratedFile({ filePath: v.filePath });
+                results[tcId] = {
+                    status: r.status,
+                    durationMs: r.durationMs,
+                    error: r.error,
+                    diagnostic: r.diagnostic
+                };
+            } catch (e) {
+                results[tcId] = { status: "ERROR", error: e.message, diagnostic: e.message };
+            }
+        }
+        setBatchRunResults(results);
+        setRunningAll(false);
     }
 
     return (
@@ -376,14 +442,26 @@ export default function AIAutomationPage() {
             {/* BƯỚC 3: AI GENERATE CODE */}
             <section style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, marginBottom: 16 }}>
                 <h3>Bước 3 — AI Generate Code</h3>
-                <button
-                    onClick={handleGenerate}
-                    disabled={!mappingReady || generating}
-                    title={mappingReady ? "" : "Chỉ bật khi mapping của testcase này đã được tester chấp nhận (route + step + assertion)"}
-                    style={{ padding: "8px 14px" }}
-                >
-                    {generating ? "Đang sinh code..." : `AI Generate Automation (${activeTc})`}
-                </button>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={!mappingReady || generating}
+                        title={mappingReady ? "" : "Chỉ bật khi mapping của testcase này đã được tester chấp nhận (route + step + assertion)"}
+                        style={{ padding: "8px 14px" }}
+                    >
+                        {generating ? "Đang sinh code..." : `AI Generate Automation (${activeTc})`}
+                    </button>
+                    <button
+                        onClick={handleGenerateAll}
+                        disabled={approvedMappings.length === 0 || generatingAll}
+                        title={approvedMappings.length === 0 ? "Cần ít nhất 1 testcase approved đủ route+step+assertion" : `Generate ${approvedMappings.length} testcase đã approve`}
+                        style={{ padding: "8px 14px" }}
+                    >
+                        {generatingAll
+                            ? "Đang sinh tất cả..."
+                            : `AI Generate All Approved (${approvedMappings.length})`}
+                    </button>
+                </div>
                 {moduleMap && !mappingReady && (
                     <div style={{ color: "#666", marginTop: 8 }}>
                         Bạn cần Approve route + tất cả step + assertion của {activeTc} trước.
@@ -410,9 +488,36 @@ export default function AIAutomationPage() {
                         {code}
                     </pre>
                 )}
-                {allApproved && !code && (
+                {Object.keys(generatedFiles).length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                        <strong>Kết quả Generate All:</strong>
+                        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                            <thead>
+                                <tr style={{ textAlign: "left", borderBottom: "2px solid #333" }}>
+                                    <th>Testcase</th>
+                                    <th>File</th>
+                                    <th>Validation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(generatedFiles).map(([tcId, v]) => (
+                                    <tr key={tcId} style={{ borderBottom: "1px solid #eee" }}>
+                                        <td>{tcId}</td>
+                                        <td>{v.filePath ? v.filePath : "(lỗi)"}</td>
+                                        <td>
+                                            {v.ok
+                                                ? <span style={{ color: "#1a7f37" }}>OK</span>
+                                                : <span style={{ color: "#b00020" }}>{v.validation?.errors?.join(" | ") || v.error || "FAIL"}</span>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                {allApproved && !code && Object.keys(generatedFiles).length === 0 && (
                     <div style={{ marginTop: 8, color: "#1a7f37" }}>
-                        Tất cả testcase đã Approved. Bạn có thể Generate từng testcase ở tab tương ứng.
+                        Tất cả testcase đã Approved. Bạn có thể Generate từng testcase hoặc Generate All Approved.
                     </div>
                 )}
             </section>
@@ -420,9 +525,65 @@ export default function AIAutomationPage() {
             {/* BƯỚC 4: RUN */}
             <section style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16 }}>
                 <h3>Bước 4 — Run Automation</h3>
-                <button onClick={handleRun} disabled={!filePath || running} style={{ padding: "8px 14px" }}>
-                    {running ? "Đang chạy..." : "Run Automation"}
-                </button>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+                    <button onClick={handleRun} disabled={!filePath || running} style={{ padding: "8px 14px" }}>
+                        {running ? "Đang chạy..." : `Run Automation (${activeTc})`}
+                    </button>
+                    <button
+                        onClick={handleRunAll}
+                        disabled={runningAll || Object.values(generatedFiles).filter((v) => v.filePath && v.ok).length === 0}
+                        style={{ padding: "8px 14px" }}
+                    >
+                        {runningAll
+                            ? "Đang chạy tất cả..."
+                            : `Run All Generated (${Object.values(generatedFiles).filter((v) => v.filePath && v.ok).length})`}
+                    </button>
+                </div>
+
+                {/* Run All kết quả */}
+                {Object.keys(batchRunResults).length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                        <strong>Kết quả Run All:</strong>
+                        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                            <thead>
+                                <tr style={{ textAlign: "left", borderBottom: "2px solid #333" }}>
+                                    <th>Testcase</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Error / Diagnostic</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(batchRunResults).map(([tcId, r]) => (
+                                    <tr key={tcId} style={{ borderBottom: "1px solid #eee", verticalAlign: "top" }}>
+                                        <td style={{ fontWeight: 600 }}>{tcId}</td>
+                                        <td>
+                                            <span
+                                                style={{
+                                                    fontWeight: 700,
+                                                    color:
+                                                        r.status === "PASSED"
+                                                            ? "#1a7f37"
+                                                            : r.status === "FAILED" || r.status === "FAILED_APP_UNREACHABLE"
+                                                              ? "#b00020"
+                                                              : "#8a6d00"
+                                                }}
+                                            >
+                                                {r.status}
+                                            </span>
+                                        </td>
+                                        <td>{r.durationMs != null ? `${r.durationMs} ms` : "-"}</td>
+                                        <td>
+                                            {r.error && <div style={{ color: "#b00020" }}>{String(r.error).slice(0, 300)}</div>}
+                                            {r.diagnostic && <div style={{ color: "#8a6d00" }}>{String(r.diagnostic).slice(0, 300)}</div>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
                 {runResult && (
                     <div style={{ marginTop: 12 }}>
                         <div>
