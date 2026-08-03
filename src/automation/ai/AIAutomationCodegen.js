@@ -34,7 +34,8 @@ export default class AIAutomationCodegen {
         }
         this.aiProvider = aiProvider;
         this.env = env ?? process.env;
-        this.outputDir = outputDir ?? path.join(process.cwd(), "outputs", "generated");
+        // Thư mục cố định chứa test sinh — khớp testDir trong playwright.config.js
+        this.outputDir = outputDir ?? path.join(process.cwd(), "outputs", "generated-tests");
     }
 
     collectMappingLocators(mapping) {
@@ -180,9 +181,8 @@ export default class AIAutomationCodegen {
     }
 
     writeFile({ code, testCaseId, module = "Login" }) {
-        const dir = path.join(this.outputDir, module);
-        fs.mkdirSync(dir, { recursive: true });
-        const file = path.join(dir, `${testCaseId}.spec.js`);
+        fs.mkdirSync(this.outputDir, { recursive: true });
+        const file = path.join(this.outputDir, `${testCaseId}.spec.js`);
         fs.writeFileSync(file, code);
         return file;
     }

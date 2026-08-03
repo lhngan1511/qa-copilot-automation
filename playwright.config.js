@@ -3,12 +3,15 @@
 //   chrome  -> dùng Chrome hệ thống (channel "chrome")
 //   msedge  -> dùng Microsoft Edge hệ thống (channel "msedge")
 //   (bỏ trống) -> dùng bundled Chromium (cần `npx playwright install chromium`)
+//
+// testDir trỏ vào thư mục generated-tests — nơi Runner lưu file do AI sinh.
+// Runner truyền RELATIVE path (từ project root) để Playwright tìm đúng test.
 import { defineConfig } from "@playwright/test";
 
 const channel = process.env.PLAYWRIGHT_BROWSER_CHANNEL?.trim() || undefined;
 
 export default defineConfig({
-    testDir: ".",
+    testDir: "./outputs/generated-tests",
     timeout: 30000,
     fullyParallel: false,
     reporter: "list",

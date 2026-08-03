@@ -10,6 +10,7 @@ node_modules/
 outputs/playwright/
 outputs/execution/
 outputs/thiet_bi/
+outputs/generated-tests/
 test-results/
 playwright-report/
 

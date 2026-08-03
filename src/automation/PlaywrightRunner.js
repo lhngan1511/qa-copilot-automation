@@ -20,6 +20,9 @@ import ExecutionResult from "./ExecutionResult.js";
 
 const VALID_CHANNELS = new Set(["chrome", "msedge"]);
 
+// Tên file test hợp lệ: *.spec.js / *.test.js / *.spec.ts / *.test.ts / *.spec.mjs / *.test.cjs...
+const TEST_FILE_RE = /\.(spec|test)\.[cm]?[jt]s$/;
+
 export default class PlaywrightRunner {
     /**
      * @param {object} options
@@ -150,19 +153,42 @@ export default class PlaywrightRunner {
      */
     runFile(filePath, { env = {} } = {}) {
         return new Promise((resolve) => {
-            const abs = path.resolve(filePath);
-            if (!fs.existsSync(abs)) {
-                resolve({ status: "ERROR", diagnostic: `Không tìm thấy file: ${abs}`, durationMs: 0, error: null, log: "" });
+            // Resolve về absolute để kiểm tra tồn tại, nhưng TRUYỀN relative từ project root cho Playwright
+            const abs = path.resolve(this.rootDir, filePath);
+            const fileExists = fs.existsSync(abs);
+            const baseName = path.basename(abs);
+            const testDir = "./outputs/generated-tests";
+
+            // diagnostic log (không secret)
+            const diag = {
+                generatedFilePath: filePath,
+                cwd: this.rootDir,
+                testDir,
+                fileExists,
+                baseName
+            };
+
+            if (!fileExists) {
+                resolve({ status: "ERROR", diagnostic: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})`, durationMs: 0, error: null, log: "", diag });
                 return;
             }
+            if (!TEST_FILE_RE.test(baseName)) {
+                resolve({ status: "ERROR", diagnostic: `INVALID_TEST_FILE_NAME: "${baseName}" — phải kết thúc bằng .spec.js/.test.js/.spec.ts...`, durationMs: 0, error: null, log: "", diag });
+                return;
+            }
+
             const browser = this.resolveBrowser();
             if (!browser.ok) {
-                resolve({ status: "DIAGNOSTIC", diagnostic: browser.diagnostic, durationMs: 0, error: null, log: "" });
+                resolve({ status: "DIAGNOSTIC", diagnostic: browser.diagnostic, durationMs: 0, error: null, log: "", diag });
                 return;
             }
+
+            // Relative path từ project root (không phải absolute) để Playwright tìm đúng test
+            const rel = path.relative(this.rootDir, abs);
             const bin = this.playwrightBin();
             const started = Date.now();
-            const args = this.buildArgs({ filePath: abs });
+            const args = this.buildArgs({ filePath: rel });
+            diag.commandArgs = args;
             const child = spawn(bin, args, {
                 shell: process.platform === "win32",
                 cwd: this.rootDir,
@@ -192,12 +218,20 @@ export default class PlaywrightRunner {
                 if (log.includes("net::ERR_CONNECTION_REFUSED") || log.includes("connect ECONNREFUSED") || log.includes("net::ERR")) {
                     status = "FAILED_APP_UNREACHABLE";
                 }
+                // Phát hiện "No tests found"
+                if (/No tests found/i.test(log)) {
+                    status = "FAILED";
+                    browser.diagnostic =
+                        `NO_TESTS_FOUND: Playwright không nhận test. file=${rel} baseName=${baseName} fileExists=${fileExists} testDir=${testDir}. ` +
+                        "Kiểm tra file nằm trong outputs/generated-tests và đúng tên *.spec.js.";
+                }
                 resolve({
                     status,
                     diagnostic: status === "PASSED" ? null : browser.diagnostic ?? log.slice(0, 500),
                     durationMs,
                     error: code === 0 ? null : log.slice(0, 1000),
-                    log
+                    log,
+                    diag
                 });
             });
         });
