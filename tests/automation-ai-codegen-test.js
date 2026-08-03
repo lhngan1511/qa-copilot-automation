@@ -204,6 +204,32 @@ test("Vẫn chặn credential hardcode khi dùng string literal thật (fill('ad
     assert.ok(validation.errors.some((e) => e.includes("hardcode giá trị credential")), "chặn literal credential");
 });
 
+// ---- JS thuần, không TypeScript ----
+test("Chặn TypeScript: non-null assertion process.env.X! (sinh JS không phải TS)", async () => {
+    const tsCode = goodCode.replace("process.env.LOGIN_USERNAME", "process.env.LOGIN_USERNAME!");
+    const fake = new FakeAIProvider({ defaultResponse: tsCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("non-null assertion") || e.includes("TypeScript")), "phải chặn TS");
+});
+
+test("Chặn TypeScript: type annotation ': string'", async () => {
+    const tsCode = goodCode.replace("const taikhoan =", "const taikhoan: string =");
+    const fake = new FakeAIProvider({ defaultResponse: tsCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("type annotation") || e.includes("TypeScript")), "phải chặn TS annotation");
+});
+
+test("JavaScript thuần (không TS) được chấp nhận", async () => {
+    const fake = new FakeAIProvider({ defaultResponse: goodCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

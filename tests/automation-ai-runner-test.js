@@ -105,6 +105,19 @@ test("playwrightBin(): trên Windows dùng .cmd, khác thì dùng file thường
     }
 });
 
+test("escapeRegex: chuyển Windows path dùng '/' + escape dấu '.' (Playwright regex)", () => {
+    const r = new PlaywrightRunner({ rootDir, browserChannel: "chrome" });
+    // Mô phỏng path Windows: backslash -> forward slash, escape '.'
+    const winRel = "outputs\\generated-tests\\TC004.spec.js".split("\\").join("/");
+    const escaped = r.escapeRegex(winRel);
+    assert.ok(!escaped.includes("\\g"), "không còn backslash gây hỏng regex");
+    assert.ok(escaped.includes("\\."), "dấu '.' được escape");
+    assert.ok(escaped.includes("/"), "dùng forward slash");
+    // regex khớp đường dẫn test (forward slash)
+    const re = new RegExp(escaped);
+    assert.ok(re.test("outputs/generated-tests/TC004.spec.js"), "regex khớp path test");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 5 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

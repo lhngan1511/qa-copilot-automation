@@ -40,6 +40,11 @@ export default class PlaywrightRunner {
         return c || null;
     }
 
+    /** Escape regex special chars để argument path không bị Playwright hiểu sai. */
+    escapeRegex(s) {
+        return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
     /** Đường dẫn playwright binary — Windows cần .cmd (spawn không chạy được shim unix). */
     playwrightBin() {
         const binDir = path.join(this.rootDir, "node_modules", ".bin");
@@ -183,8 +188,10 @@ export default class PlaywrightRunner {
                 return;
             }
 
-            // Relative path từ project root (không phải absolute) để Playwright tìm đúng test
-            const rel = path.relative(this.rootDir, abs);
+            // Relative path từ project root, dùng forward slash (Windows path có '\' làm hỏng regex của Playwright).
+            // Playwright nhận argument dạng regex khớp với đường dẫn test (dùng '/').
+            const relRaw = path.relative(this.rootDir, abs).split(path.sep).join("/");
+            const rel = this.escapeRegex(relRaw);
             const bin = this.playwrightBin();
             const started = Date.now();
             const args = this.buildArgs({ filePath: rel });

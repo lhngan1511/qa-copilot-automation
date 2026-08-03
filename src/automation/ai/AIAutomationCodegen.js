@@ -55,6 +55,7 @@ export default class AIAutomationCodegen {
     buildPrompt({ testCase, mapping, confirmedFacts }) {
         return [
             "Bạn là chuyên gia Playwright. Hãy sinh file test Playwright hoàn chỉnh cho testcase.",
+            "Code phải là JAVASCRIPT THUẦN (.js). KHÔNG TypeScript: KHÔNG non-null assertion `!` (vd process.env.X!), KHÔNG type annotation `: string`, KHÔNG interface/type/enum, KHÔNG `as`. KHÔNG dùng `!` sau process.env.",
             "CHỈ dùng locator có trong APPROVED MAPPING. Không bịa locator mới.",
             "Credential (username/password) lấy từ process.env.LOGIN_USERNAME và process.env.LOGIN_PASSWORD. KHÔNG hardcode.",
             "Base URL lấy từ process.env.BASE_URL. KHÔNG hardcode URL/host thật.",
@@ -110,6 +111,19 @@ export default class AIAutomationCodegen {
         // 2. import
         if (!code.includes("from '@playwright/test'") && !code.includes('from "@playwright/test"')) {
             errors.push('Code thiếu import "@playwright/test".');
+        }
+
+        // 2b. JavaScript thuần (không TypeScript)
+        const tsHints = [
+            [/process\.env\.[A-Z_]+!/, "cú pháp non-null assertion `!` (TypeScript)"],
+            [/:\s*(string|number|boolean|any|void|Promise<\w+>)\b/, "type annotation (TypeScript)"],
+            [/\b(interface|type|enum)\s+\w+/, "khai báo interface/type/enum (TypeScript)"],
+            [/\b(as\s+(string|number|any))\b/, "type assertion `as` (TypeScript)"]
+        ];
+        for (const [re, label] of tsHints) {
+            if (re.test(code)) {
+                errors.push(`Code chứa ${label} — phải là JavaScript thuần (.js), không dùng TypeScript.`);
+            }
         }
 
         // 3. URL hardcode — goto phải dùng process.env.BASE_URL.
