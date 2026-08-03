@@ -26,11 +26,17 @@ export default class AIAutomationService {
         this.runner = new PlaywrightRunner({ rootDir });
     }
 
-    /** Chạy AI Mapping cho 1 testcase. */
+    /** Chạy AI Mapping cho 1 testcase (backward-compatible). */
     async analyze({ testCase, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const mapper = new AIAutomationMapper(this.aiProvider, { codegenFile });
         const mapping = await mapper.map({ testCase, codegenFile, codegenText, confirmedFacts });
         return mapping;
+    }
+
+    /** Chạy AI Mapping cho TOÀN BỘ module (nhiều testcase + toàn bộ codegen). */
+    async analyzeModule({ module, testCases, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
+        const mapper = new AIAutomationMapper(this.aiProvider, { codegenFile });
+        return mapper.mapModule({ module, testCases, codegenFile, codegenText, confirmedFacts });
     }
 
     /** Chạy AI Codegen cho testcase + approved mapping. */

@@ -117,6 +117,67 @@ test("Mapper không dùng provider không có generate()", () => {
     assert.throws(() => new AIAutomationMapper({}));
 });
 
+// ---- mapModule: AI map toàn bộ module (TC001–TC004) ----
+test("mapModule: Gemini map toàn bộ module, trả testCaseMappings cho từng TC", async () => {
+    const fake = new FakeAIProvider({
+        responder: (prompt) => {
+            // prompt phải chứa toàn bộ testcase + codegen toàn chức năng + confirmed fact
+            assert.ok(prompt.includes("TC001"), "prompt chứa TC001");
+            assert.ok(prompt.includes("TC004"), "prompt chứa TC004 (toàn bộ module)");
+            assert.ok(prompt.includes("testCaseMappings"), "yêu cầu output dạng module");
+            assert.ok(prompt.includes("getByRole"), "prompt chứa codegen");
+            assert.ok(prompt.includes("CF-LOGIN-CAPTCHA-001"), "prompt chứa confirmed fact");
+            return JSON.stringify({
+                module: "Đăng nhập",
+                testCaseMappings: ["TC001", "TC002", "TC003", "TC004"].map((id, idx) => ({
+                    testCaseId: id,
+                    route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+                    stepMappings: [
+                        { stepOrder: 1, businessStep: "Bước 1", actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", confidence: 0.9, status: "MAPPED", reason: "" }
+                    ],
+                    assertionMappings: [{ businessExpectation: `E${idx}`, playwrightAssertion: "expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible()", confidence: 0.9, status: "MAPPED" }],
+                    missingData: [],
+                    warnings: []
+                }))
+            });
+        }
+    });
+    const mapper = new AIAutomationMapper(fake, { codegenFile });
+    const result = await mapper.mapModule({ module: "Đăng nhập", testCases, codegenFile, confirmedFacts });
+    assert.strictEqual(result.module, "Đăng nhập");
+    assert.strictEqual(result.testCaseMappings.length, 4);
+    const ids = result.testCaseMappings.map((m) => m.testCaseId);
+    assert.ok(ids.includes("TC001") && ids.includes("TC004"));
+    // mọi locator trong codegen
+    assert.ok(result.testCaseMappings.every((m) => m.stepMappings[0].codegenSource === "PLAYWRIGHT_CODEGEN"));
+});
+
+test("mapModule: bổ sung testcase thiếu mapping từ Gemini (fallback NEED_USER_CONFIRMATION)", async () => {
+    const fake = new FakeAIProvider({
+        // Gemini chỉ trả TC001, thiếu TC002–TC004
+        defaultResponse: JSON.stringify({
+            module: "Đăng nhập",
+            testCaseMappings: [
+                {
+                    testCaseId: "TC001",
+                    route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+                    stepMappings: [{ stepOrder: 1, actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", confidence: 0.9, status: "MAPPED" }],
+                    assertionMappings: [],
+                    missingData: [],
+                    warnings: []
+                }
+            ]
+        })
+    });
+    const mapper = new AIAutomationMapper(fake, { codegenFile });
+    const result = await mapper.mapModule({ module: "Đăng nhập", testCases, codegenFile, confirmedFacts });
+    // đủ 4 testcase, các TC thiếu được bổ sung rỗng
+    assert.strictEqual(result.testCaseMappings.length, 4);
+    const tc002 = result.testCaseMappings.find((m) => m.testCaseId === "TC002");
+    assert.ok(tc002, "TC002 được bổ sung");
+    assert.ok(tc002.warnings.some((w) => w.includes("Không có mapping")));
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 1 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

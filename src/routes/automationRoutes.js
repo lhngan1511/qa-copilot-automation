@@ -39,13 +39,19 @@ export default function createAutomationRoutes({ rootDir = process.cwd(), aiProv
 
     router.post("/analyze", async (req, res) => {
         try {
-            const { testCase, codegenFile = null, codegenText = null, confirmedFacts = [] } = req.body ?? {};
-            if (!testCase) throw new Error("Thiếu testCase.");
+            const { module, testCases, testCase, codegenFile = null, codegenText = null, confirmedFacts = [] } = req.body ?? {};
             if (!codegenText && (!codegenFile || !fs.existsSync(path.resolve(codegenFile)))) {
                 throw new Error("Thiếu codegenText hoặc codegenFile hợp lệ.");
             }
-            const mapping = await service.analyze({ testCase, codegenFile, codegenText, confirmedFacts });
-            res.status(200).json({ success: true, data: { mapping }, error: null });
+            // Ưu tiên map toàn bộ module nếu có testCases array; ngược lại map 1 testcase (backward-compatible).
+            if (Array.isArray(testCases) && testCases.length > 0) {
+                const mapping = await service.analyzeModule({ module: module ?? testCases[0].module ?? "", testCases, codegenFile, codegenText, confirmedFacts });
+                res.status(200).json({ success: true, data: mapping, error: null });
+            } else {
+                if (!testCase) throw new Error("Thiếu testCase.");
+                const mapping = await service.analyze({ testCase, codegenFile, codegenText, confirmedFacts });
+                res.status(200).json({ success: true, data: { mapping }, error: null });
+            }
         } catch (error) {
             // Không fallback sang mock. Trả diagnostic rõ.
             res.status(500).json({ success: false, data: null, error: { message: error.message, diagnostic: "AI_MAPPING_FAILED" } });

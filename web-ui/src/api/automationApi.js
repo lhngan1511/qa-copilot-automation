@@ -20,13 +20,19 @@ export async function runAutomation(module, { signal } = {}) {
     return response?.data ?? null;
 }
 
-export async function analyzeMapping({ testCase, codegenText, codegenFile = null, confirmedFacts = [], signal } = {}) {
+export async function analyzeMapping({ testCases, module, testCase, codegenText, codegenFile = null, confirmedFacts = [], signal } = {}) {
     const response = await apiClient.post("/automation/analyze", {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testCase, codegenText, codegenFile, confirmedFacts }),
+        body: JSON.stringify({ module, testCases, testCase, codegenText, codegenFile, confirmedFacts }),
         signal
     });
-    return response?.data?.mapping ?? null;
+    // Trả về toàn bộ data (module mapping hoặc mapping 1 TC) — normalize về dạng module.
+    const data = response?.data ?? null;
+    if (data && data.testCaseMappings) return data; // module mapping
+    if (data && data.mapping) {
+        return { module: data.mapping.module ?? module ?? "", testCaseMappings: [data.mapping] };
+    }
+    return null;
 }
 
 export async function generateCode({ testCase, mapping, codegenText, codegenFile = null, confirmedFacts = [], signal } = {}) {

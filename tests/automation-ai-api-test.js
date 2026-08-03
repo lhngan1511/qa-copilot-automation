@@ -157,6 +157,61 @@ test("/api/automation/run trả diagnostic khi thiếu browser", async () => {
     assert.ok(["DIAGNOSTIC", "PASSED", "FAILED"].includes(body.data.status), `status=${body.data.status}`);
 });
 
+test("/api/automation/analyze map toàn bộ module (testCases array)", async () => {
+    const moduleFake = new FakeAIProvider({
+        responder: (prompt) => {
+            if (prompt.includes("testCaseMappings") && prompt.includes("TOÀN BỘ MODULE")) {
+                return JSON.stringify({
+                    module: "Đăng nhập",
+                    testCaseMappings: [
+                        {
+                            testCaseId: "TC001",
+                            route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+                            stepMappings: [{ stepOrder: 1, actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", status: "MAPPED" }],
+                            assertionMappings: [],
+                            missingData: [],
+                            warnings: []
+                        },
+                        {
+                            testCaseId: "TC002",
+                            route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+                            stepMappings: [],
+                            assertionMappings: [],
+                            missingData: [],
+                            warnings: []
+                        }
+                    ]
+                });
+            }
+            return JSON.stringify({
+                testCaseId: "TC001",
+                route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+                stepMappings: [],
+                assertionMappings: [],
+                missingData: [],
+                warnings: []
+            });
+        }
+    });
+    const app = express();
+    app.use(express.json());
+    app.use("/api/automation", createAutomationRoutes({ rootDir, aiProvider: moduleFake }));
+    const server = app.listen(0);
+    const port = server.address().port;
+    const base = `http://127.0.0.1:${port}/api/automation`;
+    const res = await fetch(`${base}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ module: "Đăng nhập", testCases: [tc001, { ...tc001, id: "TC002" }], codegenFile, confirmedFacts: [] })
+    });
+    const body = await res.json();
+    server.close();
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(body.data.testCaseMappings.length, 2);
+    const ids = body.data.testCaseMappings.map((m) => m.testCaseId);
+    assert.ok(ids.includes("TC001") && ids.includes("TC002"));
+});
+
 test("analyze thiếu codegenFile trả lỗi", async () => {
     const app = buildApp();
     const server = app.listen(0);

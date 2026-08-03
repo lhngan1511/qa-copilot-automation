@@ -15,10 +15,12 @@ const CONFIRMED_FACTS = [
 export default function AIAutomationPage() {
     const [approvedJson, setApprovedJson] = useState("");
     const [codegenText, setCodegenText] = useState("");
-    const [selectedId, setSelectedId] = useState("");
     const [testCases, setTestCases] = useState([]);
+    const [moduleName, setModuleName] = useState("");
+    const [activeTc, setActiveTc] = useState("");
 
-    const [mapping, setMapping] = useState(null);
+    // module-level mapping: { testCaseMappings: [ {testCaseId, route, stepMappings, assertionMappings, missingData, warnings} ] }
+    const [moduleMap, setModuleMap] = useState(null);
     const [analyzing, setAnalyzing] = useState(false);
     const [mappingError, setMappingError] = useState("");
 
@@ -40,8 +42,9 @@ export default function AIAutomationPage() {
                   ? data.testCases.map((x) => x.originalTestCase ?? x)
                   : [];
             setTestCases(arr);
-            if (arr.length) setSelectedId(arr[0].id ?? "");
-            setMapping(null);
+            setModuleName(arr[0]?.module ?? "");
+            if (arr.length) setActiveTc(arr[0].id ?? "");
+            setModuleMap(null);
             setCode("");
             setRunResult(null);
         } catch (e) {
@@ -49,19 +52,19 @@ export default function AIAutomationPage() {
         }
     }
 
-    const selectedTC = testCases.find((t) => t.id === selectedId) || null;
-
     async function handleAnalyze() {
-        if (!selectedTC) return;
+        if (testCases.length === 0) return;
         setAnalyzing(true);
         setMappingError("");
         try {
             const m = await analyzeMapping({
-                testCase: selectedTC,
+                testCases,
+                module: moduleName,
                 codegenText,
                 confirmedFacts: CONFIRMED_FACTS
             });
-            setMapping(m);
+            setModuleMap(m);
+            if (m.testCaseMappings?.[0]) setActiveTc(m.testCaseMappings[0].testCaseId);
             setCode("");
             setRunResult(null);
         } catch (e) {
@@ -71,27 +74,69 @@ export default function AIAutomationPage() {
         }
     }
 
-    function updateStep(order, patch) {
-        setMapping((m) => ({
+    // helper cập nhật mapping của 1 testcase
+    function updateTc(tcId, patch) {
+        setModuleMap((m) => ({
             ...m,
-            stepMappings: m.stepMappings.map((s) => (s.stepOrder === order ? { ...s, ...patch } : s))
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) =>
+                tc.testCaseId === tcId ? { ...tc, ...patch } : tc
+            )
         }));
     }
 
-    function approveStep(order) {
-        updateStep(order, { status: "APPROVED" });
+    function approveRoute(tcId) {
+        updateTc(tcId, { route: { ...currentMapping(tcId)?.route, status: "APPROVED" } });
     }
 
-    const mappingReady = mapping?.stepMappings?.every((s) => s.status === "APPROVED") && mapping?.route?.status === "APPROVED";
+    function approveStep(tcId, order) {
+        const mapping = currentMapping(tcId);
+        updateTc(tcId, {
+            stepMappings: (mapping?.stepMappings ?? []).map((s) =>
+                s.stepOrder === order ? { ...s, status: "APPROVED" } : s
+            )
+        });
+    }
+
+    function approveAssertion(tcId, index) {
+        const mapping = currentMapping(tcId);
+        updateTc(tcId, {
+            assertionMappings: (mapping?.assertionMappings ?? []).map((a, i) =>
+                i === index ? { ...a, status: "APPROVED" } : a
+            )
+        });
+    }
+
+    function currentMapping(tcId) {
+        return moduleMap?.testCaseMappings?.find((tc) => tc.testCaseId === tcId) || null;
+    }
+
+    // canGenerate cho 1 testcase: mọi step + route + assertion APPROVED
+    const activeMap = currentMapping(activeTc);
+    const mappingReady =
+        activeMap &&
+        activeMap.route?.status === "APPROVED" &&
+        (activeMap.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
+        (activeMap.assertionMappings ?? []).every((a) => a.status === "APPROVED");
+
+    // tất cả testcase đã approved
+    const allApproved =
+        moduleMap?.testCaseMappings?.length > 0 &&
+        moduleMap.testCaseMappings.every(
+            (tc) =>
+                tc.route?.status === "APPROVED" &&
+                (tc.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
+                (tc.assertionMappings ?? []).every((a) => a.status === "APPROVED")
+        );
 
     async function handleGenerate() {
-        if (!selectedTC || !mapping) return;
+        if (!activeMap || !mappingReady) return;
+        const tc = testCases.find((t) => t.id === activeTc);
         setGenerating(true);
         setGenerateError("");
         try {
             const r = await generateCode({
-                testCase: selectedTC,
-                mapping,
+                testCase: tc,
+                mapping: activeMap,
                 codegenText,
                 confirmedFacts: CONFIRMED_FACTS
             });
@@ -120,25 +165,25 @@ export default function AIAutomationPage() {
     }
 
     return (
-        <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-            <h2>Automation AI — TC001 Đăng nhập (MVP)</h2>
+        <div style={{ padding: 24, maxWidth: 1150, margin: "0 auto" }}>
+            <h2>Automation Intelligence — Đăng nhập (MVP)</h2>
 
             {/* BƯỚC 1: INPUT */}
             <section style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                <h3>Bước 1 — Input</h3>
+                <h3>Bước 1 — Input (toàn bộ module)</h3>
                 <div style={{ display: "flex", gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                        <label style={{ fontWeight: 600 }}>approved-testcases.json</label>
+                        <label style={{ fontWeight: 600 }}>approved-testcases.json (cả module)</label>
                         <textarea
                             rows={6}
                             style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}
                             value={approvedJson}
                             onChange={(e) => setApprovedJson(e.target.value)}
-                            placeholder='Paste approved-testcases.json...'
+                            placeholder="Paste approved-testcases.json (TC001–TC004)..."
                         />
                     </div>
                     <div style={{ flex: 1 }}>
-                        <label style={{ fontWeight: 600 }}>Playwright Codegen</label>
+                        <label style={{ fontWeight: 600 }}>Playwright Codegen (toàn bộ chức năng)</label>
                         <textarea
                             rows={6}
                             style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}
@@ -152,97 +197,176 @@ export default function AIAutomationPage() {
                     Load Inputs
                 </button>
                 {testCases.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                        <label style={{ marginRight: 8 }}>Chọn testcase:</label>
-                        <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-                            {testCases.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.id} — {t.title}
-                                </option>
-                            ))}
-                        </select>
+                    <div style={{ marginTop: 8, color: "#333" }}>
+                        Đã nạp module <strong>{moduleName}</strong>: {testCases.length} testcase (
+                        {testCases.map((t) => t.id).join(", ")})
                     </div>
                 )}
             </section>
 
-            {/* BƯỚC 2: AI MAPPING */}
+            {/* BƯỚC 2: AI MAPPING toàn bộ module */}
             <section style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                <h3>Bước 2 — AI Mapping</h3>
-                <button onClick={handleAnalyze} disabled={!selectedTC || analyzing} style={{ padding: "8px 14px" }}>
-                    {analyzing ? "Đang phân tích..." : "AI Analyze & Map"}
+                <h3>Bước 2 — AI Analyze &amp; Map (toàn bộ module)</h3>
+                <button onClick={handleAnalyze} disabled={testCases.length === 0 || analyzing} style={{ padding: "8px 14px" }}>
+                    {analyzing ? "Đang phân tích toàn bộ..." : "AI Analyze & Map"}
                 </button>
                 {mappingError && <div style={{ color: "#b00020", marginTop: 8 }}>{mappingError}</div>}
 
-                {mapping && (
+                {moduleMap?.testCaseMappings && (
                     <div style={{ marginTop: 12 }}>
-                        <div>
-                            <strong>Route:</strong> {mapping.route?.value} ({mapping.route?.status})
-                        </div>
-                        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
-                            <thead>
-                                <tr style={{ textAlign: "left", borderBottom: "2px solid #333" }}>
-                                    <th>Step</th>
-                                    <th>Business Step</th>
-                                    <th>Action</th>
-                                    <th>Locator</th>
-                                    <th>Confidence</th>
-                                    <th>Status</th>
-                                    <th>Approve</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {mapping.stepMappings?.map((s) => (
-                                    <tr key={s.stepOrder} style={{ borderBottom: "1px solid #eee" }}>
-                                        <td>{s.stepOrder}</td>
-                                        <td>
-                                            <input
-                                                value={s.businessStep}
-                                                onChange={(e) => updateStep(s.stepOrder, { businessStep: e.target.value })}
-                                                style={{ width: 140 }}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                value={s.actionType}
-                                                onChange={(e) => updateStep(s.stepOrder, { actionType: e.target.value })}
-                                                style={{ width: 80 }}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                value={s.locator}
-                                                onChange={(e) => updateStep(s.stepOrder, { locator: e.target.value })}
-                                                style={{ width: 260, fontFamily: "monospace", fontSize: 11 }}
-                                            />
-                                        </td>
-                                        <td>{s.confidence}</td>
-                                        <td>
-                                            <span style={{ color: s.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
-                                                {s.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button onClick={() => approveStep(s.stepOrder)} disabled={s.status === "APPROVED"}>
-                                                Approve
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <div style={{ marginTop: 8, color: "#666" }}>
-                            <strong>Assertions:</strong>{" "}
-                            {mapping.assertionMappings?.map((a, i) => (
-                                <span key={i}>
-                                    {a.playwrightAssertion}
-                                    {i < mapping.assertionMappings.length - 1 ? "; " : ""}
-                                </span>
+                        {/* Tabs theo testcase */}
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                            {moduleMap.testCaseMappings.map((tc) => (
+                                <button
+                                    key={tc.testCaseId}
+                                    onClick={() => {
+                                        setActiveTc(tc.testCaseId);
+                                        setCode("");
+                                        setRunResult(null);
+                                    }}
+                                    style={{
+                                        padding: "6px 12px",
+                                        border: "1px solid #ccc",
+                                        borderRadius: 6,
+                                        background: activeTc === tc.testCaseId ? "#2563eb" : "#fff",
+                                        color: activeTc === tc.testCaseId ? "#fff" : "#333",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    {tc.testCaseId}
+                                </button>
                             ))}
                         </div>
-                        {mapping.warnings?.length > 0 && (
-                            <div style={{ marginTop: 8, color: "#8a6d00" }}>
-                                <strong>Warnings:</strong>
-                                <ul>{mapping.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+
+                        {activeMap && (
+                            <div>
+                                <h4 style={{ margin: "4px 0 8px" }}>
+                                    {activeMap.testCaseId}{" "}
+                                    <span style={{ color: "#666", fontWeight: 400 }}>
+                                        {testCases.find((t) => t.id === activeMap.testCaseId)?.title ?? ""}
+                                    </span>
+                                </h4>
+
+                                {/* Route */}
+                                <div style={{ marginBottom: 8 }}>
+                                    <strong>Route:</strong> {activeMap.route?.value || "(trống)"} (
+                                    <span style={{ color: activeMap.route?.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                        {activeMap.route?.status}
+                                    </span>
+                                    ){" "}
+                                    {activeMap.route?.status !== "APPROVED" && (
+                                        <button onClick={() => approveRoute(activeMap.testCaseId)} style={{ marginLeft: 8 }}>
+                                            Approve Route
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Steps */}
+                                <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
+                                    <thead>
+                                        <tr style={{ textAlign: "left", borderBottom: "2px solid #333" }}>
+                                            <th>Step</th>
+                                            <th>Business Step</th>
+                                            <th>Action</th>
+                                            <th>Locator</th>
+                                            <th>Confidence</th>
+                                            <th>Status</th>
+                                            <th>Approve</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(activeMap.stepMappings ?? []).map((s) => (
+                                            <tr key={s.stepOrder} style={{ borderBottom: "1px solid #eee" }}>
+                                                <td>{s.stepOrder}</td>
+                                                <td>
+                                                    <input
+                                                        value={s.businessStep}
+                                                        onChange={(e) =>
+                                                            updateTc(activeMap.testCaseId, {
+                                                                stepMappings: (activeMap.stepMappings ?? []).map((x) =>
+                                                                    x.stepOrder === s.stepOrder ? { ...x, businessStep: e.target.value } : x
+                                                                )
+                                                            })
+                                                        }
+                                                        style={{ width: 150 }}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        value={s.actionType}
+                                                        onChange={(e) =>
+                                                            updateTc(activeMap.testCaseId, {
+                                                                stepMappings: (activeMap.stepMappings ?? []).map((x) =>
+                                                                    x.stepOrder === s.stepOrder ? { ...x, actionType: e.target.value } : x
+                                                                )
+                                                            })
+                                                        }
+                                                        style={{ width: 80 }}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        value={s.locator}
+                                                        onChange={(e) =>
+                                                            updateTc(activeMap.testCaseId, {
+                                                                stepMappings: (activeMap.stepMappings ?? []).map((x) =>
+                                                                    x.stepOrder === s.stepOrder ? { ...x, locator: e.target.value } : x
+                                                                )
+                                                            })
+                                                        }
+                                                        style={{ width: 260, fontFamily: "monospace", fontSize: 11 }}
+                                                    />
+                                                </td>
+                                                <td>{s.confidence}</td>
+                                                <td>
+                                                    <span style={{ color: s.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                                        {s.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        onClick={() => approveStep(activeMap.testCaseId, s.stepOrder)}
+                                                        disabled={s.status === "APPROVED"}
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Assertions */}
+                                <div style={{ marginTop: 8 }}>
+                                    <strong>Assertions:</strong>
+                                    {(activeMap.assertionMappings ?? []).map((a, i) => (
+                                        <div key={i} style={{ margin: "4px 0", display: "flex", alignItems: "center", gap: 8 }}>
+                                            <span>
+                                                {a.playwrightAssertion || a.businessExpectation}{" "}
+                                                <span style={{ color: a.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                                    ({a.status})
+                                                </span>
+                                            </span>
+                                            {a.status !== "APPROVED" && (
+                                                <button onClick={() => approveAssertion(activeMap.testCaseId, i)}>
+                                                    Approve Assertion
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {activeMap.missingData?.length > 0 && (
+                                    <div style={{ marginTop: 8, color: "#8a6d00" }}>
+                                        <strong>Missing data:</strong> {activeMap.missingData.join(", ")}
+                                    </div>
+                                )}
+                                {activeMap.warnings?.length > 0 && (
+                                    <div style={{ marginTop: 8, color: "#8a6d00" }}>
+                                        <strong>Warnings:</strong>
+                                        <ul>{activeMap.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -255,13 +379,15 @@ export default function AIAutomationPage() {
                 <button
                     onClick={handleGenerate}
                     disabled={!mappingReady || generating}
-                    title={mappingReady ? "" : "Chỉ bật khi mapping đã được tester chấp nhận"}
+                    title={mappingReady ? "" : "Chỉ bật khi mapping của testcase này đã được tester chấp nhận (route + step + assertion)"}
                     style={{ padding: "8px 14px" }}
                 >
-                    {generating ? "Đang sinh code..." : "AI Generate Automation"}
+                    {generating ? "Đang sinh code..." : `AI Generate Automation (${activeTc})`}
                 </button>
-                {!mappingReady && mapping && (
-                    <div style={{ color: "#666", marginTop: 8 }}>Bạn cần Approve tất cả step + route trước.</div>
+                {moduleMap && !mappingReady && (
+                    <div style={{ color: "#666", marginTop: 8 }}>
+                        Bạn cần Approve route + tất cả step + assertion của {activeTc} trước.
+                    </div>
                 )}
                 {generateError && <div style={{ color: "#b00020", marginTop: 8 }}>{generateError}</div>}
                 {validation && (
@@ -283,6 +409,11 @@ export default function AIAutomationPage() {
                     >
                         {code}
                     </pre>
+                )}
+                {allApproved && !code && (
+                    <div style={{ marginTop: 8, color: "#1a7f37" }}>
+                        Tất cả testcase đã Approved. Bạn có thể Generate từng testcase ở tab tương ứng.
+                    </div>
                 )}
             </section>
 
