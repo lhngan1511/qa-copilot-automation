@@ -75,6 +75,7 @@ export default class AIAutomationCodegen {
             "- import { test, expect } from '@playwright/test';",
             "- test('<TC001 - tên>', async ({ page }) => { ... })  // tiêu đề chứa TC001",
             "- goto: await page.goto(process.env.BASE_URL + '<route từ mapping>');",
+            "  LƯU Ý route: dùng CHÍNH XÁC mapping.route.value (vd '/user/login'). KHÔNG thêm query returnUrl, KHÔNG hardcode host/IP vào chuỗi route.",
             "- fill/click theo từng step, dùng locator từ mapping",
             "- Tài khoản: fill(process.env.LOGIN_USERNAME)",
             "- Mật khẩu: fill(process.env.LOGIN_PASSWORD)",
@@ -110,19 +111,24 @@ export default class AIAutomationCodegen {
             errors.push('Code thiếu import "@playwright/test".');
         }
 
-        // 3. URL hardcode — phải dùng process.env.BASE_URL
-        if (code.includes("http://") || code.includes("https://") || code.includes(HARDCODED_HOST)) {
-            errors.push(`Code hardcode URL/host (${HARDCODED_HOST}). Phải dùng process.env.BASE_URL.`);
+        // 3. URL hardcode — goto phải dùng process.env.BASE_URL.
+        //    Chỉ flag khi đối số goto là string literal http://... hardcode (không phải returnUrl trong route).
+        const gotoHardcode = /page\.goto\(\s*['"`][^'"`]*https?:\/\/[^'"`]*['"`]/i;
+        if (gotoHardcode.test(code)) {
+            errors.push("Code hardcode URL trong page.goto(). Phải dùng process.env.BASE_URL + '<route>'. Không hardcode host/host:port.");
         }
         if (!code.includes("process.env.BASE_URL")) {
             errors.push("Code không dùng process.env.BASE_URL cho page.goto().");
         }
 
-        // 4. Credential — phải dùng env, KHÔNG hardcode literal giá trị thật
+        // 4. Credential — phải dùng env. Chỉ flag khi một STRING LITERAL trong code BẰNG giá trị credential thật
+        //    (tránh false-positive khi code chỉ dùng process.env.LOGIN_USERNAME/LOGIN_PASSWORD).
+        const literals = code.match(/['"`][^'"`]*['"`]/g) || [];
+        const literalValues = new Set(literals.map((l) => l.slice(1, -1)));
         const credentialValues = [this.env.LOGIN_USERNAME, this.env.LOGIN_PASSWORD].filter(Boolean);
         for (const v of credentialValues) {
-            if (v && code.includes(v)) {
-                errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD).");
+            if (v && literalValues.has(v)) {
+                errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD). Phải dùng process.env.");
             }
         }
         if (!code.includes("process.env.LOGIN_USERNAME")) {

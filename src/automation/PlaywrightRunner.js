@@ -37,6 +37,14 @@ export default class PlaywrightRunner {
         return c || null;
     }
 
+    /** Đường dẫn playwright binary — Windows cần .cmd (spawn không chạy được shim unix). */
+    playwrightBin() {
+        const binDir = path.join(this.rootDir, "node_modules", ".bin");
+        return process.platform === "win32"
+            ? path.join(binDir, "playwright.cmd")
+            : path.join(binDir, "playwright");
+    }
+
     /**
      * Phân giải browser và diagnostic khi thiếu.
      * @returns {{ok:boolean, channel:string|null, diagnostic:string|null}}
@@ -102,7 +110,7 @@ export default class PlaywrightRunner {
                 resolve({ ok: false, raw: browser.diagnostic, results: null, resultsFile: null, error: browser.diagnostic });
                 return;
             }
-            const bin = path.join(this.rootDir, "node_modules", ".bin", "playwright");
+            const bin = this.playwrightBin();
             const resultsFile = path.join(projectDir, "test-results.json");
             try {
                 if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
@@ -111,6 +119,7 @@ export default class PlaywrightRunner {
             }
             const args = this.buildArgs({ projectDir, extraArgs });
             const child = spawn(bin, args, {
+                shell: process.platform === "win32",
                 cwd: this.rootDir,
                 env: { ...process.env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
                 stdio: ["ignore", "pipe", "pipe"]
@@ -151,10 +160,11 @@ export default class PlaywrightRunner {
                 resolve({ status: "DIAGNOSTIC", diagnostic: browser.diagnostic, durationMs: 0, error: null, log: "" });
                 return;
             }
-            const bin = path.join(this.rootDir, "node_modules", ".bin", "playwright");
+            const bin = this.playwrightBin();
             const started = Date.now();
             const args = this.buildArgs({ filePath: abs });
             const child = spawn(bin, args, {
+                shell: process.platform === "win32",
                 cwd: this.rootDir,
                 env: { ...process.env, ...env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
                 stdio: ["ignore", "pipe", "pipe"]

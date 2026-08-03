@@ -93,6 +93,18 @@ test("config channel: playwright.config.js đọc PLAYWRIGHT_BROWSER_CHANNEL", (
     assert.ok(cfg.includes("channel"), "config cấu hình use.channel");
 });
 
+test("playwrightBin(): trên Windows dùng .cmd, khác thì dùng file thường", () => {
+    const r = new PlaywrightRunner({ rootDir, browserChannel: "chrome" });
+    const bin = r.playwrightBin();
+    assert.ok(bin.includes("node_modules"), "bin nằm trong node_modules/.bin");
+    // logic chọn .cmd tuỳ platform — không assert cứng vì sandbox là linux
+    assert.ok(bin.includes("playwright"), "bin có tên playwright");
+    // Nếu mô phỏng win32, phải có .cmd
+    if (process.platform === "win32") {
+        assert.ok(bin.endsWith(".cmd"), "Windows phải dùng playwright.cmd");
+    }
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 5 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

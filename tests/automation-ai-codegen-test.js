@@ -169,6 +169,41 @@ test("Lỗi 4: code thiếu testcase ID TC001 trong tiêu đề bị chặn", as
     assert.ok(validation.errors.some((e) => e.includes("TC001")), "phải báo thiếu TC001");
 });
 
+// ---- Local Acceptance: 2 false-positive từ máy local ----
+
+test("Không false-positive URL khi goto dùng process.env.BASE_URL + route (kể cả có query)", async () => {
+    // Trường hợp local thực tế: route chứa returnUrl (host nằm trong query, không phải đối số goto hardcode)
+    const codeWithQuery = goodCode.replace(
+        "page.goto(process.env.BASE_URL + '/user/login')",
+        "page.goto(process.env.BASE_URL + '/user/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F')"
+    );
+    const fake = new FakeAIProvider({ defaultResponse: codeWithQuery });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.ok(!validation.errors.some((e) => e.includes("hardcode URL")), JSON.stringify(validation.errors));
+    assert.ok(!validation.errors.some((e) => e.includes("BASE_URL")), JSON.stringify(validation.errors));
+});
+
+test("Không false-positive credential khi code chỉ dùng process.env (giá trị env không phải string literal)", async () => {
+    // env value giống substring của tên biến (từng gây false-positive do code.includes)
+    const fake = new FakeAIProvider({ defaultResponse: goodCode });
+    const codegen = new AIAutomationCodegen(fake, {
+        env: { LOGIN_USERNAME: "LOGIN", LOGIN_PASSWORD: "PASSWORD" } // substring của tên biến process.env.LOGIN_USERNAME
+    });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    assert.ok(!validation.errors.some((e) => e.includes("hardcode giá trị credential")), "không false-positive credential");
+});
+
+test("Vẫn chặn credential hardcode khi dùng string literal thật (fill('admin'))", async () => {
+    const bad = goodCode.replace("process.env.LOGIN_USERNAME", "'admin'");
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("hardcode giá trị credential")), "chặn literal credential");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
