@@ -6,26 +6,87 @@ import ExecutionResult from "./ExecutionResult.js";
 
 /**
  * PlaywrightRunner
- * Chạy generated Playwright project, thu thập pass/fail/error.
- * Không sửa test nguồn; không tự approve kết quả.
+ * Chạy generated Playwright project/file, thu thập pass/fail/error.
+ *
+ * Hỗ trợ browser channel cài sẵn trên máy:
+ *   - PLAYWRIGHT_BROWSER_CHANNEL=chrome  -> dùng Chrome hệ thống (channel "chrome"), KHÔNG cần bundled Chromium.
+ *   - PLAYWRIGHT_BROWSER_CHANNEL=msedge  -> dùng Edge hệ thống (channel "msedge").
+ *   - Không cấu hình channel             -> fallback bundled Chromium (chromium.executablePath()).
+ *
+ * Không hardcode đường dẫn máy local — dùng channel chính thức của Playwright.
+ * Diagnostic phân biệt:
+ *   SYSTEM_CHROME_NOT_FOUND / SYSTEM_EDGE_NOT_FOUND / BUNDLED_CHROMIUM_NOT_INSTALLED
  */
+
+const VALID_CHANNELS = new Set(["chrome", "msedge"]);
+
 export default class PlaywrightRunner {
     /**
      * @param {object} options
      * @param {string} [options.rootDir]
+     * @param {string|null} [options.browserChannel]  mặc định đọc process.env.PLAYWRIGHT_BROWSER_CHANNEL
      */
-    constructor({ rootDir = process.cwd() } = {}) {
+    constructor({ rootDir = process.cwd(), browserChannel = null } = {}) {
         this.rootDir = rootDir;
+        this.browserChannel = browserChannel ?? process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? null;
     }
 
-    /** Kiểm tra browser Chromium đã cài chưa (file executable tồn tại thật). */
-    hasBrowser() {
+    /** Channel đã cấu hình (chuẩn hóa lower). */
+    configuredChannel() {
+        const c = String(this.browserChannel ?? "").trim().toLowerCase();
+        return c || null;
+    }
+
+    /**
+     * Phân giải browser và diagnostic khi thiếu.
+     * @returns {{ok:boolean, channel:string|null, diagnostic:string|null}}
+     */
+    resolveBrowser() {
+        const channel = this.configuredChannel();
+
+        if (channel === "chrome") {
+            // Dùng channel chrome — Playwright tự tìm Chrome hệ thống. Chỉ báo lỗi khi run fail.
+            return { ok: true, channel: "chrome", diagnostic: null };
+        }
+        if (channel === "msedge") {
+            return { ok: true, channel: "msedge", diagnostic: null };
+        }
+        if (channel && !VALID_CHANNELS.has(channel)) {
+            return {
+                ok: false,
+                channel: null,
+                diagnostic: `Browser channel không hợp lệ: "${channel}". Hỗ trợ: chrome | msedge (hoặc bỏ trống để dùng bundled Chromium).`
+            };
+        }
+
+        // fallback bundled Chromium
         try {
             const p = chromium.executablePath();
-            return Boolean(p) && fs.existsSync(p);
+            if (p && fs.existsSync(p)) {
+                return { ok: true, channel: null, diagnostic: null };
+            }
         } catch {
-            return false;
+            /* fallthrough */
         }
+        return {
+            ok: false,
+            channel: null,
+            diagnostic:
+                "BUNDLED_CHROMIUM_NOT_INSTALLED: Chromium bundled chưa cài. Chạy `npx playwright install chromium`, hoặc đặt PLAYWRIGHT_BROWSER_CHANNEL=chrome để dùng Chrome hệ thống."
+        };
+    }
+
+    /** Build args playwright với channel (nếu có). */
+    buildArgs({ filePath = null, projectDir = null, extraArgs = [] } = {}) {
+        const channel = this.configuredChannel();
+        const args = ["test"];
+        if (channel) {
+            args.push("--channel", channel, "--browser=chromium");
+        }
+        if (projectDir) args.push("--config", path.join(projectDir, "playwright.config.js"));
+        if (filePath) args.push(filePath);
+        args.push("--reporter", projectDir ? "json" : "line", ...extraArgs);
+        return args;
     }
 
     /**
@@ -34,38 +95,29 @@ export default class PlaywrightRunner {
      */
     runProject(projectDir, { extraArgs = [] } = {}) {
         return new Promise((resolve) => {
-            if (!this.hasBrowser()) {
-                resolve({
-                    ok: false,
-                    raw: "BROWSER_NOT_INSTALLED",
-                    results: null,
-                    resultsFile: null,
-                    error: "Chromium chưa được cài đặt. Chạy `npx playwright install chromium` hoặc trỏ app đích."
-                });
+            const browser = this.resolveBrowser();
+            if (!browser.ok) {
+                resolve({ ok: false, raw: browser.diagnostic, results: null, resultsFile: null, error: browser.diagnostic });
                 return;
             }
             const bin = path.join(this.rootDir, "node_modules", ".bin", "playwright");
-            const config = path.join(projectDir, "playwright.config.js");
             const resultsFile = path.join(projectDir, "test-results.json");
             try {
                 if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
             } catch {
                 /* ignore */
             }
-
-            const args = ["test", "--config", config, "--reporter", "json", ...extraArgs];
+            const args = this.buildArgs({ projectDir, extraArgs });
             const child = spawn(bin, args, {
                 cwd: this.rootDir,
-                env: { ...process.env, BASE_URL: process.env.BASE_URL || "" },
+                env: { ...process.env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
                 stdio: ["ignore", "pipe", "pipe"]
             });
             let stdout = "";
             let stderr = "";
             child.stdout.on("data", (d) => (stdout += d));
             child.stderr.on("data", (d) => (stderr += d));
-            child.on("error", (err) =>
-                resolve({ ok: false, raw: String(err), results: null, resultsFile: null })
-            );
+            child.on("error", (err) => resolve({ ok: false, raw: String(err), results: null, resultsFile: null }));
             child.on("close", () => {
                 let results = null;
                 if (fs.existsSync(resultsFile)) {
@@ -75,20 +127,14 @@ export default class PlaywrightRunner {
                         results = null;
                     }
                 }
-                resolve({
-                    ok: results !== null,
-                    raw: stdout + stderr,
-                    results,
-                    resultsFile
-                });
+                resolve({ ok: results !== null, raw: stdout + stderr, results, resultsFile });
             });
         });
     }
 
     /**
-     * Chạy một file .spec.js đơn lẻ (AI codegen sinh ra).
-     * Trả kết quả gồm PASS/FAIL/duration/error/log + diagnostic rõ ràng.
-     * @param {string} filePath đường dẫn file .spec.js
+     * Chạy một file .spec.js đơn lẻ.
+     * @param {string} filePath
      * @returns {Promise<object>}
      */
     runFile(filePath, { env = {} } = {}) {
@@ -98,22 +144,17 @@ export default class PlaywrightRunner {
                 resolve({ status: "ERROR", diagnostic: `Không tìm thấy file: ${abs}`, durationMs: 0, error: null, log: "" });
                 return;
             }
-            if (!this.hasBrowser()) {
-                resolve({
-                    status: "DIAGNOSTIC",
-                    diagnostic:
-                        "Chromium chưa được cài đặt. Chạy `npx playwright install chromium` rồi thử lại. (không thể chạy thật trong môi trường thiếu browser)",
-                    durationMs: 0,
-                    error: null,
-                    log: ""
-                });
+            const browser = this.resolveBrowser();
+            if (!browser.ok) {
+                resolve({ status: "DIAGNOSTIC", diagnostic: browser.diagnostic, durationMs: 0, error: null, log: "" });
                 return;
             }
             const bin = path.join(this.rootDir, "node_modules", ".bin", "playwright");
             const started = Date.now();
-            const child = spawn(bin, ["test", "--reporter", "line", abs], {
+            const args = this.buildArgs({ filePath: abs });
+            const child = spawn(bin, args, {
                 cwd: this.rootDir,
-                env: { ...process.env, ...env },
+                env: { ...process.env, ...env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
                 stdio: ["ignore", "pipe", "pipe"]
             });
             let stdout = "";
@@ -124,14 +165,24 @@ export default class PlaywrightRunner {
             child.on("close", (code) => {
                 const log = stdout + stderr;
                 const durationMs = Date.now() - started;
-                // heuristic: playwright test failed => FAILED
                 let status = code === 0 ? "PASSED" : "FAILED";
-                if (log.includes("net::ERR_CONNECTION_REFUSED") || log.includes("connect ECONNREFUSED") || log.includes("Timeout") || log.includes("net::ERR")) {
+                // Phân biệt diagnostic theo browser
+                if (code !== 0) {
+                    const ch = this.configuredChannel();
+                    if (ch === "chrome" && /executable doesn't exist|chrome.*not found|Executable doesn't exist/i.test(log)) {
+                        status = "DIAGNOSTIC";
+                        browser.diagnostic = "SYSTEM_CHROME_NOT_FOUND: Không tìm thấy Chrome hệ thống. Kiểm tra Chrome đã cài hoặc dùng PLAYWRIGHT_BROWSER_CHANNEL=msedge / bundled Chromium.";
+                    } else if (ch === "msedge" && /executable doesn't exist|msedge.*not found|Executable doesn't exist/i.test(log)) {
+                        status = "DIAGNOSTIC";
+                        browser.diagnostic = "SYSTEM_EDGE_NOT_FOUND: Không tìm thấy Microsoft Edge hệ thống.";
+                    }
+                }
+                if (log.includes("net::ERR_CONNECTION_REFUSED") || log.includes("connect ECONNREFUSED") || log.includes("net::ERR")) {
                     status = "FAILED_APP_UNREACHABLE";
                 }
                 resolve({
                     status,
-                    diagnostic: code === 0 ? null : log.slice(0, 500),
+                    diagnostic: status === "PASSED" ? null : browser.diagnostic ?? log.slice(0, 500),
                     durationMs,
                     error: code === 0 ? null : log.slice(0, 1000),
                     log
@@ -140,9 +191,6 @@ export default class PlaywrightRunner {
         });
     }
 
-    /**
-     * Tạo ExecutionResult per testcase từ raw json report.
-     */
     buildExecutionResults(projectDir, manifest, runResult) {
         if (!runResult.results) {
             const env = this.environment();
@@ -154,37 +202,27 @@ export default class PlaywrightRunner {
                         testCaseId: id,
                         mappingArtifactId: manifest.sourceArtifactIds?.[i],
                         generatedProjectId: manifest.projectId,
-                        errors: [
-                            runResult.error ||
-                                "Không lấy được kết quả playwright (browser chưa cài hoặc lỗi runtime)."
-                        ],
+                        errors: [runResult.error || "Không lấy được kết quả playwright (browser chưa cài hoặc lỗi runtime)."],
                         environment: env,
                         createdAt: new Date().toISOString()
                     })
             );
         }
-
         const specs = runResult.results.suites;
         const byFile = new Map();
-        (specs || []).forEach((suite) =>
-            this.flattenSpecs(suite, byFile)
-        );
-
+        (specs || []).forEach((suite) => this.flattenSpecs(suite, byFile));
         return manifest.testCaseIds.map((id, i) => {
             const spec = byFile.get(`${id}.spec.js`);
             const durationMs = spec?.duration ?? 0;
             let status = "NOT_EXECUTED";
             let failures = [];
-            let errors = [];
             if (spec) {
                 if (spec.status === "passed") status = "PASSED";
                 else if (spec.status === "failed") status = "FAILED";
                 else if (spec.status === "timedOut") status = "ERROR";
                 else status = String(spec.status || "UNKNOWN").toUpperCase();
                 for (const r of spec.results || []) {
-                    for (const e of r.error || []) {
-                        failures.push(String(e.message ?? e).slice(0, 500));
-                    }
+                    for (const e of r.error || []) failures.push(String(e.message ?? e).slice(0, 500));
                 }
             }
             return new ExecutionResult({
@@ -193,13 +231,9 @@ export default class PlaywrightRunner {
                 testCaseId: id,
                 mappingArtifactId: manifest.sourceArtifactIds?.[i],
                 generatedProjectId: manifest.projectId,
-                summary: {
-                    status,
-                    durationMs,
-                    source: `${id}.spec.js`
-                },
+                summary: { status, durationMs, source: `${id}.spec.js` },
                 failures,
-                errors,
+                errors: [],
                 environment: this.environment(),
                 createdAt: new Date().toISOString()
             });
@@ -218,7 +252,7 @@ export default class PlaywrightRunner {
 
     environment() {
         return {
-            browser: "chromium",
+            browser: this.configuredChannel() ?? "chromium",
             baseUrl: process.env.BASE_URL || "",
             node: process.version
         };
