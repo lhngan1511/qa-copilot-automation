@@ -230,6 +230,27 @@ test("JavaScript thuần (không TS) được chấp nhận", async () => {
     assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
 });
 
+// ---- ES module, cấm require ----
+test("Chặn require('@playwright/test') (CommonJS) — dự án ESM", async () => {
+    const cjsCode = goodCode.replace(
+        "import { test, expect } from '@playwright/test';",
+        "const { test, expect } = require('@playwright/test');"
+    );
+    const fake = new FakeAIProvider({ defaultResponse: cjsCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("require") || e.includes("import")), "phải chặn require");
+});
+
+test("Code dùng import ES module được chấp nhận", async () => {
+    const fake = new FakeAIProvider({ defaultResponse: goodCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    assert.ok(goodCode.includes("import { test, expect }"), "goodCode dùng import");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

@@ -56,6 +56,7 @@ export default class AIAutomationCodegen {
         return [
             "Bạn là chuyên gia Playwright. Hãy sinh file test Playwright hoàn chỉnh cho testcase.",
             "Code phải là JAVASCRIPT THUẦN (.js). KHÔNG TypeScript: KHÔNG non-null assertion `!` (vd process.env.X!), KHÔNG type annotation `: string`, KHÔNG interface/type/enum, KHÔNG `as`. KHÔNG dùng `!` sau process.env.",
+            "Dùng ES MODULE: dòng đầu phải là `import { test, expect } from '@playwright/test';`. TUYỆT ĐỐI KHÔNG dùng `require(...)` (dự án là ESM, package.json type:module).",
             "CHỈ dùng locator có trong APPROVED MAPPING. Không bịa locator mới.",
             "Credential (username/password) lấy từ process.env.LOGIN_USERNAME và process.env.LOGIN_PASSWORD. KHÔNG hardcode.",
             "Base URL lấy từ process.env.BASE_URL. KHÔNG hardcode URL/host thật.",
@@ -108,9 +109,13 @@ export default class AIAutomationCodegen {
             errors.push(`Code thiếu testcase ID "${id}" (tiêu đề test phải chứa ${id}).`);
         }
 
-        // 2. import
-        if (!code.includes("from '@playwright/test'") && !code.includes('from "@playwright/test"')) {
-            errors.push('Code thiếu import "@playwright/test".');
+        // 2. import — phải dùng ES module import (package.json type:module)
+        if (!code.includes("import { test, expect } from '@playwright/test'") && !code.includes('import { test, expect } from "@playwright/test"')) {
+            errors.push('Code phải dùng `import { test, expect } from "@playwright/test";` (ES module).');
+        }
+        // 2a. cấm require (CommonJS) — dự án ESM, require sẽ lỗi "require is not defined"
+        if (/require\(\s*['"]@playwright\/test['"]\s*\)/.test(code)) {
+            errors.push('Code dùng require("@playwright/test") (CommonJS) — dự án là ES module. Phải dùng `import { test, expect } from "@playwright/test";`.');
         }
 
         // 2b. JavaScript thuần (không TypeScript)
