@@ -1,0 +1,138 @@
+import assert from "node:assert";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+
+import AIAutomationCodegen from "../src/automation/ai/AIAutomationCodegen.js";
+import FakeAIProvider from "./helpers/FakeAIProvider.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const codegenFile = path.join(__dirname, "fixtures", "playwright-codegen-Login.js");
+const codegenText = fs.readFileSync(codegenFile, "utf8");
+
+const tc001 = {
+    id: "TC001",
+    module: "Đăng nhập",
+    feature: "Đăng nhập",
+    title: "Đăng nhập hoạt động thành công với dữ liệu hợp lệ",
+    type: "POSITIVE",
+    steps: [
+        { order: 1, action: "Nhập tài khoản" },
+        { order: 2, action: "Nhập mật khẩu" },
+        { order: 3, action: "Nhập mã xác nhận" },
+        { order: 4, action: "Chọn Đăng nhập" }
+    ],
+    assertions: [
+        { type: "AUTHENTICATED", target: "Đăng nhập", expected: "Người dùng đăng nhập thành công khi tài khoản và mật khẩu hợp lệ." }
+    ]
+};
+
+const mapping = {
+    testCaseId: "TC001",
+    route: { source: "PLAYWRIGHT_CODEGEN", value: "/user/login", status: "MAPPED" },
+    stepMappings: [
+        { stepOrder: 1, businessStep: "Nhập tài khoản", actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", status: "MAPPED" },
+        { stepOrder: 2, businessStep: "Nhập mật khẩu", actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })", status: "MAPPED" },
+        { stepOrder: 3, businessStep: "Nhập mã xác nhận", actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Mã xác nhận' })", status: "MAPPED" },
+        { stepOrder: 4, businessStep: "Chọn Đăng nhập", actionType: "CLICK", locator: "page.getByRole('button', { name: 'Đăng nhập' })", status: "MAPPED" }
+    ],
+    assertionMappings: [
+        { businessExpectation: "Người dùng đăng nhập thành công", playwrightAssertion: "await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();", status: "MAPPED" }
+    ]
+};
+
+const goodCode = `import { test, expect } from '@playwright/test';
+
+test('TC001 - Đăng nhập hoạt động thành công với dữ liệu hợp lệ', async ({ page }) => {
+  await page.goto('/user/login');
+
+  const taikhoan = page.getByRole('textbox', { name: 'Tài khoản' });
+  const matkhau = page.getByRole('textbox', { name: 'Mật khẩu' });
+  const maxacnhan = page.getByRole('textbox', { name: 'Mã xác nhận' });
+  const dangnhap = page.getByRole('button', { name: 'Đăng nhập' });
+
+  await taikhoan.fill(process.env.LOGIN_USERNAME);
+  await matkhau.fill(process.env.LOGIN_PASSWORD);
+  await maxacnhan.fill('123456');
+  await dangnhap.click();
+
+  await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();
+});
+`;
+
+let failures = 0;
+function test(name, fn) {
+    try {
+        fn();
+        console.log(`  ✔ ${name}`);
+    } catch (e) {
+        failures++;
+        console.error(`  ✘ ${name}`);
+        console.error(`    ${e.message}`);
+    }
+}
+
+console.log("\n==================================================");
+console.log(" STEP 2 — AI AUTOMATION CODEGEN TEST (FakeAIProvider)");
+console.log("==================================================\n");
+
+test("AIAutomationCodegen sinh code và validate đúng", async () => {
+    const fake = new FakeAIProvider({ defaultResponse: goodCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { code, validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    assert.ok(code.includes("import { test, expect }"), "có import");
+    assert.ok(code.includes("process.env.LOGIN_USERNAME"), "dùng env username");
+    assert.ok(code.includes("process.env.LOGIN_PASSWORD"), "dùng env password");
+});
+
+test("Code có syntax JS hợp lệ", () => {
+    const tmp = path.join(__dirname, "..", "outputs", "generated", "_tmp_syntax.js");
+    fs.mkdirSync(path.dirname(tmp), { recursive: true });
+    fs.writeFileSync(tmp, goodCode);
+    execFileSync(process.execPath, ["--check", tmp], { stdio: "pipe" });
+    fs.rmSync(tmp, { force: true });
+});
+
+test("Codegen phát hiện hardcode credential", async () => {
+    const badCode = goodCode.replace(
+        "process.env.LOGIN_USERNAME",
+        "'admin'"
+    ).replace("process.env.LOGIN_PASSWORD", "'123456@Aa'");
+    const fake = new FakeAIProvider({ defaultResponse: badCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "123456@Aa" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false);
+    assert.ok(validation.errors.some((e) => e.includes("hardcode") || e.includes("LOGIN_PASSWORD")));
+});
+
+test("Codegen phát hiện locator ngoài mapping", async () => {
+    const badCode = goodCode.replace(
+        "page.getByRole('textbox', { name: 'Tài khoản' })",
+        "page.getByRole('textbox', { name: 'Không tồn tại' })"
+    );
+    const fake = new FakeAIProvider({ defaultResponse: badCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false);
+    assert.ok(validation.errors.some((e) => e.includes("locator ngoài mapping")));
+});
+
+test("Codegen phát hiện sample credential từ codegen", async () => {
+    const badCode = goodCode.replace("process.env.LOGIN_PASSWORD", "'123456@Aa'");
+    const fake = new FakeAIProvider({ defaultResponse: badCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false);
+});
+
+test("Codegen không dùng provider không có generate()", () => {
+    assert.throws(() => new AIAutomationCodegen({}));
+});
+
+console.log(`\n==================================================`);
+if (failures === 0) console.log(" STEP 2 PASSED ✔");
+else console.log(` ${failures} FAILURE(S) ✘`);
+console.log("==================================================\n");
+process.exit(failures === 0 ? 0 : 1);

@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./config/loadEnv.js";
 
 import QACopilot from "./QACopilot.js";
 

@@ -1,0 +1,10 @@
+[
+  { "evidenceId": "route-route", "decision": "EDIT", "editedValue": "/devices/create", "comment": "route chính thức của màn hình thêm thiết bị" },
+  { "evidenceId": "locator-ma-thiet-bi", "decision": "APPROVE", "comment": "getByLabel Mã thiết bị" },
+  { "evidenceId": "locator-ten-thiet-bi", "decision": "APPROVE", "comment": "getByLabel Tên thiết bị" },
+  { "evidenceId": "locator-loai-thiet-bi", "decision": "APPROVE", "comment": "getByLabel Loại thiết bị" },
+  { "evidenceId": "locator-device", "decision": "EDIT", "editedValue": "Lưu", "comment": "nút Lưu" },
+  { "evidenceId": "locator-them-thiet-bi.assert", "decision": "APPROVE", "comment": "thông báo thành công" },
+  { "evidenceId": "testData-ma-thiet-bi", "decision": "EDIT", "editedValue": "MA-001", "comment": "data thật" },
+  { "evidenceId": "testData-ten-thiet-bi", "decision": "EDIT", "editedValue": "Thiết bị A", "comment": "data thật" }
+]

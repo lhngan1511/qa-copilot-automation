@@ -1,0 +1,136 @@
+{
+  "module": "Login",
+  "status": "WAITING_FOR_TESTER",
+  "questions": [
+    {
+      "questionId": "Q-LOGIN-SUCCESS-001",
+      "category": "ASSERTION",
+      "question": "Xác nhận tiêu chí đăng nhập thành công cho TC001: (a) adminButton visible (quan sát từ Codegen) có được chấp nhận làm tiêu chí thành công không? (b) có cần thêm tiêu chí URL thay đổi (toHaveURL) hoặc trang đích xuất hiện không?",
+      "relatedTestCaseIds": [
+        "TC001"
+      ],
+      "evidenceReferences": [
+        "EV-LOGIN-ASSERT-SUCCESS-001",
+        "EV-LOGIN-ROUTE-001"
+      ],
+      "suggestions": [
+        "Chỉ adminButton visible là đủ",
+        "adminButton + kiểm tra URL chuyển hướng (toHaveURL)",
+        "adminButton + kiểm tra trang đích",
+        "Không dùng adminButton — cần tiêu chí khác"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    },
+    {
+      "questionId": "Q-ASSERTION-VALIDATION-001",
+      "category": "ASSERTION",
+      "question": "Xác nhận dùng 3 message quan sát từ Codegen làm assertion validation cho TC002–TC004: 'Vui lòng nhập Tên tài khoản', 'Vui lòng nhập Mật khẩu', 'Vui lòng nhập Mã xác nhận'?",
+      "relatedTestCaseIds": [
+        "TC002",
+        "TC003",
+        "TC004"
+      ],
+      "evidenceReferences": [
+        "EV-LOGIN-ASSERT-VALIDATE-ACCOUNT-001",
+        "EV-LOGIN-ASSERT-VALIDATE-PASSWORD-001",
+        "EV-LOGIN-ASSERT-VALIDATE-CAPTCHA-001"
+      ],
+      "suggestions": [
+        "Có — dùng cả 3 làm assertion",
+        "Chỉ dùng một số (ghi rõ)",
+        "Không dùng — cần assertion khác"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    },
+    {
+      "questionId": "Q-ROUTE-001",
+      "category": "ROUTE",
+      "question": "Xác nhận route chính thức cho Login: (a) BASE_URL + /user/login, (b) URL đầy đủ quan sát từ Codegen có returnUrl, hay (c) route khác?",
+      "relatedTestCaseIds": [
+        "TC001",
+        "TC002",
+        "TC003",
+        "TC004"
+      ],
+      "evidenceReferences": [
+        "EV-LOGIN-ROUTE-001"
+      ],
+      "suggestions": [
+        "BASE_URL + /user/login (bỏ returnUrl)",
+        "URL đầy đủ có returnUrl như Codegen",
+        "Route khác (cung cấp cụ thể)",
+        "Cần config base URL riêng"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    },
+    {
+      "questionId": "Q-CREDENTIAL-SOURCE-001",
+      "category": "TEST_DATA",
+      "question": "Xác nhận nguồn tài khoản và mật khẩu cho TC001 (testData.fields['Tài khoản'] và ['Mật khẩu'] hiện requiresTesterInput:true, value:null): lấy từ .env, runtime input, config riêng, hay nguồn khác?",
+      "relatedTestCaseIds": [
+        "TC001"
+      ],
+      "evidenceReferences": [],
+      "suggestions": [
+        "Từ biến môi trường (.env)",
+        "Runtime input (tester nhập khi chạy)",
+        "Config riêng của automation",
+        "Nguồn khác (ghi rõ)"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    },
+    {
+      "questionId": "Q-STEP-TARGET-TC001-001",
+      "category": "STEP_CONFLICT",
+      "question": "TC001 có 4 step thiếu 'target'. Xác nhận semantic target cho từng step để map locator: 'Nhập tài khoản'→?, 'Nhập mật khẩu'→?, 'Nhập mã xác nhận'→?, 'Chọn Đăng nhập'→?",
+      "relatedTestCaseIds": [
+        "TC001"
+      ],
+      "evidenceReferences": [
+        "EV-LOGIN-LOC-TAIKHOAN-001",
+        "EV-LOGIN-LOC-MATKHAU-001",
+        "EV-LOGIN-LOC-MAXACNHAN-001",
+        "EV-LOGIN-LOC-DANGNHAP-001"
+      ],
+      "suggestions": [
+        "Nhập tài khoản → Tài khoản; Nhập mật khẩu → Mật khẩu; Nhập mã xác nhận → Mã xác nhận; Chọn Đăng nhập → Đăng nhập (nút)",
+        "Cần sửa lại steps",
+        "Để tôi cung cấp target khác"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    },
+    {
+      "questionId": "Q-STEP-CONFLICT-TC002004-001",
+      "category": "STEP_CONFLICT",
+      "question": "TC002–TC004 có step 'Nhập mã xác nhận' nhưng target là 'Đăng nhập' (mâu thuẫn action nhập vs target nút). Xác định target đúng của step này (hoặc đánh dấu thừa)?",
+      "relatedTestCaseIds": [
+        "TC002",
+        "TC003",
+        "TC004"
+      ],
+      "evidenceReferences": [
+        "EV-LOGIN-LOC-MAXACNHAN-001",
+        "EV-LOGIN-LOC-DANGNHAP-001"
+      ],
+      "suggestions": [
+        "Target đúng là 'Mã xác nhận' (field captcha)",
+        "Target đúng là 'Đăng nhập' (nút) — sửa action thành click",
+        "Step này là thừa — bỏ",
+        "Để tôi tự xử lý khi review"
+      ],
+      "required": true,
+      "answer": null,
+      "answerStatus": "UNANSWERED"
+    }
+  ]
+}

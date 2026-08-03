@@ -1,0 +1,409 @@
+{
+  "module": "Đăng nhập",
+  "sourceNote": "Dữ liệu gốc do tester cung cấp (originalTestCase), giữ nguyên không sửa step/target/testData/assertions. pipelineMetadata tách riêng các field hệ thống phục vụ pipeline, không trộn vào payload testcase gốc.",
+  "testCases": [
+    {
+      "originalTestCase": {
+        "id": "TC001",
+        "scenarioId": "SC001",
+        "moduleId": "MOD001",
+        "functionId": "FUNC001",
+        "function": "Đăng nhập",
+        "module": "Đăng nhập",
+        "feature": "Đăng nhập",
+        "title": "Đăng nhập hoạt động thành công với dữ liệu hợp lệ",
+        "testScenario": "Đăng nhập hoạt động thành công với dữ liệu hợp lệ",
+        "scenario": "Đăng nhập hoạt động thành công với dữ liệu hợp lệ",
+        "type": "POSITIVE",
+        "testObjective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+        "objective": "Kiểm tra chức năng hoạt động đúng theo yêu cầu",
+        "requirementReference": "Đăng nhập",
+        "requirementReferences": ["Chức năng 1: Đăng nhập"],
+        "coveredRules": ["Chức năng 1: Đăng nhập"],
+        "businessRuleIds": [],
+        "sourceItem": null,
+        "ruleClassification": "",
+        "needsClarification": false,
+        "requiresRuntimeSupport": false,
+        "needsEnrichment": false,
+        "executable": false,
+        "postconditions": [],
+        "automationNotes": "",
+        "automationCandidate": true,
+        "preconditions": ["Người dùng chưa đăng nhập.", "Người dùng có tài khoản trong hệ thống.", "Người dùng đang ở màn hình đăng nhập."],
+        "testData": {
+          "fields": {
+            "Tài khoản": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Tài khoản hợp lệ do tester chuẩn bị" },
+            "Mật khẩu": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mật khẩu hợp lệ do tester chuẩn bị" },
+            "Mã xác nhận": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mã xác nhận hợp lệ theo requirement" }
+          },
+          "constraints": {},
+          "requirement": "Nhập Tài khoản hợp lệ do tester chuẩn bị; Nhập Mật khẩu hợp lệ do tester chuẩn bị; Nhập Mã xác nhận hợp lệ theo requirement",
+          "value": "Tài khoản: admin\nMật khẩu: 123456@Aa\nMã xác nhận: 123456",
+          "requiresTesterInput": true
+        },
+        "executionReadiness": "DATA_REQUIRED",
+        "assertions": [
+          { "type": "AUTHENTICATED", "target": "Đăng nhập", "expected": "Người dùng đăng nhập thành công khi tài khoản và mật khẩu hợp lệ." }
+        ],
+        "expectedResult": "Người dùng đăng nhập thành công khi tài khoản và mật khẩu hợp lệ.",
+        "expectedResults": ["Người dùng đăng nhập thành công khi tài khoản và mật khẩu hợp lệ."],
+        "actualResult": "",
+        "status": "Not Tested",
+        "reviewStatus": "APPROVED",
+        "priority": "MEDIUM",
+        "severity": "MEDIUM",
+        "intelligence": null,
+        "traceability": { "requirementId": "Đăng nhập", "scenarioId": "SC001" },
+        "source": "Requirement Intelligence Engine",
+        "reason": "Người dùng nhập thông tin đăng nhập để truy cập hệ thống.",
+        "riskCategory": "POSITIVE",
+        "createdBy": "QA-Copilot",
+        "version": "1.1",
+        "sourceItems": [],
+        "sourceCategories": [],
+        "relatedScenarioIds": [],
+        "mergedTestCaseIds": [],
+        "testcaseId": "TC001",
+        "steps": [
+          { "order": 1, "action": "Nhập tài khoản" },
+          { "order": 2, "action": "Nhập mật khẩu" },
+          { "order": 3, "action": "Nhập mã xác nhận" },
+          { "order": 4, "action": "Chọn Đăng nhập" }
+        ],
+        "automationHints": {
+          "screen": "Login",
+          "operation": "LOGIN",
+          "route": "",
+          "authenticationRequired": null,
+          "navigation": [],
+          "controls": {},
+          "executable": false,
+          "missingMetadata": ["routeOrNavigation", "controls.username", "controls.password", "controls.submit", "assertionLocator"]
+        }
+      },
+      "pipelineMetadata": {
+        "sourceFile": "user-provided-dang-nhap-approved-testcases.json",
+        "pipelineFieldNote": "Field hệ thống cho pipeline — KHÔNG sửa payload testcase gốc"
+      }
+    },
+    {
+      "originalTestCase": {
+        "id": "TC002",
+        "scenarioId": "SC002",
+        "moduleId": "MOD001",
+        "functionId": "FUNC001",
+        "function": "Đăng nhập",
+        "module": "Đăng nhập",
+        "feature": "Đăng nhập",
+        "title": "Hiển thị cảnh báo khi bỏ trống Tài khoản",
+        "testScenario": "Hiển thị cảnh báo khi bỏ trống Tài khoản",
+        "scenario": "Hiển thị cảnh báo khi bỏ trống Tài khoản",
+        "type": "VALIDATION",
+        "testObjective": "Xác minh trường Tài khoản là bắt buộc",
+        "objective": "Xác minh trường Tài khoản là bắt buộc",
+        "requirementReference": "Tài khoản không được để trống.",
+        "requirementReferences": ["Tài khoản không được để trống."],
+        "coveredRules": ["Tài khoản không được để trống."],
+        "businessRuleIds": [],
+        "sourceItem": {
+          "content": "Tài khoản không được để trống.",
+          "source": "BUSINESS_RULE",
+          "category": "BUSINESS_RULE",
+          "code": "",
+          "reference": "Tài khoản không được để trống.",
+          "text": "Tài khoản không được để trống.",
+          "fieldName": "Tài khoản",
+          "classification": "REQUIRED"
+        },
+        "ruleClassification": "REQUIRED",
+        "needsClarification": false,
+        "requiresRuntimeSupport": false,
+        "needsEnrichment": false,
+        "executable": true,
+        "postconditions": [],
+        "automationNotes": "",
+        "automationCandidate": true,
+        "preconditions": ["Người dùng chưa đăng nhập.", "Người dùng có tài khoản trong hệ thống.", "Người dùng đang ở màn hình đăng nhập."],
+        "testData": {
+          "fields": {
+            "Tài khoản": { "value": "", "purpose": "EMPTY" },
+            "Mật khẩu": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mật khẩu hợp lệ do tester chuẩn bị" },
+            "Mã xác nhận": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mã xác nhận hợp lệ theo requirement" }
+          },
+          "constraints": {},
+          "requirement": "Nhập Mật khẩu hợp lệ do tester chuẩn bị; Nhập Mã xác nhận hợp lệ theo requirement",
+          "value": "Mật khẩu: 123456@Aa\nMã xác nhận: 111211",
+          "requiresTesterInput": true
+        },
+        "executionReadiness": "DATA_REQUIRED",
+        "assertions": [
+          { "type": "FIELD_VALIDATION", "target": "Tài khoản", "expected": "Hệ thống không thực hiện Đăng nhập và đánh dấu trường Tài khoản là không hợp lệ; dữ liệu không thay đổi." }
+        ],
+        "expectedResult": "Hệ thống không cho phép hoàn tất đăng nhập khi Tài khoản để trống.",
+        "expectedResults": ["Hệ thống không cho phép hoàn tất đăng nhập khi Tài khoản để trống."],
+        "actualResult": "",
+        "status": "Not Tested",
+        "reviewStatus": "APPROVED",
+        "priority": "HIGH",
+        "severity": "HIGH",
+        "intelligence": null,
+        "traceability": { "requirementId": "Tài khoản không được để trống.", "scenarioId": "SC002" },
+        "source": "Requirement Intelligence Engine",
+        "reason": "BUSINESS_RULE from approved function",
+        "riskCategory": "BUSINESS_RULE",
+        "createdBy": "QA-Copilot",
+        "version": "1.1",
+        "sourceItems": [
+          {
+            "content": "Tài khoản không được để trống.",
+            "source": "BUSINESS_RULE",
+            "category": "BUSINESS_RULE",
+            "code": "",
+            "reference": "Tài khoản không được để trống.",
+            "text": "Tài khoản không được để trống.",
+            "fieldName": "Tài khoản",
+            "classification": "REQUIRED"
+          }
+        ],
+        "sourceCategories": ["BUSINESS_RULE"],
+        "relatedScenarioIds": [],
+        "mergedTestCaseIds": [],
+        "testcaseId": "TC002",
+        "steps": [
+          { "order": 1, "action": "Để trống Tài khoản", "target": "Tài khoản" },
+          { "order": 2, "action": "Chọn Đăng nhập", "target": "Đăng nhập" },
+          { "order": 3, "action": "Nhập Mật khẩu hợp lệ", "target": "Mật khẩu" },
+          { "order": 4, "action": "Nhập Mã xác nhận hợp lệ", "target": "Mã xác nhận" },
+          { "order": 5, "action": "Nhập mã xác nhận", "target": "Đăng nhập" }
+        ],
+        "automationHints": {
+          "screen": "Login",
+          "operation": "LOGIN",
+          "route": "",
+          "authenticationRequired": null,
+          "navigation": [],
+          "controls": {},
+          "executable": false,
+          "missingMetadata": ["routeOrNavigation", "controls.username", "controls.password", "controls.submit", "assertionLocator"]
+        }
+      },
+      "pipelineMetadata": {
+        "sourceFile": "user-provided-dang-nhap-approved-testcases.json",
+        "pipelineFieldNote": "Field hệ thống cho pipeline — KHÔNG sửa payload testcase gốc"
+      }
+    },
+    {
+      "originalTestCase": {
+        "id": "TC003",
+        "scenarioId": "SC002",
+        "moduleId": "MOD001",
+        "functionId": "FUNC001",
+        "function": "Đăng nhập",
+        "module": "Đăng nhập",
+        "feature": "Đăng nhập",
+        "title": "Hiển thị cảnh báo khi bỏ trống Mật khẩu",
+        "testScenario": "Hiển thị cảnh báo khi bỏ trống Mật khẩu",
+        "scenario": "Hiển thị cảnh báo khi bỏ trống Mật khẩu",
+        "type": "VALIDATION",
+        "testObjective": "Xác minh trường Mật khẩu là bắt buộc",
+        "objective": "Xác minh trường Mật khẩu là bắt buộc",
+        "requirementReference": "Mật khẩu không được để trống.",
+        "requirementReferences": ["Mật khẩu không được để trống."],
+        "coveredRules": ["Mật khẩu không được để trống."],
+        "businessRuleIds": [],
+        "sourceItem": {
+          "content": "Mật khẩu không được để trống.",
+          "source": "BUSINESS_RULE",
+          "category": "BUSINESS_RULE",
+          "code": "",
+          "reference": "Mật khẩu không được để trống.",
+          "text": "Mật khẩu không được để trống.",
+          "fieldName": "Mật khẩu",
+          "classification": "REQUIRED"
+        },
+        "ruleClassification": "REQUIRED",
+        "needsClarification": false,
+        "requiresRuntimeSupport": false,
+        "needsEnrichment": false,
+        "executable": true,
+        "postconditions": [],
+        "automationNotes": "",
+        "automationCandidate": true,
+        "preconditions": ["Người dùng chưa đăng nhập.", "Người dùng có tài khoản trong hệ thống.", "Người dùng đang ở màn hình đăng nhập."],
+        "testData": {
+          "fields": {
+            "Tài khoản": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Tài khoản hợp lệ do tester chuẩn bị" },
+            "Mật khẩu": { "value": "", "purpose": "EMPTY" },
+            "Mã xác nhận": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mã xác nhận hợp lệ theo requirement" }
+          },
+          "constraints": {},
+          "requirement": "Nhập Tài khoản hợp lệ do tester chuẩn bị; Nhập Mã xác nhận hợp lệ theo requirement",
+          "value": "Tài khản: admin\nMã xác nhận: 111211",
+          "requiresTesterInput": true
+        },
+        "executionReadiness": "DATA_REQUIRED",
+        "assertions": [
+          { "type": "FIELD_VALIDATION", "target": "Mật khẩu", "expected": "Hệ thống không thực hiện Đăng nhập và đánh dấu trường Mật khẩu là không hợp lệ; dữ liệu không thay đổi." }
+        ],
+        "expectedResult": "Hệ thống không cho phép hoàn tất đăng nhập khi Mật khẩu để trống.",
+        "expectedResults": ["Hệ thống không cho phép hoàn tất đăng nhập khi Mật khẩu để trống."],
+        "actualResult": "",
+        "status": "Not Tested",
+        "reviewStatus": "APPROVED",
+        "priority": "HIGH",
+        "severity": "HIGH",
+        "intelligence": null,
+        "traceability": { "requirementId": "Mật khẩu không được để trống.", "scenarioId": "SC002" },
+        "source": "Requirement Intelligence Engine",
+        "reason": "BUSINESS_RULE from approved function",
+        "riskCategory": "BUSINESS_RULE",
+        "createdBy": "QA-Copilot",
+        "version": "1.1",
+        "sourceItems": [
+          {
+            "content": "Mật khẩu không được để trống.",
+            "source": "BUSINESS_RULE",
+            "category": "BUSINESS_RULE",
+            "code": "",
+            "reference": "Mật khẩu không được để trống.",
+            "text": "Mật khẩu không được để trống.",
+            "fieldName": "Mật khẩu",
+            "classification": "REQUIRED"
+          }
+        ],
+        "sourceCategories": ["BUSINESS_RULE"],
+        "relatedScenarioIds": [],
+        "mergedTestCaseIds": [],
+        "testcaseId": "TC003",
+        "steps": [
+          { "order": 1, "action": "Để trống Mật khẩu", "target": "Mật khẩu" },
+          { "order": 2, "action": "Chọn Đăng nhập", "target": "Đăng nhập" },
+          { "order": 3, "action": "Nhập Tài khoản hợp lệ", "target": "Tài khoản" },
+          { "order": 4, "action": "Nhập Mã xác nhận hợp lệ", "target": "Mã xác nhận" },
+          { "order": 5, "action": "Nhập mã xác nhận", "target": "Đăng nhập" }
+        ],
+        "automationHints": {
+          "screen": "Login",
+          "operation": "LOGIN",
+          "route": "",
+          "authenticationRequired": null,
+          "navigation": [],
+          "controls": {},
+          "executable": false,
+          "missingMetadata": ["routeOrNavigation", "controls.username", "controls.password", "controls.submit", "assertionLocator"]
+        }
+      },
+      "pipelineMetadata": {
+        "sourceFile": "user-provided-dang-nhap-approved-testcases.json",
+        "pipelineFieldNote": "Field hệ thống cho pipeline — KHÔNG sửa payload testcase gốc"
+      }
+    },
+    {
+      "originalTestCase": {
+        "id": "TC004",
+        "scenarioId": "SC002",
+        "moduleId": "MOD001",
+        "functionId": "FUNC001",
+        "function": "Đăng nhập",
+        "module": "Đăng nhập",
+        "feature": "Đăng nhập",
+        "title": "Hiển thị cảnh báo khi bỏ trống Mã xác nhận",
+        "testScenario": "Hiển thị cảnh báo khi bỏ trống Mã xác nhận",
+        "scenario": "Hiển thị cảnh báo khi bỏ trống Mã xác nhận",
+        "type": "VALIDATION",
+        "testObjective": "Xác minh trường Mã xác nhận là bắt buộc",
+        "objective": "Xác minh trường Mã xác nhận là bắt buộc",
+        "requirementReference": "Mã xác nhận không được để trống.",
+        "requirementReferences": ["Mã xác nhận không được để trống."],
+        "coveredRules": ["Mã xác nhận không được để trống."],
+        "businessRuleIds": [],
+        "sourceItem": {
+          "content": "Mã xác nhận không được để trống.",
+          "source": "BUSINESS_RULE",
+          "category": "BUSINESS_RULE",
+          "code": "",
+          "reference": "Mã xác nhận không được để trống.",
+          "text": "Mã xác nhận không được để trống.",
+          "fieldName": "Mã xác nhận",
+          "classification": "REQUIRED"
+        },
+        "ruleClassification": "REQUIRED",
+        "needsClarification": false,
+        "requiresRuntimeSupport": false,
+        "needsEnrichment": false,
+        "executable": true,
+        "postconditions": [],
+        "automationNotes": "",
+        "automationCandidate": true,
+        "preconditions": ["Người dùng chưa đăng nhập.", "Người dùng có tài khoản trong hệ thống.", "Người dùng đang ở màn hình đăng nhập."],
+        "testData": {
+          "fields": {
+            "Tài khoản": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Tài khoản hợp lệ do tester chuẩn bị" },
+            "Mật khẩu": { "value": null, "purpose": "VALID", "requiresTesterInput": true, "instruction": "Nhập Mật khẩu hợp lệ do tester chuẩn bị" },
+            "Mã xác nhận": { "value": "", "purpose": "EMPTY" }
+          },
+          "constraints": {},
+          "requirement": "Nhập Tài khoản hợp lệ do tester chuẩn bị; Nhập Mật khẩu hợp lệ do tester chuẩn bị",
+          "value": "Tài khoản: admin\nMật khẩu: 123456@Aa",
+          "requiresTesterInput": true
+        },
+        "executionReadiness": "DATA_REQUIRED",
+        "assertions": [
+          { "type": "FIELD_VALIDATION", "target": "Mã xác nhận", "expected": "Hệ thống không thực hiện Đăng nhập và đánh dấu trường Mã xác nhận là không hợp lệ; dữ liệu không thay đổi." }
+        ],
+        "expectedResult": "Hệ thống không cho phép hoàn tất đăng nhập khi Mã xác nhận để trống.",
+        "expectedResults": ["Hệ thống không cho phép hoàn tất đăng nhập khi Mã xác nhận để trống."],
+        "actualResult": "",
+        "status": "Not Tested",
+        "reviewStatus": "APPROVED",
+        "priority": "HIGH",
+        "severity": "HIGH",
+        "intelligence": null,
+        "traceability": { "requirementId": "Mã xác nhận không được để trống.", "scenarioId": "SC002" },
+        "source": "Requirement Intelligence Engine",
+        "reason": "BUSINESS_RULE from approved function",
+        "riskCategory": "BUSINESS_RULE",
+        "createdBy": "QA-Copilot",
+        "version": "1.1",
+        "sourceItems": [
+          {
+            "content": "Mã xác nhận không được để trống.",
+            "source": "BUSINESS_RULE",
+            "category": "BUSINESS_RULE",
+            "code": "",
+            "reference": "Mã xác nhận không được để trống.",
+            "text": "Mã xác nhận không được để trống.",
+            "fieldName": "Mã xác nhận",
+            "classification": "REQUIRED"
+          }
+        ],
+        "sourceCategories": ["BUSINESS_RULE"],
+        "relatedScenarioIds": [],
+        "mergedTestCaseIds": [],
+        "testcaseId": "TC004",
+        "steps": [
+          { "order": 1, "action": "Để trống Mã xác nhận", "target": "Mã xác nhận" },
+          { "order": 2, "action": "Chọn Đăng nhập", "target": "Đăng nhập" },
+          { "order": 3, "action": "Nhập Tài khoản hợp lệ", "target": "Tài khoản" },
+          { "order": 4, "action": "Nhập Mật khẩu hợp lệ", "target": "Mật khẩu" },
+          { "order": 5, "action": "Nhập mã xác nhận", "target": "Đăng nhập" }
+        ],
+        "automationHints": {
+          "screen": "Login",
+          "operation": "LOGIN",
+          "route": "",
+          "authenticationRequired": null,
+          "navigation": [],
+          "controls": {},
+          "executable": false,
+          "missingMetadata": ["routeOrNavigation", "controls.username", "controls.password", "controls.submit", "assertionLocator"]
+        }
+      },
+      "pipelineMetadata": {
+        "sourceFile": "user-provided-dang-nhap-approved-testcases.json",
+        "pipelineFieldNote": "Field hệ thống cho pipeline — KHÔNG sửa payload testcase gốc"
+      }
+    }
+  ]
+}

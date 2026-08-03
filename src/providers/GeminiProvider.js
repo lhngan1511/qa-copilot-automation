@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../config/loadEnv.js";
 import { GoogleGenAI } from "@google/genai";
 import AIProvider from "./AIProvider.js";
 

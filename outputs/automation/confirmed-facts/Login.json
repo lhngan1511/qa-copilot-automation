@@ -1,0 +1,16 @@
+{
+  "artifactType": "AUTOMATION_CONFIRMED_FACTS",
+  "module": "Login",
+  "generatedAt": "2026-08-03T00:00:00.000Z",
+  "facts": [
+    {
+      "factId": "CF-LOGIN-CAPTCHA-001",
+      "factType": "TEST_DATA_RULE",
+      "target": "Mã xác nhận",
+      "value": "ARBITRARY_NON_EMPTY_TEXT",
+      "sourceType": "TESTER_INPUT",
+      "status": "CONFIRMED",
+      "notes": "Mã xác nhận (captcha) là chuỗi bất kỳ không rỗng. Được tester xác nhận — không cần hỏi lại trong Clarification. Không phải approved literal value cụ thể, chỉ là quy tắc dữ liệu."
+    }
+  ]
+}
