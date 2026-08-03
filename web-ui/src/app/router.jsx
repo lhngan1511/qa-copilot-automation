@@ -14,7 +14,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <DashboardPage />
+                element: <AIAutomationPage />
             },
             {
                 path: "workflows/new",
