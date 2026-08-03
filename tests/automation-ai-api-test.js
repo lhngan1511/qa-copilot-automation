@@ -41,13 +41,13 @@ const mapping = {
 const goodCode = `import { test, expect } from '@playwright/test';
 
 test('TC001 - login success', async ({ page }) => {
-  await page.goto('/user/login');
+  await page.goto(process.env.BASE_URL + '/user/login');
   const tk = page.getByRole('textbox', { name: 'Tài khoản' });
   const mk = page.getByRole('textbox', { name: 'Mật khẩu' });
   const mx = page.getByRole('textbox', { name: 'Mã xác nhận' });
   await tk.fill(process.env.LOGIN_USERNAME);
   await mk.fill(process.env.LOGIN_PASSWORD);
-  await mx.fill('123456');
+  await mx.fill('999999');
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();
 });

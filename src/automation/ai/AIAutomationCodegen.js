@@ -7,10 +7,19 @@
  *
  * Code chỉ dùng locator trong mapping. Không bịa locator mới.
  * Credential lấy từ process.env.LOGIN_USERNAME / LOGIN_PASSWORD — không hardcode.
+ * Base URL lấy từ process.env.BASE_URL — không hardcode URL.
+ * CAPTCHA (Mã xác nhận) dùng Confirmed Fact ARBITRARY_NON_EMPTY_TEXT — không dùng sample từ Codegen.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { buildCodegenLocatorSet, isLocatorInCodegen } from "./locatorValidation.js";
+
+// Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
+const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
+// Sample password quan sát được trong Codegen — KHÔNG được dùng (credential phải từ env).
+const PASSWORD_SAMPLES = ["123456@Aa", "123456@Â"];
+// Host URL bị hardcode — phải thay bằng process.env.BASE_URL.
+const HARDCODED_HOST = "172.16.1.100";
 
 export default class AIAutomationCodegen {
     /**
@@ -28,14 +37,12 @@ export default class AIAutomationCodegen {
         this.outputDir = outputDir ?? path.join(process.cwd(), "outputs", "generated");
     }
 
-    /** Lấy danh sách locator từ approved mapping (dùng để validate code). */
     collectMappingLocators(mapping) {
         const locators = [];
         for (const s of mapping.stepMappings ?? []) {
             if (s.locator) locators.push(s.locator);
         }
         for (const a of mapping.assertionMappings ?? []) {
-            // playwrightAssertion chứa locator (expect(page.getByRole...))
             if (a.playwrightAssertion) locators.push(a.playwrightAssertion);
         }
         if (mapping.route?.value && mapping.route.value.startsWith("page.")) {
@@ -49,6 +56,9 @@ export default class AIAutomationCodegen {
             "Bạn là chuyên gia Playwright. Hãy sinh file test Playwright hoàn chỉnh cho testcase.",
             "CHỈ dùng locator có trong APPROVED MAPPING. Không bịa locator mới.",
             "Credential (username/password) lấy từ process.env.LOGIN_USERNAME và process.env.LOGIN_PASSWORD. KHÔNG hardcode.",
+            "Base URL lấy từ process.env.BASE_URL. KHÔNG hardcode URL/host thật.",
+            "Mã xác nhận (CAPTCHA) dùng Confirmed Fact ARBITRARY_NON_EMPTY_TEXT: là chuỗi bất kỳ KHÔNG RỖNG. KHÔNG được dùng lại sample từ Codegen (123456, 11111, 1234566, 123456@Aa...). Dùng một chuỗi khác, ví dụ '999999' hoặc bất kỳ chuỗi không rỗng nào.",
+            "Tiêu đề test phải chứa mã testcase (vd TC001).",
             "Không sửa nội dung testcase. Không sinh thêm testcase.",
             "",
             "=== TESTCASE (approved) ===",
@@ -63,18 +73,17 @@ export default class AIAutomationCodegen {
             "=== YÊU CẦU OUTPUT ===",
             "Trả về DUY NHẤT file Playwright hoàn chỉnh, có:",
             "- import { test, expect } from '@playwright/test';",
-            "- test('<tên>', async ({ page }) => { ... })",
-            "- goto route từ mapping",
+            "- test('<TC001 - tên>', async ({ page }) => { ... })  // tiêu đề chứa TC001",
+            "- goto: await page.goto(process.env.BASE_URL + '<route từ mapping>');",
             "- fill/click theo từng step, dùng locator từ mapping",
+            "- Tài khoản: fill(process.env.LOGIN_USERNAME)",
+            "- Mật khẩu: fill(process.env.LOGIN_PASSWORD)",
+            "- Mã xác nhận: fill(<chuỗi không rỗng, KHÔNG phải sample codegen>)",
             "- assertion dùng playwrightAssertion từ mapping",
-            "- dùng process.env.LOGIN_USERNAME / LOGIN_PASSWORD cho Tài khoản và Mật khẩu",
-            "- Mã xác nhận dùng chuỗi bất kỳ không rỗng (ARBITRARY_NON_EMPTY_TEXT)",
-            "- KHÔNG hardcode credential",
-            "- KHÔNG dùng locator ngoài mapping"
+            "- KHÔNG hardcode credential, KHÔNG hardcode URL, KHÔNG dùng locator ngoài mapping"
         ].join("\n");
     }
 
-    /** Lấy toàn bộ locator chuẩn hóa từ mapping + codegen để validate. */
     collectAllowedLocators(mapping, codegenText) {
         const set = buildCodegenLocatorSet(codegenText);
         for (const loc of this.collectMappingLocators(mapping)) {
@@ -83,32 +92,60 @@ export default class AIAutomationCodegen {
         return set;
     }
 
-    /** Validate code: syntax + locator + testcase id + không hardcode credential. */
+    /**
+     * Validate code sau khi sinh.
+     * Trả về errors (rỗng = OK).
+     */
     validateCode({ code, mapping, codegenText, testCaseId }) {
         const errors = [];
-        // 1. syntax JS (nếu có thể --check)
-        // 2. testcase id
-        if (!code.includes(testCaseId)) {
-            errors.push(`Code thiếu testcase ID "${testCaseId}".`);
+        const id = testCaseId || "";
+
+        // 1. testcase id — phải xuất hiện trong code (tiêu đề test)
+        if (!id || !code.includes(id)) {
+            errors.push(`Code thiếu testcase ID "${id}" (tiêu đề test phải chứa ${id}).`);
         }
-        // 3. import
+
+        // 2. import
         if (!code.includes("from '@playwright/test'") && !code.includes('from "@playwright/test"')) {
             errors.push('Code thiếu import "@playwright/test".');
         }
-        // 4. không hardcode credential
+
+        // 3. URL hardcode — phải dùng process.env.BASE_URL
+        if (code.includes("http://") || code.includes("https://") || code.includes(HARDCODED_HOST)) {
+            errors.push(`Code hardcode URL/host (${HARDCODED_HOST}). Phải dùng process.env.BASE_URL.`);
+        }
+        if (!code.includes("process.env.BASE_URL")) {
+            errors.push("Code không dùng process.env.BASE_URL cho page.goto().");
+        }
+
+        // 4. Credential — phải dùng env, KHÔNG hardcode literal giá trị thật
         const credentialValues = [this.env.LOGIN_USERNAME, this.env.LOGIN_PASSWORD].filter(Boolean);
         for (const v of credentialValues) {
             if (v && code.includes(v)) {
                 errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD).");
             }
         }
-        // 5. không dùng sample credential từ codegen (admin / 123456@Aa / 123456)
-        for (const sample of ["123456@Aa", "123456@Â"]) {
+        if (!code.includes("process.env.LOGIN_USERNAME")) {
+            errors.push("Code không dùng process.env.LOGIN_USERNAME cho Tài khoản.");
+        }
+        if (!code.includes("process.env.LOGIN_PASSWORD")) {
+            errors.push("Code không dùng process.env.LOGIN_PASSWORD cho Mật khẩu.");
+        }
+
+        // 5. CAPTCHA — không dùng sample từ Codegen
+        for (const sample of CAPTCHA_SAMPLES) {
+            if (code.includes(sample)) {
+                errors.push(`Code dùng sample CAPTCHA từ Codegen ("${sample}") — phải dùng chuỗi không rỗng khác (Confirmed Fact ARBITRARY_NON_EMPTY_TEXT).`);
+            }
+        }
+        // password sample cũng không được dùng
+        for (const sample of PASSWORD_SAMPLES) {
             if (code.includes(sample)) {
                 errors.push(`Code chứa sample credential từ Codegen ("${sample}") — không được dùng.`);
             }
         }
-        // 6. locator: trích mọi page.getBy* trong code, kiểm tra nằm trong allowed set
+
+        // 6. locator — mọi page.getBy* phải nằm trong allowed set
         const allowed = this.collectAllowedLocators(mapping, codegenText);
         const re = /page\.(getByRole|getByText|getByPlaceholder|getByTestId|locator|getByLabel)\([^;]*?\)/g;
         let m;
@@ -118,26 +155,14 @@ export default class AIAutomationCodegen {
                 errors.push(`Code dùng locator ngoài mapping/codegen: "${raw}"`);
             }
         }
-        // 7. tài khoản/mật khẩu dùng env (không hardcode literal ngoài 'admin')
-        if (!code.includes("process.env.LOGIN_USERNAME")) {
-            errors.push("Code không dùng process.env.LOGIN_USERNAME cho Tài khoản.");
-        }
-        if (!code.includes("process.env.LOGIN_PASSWORD")) {
-            errors.push("Code không dùng process.env.LOGIN_PASSWORD cho Mật khẩu.");
-        }
 
         return { ok: errors.length === 0, errors };
     }
 
-    /**
-     * Sinh code Playwright.
-     * @returns {Promise<{code:string, validation:{ok:boolean,errors:string[]}}>}
-     */
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
         const prompt = this.buildPrompt({ testCase, mapping, confirmedFacts });
         const code = await this.aiProvider.generate(prompt);
-        // bỏ code fence nếu có
         const clean = code.replace(/^```(?:js|javascript)?\s*/i, "").replace(/```\s*$/, "").trim();
         const validation = this.validateCode({
             code: clean,
@@ -148,7 +173,6 @@ export default class AIAutomationCodegen {
         return { code: clean, validation };
     }
 
-    /** Ghi code ra file .spec.js. */
     writeFile({ code, testCaseId, module = "Login" }) {
         const dir = path.join(this.outputDir, module);
         fs.mkdirSync(dir, { recursive: true });

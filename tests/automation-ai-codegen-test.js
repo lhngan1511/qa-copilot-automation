@@ -45,7 +45,7 @@ const mapping = {
 const goodCode = `import { test, expect } from '@playwright/test';
 
 test('TC001 - Đăng nhập hoạt động thành công với dữ liệu hợp lệ', async ({ page }) => {
-  await page.goto('/user/login');
+  await page.goto(process.env.BASE_URL + '/user/login');
 
   const taikhoan = page.getByRole('textbox', { name: 'Tài khoản' });
   const matkhau = page.getByRole('textbox', { name: 'Mật khẩu' });
@@ -54,7 +54,7 @@ test('TC001 - Đăng nhập hoạt động thành công với dữ liệu hợp 
 
   await taikhoan.fill(process.env.LOGIN_USERNAME);
   await matkhau.fill(process.env.LOGIN_PASSWORD);
-  await maxacnhan.fill('123456');
+  await maxacnhan.fill('999999');
   await dangnhap.click();
 
   await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();
@@ -129,6 +129,44 @@ test("Codegen phát hiện sample credential từ codegen", async () => {
 
 test("Codegen không dùng provider không có generate()", () => {
     assert.throws(() => new AIAutomationCodegen({}));
+});
+
+// ---- 4 lỗi cần sửa: BASE_URL, CAPTCHA, credential false-positive, title TC001 ----
+
+test("Lỗi 1: page.goto hardcode URL bị chặn (phải dùng process.env.BASE_URL)", async () => {
+    const bad = goodCode.replace("page.goto(process.env.BASE_URL + '/user/login')", "page.goto('http://172.16.1.100:9230/user/login')");
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("process.env.BASE_URL") || e.includes("hardcode URL")), "phải chặn URL hardcode");
+});
+
+test("Lỗi 2: CAPTCHA dùng sample 123456 từ Codegen bị chặn", async () => {
+    const bad = goodCode.replace("maxacnhan.fill('999999')", "maxacnhan.fill('123456')");
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("sample CAPTCHA")), "phải chặn captcha sample");
+});
+
+test("Lỗi 3: process.env.LOGIN_USERNAME/PASSWORD KHÔNG bị coi là hardcode (không false-positive)", async () => {
+    const fake = new FakeAIProvider({ defaultResponse: goodCode });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    // không có lỗi nào nhắc hardcode credential
+    assert.ok(!validation.errors.some((e) => e.includes("hardcode giá trị credential")), "không false-positive credential");
+});
+
+test("Lỗi 4: code thiếu testcase ID TC001 trong tiêu đề bị chặn", async () => {
+    const bad = goodCode.replace("TC001 - Đăng nhập", "Đăng nhập");
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("TC001")), "phải báo thiếu TC001");
 });
 
 console.log(`\n==================================================`);
