@@ -76,13 +76,15 @@ export default class PlaywrightRunner {
         };
     }
 
-    /** Build args playwright với channel (nếu có). */
+    /**
+     * Build args playwright.
+     * LƯU Ý: Playwright Test CLI KHÔNG hỗ trợ `--channel`.
+     * Channel được cấu hình qua playwright.config.js (`use.channel` từ PLAYWRIGHT_BROWSER_CHANNEL),
+     * nên KHÔNG truyền --channel qua CLI. Chỉ dùng --browser=chromium.
+     */
     buildArgs({ filePath = null, projectDir = null, extraArgs = [] } = {}) {
-        const channel = this.configuredChannel();
         const args = ["test"];
-        if (channel) {
-            args.push("--channel", channel, "--browser=chromium");
-        }
+        args.push("--browser=chromium");
         if (projectDir) args.push("--config", path.join(projectDir, "playwright.config.js"));
         if (filePath) args.push(filePath);
         args.push("--reporter", projectDir ? "json" : "line", ...extraArgs);

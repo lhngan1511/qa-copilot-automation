@@ -79,6 +79,20 @@ test("runFile chrome channel trong sandbox: không vướng bundled check (bỏ 
     }
 });
 
+test("buildArgs KHÔNG truyền --channel qua CLI (Playwright Test không hỗ trợ)", () => {
+    const r = new PlaywrightRunner({ rootDir, browserChannel: "chrome" });
+    const args = r.buildArgs({ filePath: "x.spec.js" });
+    assert.ok(args.includes("--browser=chromium"), "có --browser=chromium");
+    assert.ok(!args.includes("--channel"), "không truyền --channel qua CLI");
+});
+
+test("config channel: playwright.config.js đọc PLAYWRIGHT_BROWSER_CHANNEL", () => {
+    const fs2 = fs;
+    const cfg = fs2.readFileSync(path.join(rootDir, "playwright.config.js"), "utf8");
+    assert.ok(cfg.includes("PLAYWRIGHT_BROWSER_CHANNEL"), "config đọc PLAYWRIGHT_BROWSER_CHANNEL");
+    assert.ok(cfg.includes("channel"), "config cấu hình use.channel");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 5 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
