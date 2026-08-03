@@ -23,9 +23,10 @@ export const navigationGroups = [
         items: [
             {
                 label: "Automation Intelligence",
-                description: "Automation Intelligence",
-                icon: "automation",
-                soon: true
+                description: "Mapping & Playwright CodeGen",
+                to: "/automation",
+                activePrefix: "/automation",
+                icon: "automation"
             },
             {
                 label: "CodeGen",

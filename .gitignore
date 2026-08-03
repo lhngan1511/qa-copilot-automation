@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# generated automation outputs (derived data, re-generable via CLI)
+outputs/playwright/
+outputs/execution/
+outputs/thiet_bi/
+test-results/
+playwright-report/
+
+# frontend build
+web-ui/dist/
+dist/
+
+# logs
+*.log

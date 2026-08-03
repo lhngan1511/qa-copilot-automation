@@ -1,0 +1,2282 @@
+{
+  "module": "Thiết bị",
+  "generatedAt": "2026-08-03T00:35:40.834Z",
+  "mappings": [
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC001",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC001",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [
+        {
+          "stepId": "TC001-STEP-1",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC001-STEP-2",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC001-STEP-3",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 3
+        }
+      ],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC001-STEP-4",
+          "action": "open",
+          "target": "Device",
+          "valueRef": null,
+          "sourceStep": 4
+        },
+        {
+          "stepId": "TC001-STEP-5",
+          "action": "fill",
+          "target": "Mã thiết bị",
+          "locatorKey": "ma_thiet_bi",
+          "valueRef": "literal:MA-340826",
+          "sourceStep": 5
+        },
+        {
+          "stepId": "TC001-STEP-6",
+          "action": "fill",
+          "target": "Tên thiết bị",
+          "locatorKey": "ten_thiet_bi",
+          "valueRef": "literal:Thiết bị demo",
+          "sourceStep": 6
+        },
+        {
+          "stepId": "TC001-STEP-7",
+          "action": "click",
+          "target": "Loại thiết bị",
+          "locatorKey": "loai_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 7
+        },
+        {
+          "stepId": "TC001-STEP-8",
+          "action": "click",
+          "target": "Device",
+          "locatorKey": "device",
+          "valueRef": null,
+          "sourceStep": 8
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "them_thiet_bi",
+          "target": "Thêm thiết bị",
+          "expectedValue": "Thiết bị được tạo thành công."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "ma_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Mã thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ten_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tên thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "loai_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Loại thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "device",
+          "strategy": "getByLabel",
+          "value": "Device",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.ma_thiet_bi": "MA-340826",
+        "demo.ten_thiet_bi": "Thiết bị demo"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC001"
+      },
+      "createdAt": "2026-08-03T00:35:40.826Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC002",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC002",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC002-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC002-STEP-2",
+          "action": "fill",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": "literal:Value Thêm thiết bị",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC002-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "br01_ma_thiet_bi",
+          "target": "BR01: Mã thiết bị",
+          "expectedValue": "Hệ thống không tạo bản ghi mới bằng giá trị BR01: Mã thiết bị đã tồn tại; dữ liệu hiện có không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "br01_ma_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "BR01: Mã thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.them_thiet_bi": "Value Thêm thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC002"
+      },
+      "createdAt": "2026-08-03T00:35:40.826Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC003",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC003",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC003-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC003-STEP-2",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC003-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "br02_loai_thiet_bi",
+          "target": "BR02: Loại thiết bị",
+          "expectedValue": "Hệ thống không cho phép lưu với BR02: Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "br02_loai_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "BR02: Loại thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC003"
+      },
+      "createdAt": "2026-08-03T00:35:40.826Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC004",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC004",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC004-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC004-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "them_thiet_bi",
+          "target": "Thêm thiết bị",
+          "expectedValue": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: BR04: Dữ liệu chỉ được lưu khi tất cả trường bắt buộc hợp lệ."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC004"
+      },
+      "createdAt": "2026-08-03T00:35:40.827Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC005",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC005",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC005-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC005-STEP-2",
+          "action": "fill",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": "literal:Value Thêm thiết bị",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC005-STEP-4",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 4
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "ma_thiet_bi",
+          "target": "Mã thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Mã thiết bị là không hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ma_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Mã thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.them_thiet_bi": "Value Thêm thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC005"
+      },
+      "createdAt": "2026-08-03T00:35:40.827Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC006",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC006",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC006-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC006-STEP-2",
+          "action": "fill",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": "literal:Value Thêm thiết bị",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC006-STEP-4",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 4
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "ten_thiet_bi",
+          "target": "Tên thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Thêm thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ten_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tên thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.them_thiet_bi": "Value Thêm thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC006"
+      },
+      "createdAt": "2026-08-03T00:35:40.827Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC007",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC007",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC007-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC007-STEP-2",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC007-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "loai_thiet_bi",
+          "target": "Loại thiết bị",
+          "expectedValue": "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "loai_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Loại thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC007"
+      },
+      "createdAt": "2026-08-03T00:35:40.827Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC008",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC008",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC008-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC008-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "them_thiet_bi",
+          "target": "Thêm thiết bị",
+          "expectedValue": "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC008"
+      },
+      "createdAt": "2026-08-03T00:35:40.827Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC009",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC009",
+      "module": "Thiết bị",
+      "feature": "Thêm thiết bị",
+      "pageObject": "device",
+      "route": "/device/create",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC009-STEP-1",
+          "action": "open",
+          "target": "Thêm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC009-STEP-3",
+          "action": "click",
+          "target": "Thêm thiết bị",
+          "locatorKey": "them_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 3
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "them_thiet_bi",
+          "target": "Thêm thiết bị",
+          "expectedValue": "Hệ thống không cho phép thực hiện Thêm thiết bị; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "them_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Thêm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "CREATE",
+        "sourceArtifactId": "TC009"
+      },
+      "createdAt": "2026-08-03T00:35:40.828Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC013",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC013",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [
+        {
+          "stepId": "TC013-STEP-1",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC013-STEP-2",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC013-STEP-3",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 3
+        },
+        {
+          "stepId": "TC013-STEP-4",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 4
+        }
+      ],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC013-STEP-5",
+          "action": "open",
+          "target": "Device",
+          "valueRef": null,
+          "sourceStep": 5
+        },
+        {
+          "stepId": "TC013-STEP-6",
+          "action": "click",
+          "target": "Thiết bị cần sửa",
+          "locatorKey": "thiet_bi_can_sua",
+          "valueRef": null,
+          "sourceStep": 6
+        },
+        {
+          "stepId": "TC013-STEP-7",
+          "action": "fill",
+          "target": "Mã thiết bị",
+          "locatorKey": "ma_thiet_bi",
+          "valueRef": "literal:MA-340828",
+          "sourceStep": 7
+        },
+        {
+          "stepId": "TC013-STEP-8",
+          "action": "fill",
+          "target": "Tên thiết bị",
+          "locatorKey": "ten_thiet_bi",
+          "valueRef": "literal:Thiết bị demo",
+          "sourceStep": 8
+        },
+        {
+          "stepId": "TC013-STEP-9",
+          "action": "click",
+          "target": "Loại thiết bị",
+          "locatorKey": "loai_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 9
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Thông tin thiết bị được cập nhật thành công."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "thiet_bi_can_sua",
+          "strategy": "getByLabel",
+          "value": "Thiết bị cần sửa",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ma_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Mã thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ten_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tên thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "loai_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Loại thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.ma_thiet_bi": "MA-340828",
+        "demo.ten_thiet_bi": "Thiết bị demo"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC013"
+      },
+      "createdAt": "2026-08-03T00:35:40.828Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC014",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC014",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC014-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Sửa thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC014"
+      },
+      "createdAt": "2026-08-03T00:35:40.828Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC015",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC015",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC015-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC015-STEP-2",
+          "action": "fill",
+          "target": "Sửa thiết bị",
+          "locatorKey": "sua_thiet_bi",
+          "valueRef": "literal:Value Sửa thiết bị",
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "br06_ma_thiet_bi_sau_khi_sua",
+          "target": "BR06: Mã thiết bị sau khi sửa",
+          "expectedValue": "Hệ thống không cập nhật bản ghi bằng giá trị BR06: Mã thiết bị sau khi sửa đã tồn tại; dữ liệu hiện có không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "br06_ma_thiet_bi_sau_khi_sua",
+          "strategy": "getByLabel",
+          "value": "BR06: Mã thiết bị sau khi sửa",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.sua_thiet_bi": "Value Sửa thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC015"
+      },
+      "createdAt": "2026-08-03T00:35:40.829Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC016",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC016",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC016-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: BR08: Dữ liệu cũ chỉ được thay đổi khi dữ liệu mới hợp lệ."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC016"
+      },
+      "createdAt": "2026-08-03T00:35:40.829Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC017",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC017",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC017-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: BR09: Hệ thống phải ghi nhận thông tin cập nhật theo cơ chế audit nếu có."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC017"
+      },
+      "createdAt": "2026-08-03T00:35:40.829Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC018",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC018",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC018-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC018-STEP-2",
+          "action": "fill",
+          "target": "Sửa thiết bị",
+          "locatorKey": "sua_thiet_bi",
+          "valueRef": "literal:Value Sửa thiết bị",
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "ma_thiet_bi",
+          "target": "Mã thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Sửa thiết bị và đánh dấu trường Mã thiết bị là không hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ma_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Mã thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.sua_thiet_bi": "Value Sửa thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC018"
+      },
+      "createdAt": "2026-08-03T00:35:40.829Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC019",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC019",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC019-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC019-STEP-2",
+          "action": "fill",
+          "target": "Sửa thiết bị",
+          "locatorKey": "sua_thiet_bi",
+          "valueRef": "literal:Value Sửa thiết bị",
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "ten_thiet_bi",
+          "target": "Tên thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Sửa thiết bị và đánh dấu trường Tên thiết bị là không hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "ten_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tên thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.sua_thiet_bi": "Value Sửa thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC019"
+      },
+      "createdAt": "2026-08-03T00:35:40.830Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC020",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC020",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC020-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC020-STEP-2",
+          "action": "click",
+          "target": "Sửa thiết bị",
+          "locatorKey": "sua_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "loai_thiet_bi",
+          "target": "Loại thiết bị",
+          "expectedValue": "Hệ thống không cho phép lưu với Loại thiết bị không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "loai_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Loại thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC020"
+      },
+      "createdAt": "2026-08-03T00:35:40.830Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC021",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC021",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC021-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Chưa thể tạo giá trị biên cụ thể khi giới hạn chưa được xác định; cần clarification."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC021"
+      },
+      "createdAt": "2026-08-03T00:35:40.830Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC022",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC022",
+      "module": "Thiết bị",
+      "feature": "Sửa thiết bị",
+      "pageObject": "device",
+      "route": "/device/edit",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC022-STEP-1",
+          "action": "open",
+          "target": "Sửa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "sua_thiet_bi",
+          "target": "Sửa thiết bị",
+          "expectedValue": "Hệ thống không cho phép thực hiện Sửa thiết bị; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "sua_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Sửa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "UPDATE",
+        "sourceArtifactId": "TC022"
+      },
+      "createdAt": "2026-08-03T00:35:40.830Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC026",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC026",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [
+        {
+          "stepId": "TC026-STEP-1",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC026-STEP-2",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC026-STEP-3",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 3
+        },
+        {
+          "stepId": "TC026-STEP-4",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 4
+        }
+      ],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC026-STEP-5",
+          "action": "open",
+          "target": "Device",
+          "valueRef": null,
+          "sourceStep": 5
+        },
+        {
+          "stepId": "TC026-STEP-6",
+          "action": "click",
+          "target": "Thiết bị cần xóa",
+          "locatorKey": "thiet_bi_can_xoa",
+          "valueRef": null,
+          "sourceStep": 6
+        },
+        {
+          "stepId": "TC026-STEP-7",
+          "action": "fill",
+          "target": "Xác nhận xóa",
+          "locatorKey": "xac_nhan_xoa",
+          "valueRef": "literal:Value Xác nhận xóa",
+          "sourceStep": 7
+        },
+        {
+          "stepId": "TC026-STEP-9",
+          "action": "click",
+          "target": "Device",
+          "locatorKey": "device",
+          "valueRef": null,
+          "sourceStep": 9
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Thiết bị được xóa thành công."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "thiet_bi_can_xoa",
+          "strategy": "getByLabel",
+          "value": "Thiết bị cần xóa",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "xac_nhan_xoa",
+          "strategy": "getByLabel",
+          "value": "Xác nhận xóa",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "device",
+          "strategy": "getByLabel",
+          "value": "Device",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.xac_nhan_xoa": "Value Xác nhận xóa"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC026"
+      },
+      "createdAt": "2026-08-03T00:35:40.831Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC027",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC027",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC027-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Xóa thiết bị với bản ghi không tồn tại; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC027"
+      },
+      "createdAt": "2026-08-03T00:35:40.831Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC028",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC028",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC028-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Xóa thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC028"
+      },
+      "createdAt": "2026-08-03T00:35:40.831Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC029",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC029",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC029-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Xóa thiết bị và không làm mất dữ liệu liên quan."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC029"
+      },
+      "createdAt": "2026-08-03T00:35:40.831Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC030",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC030",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC030-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC030-STEP-2",
+          "action": "click",
+          "target": "Xóa thiết bị",
+          "locatorKey": "xoa_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Xóa thiết bị khi người dùng không xác nhận; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC030"
+      },
+      "createdAt": "2026-08-03T00:35:40.832Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC031",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC031",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC031-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Chưa có đủ dữ liệu để tạo trạng thái kiểm thử cụ thể cho rule: BR15: Việc xóa có thể là xóa mềm hoặc xóa vật lý tùy thiết kế hệ thống."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC031"
+      },
+      "createdAt": "2026-08-03T00:35:40.832Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC033",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC033",
+      "module": "Thiết bị",
+      "feature": "Xóa thiết bị",
+      "pageObject": "device",
+      "route": "/device/delete",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC033-STEP-1",
+          "action": "open",
+          "target": "Xóa thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "xoa_thiet_bi",
+          "target": "Xóa thiết bị",
+          "expectedValue": "Hệ thống không cho phép thực hiện Xóa thiết bị; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "xoa_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Xóa thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "DELETE",
+        "sourceArtifactId": "TC033"
+      },
+      "createdAt": "2026-08-03T00:35:40.832Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC037",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC037",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [
+        {
+          "stepId": "TC037-STEP-1",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC037-STEP-2",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 2
+        },
+        {
+          "stepId": "TC037-STEP-3",
+          "description": "Thiết lập điều kiện trước",
+          "sourceStep": 3
+        }
+      ],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC037-STEP-4",
+          "action": "open",
+          "target": "Device",
+          "valueRef": null,
+          "sourceStep": 4
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống hiển thị đúng các thiết bị phù hợp."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC037"
+      },
+      "createdAt": "2026-08-03T00:35:40.832Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC038",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC038",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC038-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC038"
+      },
+      "createdAt": "2026-08-03T00:35:40.832Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC039",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC039",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC039-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Cần clarification về cách kết hợp điều kiện trước khi xác định kết quả."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC039"
+      },
+      "createdAt": "2026-08-03T00:35:40.833Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC040",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC040",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC040-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Chưa thể xác định một kết quả duy nhất khi không nhập điều kiện; cần clarification được phê duyệt."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC040"
+      },
+      "createdAt": "2026-08-03T00:35:40.833Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC041",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC041",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC041-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC041-STEP-2",
+          "action": "fill",
+          "target": "Tìm kiếm thiết bị",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "valueRef": "literal:Value Tìm kiếm thiết bị",
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống chấp nhận hoặc từ chối giá trị biên đúng theo giới hạn đã được phê duyệt và không lưu dữ liệu khi giá trị vượt giới hạn."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {
+        "demo.tim_kiem_thiet_bi": "Value Tìm kiếm thiết bị"
+      },
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC041"
+      },
+      "createdAt": "2026-08-03T00:35:40.833Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC042",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC042",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC042-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        },
+        {
+          "stepId": "TC042-STEP-2",
+          "action": "click",
+          "target": "Tìm kiếm thiết bị",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "valueRef": null,
+          "sourceStep": 2
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống không cho phép lưu với giá trị tham chiếu không thuộc danh sách hợp lệ; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        },
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC042"
+      },
+      "createdAt": "2026-08-03T00:35:40.833Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC043",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC043",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC043-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống không thực hiện Tìm kiếm thiết bị khi bản ghi ở trạng thái bị chặn theo rule; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC043"
+      },
+      "createdAt": "2026-08-03T00:35:40.834Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC044",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC044",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC044-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC044"
+      },
+      "createdAt": "2026-08-03T00:35:40.834Z"
+    },
+    {
+      "artifactType": "AUTOMATION_MAPPING",
+      "artifactId": "AM-TC047",
+      "status": "APPROVED",
+      "revision": 1,
+      "testCaseId": "TC047",
+      "module": "Thiết bị",
+      "feature": "Tìm kiếm thiết bị",
+      "pageObject": "device",
+      "route": "/device/list",
+      "setup": [],
+      "teardown": [],
+      "actions": [
+        {
+          "stepId": "TC047-STEP-1",
+          "action": "open",
+          "target": "Tìm kiếm thiết bị",
+          "valueRef": null,
+          "sourceStep": 1
+        }
+      ],
+      "assertions": [
+        {
+          "type": "toBeVisible",
+          "locatorKey": "tim_kiem_thiet_bi",
+          "target": "Tìm kiếm thiết bị",
+          "expectedValue": "Hệ thống không cho phép thực hiện Tìm kiếm thiết bị; dữ liệu không thay đổi."
+        }
+      ],
+      "locatorReferences": [
+        {
+          "locatorKey": "tim_kiem_thiet_bi",
+          "strategy": "getByLabel",
+          "value": "Tìm kiếm thiết bị",
+          "confirmed": true,
+          "source": "AI_PROPOSAL_AUTO"
+        }
+      ],
+      "dataReferences": {},
+      "blockers": [],
+      "readiness": "READY",
+      "metadata": {
+        "createdBy": "RULE_BASELINE+AI_PROPOSAL",
+        "routeProposed": true,
+        "screen": "Device",
+        "operation": "SEARCH",
+        "sourceArtifactId": "TC047"
+      },
+      "createdAt": "2026-08-03T00:35:40.834Z"
+    }
+  ]
+}
