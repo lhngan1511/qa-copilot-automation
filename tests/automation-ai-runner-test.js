@@ -118,6 +118,23 @@ test("escapeRegex: chuyển Windows path dùng '/' + escape dấu '.' (Playwrigh
     assert.ok(re.test("outputs/generated-tests/TC004.spec.js"), "regex khớp path test");
 });
 
+test("config quan sát: playwright.config.js đọc PLAYWRIGHT_HEADLESS và PLAYWRIGHT_SLOW_MO", () => {
+    const cfg = fs.readFileSync(path.join(rootDir, "playwright.config.js"), "utf8");
+    assert.ok(cfg.includes("PLAYWRIGHT_HEADLESS"), "config đọc PLAYWRIGHT_HEADLESS");
+    assert.ok(cfg.includes("PLAYWRIGHT_SLOW_MO"), "config đọc PLAYWRIGHT_SLOW_MO");
+    assert.ok(cfg.includes("headless"), "config cấu hình headless");
+    assert.ok(cfg.includes("slowMo"), "config cấu hình slowMo");
+    // mặc định headless=true, slowMo=0
+    assert.ok(cfg.includes('PLAYWRIGHT_HEADLESS ?? "true"'), "mặc định headless true");
+    assert.ok(cfg.includes('PLAYWRIGHT_SLOW_MO ?? "0"'), "mặc định slowMo 0");
+});
+
+test("config quan sát: .env.example khai báo PLAYWRIGHT_HEADLESS và PLAYWRIGHT_SLOW_MO", () => {
+    const ex = fs.readFileSync(path.join(rootDir, ".env.example"), "utf8");
+    assert.ok(ex.includes("PLAYWRIGHT_HEADLESS"), ".env.example có PLAYWRIGHT_HEADLESS");
+    assert.ok(ex.includes("PLAYWRIGHT_SLOW_MO"), ".env.example có PLAYWRIGHT_SLOW_MO");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 5 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
