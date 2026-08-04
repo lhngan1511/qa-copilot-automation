@@ -27,6 +27,7 @@ class ScenarioRecommendationEngine {
         ) {
             this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
             this.generateOwnedSuggestions(knowledge, scenarios, requirement);
+            this.applyConfirmedFacts(knowledge, scenarios, requirement);
             return this.removeDuplicateScenarios(scenarios);
         }
 
@@ -66,7 +67,43 @@ class ScenarioRecommendationEngine {
             requirement
         );
 
+        this.applyConfirmedFacts(knowledge, scenarios, requirement);
         return this.removeDuplicateScenarios(scenarios);
+    }
+
+    applyConfirmedFacts(knowledge, scenarios, requirement) {
+        const facts = Array.isArray(knowledge?.confirmedFacts) ? knowledge.confirmedFacts : [];
+        const sourceMap = knowledge?.knowledgeSources?.confirmedFacts ?? {};
+        facts.forEach(fact => {
+            if (typeof fact !== "string" || !fact.trim()) return;
+            const normalized = this.normalizeForComparison(fact);
+            const existing = scenarios.find(scenario =>
+                this.getArray(scenario.expectedResults).some(value => this.normalizeForComparison(value) === normalized)
+            );
+            const references = Array.isArray(sourceMap[normalized]) ? sourceMap[normalized] : [];
+            if (existing) {
+                existing.sourceReferences = this.mergeSourceReferences(existing.sourceReferences, references);
+                return;
+            }
+            this.generateFromList([{
+                title: fact,
+                description: fact,
+                expectedResults: [fact],
+                type: "CONFIRMED_FACT",
+                reason: "Tester-confirmed fact",
+                source: "RequirementKnowledge",
+                sourceReferences: references
+            }], "CONFIRMED_FACT", "HIGH", scenarios, requirement);
+        });
+    }
+
+    mergeSourceReferences(current, incoming) {
+        const result = Array.isArray(current) ? [...current] : [];
+        (Array.isArray(incoming) ? incoming : []).forEach(reference => {
+            if (!reference || !reference.sourceType || !reference.sourceId) return;
+            if (!result.some(item => item.sourceType === reference.sourceType && item.sourceId === reference.sourceId)) result.push({ ...reference });
+        });
+        return result;
     }
 
     generateFromStructuredFunctions(knowledge, scenarios, requirement) {
@@ -429,6 +466,8 @@ class ScenarioRecommendationEngine {
                 coveredRules: this.getArray(item?.coveredRules),
 
                 sourceItems: this.getArray(item?.sourceItems),
+
+                sourceReferences: this.getArray(item?.sourceReferences),
 
                 riskReason: this.getText(item?.riskReason),
 

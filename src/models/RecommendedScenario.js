@@ -42,6 +42,8 @@ class RecommendedScenario {
 
         sourceItems = [],
 
+        sourceReferences = [],
+
         riskReason = "",
 
         riskCategory = "",
@@ -151,6 +153,8 @@ class RecommendedScenario {
         this.coveredRules = Array.isArray(coveredRules) ? [...coveredRules] : [];
 
         this.sourceItems = Array.isArray(sourceItems) ? [...sourceItems] : [];
+
+        this.sourceReferences = Array.isArray(sourceReferences) ? [...sourceReferences] : [];
 
         this.riskReason = riskReason;
 
