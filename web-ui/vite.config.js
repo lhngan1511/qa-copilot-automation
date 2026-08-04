@@ -5,6 +5,10 @@ const backendTarget = process.env.VITE_BACKEND_TARGET || "http://127.0.0.1:3000"
 
 export default defineConfig({
     plugins: [react()],
+    build: {
+        outDir: "../public",
+        emptyOutDir: true
+    },
     server: {
         proxy: {
             "/api": {

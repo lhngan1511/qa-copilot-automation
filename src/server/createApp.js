@@ -95,18 +95,20 @@ export default function createApp({
 
     app.use("/api/automation-workspace", createAutomationWorkspaceRoutes({ dataDir }));
 
-    app.get("/", (_req, res, next) => {
+    app.use(express.static(resolvedPublicDirectory, { index: false }));
+
+    app.use((req, res, next) => {
+        if (req.path.startsWith("/api") || req.path === "/health") return next();
+        if (req.method !== "GET" || !req.accepts("html")) return next();
         if (!fs.existsSync(indexFile)) {
             const error = new Error(`Frontend index not found: ${indexFile}`);
             error.code = "FRONTEND_NOT_FOUND";
             error.statusCode = 500;
             return next(error);
         }
-
         return res.sendFile(indexFile);
     });
 
-    app.use(express.static(resolvedPublicDirectory, { index: false }));
     app.use(errorHandler);
 
     app.locals.dependencies = {
