@@ -1295,8 +1295,15 @@ class QACopilot {
         knowledge = this.requirementKnowledgeMapper.map({
             approvedArtifact: analysisArtifact,
             clarificationQuestions: analysisArtifact.questions,
-            clarificationAnswers: analysisArtifact.questions
+            clarificationAnswers: analysisArtifact.questions.filter(question =>
+                this.isAnsweredClarificationQuestion(question)
+            )
         });
+
+        console.log(
+            "[Clarification] RequirementKnowledge before core generation:",
+            JSON.stringify(knowledge.clarificationAnswers)
+        );
 
         if (!knowledge.isApproved()) {
             throw new Error(
