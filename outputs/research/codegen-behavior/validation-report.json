@@ -1,0 +1,17 @@
+{
+  "sourceFile": "codegen-don-vi-tinh.js",
+  "totalActions": 69,
+  "classifiedActions": 69,
+  "ignoredActions": 0,
+  "ignoredReasons": [],
+  "checks": {
+    "allActionsExistInActionList": true,
+    "locatorsTraceToCodegen": true,
+    "noActionLostOrAdded": true,
+    "unknownRedundantKeepSourceRef": true,
+    "geminiDidNotModifyCodegen": true,
+    "countMatches": true
+  },
+  "issues": [],
+  "generatedAt": "2026-08-04T00:23:14.331Z"
+}

@@ -1,0 +1,628 @@
+{
+  "sourceFile": "codegen-don-vi-tinh.js",
+  "generatedAt": "2026-08-04T00:23:14.316Z",
+  "count": 69,
+  "actions": [
+    {
+      "index": 1,
+      "rawSource": "await page.goto('http://172.16.1.100:9230/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F');",
+      "actionType": "GOTO",
+      "locator": null,
+      "value": "'http://172.16.1.100:9230/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L5"
+    },
+    {
+      "index": 2,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tài khoản' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Tài khoản' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L7"
+    },
+    {
+      "index": 3,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tài khoản' }).fill('admin');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Tài khoản' })",
+      "value": "'admin'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L9"
+    },
+    {
+      "index": 4,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L11"
+    },
+    {
+      "index": 5,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('123456@Â');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'123456@Â'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L13"
+    },
+    {
+      "index": 6,
+      "rawSource": "await page.locator('button').first().click();",
+      "actionType": "CLICK",
+      "locator": "page.locator('button')",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L15"
+    },
+    {
+      "index": 7,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('123456@');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'123456@'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L17"
+    },
+    {
+      "index": 8,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).press('CapsLock');",
+      "actionType": "PRESS",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'CapsLock'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L19"
+    },
+    {
+      "index": 9,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('123456@');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'123456@'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L21"
+    },
+    {
+      "index": 10,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).press('CapsLock');",
+      "actionType": "PRESS",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'CapsLock'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L23"
+    },
+    {
+      "index": 11,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('123456@Aa');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })",
+      "value": "'123456@Aa'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L25"
+    },
+    {
+      "index": 12,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mã xác nhận' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Mã xác nhận' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L27"
+    },
+    {
+      "index": 13,
+      "rawSource": "await page.getByRole('textbox', { name: 'Mã xác nhận' }).fill('xxxxx');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Mã xác nhận' })",
+      "value": "'xxxxx'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L29"
+    },
+    {
+      "index": 14,
+      "rawSource": "await page.getByRole('button', { name: 'Đăng nhập' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Đăng nhập' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L31"
+    },
+    {
+      "index": 15,
+      "rawSource": "await expect(page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L33"
+    },
+    {
+      "index": 16,
+      "rawSource": "await page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L35"
+    },
+    {
+      "index": 17,
+      "rawSource": "await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByRole('button', { name: 'adminButton' })",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L37"
+    },
+    {
+      "index": 18,
+      "rawSource": "await page.getByRole('button', { name: 'Danh mục' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Danh mục' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L39"
+    },
+    {
+      "index": 19,
+      "rawSource": "await page.getByRole('link', { name: 'Đơn vị tính' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('link', { name: 'Đơn vị tính' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L41"
+    },
+    {
+      "index": 20,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L43"
+    },
+    {
+      "index": 21,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L45"
+    },
+    {
+      "index": 22,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).fill('Cái 1');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": "'Cái 1'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L47"
+    },
+    {
+      "index": 23,
+      "rawSource": "await page.getByText('Sinh mã').dblclick();",
+      "actionType": "DBLCLICK",
+      "locator": "page.getByText('Sinh mã')",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L49"
+    },
+    {
+      "index": 24,
+      "rawSource": "await page.locator('form').filter({ hasText: 'Mã đơn vị tínhSinh mãTên đơn' }).getByRole('img').click();",
+      "actionType": "CLICK",
+      "locator": "page.locator('form')",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L51"
+    },
+    {
+      "index": 25,
+      "rawSource": "await page.locator('form').filter({ hasText: 'Mã đơn vị tínhSinh mãTên đơn' }).getByRole('img').click();",
+      "actionType": "CLICK",
+      "locator": "page.locator('form')",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L53"
+    },
+    {
+      "index": 26,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L55"
+    },
+    {
+      "index": 27,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).fill('Nhập ghi chú');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": "'Nhập ghi chú'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L57"
+    },
+    {
+      "index": 28,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L59"
+    },
+    {
+      "index": 29,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L61"
+    },
+    {
+      "index": 30,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L63"
+    },
+    {
+      "index": 31,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).fill('cái 2');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": "'cái 2'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L65"
+    },
+    {
+      "index": 32,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L67"
+    },
+    {
+      "index": 33,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).fill('ghi chú 2');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": "'ghi chú 2'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L69"
+    },
+    {
+      "index": 34,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L71"
+    },
+    {
+      "index": 35,
+      "rawSource": "await page.getByText('Thêm mới đơn vị tính thành cô').click();",
+      "actionType": "CLICK",
+      "locator": "page.getByText('Thêm mới đơn vị tính thành cô')",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L73"
+    },
+    {
+      "index": 36,
+      "rawSource": "await expect(page.getByText('Thêm mới đơn vị tính thành cô')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('Thêm mới đơn vị tính thành cô')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L75"
+    },
+    {
+      "index": 37,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L77"
+    },
+    {
+      "index": 38,
+      "rawSource": "await page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Thêm mới', description: 'title button', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L79"
+    },
+    {
+      "index": 39,
+      "rawSource": "await expect(page.getByText('Vui lòng nhập Tên đơn vị tính')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('Vui lòng nhập Tên đơn vị tính')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L81"
+    },
+    {
+      "index": 40,
+      "rawSource": "await page.getByRole('button', { name: 'Hủy bỏ' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Hủy bỏ' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L83"
+    },
+    {
+      "index": 41,
+      "rawSource": "await page.getByRole('textbox', { name: 'text search' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'text search' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L85"
+    },
+    {
+      "index": 42,
+      "rawSource": "await page.getByRole('textbox', { name: 'text search' }).fill('cái 1');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'text search' })",
+      "value": "'cái 1'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L87"
+    },
+    {
+      "index": 43,
+      "rawSource": "await page.getByRole('button', { name: 'Tìm' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Tìm' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L89"
+    },
+    {
+      "index": 44,
+      "rawSource": "await expect(page.getByText('trên tổng số 1 dòng dữ liệu')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('trên tổng số 1 dòng dữ liệu')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L91"
+    },
+    {
+      "index": 45,
+      "rawSource": "await page.getByRole('button', { description: 'Cập nhật', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { description: 'Cập nhật', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L93"
+    },
+    {
+      "index": 46,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L95"
+    },
+    {
+      "index": 47,
+      "rawSource": "await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).fill('Cái 2a');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Tên đơn vị tính' })",
+      "value": "'Cái 2a'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L97"
+    },
+    {
+      "index": 48,
+      "rawSource": "await page.getByRole('button', { name: 'Cập nhật' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Cập nhật' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L99"
+    },
+    {
+      "index": 49,
+      "rawSource": "await page.getByRole('textbox', { name: 'text search' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'text search' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L101"
+    },
+    {
+      "index": 50,
+      "rawSource": "await page.getByRole('textbox', { name: 'text search' }).fill('cái 2a');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'text search' })",
+      "value": "'cái 2a'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L103"
+    },
+    {
+      "index": 51,
+      "rawSource": "await page.getByRole('button', { name: 'Tìm' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Tìm' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L105"
+    },
+    {
+      "index": 52,
+      "rawSource": "await page.getByRole('button', { description: 'Cập nhật', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { description: 'Cập nhật', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L107"
+    },
+    {
+      "index": 53,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L109"
+    },
+    {
+      "index": 54,
+      "rawSource": "await page.getByRole('textbox', { name: 'Ghi chú' }).fill('Nhập ghi chú abc');",
+      "actionType": "FILL",
+      "locator": "page.getByRole('textbox', { name: 'Ghi chú' })",
+      "value": "'Nhập ghi chú abc'",
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L111"
+    },
+    {
+      "index": 55,
+      "rawSource": "await page.getByRole('button', { name: 'Cập nhật' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Cập nhật' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L113"
+    },
+    {
+      "index": 56,
+      "rawSource": "await expect(page.getByText('Cập nhật thành công')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('Cập nhật thành công')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L115"
+    },
+    {
+      "index": 57,
+      "rawSource": "await page.getByText('Thành công', { exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByText('Thành công', { exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L117"
+    },
+    {
+      "index": 58,
+      "rawSource": "await page.getByRole('button', { description: 'Cập nhật', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { description: 'Cập nhật', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L119"
+    },
+    {
+      "index": 59,
+      "rawSource": "await page.getByText('Sinh mã', { exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByText('Sinh mã', { exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L121"
+    },
+    {
+      "index": 60,
+      "rawSource": "await page.getByRole('button', { name: 'Cập nhật' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Cập nhật' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L123"
+    },
+    {
+      "index": 61,
+      "rawSource": "await expect(page.getByRole('button').filter({ hasText: /^$/ }).nth(2)).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": null,
+      "value": "{ hasText: /^$/ }",
+      "assertion": "filter",
+      "sourceReference": "codegen-don-vi-tinh.js#L125"
+    },
+    {
+      "index": 62,
+      "rawSource": "await expect(page.getByRole('button').filter({ hasText: /^$/ }).nth(3)).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": null,
+      "value": "{ hasText: /^$/ }",
+      "assertion": "filter",
+      "sourceReference": "codegen-don-vi-tinh.js#L127"
+    },
+    {
+      "index": 63,
+      "rawSource": "await page.getByRole('button', { description: 'Xóa', exact: true }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { description: 'Xóa', exact: true })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L129"
+    },
+    {
+      "index": 64,
+      "rawSource": "await expect(page.getByText('Xác nhận xóa')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('Xác nhận xóa')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L131"
+    },
+    {
+      "index": 65,
+      "rawSource": "await expect(page.getByRole('button', { name: 'Xóa', description: 'title button' })).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByRole('button', { name: 'Xóa', description: 'title button' })",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L133"
+    },
+    {
+      "index": 66,
+      "rawSource": "await expect(page.getByRole('button', { name: 'Xóa', description: 'title button' })).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByRole('button', { name: 'Xóa', description: 'title button' })",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L135"
+    },
+    {
+      "index": 67,
+      "rawSource": "await expect(page.getByRole('button', { name: 'Hủy bỏ' })).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByRole('button', { name: 'Hủy bỏ' })",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L137"
+    },
+    {
+      "index": 68,
+      "rawSource": "await page.getByRole('button', { name: 'Xóa', description: 'title button' }).click();",
+      "actionType": "CLICK",
+      "locator": "page.getByRole('button', { name: 'Xóa', description: 'title button' })",
+      "value": null,
+      "assertion": null,
+      "sourceReference": "codegen-don-vi-tinh.js#L139"
+    },
+    {
+      "index": 69,
+      "rawSource": "await expect(page.getByText('Không tìm thấy kết quả')).toBeVisible();",
+      "actionType": "ASSERT",
+      "locator": "page.getByText('Không tìm thấy kết quả')",
+      "value": "",
+      "assertion": "toBeVisible",
+      "sourceReference": "codegen-don-vi-tinh.js#L141"
+    }
+  ]
+}

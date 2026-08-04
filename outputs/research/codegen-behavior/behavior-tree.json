@@ -1,0 +1,405 @@
+{
+  "sourceFile": "codegen-don-vi-tinh.js",
+  "generatedAt": "2026-08-04T00:23:14.328Z",
+  "segments": [
+    {
+      "id": "SEG-1",
+      "type": "AUTHENTICATION",
+      "intent": "đăng nhập hệ thống",
+      "screen": "Login",
+      "actions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L5",
+        "codegen-don-vi-tinh.js#L7",
+        "codegen-don-vi-tinh.js#L9",
+        "codegen-don-vi-tinh.js#L11",
+        "codegen-don-vi-tinh.js#L13",
+        "codegen-don-vi-tinh.js#L15",
+        "codegen-don-vi-tinh.js#L17",
+        "codegen-don-vi-tinh.js#L19",
+        "codegen-don-vi-tinh.js#L21",
+        "codegen-don-vi-tinh.js#L23",
+        "codegen-don-vi-tinh.js#L25",
+        "codegen-don-vi-tinh.js#L27",
+        "codegen-don-vi-tinh.js#L29",
+        "codegen-don-vi-tinh.js#L31"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "đăng nhập hệ thống"
+    },
+    {
+      "id": "SEG-2",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": "AssetModule",
+      "actions": [
+        15
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L33"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-3",
+      "type": "AUTHENTICATION",
+      "intent": "đăng nhập hệ thống",
+      "screen": "Login",
+      "actions": [
+        16
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L35"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "đăng nhập hệ thống"
+    },
+    {
+      "id": "SEG-4",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        17
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L37"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-5",
+      "type": "NAVIGATION",
+      "intent": "điều hướng tới màn hình",
+      "screen": "UnitOfMeasure",
+      "actions": [
+        18,
+        19
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L39",
+        "codegen-don-vi-tinh.js#L41"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "điều hướng tới màn hình"
+    },
+    {
+      "id": "SEG-6",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Thêm",
+      "screen": null,
+      "actions": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L43",
+        "codegen-don-vi-tinh.js#L45",
+        "codegen-don-vi-tinh.js#L47",
+        "codegen-don-vi-tinh.js#L49",
+        "codegen-don-vi-tinh.js#L51",
+        "codegen-don-vi-tinh.js#L53",
+        "codegen-don-vi-tinh.js#L55",
+        "codegen-don-vi-tinh.js#L57",
+        "codegen-don-vi-tinh.js#L59",
+        "codegen-don-vi-tinh.js#L61",
+        "codegen-don-vi-tinh.js#L63",
+        "codegen-don-vi-tinh.js#L65",
+        "codegen-don-vi-tinh.js#L67",
+        "codegen-don-vi-tinh.js#L69",
+        "codegen-don-vi-tinh.js#L71",
+        "codegen-don-vi-tinh.js#L73"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Thêm"
+    },
+    {
+      "id": "SEG-7",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        36
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L75"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-8",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Thêm",
+      "screen": null,
+      "actions": [
+        37,
+        38
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L77",
+        "codegen-don-vi-tinh.js#L79"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Thêm"
+    },
+    {
+      "id": "SEG-9",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        39
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L81"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-10",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ ",
+      "screen": null,
+      "actions": [
+        40,
+        41,
+        42,
+        43
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L83",
+        "codegen-don-vi-tinh.js#L85",
+        "codegen-don-vi-tinh.js#L87",
+        "codegen-don-vi-tinh.js#L89"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ "
+    },
+    {
+      "id": "SEG-11",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        44
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L91"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-12",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Cập nhật",
+      "screen": null,
+      "actions": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L93",
+        "codegen-don-vi-tinh.js#L95",
+        "codegen-don-vi-tinh.js#L97",
+        "codegen-don-vi-tinh.js#L99",
+        "codegen-don-vi-tinh.js#L101",
+        "codegen-don-vi-tinh.js#L103",
+        "codegen-don-vi-tinh.js#L105",
+        "codegen-don-vi-tinh.js#L107",
+        "codegen-don-vi-tinh.js#L109",
+        "codegen-don-vi-tinh.js#L111",
+        "codegen-don-vi-tinh.js#L113"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Cập nhật"
+    },
+    {
+      "id": "SEG-13",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        56
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L115"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-14",
+      "type": "UNKNOWN",
+      "intent": "hành động chưa xác định",
+      "screen": null,
+      "actions": [
+        57
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L117"
+      ],
+      "confidence": 0.4,
+      "status": "DRAFT",
+      "reason": "hành động chưa xác định"
+    },
+    {
+      "id": "SEG-15",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Cập nhật",
+      "screen": null,
+      "actions": [
+        58,
+        59,
+        60
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L119",
+        "codegen-don-vi-tinh.js#L121",
+        "codegen-don-vi-tinh.js#L123"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Cập nhật"
+    },
+    {
+      "id": "SEG-16",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        61,
+        62
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L125",
+        "codegen-don-vi-tinh.js#L127"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-17",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Xóa",
+      "screen": null,
+      "actions": [
+        63
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L129"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Xóa"
+    },
+    {
+      "id": "SEG-18",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        64,
+        65,
+        66,
+        67
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L131",
+        "codegen-don-vi-tinh.js#L133",
+        "codegen-don-vi-tinh.js#L135",
+        "codegen-don-vi-tinh.js#L137"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    },
+    {
+      "id": "SEG-19",
+      "type": "BUSINESS",
+      "intent": "thao tác nghiệp vụ Xóa",
+      "screen": null,
+      "actions": [
+        68
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L139"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "thao tác nghiệp vụ Xóa"
+    },
+    {
+      "id": "SEG-20",
+      "type": "ASSERTION",
+      "intent": "kiểm tra kết quả",
+      "screen": null,
+      "actions": [
+        69
+      ],
+      "sourceReferences": [
+        "codegen-don-vi-tinh.js#L141"
+      ],
+      "confidence": 0.9,
+      "status": "DRAFT",
+      "reason": "kiểm tra kết quả"
+    }
+  ],
+  "patternsProposed": []
+}
