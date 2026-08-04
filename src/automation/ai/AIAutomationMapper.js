@@ -159,6 +159,7 @@ export default class AIAutomationMapper {
             "navigationChain = các bước click menu/liên kết để tới màn hình nghiệp vụ (vd Asset, Danh mục, Đơn vị tính) — KHÔNG gồm nút hành động nghiệp vụ như 'Thêm mới'.",
             "stepMappings = business flow thực sự của testcase (không gồm auth/navigation).",
             "entryRoute = đường dẫn URL hợp lệ (vd '/wasuco/login'), KHÔNG phải chuỗi mô tả 'Danh mục -> Đơn vị tính'.",
+            "QUAN TRỌNG: nếu Codegen có query 'returnUrl' trong URL login (vd '/wasuco/login?returnUrl=http%3A%2F%2F...'), entryRoute phải GIỮ NGUYÊN returnUrl để sau login browser về đúng trang chủ. KHÔNG bỏ returnUrl.",
             "",
             "=== MODULE ===",
             module,

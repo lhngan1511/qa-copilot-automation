@@ -421,9 +421,38 @@ test("entryRoute chứa '->' bị loại khỏi goto (không dùng chuỗi mô t
     assert.ok(!/goto\([^)]*->/.test(code), "không dùng chuỗi mô tả trong goto");
 });
 
+// ---- entryRoute giữ returnUrl (về đúng trang chủ sau login) ----
+test("entryRoute giữ returnUrl được sinh đúng, không bị chặn (về đúng trang chủ)", async () => {
+    const approvedMapping = {
+        testCaseId: "TC001",
+        entryRoute: { type: "URL_PATH", value: "/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F", status: "APPROVED" },
+        authenticationSetup: { status: "APPROVED", steps: [
+            { stepOrder: 1, actionType: "FILL", target: "Tài khoản", locator: "page.getByRole('textbox', { name: 'Tài khoản' })" },
+            { stepOrder: 2, actionType: "FILL", target: "Mật khẩu", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })" },
+            { stepOrder: 3, actionType: "FILL", target: "Mã xác nhận", locator: "page.getByRole('textbox', { name: 'Mã xác nhận' })" },
+            { stepOrder: 4, actionType: "CLICK", target: "Đăng nhập", locator: "page.getByRole('button', { name: 'Đăng nhập' })" }
+        ]},
+        navigationChain: { status: "APPROVED", steps: [
+            { stepOrder: 1, actionType: "CLICK", target: "Asset", locator: "page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })" },
+            { stepOrder: 2, actionType: "CLICK", target: "Danh mục", locator: "page.getByRole('button', { name: 'Danh mục' })" },
+            { stepOrder: 3, actionType: "CLICK", target: "Đơn vị tính", locator: "page.getByRole('link', { name: 'Đơn vị tính' })" }
+        ]},
+        stepMappings: [{ stepOrder: 1, actionType: "CLICK", locator: "page.getByRole('button', { name: 'Thêm mới' })", status: "APPROVED" }],
+        assertionMappings: []
+    };
+    const body = `import { test, expect } from '@playwright/test';\ntest('TC001 - x', async ({ page }) => {\n  await page.getByRole('button', { name: 'Thêm mới' }).click();\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: body });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw", LOGIN_CAPTCHA: "999999" } });
+    const { code, validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    assert.ok(code.includes("returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F"), "giữ returnUrl trong goto");
+    assert.ok(code.includes("page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })"), "có navigation Asset");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
 console.log("==================================================\n");
 process.exit(failures === 0 ? 0 : 1);
+
 
