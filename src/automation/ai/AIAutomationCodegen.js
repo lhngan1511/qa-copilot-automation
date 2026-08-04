@@ -12,7 +12,6 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { buildCodegenLocatorSet, isLocatorInCodegen } from "./locatorValidation.js";
 
 // Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
 const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
@@ -38,31 +37,63 @@ export default class AIAutomationCodegen {
         this.outputDir = outputDir ?? path.join(process.cwd(), "outputs", "generated-tests");
     }
 
+    /** Trích locator page.getBy* từ một biểu thức (vd playwrightAssertion). */
+    extractLocator(expr) {
+        const re = /page\.(getByRole|getByText|getByPlaceholder|getByTestId|getByLabel|locator)\([^;]*?\)/;
+        const m = re.exec(String(expr ?? ""));
+        return m ? m[0].trim() : null;
+    }
+
+    /**
+     * Xây allowlist locator từ APPROVED mapping — CHỈ từ mapping, KHÔNG từ codegen/đoán.
+     * @returns {Map<string,string>} locatorId -> locator
+     */
+    buildLocatorAllowlist(mapping) {
+        const allow = new Map();
+        for (const s of mapping?.stepMappings ?? []) {
+            const loc = this.extractLocator(s.locator) || s.locator;
+            if (loc) allow.set(`step-${s.stepOrder}`, loc);
+        }
+        for (const a of mapping?.assertionMappings ?? []) {
+            const loc = this.extractLocator(a.playwrightAssertion) || a.playwrightAssertion;
+            if (loc) allow.set(`assert-${a.assertionIndex ?? allow.size}`, loc);
+        }
+        if (mapping?.route?.value && mapping.route.value.startsWith("page.")) {
+            const loc = this.extractLocator(mapping.route.value) || mapping.route.value;
+            allow.set("route", loc);
+        }
+        return allow;
+    }
+
+    /** Lọc chỉ những locator thuộc allowlist (để khớp). */
     collectMappingLocators(mapping) {
-        const locators = [];
-        for (const s of mapping.stepMappings ?? []) {
-            if (s.locator) locators.push(s.locator);
-        }
-        for (const a of mapping.assertionMappings ?? []) {
-            if (a.playwrightAssertion) locators.push(a.playwrightAssertion);
-        }
-        if (mapping.route?.value && mapping.route.value.startsWith("page.")) {
-            locators.push(mapping.route.value);
-        }
-        return locators;
+        return Array.from(this.buildLocatorAllowlist(mapping).values());
     }
 
     buildPrompt({ testCase, mapping, confirmedFacts }) {
+        const allowlist = this.buildLocatorAllowlist(mapping);
+        const allowListText = Array.from(allowlist.entries())
+            .map(([id, loc]) => `  ${id}: ${loc}`)
+            .join("\n");
+
         return [
             "Bạn là chuyên gia Playwright. Hãy sinh file test Playwright hoàn chỉnh cho testcase.",
             "Code phải là JAVASCRIPT THUẦN (.js). KHÔNG TypeScript: KHÔNG non-null assertion `!` (vd process.env.X!), KHÔNG type annotation `: string`, KHÔNG interface/type/enum, KHÔNG `as`. KHÔNG dùng `!` sau process.env.",
             "Dùng ES MODULE: dòng đầu phải là `import { test, expect } from '@playwright/test';`. TUYỆT ĐỐI KHÔNG dùng `require(...)` (dự án là ESM, package.json type:module).",
-            "CHỈ dùng locator có trong APPROVED MAPPING. Không bịa locator mới.",
+            "### QUY TẮC BẮT BUỘC — LOCATOR ALLOWLIST TUYỆT ĐỐI ###",
+            "Chỉ được dùng CHÍNH XÁC locator có trong danh sách ALLOWED LOCATORS bên dưới (theo locatorId).",
+            "KHÔNG tự viết locator bằng tên nghiệp vụ (vd getByLabel('Username')), KHÔNG suy đoán từ testcase.",
+            "KHÔNG chuyển đổi: getByRole(...) -> getByLabel(...), hoặc tên tiếng Việt -> Username/Password/Captcha.",
+            "Mỗi action/assertion phải dùng đúng locator đã approved. Nếu approved mapping thiếu locator cho một business step -> KHÔNG đoán, trả về ghi chú thiếu.",
+            "Assertion implementation chỉ dùng từ assertionMappings đã approved. KHÔNG tự tạo message regex.",
             "Credential (username/password) lấy từ process.env.LOGIN_USERNAME và process.env.LOGIN_PASSWORD. KHÔNG hardcode.",
             "Base URL lấy từ process.env.BASE_URL. KHÔNG hardcode URL/host thật.",
-            "Mã xác nhận (CAPTCHA) dùng Confirmed Fact ARBITRARY_NON_EMPTY_TEXT: là chuỗi bất kỳ KHÔNG RỖNG. KHÔNG được dùng lại sample từ Codegen (123456, 11111, 1234566, 123456@Aa...). Dùng một chuỗi khác, ví dụ '999999' hoặc bất kỳ chuỗi không rỗng nào.",
+            "Mã xác nhận (CAPTCHA) dùng Confirmed Fact ARBITRARY_NON_EMPTY_TEXT: là chuỗi bất kỳ KHÔNG RỖNG. KHÔNG được dùng lại sample từ Codegen (123456, 11111, 1234566, 123456@Aa...). Dùng một chuỗi khác, ví dụ '999999'.",
             "Tiêu đề test phải chứa mã testcase (vd TC001).",
             "Không sửa nội dung testcase. Không sinh thêm testcase.",
+            "",
+            "=== ALLOWED LOCATORS (chỉ dùng các locator này, theo locatorId) ===",
+            allowListText || "  (KHÔNG có locator nào được phép — testcase không có locator approved)",
             "",
             "=== TESTCASE (approved) ===",
             JSON.stringify(testCase, null, 2),
@@ -78,22 +109,11 @@ export default class AIAutomationCodegen {
             "- import { test, expect } from '@playwright/test';",
             "- test('<TC001 - tên>', async ({ page }) => { ... })  // tiêu đề chứa TC001",
             "- goto: await page.goto(process.env.BASE_URL + '<route từ mapping>');",
-            "  LƯU Ý route: dùng CHÍNH XÁC mapping.route.value (vd '/user/login'). KHÔNG thêm query returnUrl, KHÔNG hardcode host/IP vào chuỗi route.",
-            "- fill/click theo từng step, dùng locator từ mapping",
-            "- Tài khoản: fill(process.env.LOGIN_USERNAME)",
-            "- Mật khẩu: fill(process.env.LOGIN_PASSWORD)",
-            "- Mã xác nhận: fill(<chuỗi không rỗng, KHÔNG phải sample codegen>)",
-            "- assertion dùng playwrightAssertion từ mapping",
-            "- KHÔNG hardcode credential, KHÔNG hardcode URL, KHÔNG dùng locator ngoài mapping"
+            "  LƯU Ý route: dùng CHÍNH XÁC mapping.route.value. KHÔNG thêm query returnUrl, KHÔNG hardcode host/IP.",
+            "- fill/click theo từng step, dùng CHÍNH XÁC locator từ ALLOWED LOCATORS",
+            "- assertion dùng playwrightAssertion từ mapping (chỉ locator approved)",
+            "- KHÔNG hardcode credential, KHÔNG hardcode URL, KHÔNG dùng locator ngoài allowlist"
         ].join("\n");
-    }
-
-    collectAllowedLocators(mapping, codegenText) {
-        const set = buildCodegenLocatorSet(codegenText);
-        for (const loc of this.collectMappingLocators(mapping)) {
-            set.add(loc);
-        }
-        return set;
     }
 
     /**
@@ -197,18 +217,36 @@ export default class AIAutomationCodegen {
             }
         }
 
-        // 6. locator — mọi page.getBy* phải nằm trong allowed set
-        const allowed = this.collectAllowedLocators(mapping, codegenText);
-        const re = /page\.(getByRole|getByText|getByPlaceholder|getByTestId|locator|getByLabel)\([^;]*?\)/g;
+        // 6. locator — đối chiếu CHÍNH XÁC từng locator với allowlist (approved mapping).
+        //    Không chấp nhận locator ngoài mapping, kể cả nếu có trong codegen.
+        const allowlist = this.buildLocatorAllowlist(mapping);
+        const allowedSet = new Set(
+            Array.from(allowlist.values()).map((l) => this.normalizeLocator(l))
+        );
+        const re = /page\.(getByRole|getByText|getByPlaceholder|getByTestId|getByLabel|locator)\([^;]*?\)/g;
         let m;
+        let foundLocator = false;
         while ((m = re.exec(code)) !== null) {
             const raw = m[0];
-            if (!isLocatorInCodegen(raw, allowed)) {
-                errors.push(`Code dùng locator ngoài mapping/codegen: "${raw}"`);
+            foundLocator = true;
+            const norm = this.normalizeLocator(raw);
+            if (!allowedSet.has(norm)) {
+                errors.push(`Code dùng locator KHÔNG thuộc approved mapping: "${raw}" — reject toàn bộ output.`);
             }
         }
+        // Nếu approved mapping có locator nhưng code không dùng tới bất kỳ locator nào (cần đủ step)
+        // => vẫn OK; chỉ reject khi có locator ngoài allowlist.
 
         return { ok: errors.length === 0, errors };
+    }
+
+    /** Chuẩn hóa locator để so khớp chính xác (bỏ khoảng trắng thừa, thống nhất nháy). */
+    normalizeLocator(locator) {
+        return String(locator ?? "")
+            .replace(/\s+/g, " ")
+            .replace(/"([^"]*)"/g, "'$1'")
+            .replace(/\s*([(),{}])\s*/g, "$1")
+            .trim();
     }
 
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {

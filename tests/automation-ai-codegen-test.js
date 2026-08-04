@@ -301,6 +301,65 @@ test("Bước 'để trống Tài khoản' không bị coi là cần LOGIN_USERN
     assert.ok(env.has("LOGIN_PASSWORD"), "nhập mật khẩu -> cần password");
 });
 
+// ---- Allowlist tuyệt đối: reject locator không thuộc approved mapping ----
+test("REJECT: mapping có getByRole textbox Tài khoản, Gemini trả getByLabel('Username') -> reject", async () => {
+    // approved mapping có locator getByRole('textbox', { name: 'Tài khoản' })
+    const approvedMapping = {
+        testCaseId: "TC001",
+        route: { value: "/user/login", status: "APPROVED" },
+        stepMappings: [
+            { stepOrder: 1, actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", status: "APPROVED" }
+        ],
+        assertionMappings: []
+    };
+    // Gemini trả code dùng getByLabel('Username') — KHÔNG có trong approved mapping
+    const bad = goodCode.replace(
+        "page.getByRole('textbox', { name: 'Tài khoản' })",
+        "page.getByLabel('Username')"
+    );
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("KHÔNG thuộc approved mapping")), "phải reject getByLabel('Username')");
+});
+
+test("ACCEPT: code dùng đúng locator getByRole('textbox', { name: 'Tài khoản' }) trong approved mapping", async () => {
+    const approvedMapping = {
+        testCaseId: "TC001",
+        route: { value: "/user/login", status: "APPROVED" },
+        stepMappings: [
+            { stepOrder: 1, actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tài khoản' })", status: "APPROVED" }
+        ],
+        assertionMappings: []
+    };
+    // code dùng đúng locator approved
+    const ok = `import { test, expect } from '@playwright/test';\ntest('TC001 - login', async ({ page }) => {\n  await page.goto(process.env.BASE_URL + '/user/login');\n  await page.getByRole('textbox', { name: 'Tài khoản' }).fill(process.env.LOGIN_USERNAME);\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: ok });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+});
+
+test("REJECT: mapping không có locator cho step -> code không nên tự thêm locator ngoài allowlist", async () => {
+    const approvedMapping = {
+        testCaseId: "TC001",
+        route: { value: "/user/login", status: "APPROVED" },
+        stepMappings: [
+            // step này KHÔNG có locator approved
+            { stepOrder: 1, actionType: "FILL", locator: null, status: "APPROVED" }
+        ],
+        assertionMappings: []
+    };
+    // Gemini tự đoán locator
+    const bad = `import { test, expect } from '@playwright/test';\ntest('TC001 - x', async ({ page }) => {\n  await page.goto(process.env.BASE_URL + '/user/login');\n  await page.getByLabel('Mật khẩu').fill('123');\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: bad });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw123" } });
+    const { validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, false, JSON.stringify(validation.errors));
+    assert.ok(validation.errors.some((e) => e.includes("KHÔNG thuộc approved mapping")), "phải reject locator tự đoán");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);

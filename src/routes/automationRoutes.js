@@ -63,6 +63,15 @@ export default function createAutomationRoutes({ rootDir = process.cwd(), aiProv
             const { testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] } = req.body ?? {};
             if (!testCase || !mapping) throw new Error("Thiếu testCase/mapping.");
             const { code, validation } = await service.generate({ testCase, mapping, codegenFile, codegenText, confirmedFacts });
+            // KHÔNG ghi file hợp lệ khi validation fail — reject toàn bộ output (locator ngoài mapping).
+            if (!validation.ok) {
+                res.status(200).json({
+                    success: false,
+                    data: { code, validation, filePath: null },
+                    error: { message: "Code không đạt validation — không ghi file.", diagnostic: "AI_CODEGEN_REJECTED", details: validation.errors }
+                });
+                return;
+            }
             const filePath = service.saveGeneratedCode({ code, testCaseId: testCase.id, module: testCase.module || "Login" });
             res.status(200).json({ success: true, data: { code, validation, filePath }, error: null });
         } catch (error) {
