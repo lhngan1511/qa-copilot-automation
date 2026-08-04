@@ -72,15 +72,59 @@ class ScenarioRecommendationEngine {
     }
 
     applyConfirmedFacts(knowledge, scenarios, requirement) {
-        const facts = Array.isArray(knowledge?.confirmedFacts) ? knowledge.confirmedFacts : [];
-        const sourceMap = knowledge?.knowledgeSources?.confirmedFacts ?? {};
-        facts.forEach(fact => {
-            if (typeof fact !== "string" || !fact.trim()) return;
+        const sourceMap = this.isPlainObject(knowledge?.knowledgeSources)
+            ? knowledge.knowledgeSources
+            : {};
+
+        /*
+         A tester-confirmed clarification answer is a confirmed fact
+         regardless of the semantic collection the mapper placed it in.
+         RequirementKnowledgeMapper routes each answer by category
+         (businessRules / validationRules / permissions / boundaryCases /
+         confirmedFacts) and records every source reference under
+         knowledge.knowledgeSources. Only confirmedFacts has no separate
+         consumer, so previously only that bucket produced scenarios while
+         the rest were silently dropped.
+         */
+
+        const collectFacts = (field, onlyTracked) => {
+            const facts = Array.isArray(knowledge[field]) ? knowledge[field] : [];
+            const bucket = this.isPlainObject(sourceMap[field]) ? sourceMap[field] : {};
+            const result = [];
+
+            facts.forEach(fact => {
+                if (typeof fact !== "string" || !fact.trim()) return;
+                const normalized = this.normalizeForComparison(fact);
+                const trackedKey = Object.keys(bucket).find(
+                    key => this.normalizeForComparison(key) === normalized
+                );
+                const references =
+                    trackedKey !== undefined && Array.isArray(bucket[trackedKey])
+                        ? bucket[trackedKey]
+                        : [];
+                if (onlyTracked && references.length === 0) return;
+                if (result.some(item => this.normalizeForComparison(item.fact) === normalized)) {
+                    return;
+                }
+                result.push({ fact, references });
+            });
+
+            return result;
+        };
+
+        const confirmed = [
+            ...collectFacts("confirmedFacts", false),
+            ...collectFacts("businessRules", true),
+            ...collectFacts("validationRules", true),
+            ...collectFacts("permissions", true),
+            ...collectFacts("boundaryCases", true)
+        ];
+
+        confirmed.forEach(({ fact, references }) => {
             const normalized = this.normalizeForComparison(fact);
             const existing = scenarios.find(scenario =>
                 this.getArray(scenario.expectedResults).some(value => this.normalizeForComparison(value) === normalized)
             );
-            const references = Array.isArray(sourceMap[normalized]) ? sourceMap[normalized] : [];
             if (existing) {
                 existing.sourceReferences = this.mergeSourceReferences(existing.sourceReferences, references);
                 return;
@@ -877,6 +921,10 @@ class ScenarioRecommendationEngine {
 
     getArray(value) {
         return Array.isArray(value) ? value : [];
+    }
+
+    isPlainObject(value) {
+        return Boolean(value && typeof value === "object" && !Array.isArray(value));
     }
 
     getTestData(value) {
