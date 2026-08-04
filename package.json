@@ -20,7 +20,13 @@
         "test:gemini": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node tests/gemini.test.js",
         "test:ollama": "node tests/ollama.test.js",
         "test:pipeline:ai": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first ENABLE_AI=true AI_PROVIDER=gemini AI_FALLBACK_ENABLED=false node tests/pipeline-test.js",
-        "test:regression": "cross-env ENABLE_AI=false node tests/pipeline-test.js"
+        "test:regression": "cross-env ENABLE_AI=false node tests/pipeline-test.js",
+        "automation:map": "node src/automation/cli.js --no-run",
+        "automation:run": "node src/automation/cli.js",
+        "test:automation": "node tests/automation-pipeline-test.js",
+        "test:mapping": "node tests/automation-mapping-layer-test.js",
+        "mapping:cli": "node src/automation/cli-mapping.js",
+        "demo:app": "node demo-app/server.js"
     },
     "dependencies": {
         "@google/genai": "^2.13.0",
