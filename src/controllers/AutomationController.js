@@ -1,0 +1,34 @@
+export default class AutomationController {
+    constructor({ service }) {
+        if (!service) throw new Error("AutomationController cần service.");
+        this.service = service;
+    }
+
+    async analyze(req, res) {
+        try {
+            const data = await this.service.analyze(req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return res.status(500).json({ success: false, data: null, error: { message: "Không thể phân tích dữ liệu bằng AI.", technical: error.message, diagnostic: "AI_MAPPING_FAILED" } });
+        }
+    }
+
+    async generate(req, res) {
+        try {
+            const data = await this.service.generate(req.body ?? {});
+            if (!data.validation?.ok) return res.status(200).json({ success: false, data, error: { message: "Sinh mã kiểm thử không thành công.", diagnostic: "AI_CODEGEN_REJECTED" } });
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return res.status(500).json({ success: false, data: null, error: { message: "Sinh mã kiểm thử không thành công.", technical: error.message, diagnostic: "AI_CODEGEN_FAILED" } });
+        }
+    }
+
+    async run(req, res) {
+        try {
+            const data = await this.service.run(req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return res.status(500).json({ success: false, data: null, error: { message: "Testcase thất bại tại bước thực thi.", technical: error.message, diagnostic: "PLAYWRIGHT_RUN_FAILED" } });
+        }
+    }
+}

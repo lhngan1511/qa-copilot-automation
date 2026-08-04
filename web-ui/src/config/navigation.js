@@ -23,9 +23,10 @@ export const navigationGroups = [
         items: [
             {
                 label: "Automation Intelligence",
-                description: "Automation Intelligence",
-                icon: "automation",
-                soon: true
+                description: "Sinh mã và thực thi testcase",
+                to: "/automation/workspaces/new",
+                activePrefix: "/automation",
+                icon: "automation"
             },
             {
                 label: "CodeGen",

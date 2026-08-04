@@ -6,6 +6,7 @@ import QACopilot from "../QACopilot.js";
 import QACopilotApplicationService from "../services/QACopilotApplicationService.js";
 import QACopilotController from "../controllers/QACopilotController.js";
 import createWorkflowRoutes from "../routes/workflowRoutes.js";
+import createAutomationWorkspaceRoutes from "../routes/automationWorkspaceRoutes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
 import fs from "node:fs";
@@ -75,6 +76,7 @@ export default function createApp({
             resolveRequirementFile: requirementId => requirementUploadService.resolve(requirementId)
         })
     );
+    app.use("/api/automation-workspace", createAutomationWorkspaceRoutes({ dataDir }));
     app.get("/", (_req, res, next) => {
         if (!fs.existsSync(indexFile)) {
             const error = new Error(`Frontend index not found: ${indexFile}`);
