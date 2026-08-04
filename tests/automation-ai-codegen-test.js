@@ -360,8 +360,70 @@ test("REJECT: mapping không có locator cho step -> code không nên tự thêm
     assert.ok(validation.errors.some((e) => e.includes("KHÔNG thuộc approved mapping")), "phải reject locator tự đoán");
 });
 
+// ---- Vertical slice: entryRoute + authenticationSetup + navigationChain ----
+test("Generator tự chèn auth + navigation vào code từ mapping approved (TC chạy độc lập)", async () => {
+    const approvedMapping = {
+        testCaseId: "TC003",
+        entryRoute: { type: "URL_PATH", value: "/wasuco/login", status: "APPROVED" },
+        authenticationSetup: {
+            status: "APPROVED",
+            steps: [
+                { stepOrder: 1, actionType: "FILL", target: "Tài khoản", locator: "page.getByRole('textbox', { name: 'Tài khoản' })" },
+                { stepOrder: 2, actionType: "FILL", target: "Mật khẩu", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })" },
+                { stepOrder: 3, actionType: "FILL", target: "Mã xác nhận", locator: "page.getByRole('textbox', { name: 'Mã xác nhận' })" },
+                { stepOrder: 4, actionType: "CLICK", target: "Đăng nhập", locator: "page.getByRole('button', { name: 'Đăng nhập' })" }
+            ]
+        },
+        navigationChain: {
+            status: "APPROVED",
+            steps: [
+                { stepOrder: 1, actionType: "CLICK", target: "Asset", locator: "page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })" },
+                { stepOrder: 2, actionType: "CLICK", target: "Danh mục", locator: "page.getByRole('button', { name: 'Danh mục' })" },
+                { stepOrder: 3, actionType: "CLICK", target: "Đơn vị tính", locator: "page.getByRole('link', { name: 'Đơn vị tính' })" }
+            ]
+        },
+        stepMappings: [
+            { stepOrder: 1, actionType: "CLICK", locator: "page.getByRole('button', { name: 'Thêm mới' })", status: "APPROVED" }
+        ],
+        assertionMappings: [
+            { playwrightAssertion: "expect(page.getByText('THÊM MỚI', { exact: true })).toBeVisible()", status: "APPROVED" }
+        ]
+    };
+    // Gemini chỉ sinh business body (không lặp auth/nav)
+    const geminiBody = `import { test, expect } from '@playwright/test';\ntest('TC003 - bỏ trống Tên', async ({ page }) => {\n  await page.getByRole('button', { name: 'Thêm mới' }).click();\n  await expect(page.getByText('THÊM MỚI', { exact: true })).toBeVisible();\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: geminiBody });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw", LOGIN_CAPTCHA: "999999" } });
+    const { code, validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    // code phải chứa auth + navigation đã chèn
+    assert.ok(code.includes("page.goto(process.env.BASE_URL + '/wasuco/login')"), "có entryRoute goto");
+    assert.ok(code.includes("process.env.LOGIN_USERNAME"), "có auth username");
+    assert.ok(code.includes("process.env.LOGIN_PASSWORD"), "có auth password");
+    assert.ok(code.includes("process.env.LOGIN_CAPTCHA"), "có auth captcha");
+    assert.ok(code.includes("page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })"), "có navigation Asset");
+    assert.ok(code.includes("page.getByRole('link', { name: 'Đơn vị tính' })"), "có navigation Đơn vị tính");
+});
+
+test("entryRoute chứa '->' bị loại khỏi goto (không dùng chuỗi mô tả)", async () => {
+    const approvedMapping = {
+        testCaseId: "TC003",
+        entryRoute: { type: "URL_PATH", value: "Danh mục -> Đơn vị tính -> Thêm mới", status: "APPROVED" },
+        authenticationSetup: { status: "APPROVED", steps: [] },
+        navigationChain: { status: "APPROVED", steps: [] },
+        stepMappings: [{ stepOrder: 1, actionType: "CLICK", locator: "page.getByRole('button', { name: 'Thêm mới' })", status: "APPROVED" }],
+        assertionMappings: []
+    };
+    const body = `import { test, expect } from '@playwright/test';\ntest('TC003 - x', async ({ page }) => {\n  await page.getByRole('button', { name: 'Thêm mới' }).click();\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: body });
+    const codegen = new AIAutomationCodegen(fake, { env: {} });
+    const { code } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    // không được có goto chứa '->'
+    assert.ok(!/goto\([^)]*->/.test(code), "không dùng chuỗi mô tả trong goto");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
 console.log("==================================================\n");
 process.exit(failures === 0 ? 0 : 1);
+

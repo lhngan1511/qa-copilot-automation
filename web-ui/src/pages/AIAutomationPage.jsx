@@ -117,18 +117,111 @@ export default function AIAutomationPage() {
         return moduleMap?.testCaseMappings?.find((tc) => tc.testCaseId === tcId) || null;
     }
 
-    // canGenerate cho 1 testcase: mọi step + route + assertion APPROVED
-    const activeMap = currentMapping(activeTc);
-    const mappingReady =
-        activeMap &&
-        activeMap.route?.status === "APPROVED" &&
-        (activeMap.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
-        (activeMap.assertionMappings ?? []).every((a) => a.status === "APPROVED");
+    // ---- Shared Setup cấp module (review 1 lần, áp cho mọi testcase) ----
 
-    // kiểm tra 1 testcase đã approve đủ route + step + assertion
+    // cập nhật 1 khối shared trên TẤT CẢ testcase mappings
+    function updateAllShared(field, patch) {
+        setModuleMap((m) => ({
+            ...m,
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) => {
+                const cur = tc[field];
+                if (!cur) return tc;
+                return { ...tc, [field]: { ...cur, ...patch } };
+            })
+        }));
+    }
+
+    function approveSharedEntryRoute() {
+        updateAllShared("entryRoute", { status: "APPROVED" });
+    }
+
+    function approveSharedAuthStep(stepOrder) {
+        setModuleMap((m) => ({
+            ...m,
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) => ({
+                ...tc,
+                authenticationSetup: {
+                    ...tc.authenticationSetup,
+                    steps: (tc.authenticationSetup?.steps ?? []).map((s) =>
+                        s.stepOrder === stepOrder ? { ...s, status: "APPROVED" } : s
+                    )
+                }
+            }))
+        }));
+    }
+
+    function approveSharedAuthAll() {
+        setModuleMap((m) => ({
+            ...m,
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) => ({
+                ...tc,
+                authenticationSetup: {
+                    ...tc.authenticationSetup,
+                    steps: (tc.authenticationSetup?.steps ?? []).map((s) => ({ ...s, status: "APPROVED" })),
+                    status: "APPROVED"
+                }
+            }))
+        }));
+    }
+
+    function approveSharedNavStep(stepOrder) {
+        setModuleMap((m) => ({
+            ...m,
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) => ({
+                ...tc,
+                navigationChain: {
+                    ...tc.navigationChain,
+                    steps: (tc.navigationChain?.steps ?? []).map((s) =>
+                        s.stepOrder === stepOrder ? { ...s, status: "APPROVED" } : s
+                    )
+                }
+            }))
+        }));
+    }
+
+    function approveSharedNavAll() {
+        setModuleMap((m) => ({
+            ...m,
+            testCaseMappings: (m?.testCaseMappings ?? []).map((tc) => ({
+                ...tc,
+                navigationChain: {
+                    ...tc.navigationChain,
+                    steps: (tc.navigationChain?.steps ?? []).map((s) => ({ ...s, status: "APPROVED" })),
+                    status: "APPROVED"
+                }
+            }))
+        }));
+    }
+
+    // kiểm tra shared setup của 1 testcase đã approve đủ chưa
+    function sharedReady(tc) {
+        const authSteps = tc?.authenticationSetup?.steps ?? [];
+        const navSteps = tc?.navigationChain?.steps ?? [];
+        return (
+            tc?.entryRoute?.status === "APPROVED" &&
+            tc?.authenticationSetup?.status === "APPROVED" &&
+            authSteps.every((s) => s.status === "APPROVED") &&
+            tc?.navigationChain?.status === "APPROVED" &&
+            navSteps.every((s) => s.status === "APPROVED")
+        );
+    }
+
+    // canGenerate cho 1 testcase: shared (entryRoute/auth/nav) + business steps + assertion APPROVED
+    const activeMap = currentMapping(activeTc);
+    const missingGenerate = [];
+    if (activeMap) {
+        if (activeMap.entryRoute?.status !== "APPROVED") missingGenerate.push("Entry Route");
+        if (activeMap.authenticationSetup?.status !== "APPROVED") missingGenerate.push("Authentication Setup");
+        if (activeMap.navigationChain?.status !== "APPROVED") missingGenerate.push("Navigation Chain");
+        if (!(activeMap.stepMappings ?? []).every((s) => s.status === "APPROVED")) missingGenerate.push("Business Steps");
+        if (!(activeMap.assertionMappings ?? []).every((a) => a.status === "APPROVED")) missingGenerate.push("Assertion");
+    }
+    const mappingReady = activeMap && missingGenerate.length === 0;
+
+    // kiểm tra 1 testcase đã approve đủ (shared + business + assertion)
     function isTcApproved(tc) {
         return (
-            tc?.route?.status === "APPROVED" &&
+            sharedReady(tc) &&
             (tc.stepMappings ?? []).every((s) => s.status === "APPROVED") &&
             (tc.assertionMappings ?? []).every((a) => a.status === "APPROVED")
         );
@@ -304,6 +397,105 @@ export default function AIAutomationPage() {
                             ))}
                         </div>
 
+                        {/* SHARED SETUP (cấp module — review 1 lần, áp mọi testcase) */}
+                        {activeMap && (
+                            <div style={{ border: "1px solid #0b7285", borderRadius: 8, padding: 12, marginBottom: 16, background: "#f4fbfc" }}>
+                                <h4 style={{ margin: "0 0 8px", color: "#0b7285" }}>Shared Setup (dùng chung toàn module)</h4>
+
+                                {/* Entry Route */}
+                                <div style={{ marginBottom: 10 }}>
+                                    <strong>Entry Route:</strong>{" "}
+                                    <code>{activeMap.entryRoute?.value || "(trống)"}</code>{" "}
+                                    <span style={{ color: activeMap.entryRoute?.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                        ({activeMap.entryRoute?.status ?? "BLOCKED"})
+                                    </span>{" "}
+                                    {activeMap.entryRoute?.status !== "APPROVED" && (
+                                        <button onClick={approveSharedEntryRoute}>Approve Entry Route</button>
+                                    )}
+                                    {activeMap.entryRoute?.sourceReference && (
+                                        <div style={{ fontSize: 11, color: "#666" }}>src: {activeMap.entryRoute.sourceReference}</div>
+                                    )}
+                                </div>
+
+                                {/* Authentication Setup */}
+                                <div style={{ marginBottom: 10 }}>
+                                    <strong>Authentication Setup:</strong>{" "}
+                                    <span style={{ color: activeMap.authenticationSetup?.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                        ({activeMap.authenticationSetup?.status ?? "BLOCKED"})
+                                    </span>
+                                    {activeMap.authenticationSetup?.steps?.length > 0 && (
+                                        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                                            <thead>
+                                                <tr style={{ textAlign: "left", borderBottom: "1px solid #bbb" }}>
+                                                    <th>Step</th><th>Action</th><th>Target</th><th>Locator</th><th>ValueRef</th><th>Status</th><th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(activeMap.authenticationSetup?.steps ?? []).map((s) => (
+                                                    <tr key={s.stepOrder} style={{ borderBottom: "1px solid #eee" }}>
+                                                        <td>{s.stepOrder}</td>
+                                                        <td>{s.actionType}</td>
+                                                        <td>{s.target}</td>
+                                                        <td><code style={{ fontSize: 11 }}>{s.locator}</code></td>
+                                                        <td><code style={{ fontSize: 11 }}>{s.valueRef || "-"}</code></td>
+                                                        <td><span style={{ color: s.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>{s.status}</span></td>
+                                                        <td>
+                                                            {s.status !== "APPROVED" && (
+                                                                <button onClick={() => approveSharedAuthStep(s.stepOrder)}>Approve</button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                    {activeMap.authenticationSetup?.status !== "APPROVED" && (
+                                        <button onClick={approveSharedAuthAll} style={{ marginTop: 6 }}>
+                                            Approve toàn Authentication Setup
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Navigation Chain */}
+                                <div>
+                                    <strong>Navigation Chain:</strong>{" "}
+                                    <span style={{ color: activeMap.navigationChain?.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>
+                                        ({activeMap.navigationChain?.status ?? "BLOCKED"})
+                                    </span>
+                                    {activeMap.navigationChain?.steps?.length > 0 && (
+                                        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                                            <thead>
+                                                <tr style={{ textAlign: "left", borderBottom: "1px solid #bbb" }}>
+                                                    <th>Step</th><th>Action</th><th>Target</th><th>Locator</th><th>Status</th><th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(activeMap.navigationChain?.steps ?? []).map((s) => (
+                                                    <tr key={s.stepOrder} style={{ borderBottom: "1px solid #eee" }}>
+                                                        <td>{s.stepOrder}</td>
+                                                        <td>{s.actionType}</td>
+                                                        <td>{s.target}</td>
+                                                        <td><code style={{ fontSize: 11 }}>{s.locator}</code></td>
+                                                        <td><span style={{ color: s.status === "APPROVED" ? "#1a7f37" : "#b00020" }}>{s.status}</span></td>
+                                                        <td>
+                                                            {s.status !== "APPROVED" && (
+                                                                <button onClick={() => approveSharedNavStep(s.stepOrder)}>Approve</button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                    {activeMap.navigationChain?.status !== "APPROVED" && (
+                                        <button onClick={approveSharedNavAll} style={{ marginTop: 6 }}>
+                                            Approve toàn Navigation Chain
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {activeMap && (
                             <div>
                                 <h4 style={{ margin: "4px 0 8px" }}>
@@ -463,8 +655,9 @@ export default function AIAutomationPage() {
                     </button>
                 </div>
                 {moduleMap && !mappingReady && (
-                    <div style={{ color: "#666", marginTop: 8 }}>
-                        Bạn cần Approve route + tất cả step + assertion của {activeTc} trước.
+                    <div style={{ color: "#b00020", marginTop: 8 }}>
+                        <strong>Chưa sẵn sàng Generate ({activeTc}):</strong> cần Approve:{" "}
+                        {missingGenerate.length ? missingGenerate.join(", ") : "(xem chi tiết)"}.
                     </div>
                 )}
                 {generateError && <div style={{ color: "#b00020", marginTop: 8 }}>{generateError}</div>}

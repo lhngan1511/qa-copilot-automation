@@ -46,6 +46,7 @@ export default class AIAutomationCodegen {
 
     /**
      * Xây allowlist locator từ APPROVED mapping — CHỈ từ mapping, KHÔNG từ codegen/đoán.
+     * Bao gồm locator của authenticationSetup + navigationChain (đã APPROVED) + business steps + assertions.
      * @returns {Map<string,string>} locatorId -> locator
      */
     buildLocatorAllowlist(mapping) {
@@ -57,6 +58,16 @@ export default class AIAutomationCodegen {
         for (const a of mapping?.assertionMappings ?? []) {
             const loc = this.extractLocator(a.playwrightAssertion) || a.playwrightAssertion;
             if (loc) allow.set(`assert-${a.assertionIndex ?? allow.size}`, loc);
+        }
+        // authenticationSetup (steps)
+        for (const st of mapping?.authenticationSetup?.steps ?? []) {
+            const loc = this.extractLocator(st.locator) || st.locator;
+            if (loc) allow.set(`auth-${st.stepOrder ?? allow.size}`, loc);
+        }
+        // navigationChain (steps)
+        for (const st of mapping?.navigationChain?.steps ?? []) {
+            const loc = this.extractLocator(st.locator) || st.locator;
+            if (loc) allow.set(`nav-${st.stepOrder ?? allow.size}`, loc);
         }
         if (mapping?.route?.value && mapping.route.value.startsWith("page.")) {
             const loc = this.extractLocator(mapping.route.value) || mapping.route.value;
@@ -86,7 +97,7 @@ export default class AIAutomationCodegen {
             "KHÔNG chuyển đổi: getByRole(...) -> getByLabel(...), hoặc tên tiếng Việt -> Username/Password/Captcha.",
             "Mỗi action/assertion phải dùng đúng locator đã approved. Nếu approved mapping thiếu locator cho một business step -> KHÔNG đoán, trả về ghi chú thiếu.",
             "Assertion implementation chỉ dùng từ assertionMappings đã approved. KHÔNG tự tạo message regex.",
-            "Credential (username/password) lấy từ process.env.LOGIN_USERNAME và process.env.LOGIN_PASSWORD. KHÔNG hardcode.",
+            "Credential (username/password/captcha) lấy từ process.env.LOGIN_USERNAME, LOGIN_PASSWORD, LOGIN_CAPTCHA. KHÔNG hardcode.",
             "Base URL lấy từ process.env.BASE_URL. KHÔNG hardcode URL/host thật.",
             "Mã xác nhận (CAPTCHA) dùng Confirmed Fact ARBITRARY_NON_EMPTY_TEXT: là chuỗi bất kỳ KHÔNG RỖNG. KHÔNG được dùng lại sample từ Codegen (123456, 11111, 1234566, 123456@Aa...). Dùng một chuỗi khác, ví dụ '999999'.",
             "Tiêu đề test phải chứa mã testcase (vd TC001).",
@@ -117,24 +128,31 @@ export default class AIAutomationCodegen {
     }
 
     /**
-     * Xác định env credential nào BẮT BUỘC phải có trong code, dựa vào stepMappings.
-     * - Có bước fill target chứa "Tài khoản"/"username" -> cần LOGIN_USERNAME.
-     * - Có bước fill target chứa "Mật khẩu"/"password" -> cần LOGIN_PASSWORD.
+     * Xác định env credential nào BẮT BUỘC phải có trong code.
+     * Xét cả authenticationSetup.steps (login) và stepMappings.
+     * - "Tài khoản"/"username" -> LOGIN_USERNAME.
+     * - "Mật khẩu"/"password" -> LOGIN_PASSWORD.
+     * - "Mã xác nhận"/"captcha" -> LOGIN_CAPTCHA.
      * Validation testcase bỏ trống field sẽ không yêu cầu env đó.
      * @returns {Set<string>}
      */
     requiredCredentialEnv(mapping) {
         const set = new Set();
-        const steps = mapping?.stepMappings ?? [];
-        for (const s of steps) {
+        const allSteps = [
+            ...(mapping?.authenticationSetup?.steps ?? []),
+            ...(mapping?.stepMappings ?? [])
+        ];
+        for (const s of allSteps) {
             const business = String(s.businessStep ?? "").toLowerCase();
-            const text = `${business} ${s.target ?? ""}`.toLowerCase();
+            const target = String(s.target ?? "").toLowerCase();
+            const text = `${business} ${target}`.toLowerCase();
             const isFill = String(s.actionType ?? "").toUpperCase() === "FILL";
             // Bước "để trống / bỏ trống" KHÔNG điền giá trị thật -> không cần env credential cho field đó
             const isEmptyStep = /để trống|bỏ trống|để trống field/.test(business);
             if (!isFill || isEmptyStep) continue;
             if (/tài khoản|username|account/.test(text)) set.add("LOGIN_USERNAME");
             if (/mật khẩu|password/.test(text)) set.add("LOGIN_PASSWORD");
+            if (/mã xác nhận|captcha/.test(text)) set.add("LOGIN_CAPTCHA");
         }
         return set;
     }
@@ -203,6 +221,9 @@ export default class AIAutomationCodegen {
         if (requiredEnv.has("LOGIN_PASSWORD") && !code.includes("process.env.LOGIN_PASSWORD")) {
             errors.push("Code không dùng process.env.LOGIN_PASSWORD cho Mật khẩu.");
         }
+        if (requiredEnv.has("LOGIN_CAPTCHA") && !code.includes("process.env.LOGIN_CAPTCHA")) {
+            errors.push("Code không dùng process.env.LOGIN_CAPTCHA cho Mã xác nhận.");
+        }
 
         // 5. CAPTCHA — không dùng sample từ Codegen
         for (const sample of CAPTCHA_SAMPLES) {
@@ -249,18 +270,81 @@ export default class AIAutomationCodegen {
             .trim();
     }
 
+    /**
+     * Dựng prefix code cho entryRoute + authenticationSetup + navigationChain (từ mapping APPROVED).
+     * Đảm bảo testcase mở entry route, đăng nhập, điều hướng trước khi business steps.
+     * Chỉ dùng khi mapping có authenticationSetup/navigationChain (đã APPROVED).
+     */
+    buildSetupPrefix(mapping) {
+        const lines = [];
+        const entryRoute = mapping?.entryRoute?.value;
+        if (entryRoute && !/[->]/.test(entryRoute)) {
+            lines.push(`  await page.goto(process.env.BASE_URL + ${JSON.stringify(entryRoute)});`);
+        }
+        // authenticationSetup steps (đã approved)
+        for (const st of mapping?.authenticationSetup?.steps ?? []) {
+            lines.push(this.renderStep(st));
+        }
+        // navigationChain steps (đã approved)
+        for (const st of mapping?.navigationChain?.steps ?? []) {
+            lines.push(this.renderStep(st));
+        }
+        return lines;
+    }
+
+    /** Render 1 step (auth/nav) thành dòng Playwright, dùng locator + actionType approved. */
+    renderStep(st) {
+        const loc = st.locator ?? "";
+        const action = String(st.actionType ?? "CLICK").toUpperCase();
+        const target = String(st.target ?? "").toLowerCase();
+        // map credential theo target (chỉ cho auth steps)
+        let value = st.valueRef ? this.valueExpr(st.valueRef) : null;
+        if (action === "FILL" && !value) {
+            if (/tài khoản|username|account/.test(target)) value = "process.env.LOGIN_USERNAME";
+            else if (/mật khẩu|password/.test(target)) value = "process.env.LOGIN_PASSWORD";
+            else if (/mã xác nhận|captcha/.test(target)) value = "process.env.LOGIN_CAPTCHA";
+        }
+        switch (action) {
+            case "FILL": return `  await ${loc}.fill(${value ?? "''"});`;
+            case "CLICK": return `  await ${loc}.click();`;
+            case "PRESS": return `  await ${loc}.press(${value ?? "'Enter'"});`;
+            case "SELECT": return `  await ${loc}.selectOption(${value ?? "''"});`;
+            default: return `  await ${loc}.click();`;
+        }
+    }
+
+    valueExpr(v) {
+        if (typeof v === "string" && v.startsWith("literal:")) return JSON.stringify(v.slice(8));
+        if (typeof v === "string" && v.startsWith("env:")) return `process.env.${v.slice(4)}`;
+        return JSON.stringify(v ?? "");
+    }
+
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
         const prompt = this.buildPrompt({ testCase, mapping, confirmedFacts });
         const code = await this.aiProvider.generate(prompt);
         const clean = code.replace(/^```(?:js|javascript)?\s*/i, "").replace(/```\s*$/, "").trim();
+
+        // Chèn prefix auth + navigation (nếu mapping có authSetup/navigationChain) vào trong test body.
+        const setupPrefix = this.buildSetupPrefix(mapping);
+        let final = clean;
+        if (setupPrefix.length > 0) {
+            const indent = "  ";
+            const prefixBlock = setupPrefix.join("\n") + "\n";
+            // chèn sau dòng `test('...', async ({ page }) => {` (body mở đầu)
+            const bodyMatch = /(\basync\s*\(\{\s*page\s*\}\)\s*=>\s*\{)([\s\S]*)$/;
+            if (bodyMatch.test(final)) {
+                final = final.replace(bodyMatch, (_m, open, rest) => open + "\n" + prefixBlock + rest);
+            }
+        }
+
         const validation = this.validateCode({
-            code: clean,
+            code: final,
             mapping,
             codegenText: text,
             testCaseId: testCase.id ?? testCase.testcaseId ?? ""
         });
-        return { code: clean, validation };
+        return { code: final, validation };
     }
 
     writeFile({ code, testCaseId, module = "Login" }) {
