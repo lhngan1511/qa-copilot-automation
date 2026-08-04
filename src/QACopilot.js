@@ -1497,6 +1497,7 @@ class QACopilot {
             .filter(Boolean);
 
         if (type === "POSITIVE") return true;
+        if (type === "CONFIRMED_FACT") return true;
         if (
             type === "BUSINESS_RULE" &&
             (groupType === "BUSINESS_RULE" || sourceTypes.includes("BUSINESS_RULE"))
