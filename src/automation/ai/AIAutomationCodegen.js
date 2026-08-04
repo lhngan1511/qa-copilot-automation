@@ -123,7 +123,13 @@ export default class AIAutomationCodegen {
             "  LƯU Ý route: dùng CHÍNH XÁC mapping.route.value. KHÔNG thêm query returnUrl, KHÔNG hardcode host/IP.",
             "- fill/click theo từng step, dùng CHÍNH XÁC locator từ ALLOWED LOCATORS",
             "- assertion dùng playwrightAssertion từ mapping (chỉ locator approved)",
-            "- KHÔNG hardcode credential, KHÔNG hardcode URL, KHÔNG dùng locator ngoài allowlist"
+            "- KHÔNG hardcode credential, KHÔNG hardcode URL, KHÔNG dùng locator ngoài allowlist",
+            "",
+            "### QUAN TRỌNG — KHÔNG LẶP LẠI AUTH/NAVIGATION ###",
+            "Nếu mapping có authenticationSetup + navigationChain (đã APPROVED), Generator sẽ TỰ chèn sẵn: goto entryRoute, login, và navigationChain.",
+            "Bạn CHỈ cần sinh PHẦN BUSINESS STEPS + ASSERTION.",
+            "KHÔNG sinh lại page.goto('/wasuco/login'), KHÔNG sinh lại fill Tài khoản/Mật khẩu/Mã xác nhận/click Đăng nhập, KHÔNG sinh lại click Asset/Danh mục/Đơn vị tính.",
+            "Bắt đầu trực tiếp từ business steps (vd click 'Thêm mới', fill 'Tên đơn vị tính', ...) rồi assertion."
         ].join("\n");
     }
 
@@ -319,17 +325,62 @@ export default class AIAutomationCodegen {
         return JSON.stringify(v ?? "");
     }
 
+    /**
+     * Loại bỏ phần auth/navigation bị Gemini sinh trùng trong body (đã có prefix).
+     * Nếu mapping có authenticationSetup/navigationChain, xoá các dòng goto login / fill credential /
+     * click Đăng nhập / click Asset/Danh mục/Đơn vị tính khỏi phần code do Gemini sinh.
+     */
+    stripDuplicateSetup(code, mapping) {
+        const hasSetup = (mapping?.authenticationSetup?.steps?.length > 0) ||
+                         (mapping?.navigationChain?.steps?.length > 0);
+        if (!hasSetup) return code;
+        const lines = code.split("\n");
+        const keep = [];
+        let skipBlock = false;
+        // các từ khoá login/nav lặp (nếu gặp goto login hoặc login block bắt đầu)
+        const authNavLocators = new Set([
+            "login", "Tài khoản", "Mật khẩu", "Mã xác nhận", "Đăng nhập",
+            "Asset Quản lý trang thiết bị", "Danh mục", "Đơn vị tính"
+        ]);
+        for (const raw of lines) {
+            const line = raw.trim();
+            // bắt đầu một block goto login -> bỏ từ đây cho tới hết login
+            if (/page\.goto\(.*\/wasuco\/login/.test(line)) {
+                skipBlock = true;
+                continue;
+            }
+            // nếu đang trong block login, bỏ các dòng fill/click login
+            if (skipBlock) {
+                // kết thúc block login khi gặp business step đầu tiên (không phải auth/nav)
+                const isBusiness = /Thêm mới|Tên đơn vị|text search|Tìm|Cập nhật/.test(line) && !/login/i.test(line);
+                if (isBusiness) {
+                    skipBlock = false;
+                    keep.push(raw);
+                }
+                continue;
+            }
+            // bỏ dòng click navigation trùng (Asset/Danh mục/Đơn vị tính) khi đã có prefix
+            if (/getByRole\('(link|button)'\s*,\s*\{\s*name:\s*'(Asset Quản lý trang thiết bị|Danh mục|Đơn vị tính)'/.test(line)) {
+                continue;
+            }
+            keep.push(raw);
+        }
+        return keep.join("\n");
+    }
+
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
         const prompt = this.buildPrompt({ testCase, mapping, confirmedFacts });
         const code = await this.aiProvider.generate(prompt);
         const clean = code.replace(/^```(?:js|javascript)?\s*/i, "").replace(/```\s*$/, "").trim();
 
+        // Loại bỏ phần auth/nav Gemini sinh trùng (nếu mapping có authSetup/navChain)
+        const stripped = this.stripDuplicateSetup(clean, mapping);
+
         // Chèn prefix auth + navigation (nếu mapping có authSetup/navigationChain) vào trong test body.
         const setupPrefix = this.buildSetupPrefix(mapping);
-        let final = clean;
+        let final = stripped;
         if (setupPrefix.length > 0) {
-            const indent = "  ";
             const prefixBlock = setupPrefix.join("\n") + "\n";
             // chèn sau dòng `test('...', async ({ page }) => {` (body mở đầu)
             const bodyMatch = /(\basync\s*\(\{\s*page\s*\}\)\s*=>\s*\{)([\s\S]*)$/;

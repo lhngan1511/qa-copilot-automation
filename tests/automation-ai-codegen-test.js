@@ -449,10 +449,48 @@ test("entryRoute giữ returnUrl được sinh đúng, không bị chặn (về 
     assert.ok(code.includes("page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })"), "có navigation Asset");
 });
 
+// ---- Strip duplicate auth/nav khi Gemini sinh lại (lỗi local acceptance) ----
+test("Generator loại bỏ auth+nav Gemini sinh trùng, chỉ còn 1 lần (hết timeout)", async () => {
+    const approvedMapping = {
+        testCaseId: "TC001",
+        entryRoute: { type: "URL_PATH", value: "/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F", status: "APPROVED" },
+        authenticationSetup: { status: "APPROVED", steps: [
+            { stepOrder: 1, actionType: "FILL", target: "Tài khoản", locator: "page.getByRole('textbox', { name: 'Tài khoản' })" },
+            { stepOrder: 2, actionType: "FILL", target: "Mật khẩu", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })" },
+            { stepOrder: 3, actionType: "FILL", target: "Mã xác nhận", locator: "page.getByRole('textbox', { name: 'Mã xác nhận' })" },
+            { stepOrder: 4, actionType: "CLICK", target: "Đăng nhập", locator: "page.getByRole('button', { name: 'Đăng nhập' })" }
+        ]},
+        navigationChain: { status: "APPROVED", steps: [
+            { stepOrder: 1, actionType: "CLICK", target: "Asset", locator: "page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' })" },
+            { stepOrder: 2, actionType: "CLICK", target: "Danh mục", locator: "page.getByRole('button', { name: 'Danh mục' })" },
+            { stepOrder: 3, actionType: "CLICK", target: "Đơn vị tính", locator: "page.getByRole('link', { name: 'Đơn vị tính' })" }
+        ]},
+        stepMappings: [
+            { stepOrder: 1, actionType: "CLICK", locator: "page.getByRole('button', { name: 'Thêm mới' })", status: "APPROVED" },
+            { stepOrder: 2, actionType: "FILL", locator: "page.getByRole('textbox', { name: 'Tên đơn vị tính' })", status: "APPROVED" }
+        ],
+        assertionMappings: [
+            { playwrightAssertion: "expect(page.getByText('Thêm mới đơn vị tính thành cô')).toBeVisible()", status: "APPROVED" }
+        ]
+    };
+    // Gemini sinh body có lặp lại auth+nav (đúng lỗi local)
+    const geminiBody = `import { test, expect } from '@playwright/test';\ntest('TC001 - Thêm mới', async ({ page }) => {\n  await page.goto(process.env.BASE_URL + '/wasuco/login');\n  await page.getByRole('textbox', { name: 'Tài khoản' }).fill(process.env.LOGIN_USERNAME);\n  await page.getByRole('textbox', { name: 'Mật khẩu' }).fill(process.env.LOGIN_PASSWORD);\n  await page.getByRole('textbox', { name: 'Mã xác nhận' }).fill('999999');\n  await page.getByRole('button', { name: 'Đăng nhập' }).click();\n  await page.getByRole('link', { name: 'Asset Quản lý trang thiết bị' }).click();\n  await page.getByRole('button', { name: 'Danh mục' }).click();\n  await page.getByRole('link', { name: 'Đơn vị tính' }).click();\n  await page.getByRole('button', { name: 'Thêm mới' }).click();\n  await page.getByRole('textbox', { name: 'Tên đơn vị tính' }).fill('Đơn vị tính mới');\n  await expect(page.getByText('Thêm mới đơn vị tính thành cô')).toBeVisible();\n});\n`;
+    const fake = new FakeAIProvider({ defaultResponse: geminiBody });
+    const codegen = new AIAutomationCodegen(fake, { env: { LOGIN_USERNAME: "admin", LOGIN_PASSWORD: "pw", LOGIN_CAPTCHA: "999999" } });
+    const { code, validation } = await codegen.generate({ testCase: tc001, mapping: approvedMapping, codegenFile });
+    assert.strictEqual(validation.ok, true, JSON.stringify(validation.errors));
+    // prefix 1 lần + strip => chỉ còn 1 lần goto login
+    const loginCount = (code.match(/page\.goto\(process\.env\.BASE_URL \+ ["']\/wasuco\/login/g) || []).length;
+    assert.strictEqual(loginCount, 1, `chỉ 1 goto login, có ${loginCount}`);
+    // business steps vẫn còn
+    assert.ok(code.includes("page.getByRole('button', { name: 'Thêm mới' })"), "có business Thêm mới");
+});
+
 console.log(`\n==================================================`);
 if (failures === 0) console.log(" STEP 2 PASSED ✔");
 else console.log(` ${failures} FAILURE(S) ✘`);
 console.log("==================================================\n");
 process.exit(failures === 0 ? 0 : 1);
+
 
 
