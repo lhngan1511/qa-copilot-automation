@@ -1,7 +1,9 @@
-import "dotenv/config";
+import "../config/loadEnv.js";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import createApp from "./createApp.js";
+import { loadedEnvFilePath, envFileExists } from "../config/loadEnv.js";
+
+const { default: createApp } = await import("./createApp.js");
 
 const entryFile = fileURLToPath(import.meta.url);
 const host = process.env.HOST || "127.0.0.1";
@@ -13,6 +15,10 @@ const app = createApp({ repositoryType, dataDir });
 const server = app.listen(port, host, () => {
     const url = `http://${host}:${port}`;
     console.log(`Server entry: ${entryFile}`);
+    console.log(`Env file: ${loadedEnvFilePath} (${envFileExists ? "loaded" : "missing"})`);
+    console.log(`ENABLE_AI: ${process.env.ENABLE_AI || "unset"}`);
+    console.log(`AI_PROVIDER: ${process.env.AI_PROVIDER || "unset"}`);
+    console.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? "CONFIGURED" : "MISSING"}`);
     console.log(`Public directory: ${app.locals.dependencies.publicDirectory}`);
     console.log(`index.html exists: ${app.locals.dependencies.indexExists}`);
     console.log(`QA Copilot server listening on ${url}`);
