@@ -186,14 +186,19 @@ class ScenarioRecommendationEngine {
             this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
             this.getText(feature) ||
             "Chức năng";
+        /*
+         The grouped CONFIRMED_FACT scenario must NOT use sourceItems: that
+         contract triggers atomic expansion, which splits the scenario by
+         rule item and marks it for enrichment, so the Quality Gate drops it.
+         Confirmed facts are carried in coveredRules + expectedResults (raw
+         confirmed content) with the business meaning described in
+         description, and the merged CLARIFICATION source references are kept
+         at scenario level - none of these trigger atomic expansion.
+         */
         const facts = uncovered.map(item => item.fact);
-
-        const sourceItems = uncovered.map(item => ({
-            content: this.buildConfirmedFactTitle(feature, item.fact),
-            source: "CONFIRMED_FACT",
-            rawFact: item.fact,
-            sourceReferences: this.cloneRefs(item.references)
-        }));
+        const behaviors = uncovered.map(item =>
+            this.buildConfirmedFactTitle(feature, item.fact)
+        );
 
         return {
             module: moduleName,
@@ -205,10 +210,9 @@ class ScenarioRecommendationEngine {
             type: "CONFIRMED_FACT",
             priority: "HIGH",
             reason: "Tester-confirmed fact",
-            description: facts.join("; "),
+            description: behaviors.join("; "),
             expectedResults: [...facts],
             coveredRules: [...facts],
-            sourceItems,
             sourceReferences: uncovered.flatMap(item =>
                 this.cloneRefs(item.references)
             )
@@ -245,7 +249,9 @@ class ScenarioRecommendationEngine {
             return `${f} với dữ liệu nhập được che dấu`;
         }
         if (/(gioi han|so lan|khong qua|toi da|toi thieu|khoa tai khoan|khoa|quy dinh|\blan\b)/.test(normalized)) {
-            return `${f} sai quá số lần quy định và kiểm tra cơ chế giới hạn`;
+            const count = String(fact ?? "").match(/\d+/)?.[0];
+            const limit = count ? `${count} lần` : "số lần quy định";
+            return `${f} sai quá ${limit} và kiểm tra cơ chế giới hạn`;
         }
         if (/(loi|fail|that bai|khong hop le|khong duoc)/.test(normalized)) {
             return `${f} và xử lý đúng phản hồi lỗi`;
