@@ -406,11 +406,18 @@ export default class TestStepNormalizer {
         const actionKey = this.comparable(step.action);
         return preconditions.some(precondition => {
             const preconditionKey = this.comparable(precondition);
+            if (!preconditionKey) return false;
+            /*
+             A step is a duplicated precondition only when the step action
+             restates the full precondition (exact match, or the action
+             contains the whole precondition text). The reverse substring
+             check (precondition contains the action) must NOT be used: a
+             short real action such as "Đăng nhập" would be swallowed by a
+             longer precondition like "Người dùng chưa đăng nhập".
+             */
             return (
-                preconditionKey &&
-                (preconditionKey === actionKey ||
-                    preconditionKey.includes(actionKey) ||
-                    actionKey.includes(preconditionKey))
+                preconditionKey === actionKey ||
+                actionKey.includes(preconditionKey)
             );
         });
     }
