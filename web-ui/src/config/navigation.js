@@ -30,13 +30,13 @@ export const navigationGroups = [
             },
             {
                 label: "CodeGen",
-                description: "AI Code Generation",
+                description: "Thư viện CodeGen",
                 icon: "code",
                 soon: true
             },
             {
                 label: "Reports",
-                description: "Báo cáo & thống kê",
+                description: "Báo cáo và thống kê",
                 icon: "reports",
                 soon: true
             }
