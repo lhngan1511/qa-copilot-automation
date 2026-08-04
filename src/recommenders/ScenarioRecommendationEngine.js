@@ -27,7 +27,7 @@ class ScenarioRecommendationEngine {
         ) {
             this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
             this.generateOwnedSuggestions(knowledge, scenarios, requirement);
-            this.applyConfirmedFacts(knowledge, scenarios, requirement);
+            this.mergeConfirmedFacts(knowledge, scenarios, requirement);
             return this.removeDuplicateScenarios(scenarios);
         }
 
@@ -67,31 +67,78 @@ class ScenarioRecommendationEngine {
             requirement
         );
 
-        this.applyConfirmedFacts(knowledge, scenarios, requirement);
+        this.mergeConfirmedFacts(knowledge, scenarios, requirement);
         return this.removeDuplicateScenarios(scenarios);
     }
 
-    applyConfirmedFacts(knowledge, scenarios, requirement) {
+    mergeConfirmedFacts(knowledge, scenarios, requirement) {
+        const confirmed = this.collectConfirmedKnowledge(knowledge);
+        if (confirmed.length === 0) return;
+
+        /*
+         Feed the confirmed knowledge into the existing recommendation
+         context: each fact that already maps onto a business scenario
+         (matched by its covered rules / expected results) is attached to
+         that scenario and traced back to its CLARIFICATION source. This is
+         the primary path - confirmed facts stay inside the business
+         scenario they belong to instead of becoming standalone entries.
+         */
+
+        const uncovered = [];
+        confirmed.forEach(item => {
+            const normalized = this.normalizeForComparison(item.fact);
+            const existing = scenarios.find(scenario =>
+                this.matchesConfirmedFact(scenario, normalized)
+            );
+            if (existing) {
+                existing.sourceReferences = this.mergeSourceReferences(
+                    existing.sourceReferences,
+                    item.references
+                );
+                if (
+                    Array.isArray(existing.expectedResults) &&
+                    !existing.expectedResults.some(value =>
+                        this.normalizeForComparison(value) === normalized
+                    )
+                ) {
+                    existing.expectedResults.push(item.fact);
+                }
+                return;
+            }
+            uncovered.push(item);
+        });
+
+        /*
+         Only facts that are truly independent test behaviours - not covered
+         by any existing business scenario - become a new scenario. They are
+         grouped into ONE scenario per module (never one scenario per fact),
+         carrying a business title and keeping every CLARIFICATION source
+         reference for traceability.
+         */
+
+        if (uncovered.length === 0) return;
+
+        const grouped = this.buildConfirmedFactGroup(knowledge, uncovered, requirement);
+        if (!grouped) return;
+
+        this.generateFromList([grouped], "CONFIRMED_FACT", "HIGH", scenarios, requirement);
+    }
+
+    collectConfirmedKnowledge(knowledge) {
         const sourceMap = this.isPlainObject(knowledge?.knowledgeSources)
             ? knowledge.knowledgeSources
             : {};
+        const result = [];
 
-        /*
-         A tester-confirmed clarification answer is a confirmed fact
-         regardless of the semantic collection the mapper placed it in.
-         RequirementKnowledgeMapper routes each answer by category
-         (businessRules / validationRules / permissions / boundaryCases /
-         confirmedFacts) and records every source reference under
-         knowledge.knowledgeSources. Only confirmedFacts has no separate
-         consumer, so previously only that bucket produced scenarios while
-         the rest were silently dropped.
-         */
-
-        const collectFacts = (field, onlyTracked) => {
+        [
+            "confirmedFacts",
+            "businessRules",
+            "validationRules",
+            "permissions",
+            "boundaryCases"
+        ].forEach(field => {
             const facts = Array.isArray(knowledge[field]) ? knowledge[field] : [];
             const bucket = this.isPlainObject(sourceMap[field]) ? sourceMap[field] : {};
-            const result = [];
-
             facts.forEach(fact => {
                 if (typeof fact !== "string" || !fact.trim()) return;
                 const normalized = this.normalizeForComparison(fact);
@@ -102,43 +149,128 @@ class ScenarioRecommendationEngine {
                     trackedKey !== undefined && Array.isArray(bucket[trackedKey])
                         ? bucket[trackedKey]
                         : [];
-                if (onlyTracked && references.length === 0) return;
+                /*
+                 Only the dedicated confirmedFacts bucket is trusted on its
+                 own. For the semantic collections a confirmed fact must carry
+                 a CLARIFICATION source reference, otherwise it is a regular
+                 rule already represented by the normal recommendation flow.
+                 */
+                if (field !== "confirmedFacts" && references.length === 0) return;
                 if (result.some(item => this.normalizeForComparison(item.fact) === normalized)) {
                     return;
                 }
-                result.push({ fact, references });
+                result.push({ fact, references, field });
             });
-
-            return result;
-        };
-
-        const confirmed = [
-            ...collectFacts("confirmedFacts", false),
-            ...collectFacts("businessRules", true),
-            ...collectFacts("validationRules", true),
-            ...collectFacts("permissions", true),
-            ...collectFacts("boundaryCases", true)
-        ];
-
-        confirmed.forEach(({ fact, references }) => {
-            const normalized = this.normalizeForComparison(fact);
-            const existing = scenarios.find(scenario =>
-                this.getArray(scenario.expectedResults).some(value => this.normalizeForComparison(value) === normalized)
-            );
-            if (existing) {
-                existing.sourceReferences = this.mergeSourceReferences(existing.sourceReferences, references);
-                return;
-            }
-            this.generateFromList([{
-                title: fact,
-                description: fact,
-                expectedResults: [fact],
-                type: "CONFIRMED_FACT",
-                reason: "Tester-confirmed fact",
-                source: "RequirementKnowledge",
-                sourceReferences: references
-            }], "CONFIRMED_FACT", "HIGH", scenarios, requirement);
         });
+
+        return result;
+    }
+
+    matchesConfirmedFact(scenario, normalized) {
+        const candidateTexts = [
+            ...this.getArray(scenario.coveredRules),
+            ...this.getArray(scenario.expectedResults),
+            ...this.getArray(scenario.sourceItems).map(item =>
+                this.getText(item?.content ?? item?.rule ?? item?.title ?? "")
+            )
+        ];
+        return candidateTexts.some(value =>
+            this.normalizeForComparison(value) === normalized
+        );
+    }
+
+    buildConfirmedFactGroup(knowledge, uncovered, requirement) {
+        const feature = this.resolveConfirmedFeature(knowledge, requirement);
+        const moduleName =
+            this.getText(knowledge?.module?.name) ||
+            this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
+            this.getText(feature) ||
+            "Chức năng";
+        const facts = uncovered.map(item => item.fact);
+
+        const sourceItems = uncovered.map(item => ({
+            content: this.buildConfirmedFactTitle(feature, item.fact),
+            source: "CONFIRMED_FACT",
+            rawFact: item.fact,
+            sourceReferences: this.cloneRefs(item.references)
+        }));
+
+        return {
+            module: moduleName,
+            moduleId: this.getText(knowledge?.module?.id),
+            feature,
+            functionId: this.getText(knowledge?.module?.id),
+            functionName: feature,
+            title: `Kiểm tra hành vi đã được tester xác nhận của ${feature}`,
+            type: "CONFIRMED_FACT",
+            priority: "HIGH",
+            reason: "Tester-confirmed fact",
+            description: facts.join("; "),
+            expectedResults: [...facts],
+            coveredRules: [...facts],
+            sourceItems,
+            sourceReferences: uncovered.flatMap(item =>
+                this.cloneRefs(item.references)
+            )
+        };
+    }
+
+    resolveConfirmedFeature(knowledge, requirement) {
+        const functions = this.getArray(knowledge?.functions).filter(
+            fn => this.getText(fn?.name)
+        );
+        if (functions.length === 1) {
+            return this.getText(functions[0].name);
+        }
+        const moduleName = this.getText(knowledge?.module?.name);
+        if (moduleName) {
+            return this.capitalize(moduleName);
+        }
+        const feature = this.getText(requirement?.feature);
+        return feature || "Chức năng";
+    }
+
+    buildConfirmedFactTitle(feature, fact) {
+        const f = this.capitalize(this.getText(feature) || "Chức năng");
+        const normalized = this.comparable(fact);
+
+        if (
+            /(sai (mat khau|tai khoan)|sai thong tin dang nhap|khong duoc dang nhap|dang nhap that bai|dang nhap khong thanh cong)/.test(
+                normalized
+            )
+        ) {
+            return `${f} sai thông tin đăng nhập và hiển thị phản hồi phù hợp`;
+        }
+        if (/che dau|masking|bi an|an mat/.test(normalized)) {
+            return `${f} với dữ liệu nhập được che dấu`;
+        }
+        if (/(gioi han|so lan|khong qua|toi da|toi thieu|khoa tai khoan|khoa|quy dinh|\blan\b)/.test(normalized)) {
+            return `${f} sai quá số lần quy định và kiểm tra cơ chế giới hạn`;
+        }
+        if (/(loi|fail|that bai|khong hop le|khong duoc)/.test(normalized)) {
+            return `${f} và xử lý đúng phản hồi lỗi`;
+        }
+        return `${f}: ${this.getText(fact)}`;
+    }
+
+    comparable(value) {
+        return String(value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "d")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    cloneRefs(references) {
+        return (Array.isArray(references) ? references : []).map(reference => ({ ...reference }));
+    }
+
+    capitalize(value) {
+        const text = this.getText(value);
+        return text ? text.charAt(0).toLocaleUpperCase("vi") + text.slice(1) : "";
     }
 
     mergeSourceReferences(current, incoming) {
