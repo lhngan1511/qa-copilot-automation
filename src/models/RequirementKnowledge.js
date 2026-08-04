@@ -29,6 +29,8 @@ class RequirementKnowledge {
         this.exceptions = this.normalizeStringArray(data.exceptions);
         this.notes = this.normalizeStringArray(data.notes);
         this.clarificationAnswers = this.cloneObjectArray(data.clarificationAnswers);
+        this.confirmedFacts = this.normalizeStringArray(data.confirmedFacts);
+        this.knowledgeSources = this.cloneValue(data.knowledgeSources ?? {});
         this.approved = data.approved === true;
 
         this.confidence = typeof data.confidence === "number" ? data.confidence : 0;
@@ -152,6 +154,8 @@ class RequirementKnowledge {
             questions: this.cloneValue(this.questions),
             clarificationQuestions: this.cloneValue(this.clarificationQuestions),
             clarificationAnswers: this.cloneValue(this.clarificationAnswers),
+            confirmedFacts: [...this.confirmedFacts],
+            knowledgeSources: this.cloneValue(this.knowledgeSources),
             approved: this.approved,
             notes: [...this.notes],
             confidence: this.confidence,
