@@ -117,7 +117,11 @@ export default function CodeGenPage() {
         try {
             const rec = await actions.stop.mutateAsync({});
             setActiveId(rec.recordingId);
-            setNotice("Đã dừng ghi. Xem toàn bộ script và gắn testcase nếu cần.");
+            if (rec.status === "STOP_FAILED" || !rec.scriptContent) {
+                setNotice(rec.error?.message || "Dừng ghi nhưng không lấy được script. Hãy thử lại.");
+            } else {
+                setNotice(`Đã dừng ghi. Script dài ${rec.scriptLength} ký tự. Xem và gắn testcase nếu cần.`);
+            }
         } catch (error) {
             setNotice(error.message || "Không thể dừng ghi.");
         }

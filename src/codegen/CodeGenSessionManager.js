@@ -309,7 +309,9 @@ export default class CodeGenSessionManager {
             pid,
             command,
             url: normalizedUrl,
-            browser: normalizedBrowser
+            browser: normalizedBrowser,
+            outputPath: recordingFile,
+            outputPathExists: fs.existsSync(recordingFile)
         })}`);
 
         this.session = { url: normalizedUrl, browser: normalizedBrowser, command, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log, pid };
@@ -360,19 +362,146 @@ export default class CodeGenSessionManager {
         }
     }
 
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     /**
-     * Stop phiên: kết thúc process an toàn, lưu toàn bộ script vào metadata.
+     * Chờ output file trở nên non-empty và ổn định (kích thước không đổi trong
+     * một khoảng poll) trong giới hạn thời gian. Playwright chỉ ghi/flush file
+     * khi recording kết thúc (Inspector/browser đóng), nên không được đọc file
+     * ngay sau khi kill process.
      */
-    async stop({ timeoutMs = 2000 } = {}) {
+    async waitForScriptFile(filePath, { timeoutMs = 5000, pollMs = 250, stablePolls = 3 } = {}) {
+        const deadline = Date.now() + timeoutMs;
+        let lastSize = -1;
+        let stableCount = 0;
+        while (Date.now() < deadline) {
+            const size = fs.existsSync(filePath) ? fs.statSync(filePath).size : 0;
+            if (size > 0) {
+                if (size === lastSize) {
+                    stableCount += 1;
+                    if (stableCount >= stablePolls) {
+                        return this.readRecordingFile(filePath);
+                    }
+                } else {
+                    stableCount = 0;
+                }
+                lastSize = size;
+            } else {
+                stableCount = 0;
+                lastSize = -1;
+            }
+            await this.sleep(pollMs);
+        }
+        return this.readRecordingFile(filePath);
+    }
+
+    /**
+     * Dừng đúng process tree của phiên ghi đang active (không chỉ kill wrapper
+     * Node/npx). Ưu tiên graceful (SIGTERM / taskkill không /F), sau đó
+     * force-kill cả process tree sau timeout.
+     */
+    async shutdownProcessTree(child, { gracefulTimeoutMs = 1500, forceTimeoutMs = 1500, treeKill = null } = {}) {
+        if (!child || typeof child.kill !== "function") return;
+        const pid = child.pid;
+        const finish = new Promise(resolve => child.once("close", resolve));
+        // graceful trước
+        if (treeKill) {
+            await treeKill(pid, { force: false });
+        } else if (this.platform === "win32" && pid) {
+            // taskkill /T (cả tree) không /F = graceful-ish
+            await this.runTaskKill(pid, false);
+        } else {
+            try {
+                child.kill("SIGTERM");
+            } catch {
+                /* ignore */
+            }
+        }
+        const exitedEarly = await Promise.race([
+            finish.then(() => true),
+            this.sleep(gracefulTimeoutMs).then(() => false)
+        ]);
+        if (exitedEarly) return;
+
+        // force kill tree
+        if (treeKill) {
+            await treeKill(pid, { force: true });
+        } else if (this.platform === "win32" && pid) {
+            await this.runTaskKill(pid, true);
+        } else {
+            try {
+                child.kill("SIGKILL");
+            } catch {
+                /* ignore */
+            }
+        }
+        await Promise.race([finish, this.sleep(forceTimeoutMs)]);
+    }
+
+    runTaskKill(pid, force) {
+        return new Promise(resolve => {
+            let task;
+            try {
+                task = this.spawnFn("taskkill", force ? ["/pid", String(pid), "/T", "/F"] : ["/pid", String(pid), "/T"], {
+                    windowsHide: true,
+                    stdio: "ignore"
+                });
+            } catch {
+                resolve();
+                return;
+            }
+            task.on("error", () => resolve());
+            task.on("close", () => resolve());
+            setTimeout(resolve, 1500);
+        });
+    }
+
+    /**
+     * Stop phiên: dừng đúng process tree, chờ output file được flush rồi mới
+     * đọc script. Nếu không capture được script -> CODE_GEN_SCRIPT_NOT_CAPTURED,
+     * status STOP_FAILED, không trả STOPPED giả.
+     */
+    async stop({ timeoutMs = 1500, flushWaitMs = 5000, treeKill = null } = {}) {
         if (this.status !== "RECORDING" || !this.session) {
             const error = new Error("Không có phiên CodeGen đang ghi để dừng.");
             error.code = "CODE_GEN_NO_ACTIVE_SESSION";
             throw error;
         }
-        const { child, recordingFile, recordingId } = this.session;
-        await this.terminateChild(child, timeoutMs);
+        const { child, recordingFile, recordingId, pid } = this.session;
+        console.log(`[CodeGen] stop requested: ${JSON.stringify({ recordingId, pid, outputPath: recordingFile, existedBefore: fs.existsSync(recordingFile) })}`);
 
-        const content = this.readRecordingFile(recordingFile);
+        await this.shutdownProcessTree(child, { treeKill });
+        console.log(`[CodeGen] process tree stopped (pid=${pid}). Chờ output file flush...`);
+
+        const content = await this.waitForScriptFile(recordingFile, { timeoutMs: flushWaitMs });
+
+        if (!content) {
+            const err = new Error(
+                "Không lấy được script sau khi dừng (Playwright chưa ghi/flush file output). " +
+                "Hãy đóng Playwright Inspector rồi bấm Dừng lần nữa, hoặc kiểm tra output path."
+            );
+            err.code = "CODE_GEN_SCRIPT_NOT_CAPTURED";
+            this.store.update(recordingId, {
+                scriptContent: "",
+                status: "STOP_FAILED",
+                lastRunResult: { status: "ERROR", passed: false, error: err.message, output: err.message }
+            });
+            this.status = "STOP_FAILED";
+            this.session = null;
+            this.activeRecording = null;
+            this.error = { code: err.code, message: err.message };
+            return {
+                recordingId,
+                status: "STOP_FAILED",
+                outputPath: recordingFile,
+                scriptLength: 0,
+                scriptContent: "",
+                error: { code: err.code, message: err.message }
+            };
+        }
+
         this.store.update(recordingId, {
             scriptContent: content,
             status: "STOPPED",
@@ -381,8 +510,16 @@ export default class CodeGenSessionManager {
         this.status = "STOPPED";
         this.session = null;
         this.activeRecording = null;
+        this.error = null;
 
-        return this.get(recordingId);
+        console.log(`[CodeGen] stop done: ${JSON.stringify({ recordingId, status: "STOPPED", outputPath: recordingFile, scriptLength: content.length })}`);
+        return {
+            recordingId,
+            status: "STOPPED",
+            outputPath: recordingFile,
+            scriptLength: content.length,
+            scriptContent: content
+        };
     }
 
     terminateChild(child, timeoutMs) {
