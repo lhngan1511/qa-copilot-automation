@@ -1496,6 +1496,18 @@ class QACopilot {
             )
             .filter(Boolean);
 
+        /*
+         A scenario carrying a CLARIFICATION source reference is a
+         tester-confirmed behaviour and must always reach testcase
+         generation, whatever its classified business type.
+         */
+        if (
+            (Array.isArray(scenario?.sourceReferences) ? scenario.sourceReferences : []).some(
+                reference => reference?.sourceType === "CLARIFICATION"
+            )
+        ) {
+            return true;
+        }
         if (type === "POSITIVE") return true;
         if (type === "CONFIRMED_FACT") return true;
         if (

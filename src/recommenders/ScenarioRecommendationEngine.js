@@ -109,19 +109,30 @@ class ScenarioRecommendationEngine {
         });
 
         /*
-         Only facts that are truly independent test behaviours - not covered
-         by any existing business scenario - become a new scenario. They are
-         grouped into ONE scenario per module (never one scenario per fact),
-         carrying a business title and keeping every CLARIFICATION source
-         reference for traceability.
+         Facts that are not covered by an existing business scenario are
+         classified semantically:
+         - a fact that describes an independent test behaviour becomes its own
+           business scenario (never a generic "group" of unrelated facts);
+         - the scenario type and title are derived from the fact's meaning
+           (login failure -> NEGATIVE, masking -> VALIDATION, attempt limit ->
+           BUSINESS_RULE), so the final test type is not a catch-all
+           CONFIRMED_FACT when a concrete business type is known.
+         Each scenario keeps its CLARIFICATION source reference.
          */
 
         if (uncovered.length === 0) return;
 
-        const grouped = this.buildConfirmedFactGroup(knowledge, uncovered, requirement);
-        if (!grouped) return;
-
-        this.generateFromList([grouped], "CONFIRMED_FACT", "HIGH", scenarios, requirement);
+        uncovered.forEach(item => {
+            const scenario = this.buildConfirmedFactScenario(knowledge, item, requirement);
+            if (!scenario) return;
+            this.generateFromList(
+                [scenario],
+                scenario.type,
+                scenario.priority || "HIGH",
+                scenarios,
+                requirement
+            );
+        });
     }
 
     collectConfirmedKnowledge(knowledge) {
@@ -179,26 +190,15 @@ class ScenarioRecommendationEngine {
         );
     }
 
-    buildConfirmedFactGroup(knowledge, uncovered, requirement) {
+    buildConfirmedFactScenario(knowledge, item, requirement) {
         const feature = this.resolveConfirmedFeature(knowledge, requirement);
         const moduleName =
             this.getText(knowledge?.module?.name) ||
             this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
             this.getText(feature) ||
             "Chức năng";
-        /*
-         The grouped CONFIRMED_FACT scenario must NOT use sourceItems: that
-         contract triggers atomic expansion, which splits the scenario by
-         rule item and marks it for enrichment, so the Quality Gate drops it.
-         Confirmed facts are carried in coveredRules + expectedResults (raw
-         confirmed content) with the business meaning described in
-         description, and the merged CLARIFICATION source references are kept
-         at scenario level - none of these trigger atomic expansion.
-         */
-        const facts = uncovered.map(item => item.fact);
-        const behaviors = uncovered.map(item =>
-            this.buildConfirmedFactTitle(feature, item.fact)
-        );
+        const fact = item.fact;
+        const classification = this.classifyConfirmedFact(feature, fact);
 
         return {
             module: moduleName,
@@ -206,16 +206,84 @@ class ScenarioRecommendationEngine {
             feature,
             functionId: this.getText(knowledge?.module?.id),
             functionName: feature,
-            title: `Kiểm tra hành vi đã được tester xác nhận của ${feature}`,
-            type: "CONFIRMED_FACT",
-            priority: "HIGH",
+            title: classification.title,
+            type: classification.type,
+            priority: classification.priority || "HIGH",
             reason: "Tester-confirmed fact",
-            description: behaviors.join("; "),
-            expectedResults: [...facts],
-            coveredRules: [...facts],
-            sourceReferences: uncovered.flatMap(item =>
-                this.cloneRefs(item.references)
+            description: classification.title,
+            expectedResults: [fact],
+            coveredRules: [fact],
+            sourceReferences: this.cloneRefs(item.references)
+        };
+    }
+
+    classifyConfirmedFact(feature, fact) {
+        const f = this.capitalize(this.getText(feature) || "Chức năng");
+        const normalized = this.comparable(fact);
+
+        /*
+         Attempt limit / lockout -> a boundary-style business rule.
+         Keep the confirmed count in the title when present.
+         */
+        if (
+            /(gioi han|so lan|khong qua|toi da|toi thieu|khoa tai khoan|khoa tai khoan sau|\blan\b)/.test(
+                normalized
             )
+        ) {
+            const count = String(fact ?? "").match(/\d+/)?.[0];
+            const limit = count ? `${count} lần` : "số lần quy định";
+            return {
+                title: `${f} sai quá ${limit} và kiểm tra cơ chế giới hạn`,
+                type: "BUSINESS_RULE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Password masking / hidden input -> a validation concern.
+         */
+        if (/che dau|masking|bi an|an mat|khong hien thi/.test(normalized)) {
+            return {
+                title: `${f} với mật khẩu được che dấu khi nhập`,
+                type: "VALIDATION",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Wrong credentials / failed login -> negative behaviour.
+         */
+        if (
+            /(sai (mat khau|tai khoan)|sai thong tin dang nhap|khong duoc dang nhap|dang nhap that bai|dang nhap khong thanh cong|mat khau.*khong (dung|chinh xac)|tai khoan.*khong (dung|chinh xac))/.test(
+                normalized
+            )
+        ) {
+            return {
+                title: `${f} sai mật khẩu và kiểm tra phản hồi`,
+                type: "NEGATIVE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Generic failure handling.
+         */
+        if (/(loi|fail|that bai|khong hop le|khong duoc)/.test(normalized)) {
+            return {
+                title: `${f} và xử lý đúng phản hồi lỗi`,
+                type: "NEGATIVE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Fallback: treat as an independent confirmed behaviour with a business
+         title (never the raw fact as title).
+         */
+        return {
+            title: `${f}: ${this.getText(fact)}`,
+            type: "CONFIRMED_FACT",
+            priority: "HIGH"
         };
     }
 
@@ -232,31 +300,6 @@ class ScenarioRecommendationEngine {
         }
         const feature = this.getText(requirement?.feature);
         return feature || "Chức năng";
-    }
-
-    buildConfirmedFactTitle(feature, fact) {
-        const f = this.capitalize(this.getText(feature) || "Chức năng");
-        const normalized = this.comparable(fact);
-
-        if (
-            /(sai (mat khau|tai khoan)|sai thong tin dang nhap|khong duoc dang nhap|dang nhap that bai|dang nhap khong thanh cong)/.test(
-                normalized
-            )
-        ) {
-            return `${f} sai thông tin đăng nhập và hiển thị phản hồi phù hợp`;
-        }
-        if (/che dau|masking|bi an|an mat/.test(normalized)) {
-            return `${f} với dữ liệu nhập được che dấu`;
-        }
-        if (/(gioi han|so lan|khong qua|toi da|toi thieu|khoa tai khoan|khoa|quy dinh|\blan\b)/.test(normalized)) {
-            const count = String(fact ?? "").match(/\d+/)?.[0];
-            const limit = count ? `${count} lần` : "số lần quy định";
-            return `${f} sai quá ${limit} và kiểm tra cơ chế giới hạn`;
-        }
-        if (/(loi|fail|that bai|khong hop le|khong duoc)/.test(normalized)) {
-            return `${f} và xử lý đúng phản hồi lỗi`;
-        }
-        return `${f}: ${this.getText(fact)}`;
     }
 
     comparable(value) {
