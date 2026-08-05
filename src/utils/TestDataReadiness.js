@@ -22,21 +22,40 @@ function normalizeTestData(testData, context = {}) {
             Object.hasOwn(testData, "value") ||
             Object.hasOwn(testData, "fields"))
     ) {
+        const fields =
+            testData.fields &&
+            typeof testData.fields === "object" &&
+            !Array.isArray(testData.fields)
+                ? structuredClone(testData.fields)
+                : {};
+        const rawValue = normalizeText(testData.value);
+
+        /*
+         Tester-entered data arrives as a free-text testData.value (a single
+         "Test Data" field in the review UI). Sync it onto the per-field
+         structure so testData.fields["<tên>"].value is the source of truth
+         and testData.value is only a derived display of those fields - it is
+         never an independent source that can drift from the fields.
+         */
+        const assigned = syncTesterValuesIntoFields(fields, rawValue);
+
+        /*
+         When the tester provided values, requiresTesterInput is recomputed
+         purely from the per-field state so that once every required field has
+         a value it becomes false (and executionReadiness leaves DATA_REQUIRED).
+         Otherwise keep the explicit flag that came in.
+         */
+        const requiresTesterInput = assigned
+            ? Object.values(fields).some(field => field?.requiresTesterInput === true)
+            : testData.requiresTesterInput === true ||
+              Object.values(fields).some(field => field?.requiresTesterInput === true);
+
         return {
             ...structuredClone(testData),
-            fields:
-                testData.fields &&
-                typeof testData.fields === "object" &&
-                !Array.isArray(testData.fields)
-                    ? structuredClone(testData.fields)
-                    : {},
+            fields,
             requirement: normalizeText(testData.requirement),
-            value: normalizeText(testData.value),
-            requiresTesterInput:
-                testData.requiresTesterInput === true ||
-                Object.values(testData.fields ?? {}).some(
-                    field => field?.requiresTesterInput === true
-                )
+            value: assigned ? deriveDisplayValue(fields) : rawValue,
+            requiresTesterInput
         };
     }
 
@@ -44,6 +63,73 @@ function normalizeTestData(testData, context = {}) {
         requirement: buildDataRequirement(context),
         value: ""
     };
+}
+
+/*
+ Parse testData.value (raw text) and populate testData.fields[name].value.
+ Each line may be "Tên trường: giá trị" (matched against the known field
+ names) or a bare value matched positionally to the remaining fields in
+ order. A line whose value is an intentional-empty marker ("Để trống") sets
+ the field value to "" (tester already decided). No field name is hardcoded.
+ */
+function syncTesterValuesIntoFields(fields, rawValue) {
+    const fieldNames = Object.keys(fields);
+    if (!rawValue || fieldNames.length === 0) return false;
+
+    const assigned = new Set();
+    const lines = rawValue.split(/\r?\n/);
+
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        const colonIndex = trimmed.indexOf(":");
+        if (colonIndex > 0) {
+            const name = normalizeText(trimmed.slice(0, colonIndex));
+            const value = trimmed.slice(colonIndex + 1).trim();
+            const match = fieldNames.find(
+                fieldName => fieldName.toLowerCase() === name.toLowerCase()
+            );
+            if (match && value !== "") {
+                applyTesterValue(fields, match, value);
+                assigned.add(match);
+            }
+        }
+    });
+
+    if (assigned.size < fieldNames.length) {
+        const unassigned = fieldNames.filter(name => !assigned.has(name));
+        let cursor = 0;
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.includes(":")) return;
+            if (cursor < unassigned.length) {
+                applyTesterValue(fields, unassigned[cursor], trimmed);
+                assigned.add(unassigned[cursor]);
+                cursor += 1;
+            }
+        });
+    }
+
+    return assigned.size > 0;
+}
+
+function applyTesterValue(fields, name, value) {
+    const field = fields[name] && typeof fields[name] === "object" ? fields[name] : {};
+    const normalizedValue = /để trống/i.test(value) ? "" : value;
+    fields[name] = {
+        ...field,
+        value: normalizedValue,
+        requiresTesterInput: false
+    };
+    if (Object.hasOwn(fields[name], "instruction")) {
+        delete fields[name].instruction;
+    }
+}
+
+function deriveDisplayValue(fields) {
+    return Object.entries(fields)
+        .map(([name, field]) => `${name}: ${field?.value ?? ""}`)
+        .join("\n");
 }
 
 function buildDataRequirement(context) {
