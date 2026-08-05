@@ -2,48 +2,46 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
+import CodeGenRecordingStore from "./CodeGenRecordingStore.js";
 
 /*
- CodeGenSessionManager
- MVP cho Giai đoạn 2 - Playwright CodeGen.
+ CodeGenSessionManager — Recording Session centric (Giai đoạn 2 MVP)
 
- Luồng: URL -> Start (spawn `playwright codegen`) -> tester thao tác trên
- trình duyệt -> Stop (kết thúc process an toàn, đọc script) -> người dùng tự
- tải/lưu script -> Run thử.
+ Một Recording Session là thực thể chính. Một recording có thể:
+   - không gắn testcase;
+   - gắn 1 testcase;
+   - gắn nhiều testcase.
 
- Ràng buộc MVP:
-   - Chỉ một phiên CodeGen chạy tại một thời điểm.
-   - Một URL, một script.
-   - Không AI, không self-healing, không Automation Intelligence, không phụ
-     thuộc approved-testcases.json.
-   - File tạm được dọn khi dừng / lỗi / server restart (qua dispose).
+ Testcase không phải điều kiện bắt buộc để bắt đầu ghi. Script lưu TOÀN BỘ
+ luồng; không tự tách script theo testcase, không ép one-testcase-one-file.
+
+ Metadata + script giữ lâu dài nằm trong CodeGenRecordingStore (data/
+ codegen-recordings.json + outputs/codegen/). TempDir chỉ dùng cho recording
+ đang chạy / file run tạm / report-trace tạm.
+
+ storageMode: TEMP | SERVER | DOWNLOADED
+   - TEMP: script chưa lưu bền (chỉ nội dung + file tạm)
+   - SERVER: đã lưu phía server -> có serverFilePath
+   - DOWNLOADED: người dùng Save As bằng trình duyệt (backend không biết
+     đường dẫn thật, chỉ lưu downloadFileName gợi ý)
+
+ Mode:
+   - FULL_FLOW: ghi toàn bộ luồng; link 0..n testcase
+   - TESTCASE_SEGMENT: đoạn ghi phục vụ testcase; PHẢI link >=1 testcase
+     trước khi hoàn tất lưu metadata
 */
 
 const DEFAULT_TARGET = "playwright-test";
-const VALID_BROWSERS = new Set(["chromium", "chrome"]);
-
-function slugify(value) {
-    return String(value ?? "")
-        .trim()
-        .toLowerCase()
-        .replace(/^https?:\/\//i, "")
-        .replace(/\/+$/g, "")
-        .replace(/[^a-z0-9.]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 80) || "playwright";
-}
-
-function defaultFileName(url) {
-    return `${slugify(url)}-recording.spec.js`;
-}
+const VALID_BROWSERS = new Set(["chrome", "edge", "chromium"]);
+const BROWSER_CHANNEL = { chrome: "chrome", edge: "msedge", chromium: null };
 
 export default class CodeGenSessionManager {
     constructor({
         rootDir = process.cwd(),
         tempDir = null,
         browserChannel = null,
+        store = null,
         runner = null,
         spawnFn = spawn,
         playwrightBin = null
@@ -51,15 +49,14 @@ export default class CodeGenSessionManager {
         this.rootDir = rootDir;
         this.tempDir = tempDir ?? path.join(os.tmpdir(), "qa-copilot-codegen");
         this.browserChannel = browserChannel ?? process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? null;
-        this.runner = runner ?? new PlaywrightRunner({ rootDir, browserChannel: this.browserChannel });
+        this.store = store ?? new CodeGenRecordingStore({ scriptsDir: path.resolve(rootDir, "outputs", "codegen") });
+        this.runner = runner;
         this.spawnFn = spawnFn;
         this.playwrightBin = playwrightBin ?? this.resolvePlaywrightBin();
 
-        this.session = null;
+        this.session = null; // phiên ghi đang chạy
         this.status = "IDLE";
-        this.script = "";
-        this.error = null;
-        this.defaultFileName = "playwright-recording.spec.js";
+        this.activeRecording = null; // recording record của phiên đang ghi
 
         this.ensureTempDir();
     }
@@ -75,60 +72,54 @@ export default class CodeGenSessionManager {
         fs.mkdirSync(this.tempDir, { recursive: true });
         fs.mkdirSync(path.join(this.tempDir, "recordings"), { recursive: true });
         fs.mkdirSync(path.join(this.tempDir, "runs"), { recursive: true });
+        fs.mkdirSync(path.join(this.tempDir, "reports"), { recursive: true });
     }
 
-    /** Đường dẫn file ghi lại script cho phiên hiện tại. */
-    recordingPath(url, stamp = Date.now()) {
-        return path.join(this.tempDir, "recordings", `${slugify(url)}-${stamp}.js`);
+    channelFor(browser) {
+        return BROWSER_CHANNEL[browser] ?? null;
     }
 
-    getStatus() {
-        // Nếu đang ghi hoặc đã dừng mà file tạm đã được ghi, cập nhật script.
-        if (this.session && this.status !== "IDLE" && this.session.recordingFile) {
-            try {
-                if (fs.existsSync(this.session.recordingFile)) {
-                    const content = fs.readFileSync(this.session.recordingFile, "utf8");
-                    if (content.trim()) this.script = content;
-                }
-            } catch {
-                /* ignore */
-            }
-        }
-        return {
-            status: this.status,
-            url: this.session?.url ?? null,
-            script: this.script,
-            defaultFileName: this.defaultFileName,
-            recordingFile: this.session?.recordingFile ?? null,
-            startedAt: this.session?.startedAt ?? null,
-            error: this.error
-        };
+    /** Danh sách recording sessions. */
+    list() {
+        return this.store.list();
+    }
+
+    /** Chi tiết một recording (kèm scriptContent). */
+    get(recordingId) {
+        const rec = this.store.recordings.find(item => item.recordingId === recordingId);
+        return rec ? { ...this.store.get(recordingId), scriptContent: rec.scriptContent ?? "" } : null;
     }
 
     /**
-     * Start một phiên CodeGen.
-     * Ném lỗi nếu đã có phiên đang ghi (chỉ một phiên tại một thời điểm).
+     * Start một Recording Session (tự do, không bắt buộc testcase).
      */
-    async start({ url } = {}) {
+    async start({ url = "", browser = "chrome", mode = "FULL_FLOW" } = {}) {
         const normalizedUrl = String(url ?? "").trim();
         if (!normalizedUrl) {
             const error = new Error("URL không được để trống.");
             error.code = "CODE_GEN_URL_REQUIRED";
             throw error;
         }
+        const normalizedBrowser = String(browser || "chrome").toLowerCase();
+        if (!VALID_BROWSERS.has(normalizedBrowser)) {
+            const error = new Error(`Browser không hợp lệ: ${browser}. Hỗ trợ: chrome | edge | chromium.`);
+            error.code = "CODE_GEN_INVALID_BROWSER";
+            throw error;
+        }
         if (this.status === "RECORDING" && this.session) {
-            const error = new Error(
-                "Đã có phiên CodeGen đang ghi. Dừng phiên hiện tại trước khi bắt đầu phiên mới."
-            );
+            const error = new Error("Đã có phiên CodeGen đang ghi. Dừng phiên hiện tại trước.");
             error.code = "CODE_GEN_SESSION_BUSY";
             throw error;
         }
 
-        // Dọn dữ liệu phiên cũ.
-        await this.dispose();
+        await this.disposeSession();
         this.ensureTempDir();
 
-        const recordingFile = this.recordingPath(normalizedUrl);
+        // Tạo recording record (persistent metadata) trước.
+        const recording = this.store.create({ mode, url: normalizedUrl, browser: normalizedBrowser });
+
+        const recordingFile = path.join(this.tempDir, "recordings", `${recording.recordingId}.js`);
+        const channel = this.channelFor(normalizedBrowser);
         const args = [
             "codegen",
             normalizedUrl,
@@ -139,13 +130,13 @@ export default class CodeGenSessionManager {
             "--browser",
             "chromium"
         ];
-        if (this.browserChannel === "chrome") args.push("--channel", "chrome");
+        if (channel) args.push("--channel", channel);
 
         const child = this.spawnFn(this.playwrightBin, args, {
             cwd: this.rootDir,
             env: {
                 ...process.env,
-                PLAYWRIGHT_BROWSER_CHANNEL: this.browserChannel || ""
+                PLAYWRIGHT_BROWSER_CHANNEL: channel || ""
             },
             stdio: ["ignore", "pipe", "pipe"]
         });
@@ -154,53 +145,40 @@ export default class CodeGenSessionManager {
         child.stdout?.on("data", chunk => (log += String(chunk)));
         child.stderr?.on("data", chunk => (log += String(chunk)));
 
-        this.session = {
-            url: normalizedUrl,
-            child,
-            recordingFile,
-            startedAt: new Date().toISOString(),
-            log
-        };
+        this.session = { url: normalizedUrl, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log };
         this.status = "RECORDING";
-        this.script = "";
-        this.error = null;
-        this.defaultFileName = defaultFileName(normalizedUrl);
+        this.activeRecording = recording.recordingId;
 
-        // Theo dõi nếu process tự thoát (ví dụ thiếu browser / lỗi khởi động).
         child.on("exit", code => {
-            if (this.status === "RECORDING" && this.session?.child === child) {
-                const content = this.readRecordingFile(this.session.recordingFile);
-                this.script = content;
-                this.status = "STOPPED";
-                this.error = {
-                    code: "CODE_GEN_PROCESS_EXITED",
-                    message: `Playwright CodeGen đã tự kết thúc (exit=${code}). ${
-                        content ? "Script đã được ghi." : "Script chưa được ghi."
-                    }`
-                };
-                // Nếu là lỗi khởi động (browser thiếu) thì ghi rõ.
-                if (!content && /executable doesn't exist|Failed to launch|ERR_|not found/i.test(log)) {
-                    this.error.code = "CODE_GEN_BROWSER_UNAVAILABLE";
-                    this.error.message = `Không thể mở trình duyệt cho CodeGen: ${log.slice(-400)}`;
-                }
+            if (this.status === "RECORDING" && this.session?.recordingId === recording.recordingId) {
+                const content = this.readRecordingFile(recordingFile);
+                const status = content.trim() ? "STOPPED" : "ERROR";
+                this.store.update(recording.recordingId, {
+                    scriptContent: content,
+                    status,
+                    lastRunResult: null
+                });
+                this.status = status;
+                this.error = !content.trim()
+                    ? { code: "CODE_GEN_BROWSER_UNAVAILABLE", message: `Không thể mở trình duyệt: ${log.slice(-400)}` }
+                    : null;
             }
         });
 
-        return this.getStatus();
+        return this.get(recording.recordingId);
     }
 
     readRecordingFile(filePath) {
         try {
             if (!fs.existsSync(filePath)) return "";
-            const content = fs.readFileSync(filePath, "utf8");
-            return String(content ?? "").trim();
+            return String(fs.readFileSync(filePath, "utf8") ?? "").trim();
         } catch {
             return "";
         }
     }
 
     /**
-     * Stop phiên: kết thúc process an toàn rồi đọc script từ file tạm.
+     * Stop phiên: kết thúc process an toàn, lưu toàn bộ script vào metadata.
      */
     async stop({ timeoutMs = 2000 } = {}) {
         if (this.status !== "RECORDING" || !this.session) {
@@ -208,19 +186,20 @@ export default class CodeGenSessionManager {
             error.code = "CODE_GEN_NO_ACTIVE_SESSION";
             throw error;
         }
-        const { child, recordingFile } = this.session;
+        const { child, recordingFile, recordingId } = this.session;
         await this.terminateChild(child, timeoutMs);
 
-        this.script = this.readRecordingFile(recordingFile);
+        const content = this.readRecordingFile(recordingFile);
+        this.store.update(recordingId, {
+            scriptContent: content,
+            status: "STOPPED",
+            lastRunResult: null
+        });
         this.status = "STOPPED";
-        this.error = null;
+        this.session = null;
+        this.activeRecording = null;
 
-        const result = this.getStatus();
-        if (!result.script) {
-            result.warning =
-                "Script chưa được ghi. Nếu trình duyệt ghi đang mở, hãy đóng cửa sổ ghi rồi bấm Dừng lần nữa.";
-        }
-        return result;
+        return this.get(recordingId);
     }
 
     terminateChild(child, timeoutMs) {
@@ -236,8 +215,11 @@ export default class CodeGenSessionManager {
                 resolve();
             };
             child.once("exit", finish);
-            child.kill("SIGTERM");
-            // Nếu không tự thoát sau timeout -> kill mạnh.
+            try {
+                child.kill("SIGTERM");
+            } catch {
+                /* ignore */
+            }
             setTimeout(() => {
                 if (finished) return;
                 try {
@@ -250,57 +232,112 @@ export default class CodeGenSessionManager {
         });
     }
 
+    /** Đổi tên file (downloadFileName). */
+    rename(recordingId, { fileName } = {}) {
+        const name = String(fileName ?? "").trim();
+        if (!name) {
+            const error = new Error("Tên file không được để trống.");
+            error.code = "CODE_GEN_EMPTY_FILE_NAME";
+            throw error;
+        }
+        const safe = this.store.safeSpecName(name);
+        return this.store.update(recordingId, { downloadFileName: safe });
+    }
+
     /**
-     * Lưu script đã ghi (hoặc script tuỳ chỉnh) xuống file tạm để run.
-     * Trả về đường dẫn file .spec.js tương đối rootDir để Playwright chạy.
+     * Gắn testcase (0/1/n) sau khi recording hoàn tất.
+     * TESTCASE_SEGMENT bắt buộc link >=1 testcase.
      */
-    async saveScript({ script, fileName = "playwright-recording.spec.js", fileNameHint = null } = {}) {
-        const content = String(script ?? this.script ?? "").trim();
+    linkTestcases(recordingId, { testcaseIds = [] } = {}) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        if (rec.status === "RECORDING") {
+            const error = new Error("Chưa thể gắn testcase khi đang ghi. Hãy dừng ghi trước.");
+            error.code = "CODE_GEN_LINK_WHILE_RECORDING";
+            throw error;
+        }
+        const ids = [...new Set((Array.isArray(testcaseIds) ? testcaseIds : []).map(id => String(id).trim()).filter(Boolean))];
+        if (rec.mode === "TESTCASE_SEGMENT" && ids.length === 0) {
+            const error = new Error("Mode TESTCASE_SEGMENT phải gắn ít nhất 1 testcase.");
+            error.code = "CODE_GEN_SEGMENT_REQUIRES_TESTCASE";
+            throw error;
+        }
+        return this.store.update(recordingId, { testcaseIds: ids });
+    }
+
+    /**
+     * Lưu script phía server (workspace). Trả serverFilePath.
+     */
+    saveToWorkspace(recordingId, { fileName } = {}) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        const raw = this.store.recordings.find(item => item.recordingId === recordingId);
+        const content = String(raw?.scriptContent ?? "").trim();
         if (!content) {
             const error = new Error("Không có nội dung script để lưu.");
             error.code = "CODE_GEN_EMPTY_SCRIPT";
             throw error;
         }
-        const safeName = this.safeSpecName(fileName || fileNameHint || "playwright-recording.spec.js");
-        const filePath = path.join(this.tempDir, "runs", safeName);
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        fs.writeFileSync(filePath, content, "utf8");
-        this.script = content;
-        return {
-            fileName: safeName,
-            absPath: filePath,
-            relPath: path.relative(this.rootDir, filePath)
-        };
-    }
-
-    safeSpecName(name) {
-        const base = path.basename(String(name || "playwright-recording.spec.js"));
-        const safe = base.replace(/[^a-zA-Z0-9._-]/g, "-");
-        const withExt = /\.(spec|test)\.[cm]?[jt]s$/i.test(safe)
-            ? safe
-            : `${safe.replace(/\.js$/i, "")}.spec.js`;
-        return withExt;
+        const targetName = fileName ? this.store.safeSpecName(fileName) : rec.downloadFileName || "playwright-recording.spec.js";
+        const { serverFilePath } = this.store.writeServerScript(recordingId, content, targetName);
+        return this.store.update(recordingId, {
+            storageMode: "SERVER",
+            serverFilePath,
+            downloadFileName: path.basename(serverFilePath)
+        });
     }
 
     /**
-     * Chạy script: cho phép truyền script (nội dung) hoặc filePath đã có.
-     * Trả PASS/FAIL + stdout/stderr rút gọn.
+     * Chạy script của recording. Trả PASS/FAIL + report/trace path.
      */
-    async run({ script, filePath, env = {} } = {}) {
-        let target = filePath;
-        if (!target) {
-            const saved = await this.saveScript({ script });
-            target = saved.relPath;
+    async run(recordingId, { env = {} } = {}) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
         }
-        const result = await this.runner.runFile(target, { env });
-        return {
+        const raw = this.store.recordings.find(item => item.recordingId === recordingId);
+        const content = String(raw?.scriptContent ?? "").trim();
+        if (!content) {
+            const error = new Error("Chưa có script để chạy.");
+            error.code = "CODE_GEN_EMPTY_SCRIPT";
+            throw error;
+        }
+
+        // Ghi file run tạm (tempDir/runs).
+        const runFile = path.join(this.tempDir, "runs", `${recordingId}.spec.js`);
+        fs.mkdirSync(path.dirname(runFile), { recursive: true });
+        fs.writeFileSync(runFile, content, "utf8");
+
+        const channel = this.channelFor(rec.browser);
+        const runner = this.runner ?? new PlaywrightRunner({ rootDir: this.rootDir, browserChannel: channel });
+        const result = await runner.runFile(path.relative(this.rootDir, runFile), { env });
+
+        const reportPath = result?.resultsFile && fs.existsSync(result.resultsFile)
+            ? path.relative(this.rootDir, result.resultsFile)
+            : null;
+
+        const runResult = {
             status: result?.status ?? "ERROR",
             passed: result?.status === "PASSED",
             diagnostic: result?.diagnostic ?? null,
             error: result?.error ?? null,
             output: this.truncateOutput(result?.log ?? result?.diagnostic ?? ""),
-            durationMs: result?.durationMs ?? 0
+            durationMs: result?.durationMs ?? 0,
+            reportPath
         };
+
+        this.store.update(recordingId, { lastRunResult: runResult, reportPath });
+        return runResult;
     }
 
     truncateOutput(text, max = 4000) {
@@ -308,10 +345,42 @@ export default class CodeGenSessionManager {
         return value.length > max ? `${value.slice(0, max)}...` : value;
     }
 
-    /**
-     * Dọn dữ liệu phiên: kill process còn chạy và xoá file tạm.
-     */
-    async dispose() {
+    /** Open Folder — chỉ khi có serverFilePath. */
+    openFolder(recordingId) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        if (rec.storageMode !== "SERVER" || !rec.serverFilePath) {
+            const error = new Error(
+                "Chưa lưu script phía server (Save to workspace) nên không mở được thư mục."
+            );
+            error.code = "CODE_GEN_NO_SERVER_FILE";
+            throw error;
+        }
+        return { serverFilePath: rec.serverFilePath, folderPath: path.relative(this.rootDir, this.store.scriptsDir) };
+    }
+
+    /** Open Report / Trace — khi run đã tạo. */
+    openReport(recordingId) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        return { reportPath: rec.reportPath ?? null, tracePath: rec.tracePath ?? null };
+    }
+
+    /** Delete recording. */
+    delete(recordingId) {
+        return this.store.remove(recordingId);
+    }
+
+    /** Dọn phiên đang ghi + file tạm (không xoá metadata/script bền). */
+    async disposeSession() {
         if (this.session?.child) {
             try {
                 await this.terminateChild(this.session.child, 800);
@@ -320,17 +389,21 @@ export default class CodeGenSessionManager {
             }
         }
         this.session = null;
+        this.activeRecording = null;
         this.status = "IDLE";
-        this.script = "";
-        this.error = null;
-        this.defaultFileName = "playwright-recording.spec.js";
         try {
-            fs.rmSync(this.tempDir, { recursive: true, force: true });
+            fs.rmSync(path.join(this.tempDir, "runs"), { recursive: true, force: true });
+            fs.rmSync(path.join(this.tempDir, "recordings"), { recursive: true, force: true });
         } catch {
             /* ignore */
         }
         return { status: this.status };
     }
+
+    async dispose() {
+        await this.disposeSession();
+        return { status: this.status };
+    }
 }
 
-export { CodeGenSessionManager, defaultFileName, slugify };
+export { CodeGenSessionManager };

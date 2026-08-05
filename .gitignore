@@ -4,3 +4,4 @@ web-ui/dist/
 test-results/
 outputs/
 *.log
+data/codegen-recordings.json

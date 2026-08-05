@@ -1,7 +1,8 @@
 export default class CodeGenController {
-    constructor({ manager }) {
+    constructor({ manager, testcaseLoader = null }) {
         if (!manager) throw new Error("CodeGenController cần manager.");
         this.manager = manager;
+        this.testcaseLoader = testcaseLoader;
     }
 
     async start(req, res) {
@@ -22,18 +23,46 @@ export default class CodeGenController {
         }
     }
 
-    async status(req, res) {
+    async list(req, res) {
         try {
-            const data = this.manager.getStatus();
+            const data = this.manager.list();
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
-            return this.fail(res, error, 500, "CODE_GEN_STATUS_FAILED", "Không thể đọc trạng thái CodeGen.");
+            return this.fail(res, error, 500, "CODE_GEN_LIST_FAILED", "Không thể đọc danh sách recording.");
+        }
+    }
+
+    async get(req, res) {
+        try {
+            const data = this.manager.get(req.params.recordingId);
+            if (!data) return res.status(404).json({ success: false, data: null, error: { code: "RECORDING_NOT_FOUND", message: "Không tìm thấy recording." } });
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 404, "RECORDING_NOT_FOUND", "Không tìm thấy recording.");
+        }
+    }
+
+    async rename(req, res) {
+        try {
+            const data = this.manager.rename(req.params.recordingId, req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_RENAME_FAILED", "Không thể đổi tên.");
+        }
+    }
+
+    async linkTestcases(req, res) {
+        try {
+            const data = this.manager.linkTestcases(req.params.recordingId, req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_LINK_FAILED", "Không thể gắn testcase.");
         }
     }
 
     async save(req, res) {
         try {
-            const data = await this.manager.saveScript(req.body ?? {});
+            const data = this.manager.saveToWorkspace(req.params.recordingId, req.body ?? {});
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 200, "CODE_GEN_SAVE_FAILED", "Không thể lưu script.");
@@ -42,10 +71,55 @@ export default class CodeGenController {
 
     async run(req, res) {
         try {
-            const data = await this.manager.run(req.body ?? {});
+            const data = await this.manager.run(req.params.recordingId, req.body ?? {});
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 200, "CODE_GEN_RUN_FAILED", "Không thể chạy thử script.");
+        }
+    }
+
+    async openFolder(req, res) {
+        try {
+            const data = this.manager.openFolder(req.params.recordingId);
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_OPEN_FOLDER_FAILED", "Không thể mở thư mục.");
+        }
+    }
+
+    async openReport(req, res) {
+        try {
+            const data = this.manager.openReport(req.params.recordingId);
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_OPEN_REPORT_FAILED", "Không thể mở report.");
+        }
+    }
+
+    async remove(req, res) {
+        try {
+            const data = this.manager.delete(req.params.recordingId);
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_DELETE_FAILED", "Không thể xoá recording.");
+        }
+    }
+
+    async testcases(req, res) {
+        try {
+            const data = this.testcaseLoader ? this.testcaseLoader.loadAll() : [];
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "CODE_GEN_TESTCASES_FAILED", "Không thể đọc danh sách testcase.");
+        }
+    }
+
+    async status(req, res) {
+        try {
+            const data = { status: this.manager.status, activeRecording: this.manager.activeRecording };
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "CODE_GEN_STATUS_FAILED", "Không thể đọc trạng thái CodeGen.");
         }
     }
 

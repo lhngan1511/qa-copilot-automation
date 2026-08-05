@@ -90,5 +90,11 @@ export const apiClient = {
             ...options,
             method: "PUT"
         });
+    },
+    delete(path, options) {
+        return request(path, {
+            ...options,
+            method: "DELETE"
+        });
     }
 };

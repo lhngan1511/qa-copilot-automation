@@ -9,6 +9,7 @@ import createWorkflowRoutes from "../routes/workflowRoutes.js";
 import createAutomationWorkspaceRoutes from "../routes/automationWorkspaceRoutes.js";
 import createCodeGenRoutes from "../routes/codeGenRoutes.js";
 import CodeGenSessionManager from "../codegen/CodeGenSessionManager.js";
+import CodeGenRecordingStore from "../codegen/CodeGenRecordingStore.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
 import fs from "node:fs";
@@ -97,7 +98,14 @@ export default function createApp({
 
     app.use("/api/automation-workspace", createAutomationWorkspaceRoutes({ dataDir }));
 
-    const codeGenManager = new CodeGenSessionManager({ rootDir: projectDirectory });
+    const codeGenDataDir = path.resolve(dataDir ?? path.join(projectDirectory, "data"));
+    const codeGenManager = new CodeGenSessionManager({
+        rootDir: projectDirectory,
+        store: new CodeGenRecordingStore({
+            metadataFile: path.join(codeGenDataDir, "codegen-recordings.json"),
+            scriptsDir: path.join(projectDirectory, "outputs", "codegen")
+        })
+    });
     app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager }));
 
     app.use(express.static(resolvedPublicDirectory, { index: false }));

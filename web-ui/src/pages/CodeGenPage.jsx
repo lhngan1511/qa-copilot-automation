@@ -1,9 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useCodeGenStatus, useCodeGenActions } from "../hooks/useCodeGen.js";
+import {
+    useCodeGenRecordings,
+    useCodeGenStatus,
+    useApprovedTestcases,
+    useCodeGenActions
+} from "../hooks/useCodeGen.js";
 
+const BROWSERS = ["chrome", "edge", "chromium"];
+const MODES = [
+    { value: "FULL_FLOW", label: "Full Flow (cả quy trình/module)" },
+    { value: "TESTCASE_SEGMENT", label: "Testcase Segment (đoạn ghi phục vụ testcase)" }
+];
 const STATUS_LABEL = {
-    IDLE: "Chưa bắt đầu",
     RECORDING: "Đang ghi",
     STOPPED: "Đã dừng",
     SAVED: "Đã lưu",
@@ -24,95 +33,131 @@ function downloadScript(content, fileName) {
 
 export default function CodeGenPage() {
     const [url, setUrl] = useState("");
-    const [script, setScript] = useState("");
-    const [fileName, setFileName] = useState("");
+    const [browser, setBrowser] = useState("chrome");
+    const [mode, setMode] = useState("FULL_FLOW");
     const [notice, setNotice] = useState("");
-    const [runResult, setRunResult] = useState(null);
-    const [localStatus, setLocalStatus] = useState("IDLE");
+    const [activeId, setActiveId] = useState("");
+    const [linkMode, setLinkMode] = useState(false);
+    const [selectedTestcaseIds, setSelectedTestcaseIds] = useState([]);
 
+    const recordingsQuery = useCodeGenRecordings();
     const statusQuery = useCodeGenStatus();
+    const testcasesQuery = useApprovedTestcases();
     const actions = useCodeGenActions();
 
-    const serverStatus = statusQuery.data?.status ?? null;
-    const serverScript = statusQuery.data?.script ?? "";
-    const defaultFileName = statusQuery.data?.defaultFileName ?? "playwright-recording.spec.js";
-
-    const status = serverStatus === "RECORDING" ? "RECORDING" : localStatus === "SAVED" ? "SAVED" : serverStatus || localStatus;
+    const recordings = recordingsQuery.data ?? [];
+    const active = recordings.find(rec => rec.recordingId === activeId) ?? null;
+    const isRecording = statusQuery.data?.status === "RECORDING";
     const busy = actions.start.isPending || actions.stop.isPending || actions.run.isPending;
 
-    // Script hiển thị: ưu tiên server (từ stop), rồi local.
-    const visibleScript = script || serverScript;
+    const testcases = useMemo(() => testcasesQuery.data ?? [], [testcasesQuery.data]);
 
-    const downloadName = useMemo(
-        () => fileName.trim() || defaultFileName,
-        [fileName, defaultFileName]
-    );
+    const selectRecording = id => {
+        setActiveId(id);
+        setLinkMode(false);
+        const rec = recordings.find(r => r.recordingId === id);
+        setSelectedTestcaseIds(rec?.testcaseIds ?? []);
+    };
 
     const handleStart = async () => {
         setNotice("");
-        setRunResult(null);
         if (!url.trim()) {
             setNotice("Vui lòng nhập URL trước khi bắt đầu ghi.");
             return;
         }
         try {
-            await actions.start.mutateAsync({ url: url.trim() });
-            setLocalStatus("RECORDING");
-            setNotice("Đã bắt đầu ghi. Tester thao tác trên trình duyệt CodeGen, sau đó bấm Dừng ghi.");
+            const rec = await actions.start.mutateAsync({ url: url.trim(), browser, mode });
+            setActiveId(rec.recordingId);
+            setNotice("Đã bắt đầu ghi. Thao tác trên trình duyệt CodeGen rồi bấm Dừng ghi.");
         } catch (error) {
             setNotice(error.message || "Không thể bắt đầu ghi.");
-            setLocalStatus("ERROR");
         }
     };
 
     const handleStop = async () => {
         setNotice("");
-        setRunResult(null);
         try {
-            const result = await actions.stop.mutateAsync({});
-            setScript(result?.script ?? "");
-            setLocalStatus("STOPPED");
-            if (result?.warning) setNotice(result.warning);
-            else if (result?.script) setNotice("Đã dừng ghi. Xem script bên dưới.");
+            const rec = await actions.stop.mutateAsync({});
+            setActiveId(rec.recordingId);
+            setNotice("Đã dừng ghi. Xem toàn bộ script và gắn testcase nếu cần.");
         } catch (error) {
             setNotice(error.message || "Không thể dừng ghi.");
-            setLocalStatus("ERROR");
         }
     };
 
-    const handleSave = () => {
-        if (!visibleScript.trim()) {
+    const handleSaveAs = () => {
+        if (!active || !active.hasScript) {
             setNotice("Không có script để lưu.");
             return;
         }
-        downloadScript(visibleScript, downloadName);
-        setLocalStatus("SAVED");
-        setNotice(`Đã tải script. Bạn có thể lưu vào nơi mong muốn qua hộp thoại lưu của trình duyệt.`);
+        downloadScript(active.scriptContent ?? "", active.downloadFileName || "playwright-recording.spec.js");
+        setNotice("Đã tải script. Dùng Save As của trình duyệt để chọn nơi lưu.");
+    };
+
+    const handleSaveWorkspace = async () => {
+        try {
+            await actions.save.mutateAsync({ recordingId: activeId });
+            setNotice("Đã lưu script vào workspace (outputs/codegen). Có thể mở thư mục.");
+        } catch (error) {
+            setNotice(error.message || "Không thể lưu vào workspace.");
+        }
     };
 
     const handleRun = async () => {
         setNotice("");
-        setRunResult(null);
         try {
-            const result = await actions.run.mutateAsync({ script: visibleScript });
-            setRunResult(result);
+            await actions.run.mutateAsync({ recordingId: activeId });
         } catch (error) {
-            setRunResult({ status: "ERROR", passed: false, error: error.message, output: "" });
+            setNotice(error.message || "Không thể chạy thử.");
         }
     };
 
-    const handleCleanup = async () => {
-        setNotice("");
-        setScript("");
-        setRunResult(null);
-        setLocalStatus("IDLE");
+    const handleOpenFolder = async () => {
         try {
-            await actions.cleanup.mutateAsync({});
-            setNotice("Đã dọn dữ liệu phiên CodeGen.");
+            const data = await actions.openFolder.mutateAsync({ recordingId: activeId });
+            setNotice(`Thư mục: ${data.folderPath}/${data.serverFilePath}`);
         } catch (error) {
-            setNotice(error.message || "Không thể dọn dữ liệu phiên.");
+            setNotice(error.message || "Không thể mở thư mục.");
         }
     };
+
+    const handleRename = async () => {
+        const name = window.prompt("Tên file script:", active?.downloadFileName ?? "");
+        if (!name || !name.trim()) return;
+        try {
+            await actions.rename.mutateAsync({ recordingId: activeId, fileName: name.trim() });
+        } catch (error) {
+            setNotice(error.message || "Không thể đổi tên.");
+        }
+    };
+
+    const handleLink = async () => {
+        try {
+            await actions.link.mutateAsync({ recordingId: activeId, testcaseIds: selectedTestcaseIds });
+            setLinkMode(false);
+            setNotice("Đã cập nhật liên kết testcase.");
+        } catch (error) {
+            setNotice(error.message || "Không thể gắn testcase.");
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(`Xoá recording ${active?.recordingId}?`)) return;
+        try {
+            await actions.remove.mutateAsync({ recordingId: activeId });
+            setActiveId("");
+            setNotice("Đã xoá recording.");
+        } catch (error) {
+            setNotice(error.message || "Không thể xoá.");
+        }
+    };
+
+    const toggleTestcase = id =>
+        setSelectedTestcaseIds(ids =>
+            ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
+        );
+
+    if (recordingsQuery.isPending) return <div className="page">Đang tải...</div>;
 
     return (
         <section className="page codegen-page">
@@ -123,37 +168,53 @@ export default function CodeGenPage() {
                 <div>
                     <p className="workflow-id">CODEGEN MVP</p>
                     <h2>Playwright CodeGen</h2>
-                    <p>Ghi lại thao tác trên trình duyệt và sinh script Playwright.</p>
+                    <p>Ghi toàn bộ luồng thao tác trên trình duyệt thành một Recording Session.</p>
                 </div>
-                <span className={`status-badge ${status === "RECORDING" ? "status-badge--warning" : status === "ERROR" ? "status-badge--danger" : status === "SAVED" ? "status-badge--success" : "status-badge--neutral"}`}>
-                    {STATUS_LABEL[status] ?? status}
+                <span className={`status-badge ${isRecording ? "status-badge--warning" : "status-badge--neutral"}`}>
+                    {isRecording ? "Đang ghi" : "Chưa ghi"}
                 </span>
             </header>
 
-            {notice && (
-                <div className="automation-notice" role="status">
-                    {notice}
-                </div>
-            )}
+            {notice && <div className="automation-notice" role="status">{notice}</div>}
 
+            {/* START RECORDING */}
             <div className="codegen-card">
-                <label className="codegen-label" htmlFor="codegen-url">
-                    URL ứng dụng
-                </label>
+                <label className="codegen-label">Start Recording (tự do, không bắt buộc testcase)</label>
                 <div className="codegen-row">
                     <input
-                        id="codegen-url"
                         className="codegen-input"
                         type="text"
                         placeholder="https://example.com"
                         value={url}
-                        disabled={status === "RECORDING" || actions.start.isPending}
-                        onChange={event => setUrl(event.target.value)}
+                        disabled={isRecording || actions.start.isPending}
+                        onChange={e => setUrl(e.target.value)}
                     />
+                    <select
+                        className="codegen-input"
+                        value={browser}
+                        disabled={isRecording}
+                        onChange={e => setBrowser(e.target.value)}
+                        aria-label="Browser"
+                    >
+                        {BROWSERS.map(b => (
+                            <option key={b} value={b}>{b}</option>
+                        ))}
+                    </select>
+                    <select
+                        className="codegen-input"
+                        value={mode}
+                        disabled={isRecording}
+                        onChange={e => setMode(e.target.value)}
+                        aria-label="Mode"
+                    >
+                        {MODES.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                    </select>
                     <button
                         className="button button--primary"
                         type="button"
-                        disabled={status === "RECORDING" || busy}
+                        disabled={isRecording || busy}
                         onClick={handleStart}
                     >
                         Bắt đầu ghi
@@ -161,7 +222,7 @@ export default function CodeGenPage() {
                     <button
                         className="button button--danger"
                         type="button"
-                        disabled={status !== "RECORDING" || actions.stop.isPending}
+                        disabled={!isRecording || actions.stop.isPending}
                         onClick={handleStop}
                     >
                         Dừng ghi
@@ -169,66 +230,109 @@ export default function CodeGenPage() {
                 </div>
             </div>
 
-            <div className="codegen-card">
-                <div className="codegen-row codegen-row--between">
-                    <label className="codegen-label" htmlFor="codegen-filename">
-                        Tên file script
-                    </label>
-                    <span className="codegen-hint">
-                        Mặc định: {defaultFileName} — dùng Save As của trình duyệt để chọn nơi lưu.
-                    </span>
+            <div className="codegen-layout">
+                {/* LIST */}
+                <div className="codegen-list">
+                    <h3>Recording Sessions</h3>
+                    {recordings.length === 0 && <p className="codegen-empty">Chưa có recording nào.</p>}
+                    {recordings.map(rec => (
+                        <button
+                            key={rec.recordingId}
+                            className={`codegen-list-item ${activeId === rec.recordingId ? "codegen-list-item--active" : ""}`}
+                            onClick={() => selectRecording(rec.recordingId)}
+                        >
+                            <strong>{rec.downloadFileName}</strong>
+                            <small>{rec.mode} · {rec.status} · {rec.testcaseIds.length} testcase</small>
+                        </button>
+                    ))}
                 </div>
-                <div className="codegen-row">
-                    <input
-                        id="codegen-filename"
-                        className="codegen-input"
-                        type="text"
-                        placeholder={defaultFileName}
-                        value={fileName}
-                        disabled={!visibleScript.trim()}
-                        onChange={event => setFileName(event.target.value)}
-                    />
-                    <button
-                        className="button button--secondary"
-                        type="button"
-                        disabled={!visibleScript.trim()}
-                        onClick={handleSave}
-                    >
-                        Lưu script
-                    </button>
-                    <button
-                        className="button button--secondary"
-                        type="button"
-                        disabled={!visibleScript.trim() || actions.run.isPending}
-                        onClick={handleRun}
-                    >
-                        Chạy thử
-                    </button>
-                    <button
-                        className="button button--secondary"
-                        type="button"
-                        disabled={busy}
-                        onClick={handleCleanup}
-                    >
-                        Dọn phiên
-                    </button>
+
+                {/* DETAIL */}
+                <div className="codegen-detail">
+                    {!active ? (
+                        <p className="codegen-empty">Chọn một recording để xem chi tiết.</p>
+                    ) : (
+                        <>
+                            <div className="codegen-card">
+                                <div className="codegen-row codegen-row--between">
+                                    <div>
+                                        <h3>{active.downloadFileName}</h3>
+                                        <p className="codegen-meta">
+                                            {active.recordingId} · {active.mode} · {active.browser} · {active.storageMode}
+                                        </p>
+                                        <p className="codegen-meta">
+                                            Testcase: {active.testcaseIds.length > 0 ? active.testcaseIds.join(", ") : "(chưa gắn)"}
+                                            {active.mode === "TESTCASE_SEGMENT" && active.testcaseIds.length === 0 && " — cần gắn ít nhất 1 testcase"}
+                                        </p>
+                                    </div>
+                                    <span className={`status-badge ${active.status === "STOPPED" ? "status-badge--success" : "status-badge--neutral"}`}>
+                                        {STATUS_LABEL[active.status] ?? active.status}
+                                    </span>
+                                </div>
+                                <div className="codegen-row">
+                                    <button className="button button--secondary" type="button" disabled={!active.hasScript} onClick={handleSaveAs}>Save As</button>
+                                    <button className="button button--secondary" type="button" disabled={!active.hasScript || actions.save.isPending} onClick={handleSaveWorkspace}>Save to workspace</button>
+                                    <button className="button button--secondary" type="button" disabled={!active.hasScript || actions.run.isPending} onClick={handleRun}>Run</button>
+                                    <button className="button button--secondary" type="button" onClick={handleRename}>Rename</button>
+                                    <button className="button button--secondary" type="button" disabled={active.storageMode !== "SERVER"} onClick={handleOpenFolder}>Open Folder</button>
+                                    <button className="button button--danger" type="button" onClick={handleDelete}>Delete</button>
+                                </div>
+                            </div>
+
+                            {/* SCRIPT */}
+                            <div className="codegen-card">
+                                <label className="codegen-label">Script (toàn bộ luồng)</label>
+                                <pre className="codegen-script">
+                                    {active.scriptContent?.trim() || "// Chưa có script."}
+                                </pre>
+                            </div>
+
+                            {/* RUN RESULT */}
+                            {active.lastRunResult && (
+                                <div className={`codegen-run ${active.lastRunResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
+                                    <strong>{active.lastRunResult.passed ? "PASS" : "FAIL"}</strong>
+                                    <span>{active.lastRunResult.error || active.lastRunResult.diagnostic || `Mã thoát: ${active.lastRunResult.status}`}</span>
+                                    {active.lastRunResult.reportPath && <span>Report: {active.lastRunResult.reportPath}</span>}
+                                    {active.lastRunResult.output && <pre className="codegen-output">{active.lastRunResult.output}</pre>}
+                                </div>
+                            )}
+
+                            {/* LINK TESTCASES */}
+                            <div className="codegen-card">
+                                <div className="codegen-row codegen-row--between">
+                                    <label className="codegen-label">Link Testcases (0/1/n)</label>
+                                    <button className="button button--secondary" type="button" onClick={() => setLinkMode(v => !v)}>
+                                        {linkMode ? "Đóng" : "Chọn testcase"}
+                                    </button>
+                                </div>
+                                {linkMode && (
+                                    <>
+                                        <div className="codegen-testcase-grid">
+                                            {testcases.length === 0 && <p className="codegen-empty">Không tìm thấy approved-testcases.json.</p>}
+                                            {testcases.map(tc => (
+                                                <label key={tc.id} className="codegen-testcase-item">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedTestcaseIds.includes(tc.id)}
+                                                        onChange={() => toggleTestcase(tc.id)}
+                                                    />
+                                                    <span>
+                                                        <strong>{tc.id}</strong> — {tc.title || tc.id}
+                                                        <small>{tc.module} · {tc.feature}</small>
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <button className="button button--primary" type="button" onClick={handleLink}>
+                                            Lưu liên kết
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
-
-            <div className="codegen-card">
-                <label className="codegen-label">Script đã sinh</label>
-                <pre className="codegen-script" data-testid="codegen-script">
-                    {visibleScript.trim() || "// Chưa có script. Bấm \"Bắt đầu ghi\" rồi thao tác trên trình duyệt."}
-                </pre>
-            </div>
-
-            {runResult && (
-                <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
-                    <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>
-                    <span>{runResult.error || runResult.diagnostic || `Mã thoát: ${runResult.status}`}</span>
-                    {runResult.output && <pre className="codegen-output">{runResult.output}</pre>}
-                </div>
-            )}
         </section>
     );
 }
