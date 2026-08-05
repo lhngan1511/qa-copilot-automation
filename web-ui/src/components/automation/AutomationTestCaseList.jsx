@@ -59,6 +59,7 @@ export default function AutomationTestCaseList({
                     const confidence = confidenceOf(testCase.mapping);
                     const pct = normalizeConfidence(confidence);
                     const confCls = pct == null ? "" : pct >= 70 ? "confidence--high" : pct >= 40 ? "confidence--mid" : "confidence--low";
+                    const hasAnalysis = Boolean(testCase.mapping && Object.keys(testCase.mapping).length);
                     return <div className={`automation-testcase-card ${activeId === testCase.id ? "automation-testcase-card--active" : ""} ${!testCase.includedInSession ? "automation-testcase-card--removed" : ""}`} key={testCase.id}>
                         <div className="automation-testcase-card__top">
                             <input type="checkbox" aria-label={`Chọn ${testCase.id}`} checked={selectedIds.includes(testCase.id)} disabled={!testCase.includedInSession} onChange={() => onToggle(testCase.id)} />
@@ -71,7 +72,9 @@ export default function AutomationTestCaseList({
                                 : <button type="button" className="automation-status automation-status--warn automation-status--action" onClick={() => onOpenData(testCase.id)}>🟡 Cần bổ sung dữ liệu</button>}
                         </div>
                         <div className="automation-testcase-card__meta">
-                            <span>Confidence: {pct == null ? "—" : <span className={`automation-confidence ${confCls}`}>{pct}%</span>}</span>
+                            {pct == null
+                                ? <span>{hasAnalysis ? "AI đã phân tích" : "Chưa phân tích"}</span>
+                                : <span>Confidence: <span className={`automation-confidence ${confCls}`}>{pct}%</span></span>}
                         </div>
                         <div className="automation-testcase-card__actions">
                             <button className="button button--secondary" type="button" onClick={() => onOpen(testCase.id)}>Xem AI hiểu gì</button>

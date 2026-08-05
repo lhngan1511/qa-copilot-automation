@@ -473,3 +473,24 @@
     .automation-testcase-card__top { flex-wrap: wrap; }
     .automation-data-row { flex-direction: column; align-items: stretch; }
 }
+
+/* Sprint 1.2 — drawer Inspector + compact card + single action bar */
+.automation-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 460px;
+    max-width: 92vw;
+    background: #fff;
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.18);
+    z-index: 80;
+    overflow-y: auto;
+    padding: 16px;
+}
+.automation-drawer .automation-inspector { border: 0; padding: 0; }
+.automation-inspector__heading-actions { display: flex; gap: 8px; }
+.automation-testcase-card { padding: 10px 12px; gap: 6px; }
+.automation-testcase-card__title span { font-size: 13px; }
+.automation-testcase-card__meta { font-size: 11px; }
+.automation-action-bar { padding: 4px 0; }

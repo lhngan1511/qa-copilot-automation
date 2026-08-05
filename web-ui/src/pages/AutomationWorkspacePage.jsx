@@ -210,16 +210,16 @@ export default function AutomationWorkspacePage() {
                 <div className="automation-step__body">
                     <div className="automation-step__head">
                         <h3>Chọn testcase, review và sinh automation</h3>
-                        <span className="automation-step__tools">
-                            <button className="button button--secondary" type="button" disabled={selectedCount === 0 || !analyzed} onClick={() => generateRequest([...selectedTestCaseIds])}>Sinh automation đã chọn</button>
-                            <button className="button button--secondary" type="button" disabled={selectedCount === 0} onClick={() => runRequest([...selectedTestCaseIds])}>Chạy testcase đã chọn</button>
-                        </span>
                     </div>
-                    <div className="automation-main-grid">
-                        <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
-                        <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} />
-                    </div>
+                    <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
                 </div>
+            </div>
+        )}
+
+        {/* Drawer Inspector: mở bên phải, không inline; danh sách giữ nguyên */}
+        {activeTestCase && (
+            <div className="automation-drawer">
+                <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} onClose={() => setActiveTestCaseId(null)} />
             </div>
         )}
     </section>;

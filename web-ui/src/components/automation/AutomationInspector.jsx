@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const TABS = [["REVIEW", "AI hiểu gì"], ["INFO", "Thông tin"], ["DATA", "Dữ liệu kiểm thử"], ["CODE", "Mã kiểm thử"]];
+// Tối đa 2 tab: AI hiểu gì + Dữ liệu kiểm thử. Mã kiểm thử chỉ khi đã generate.
+const REVIEW_TAB = ["REVIEW", "AI hiểu gì"];
+const DATA_TAB = ["DATA", "Dữ liệu kiểm thử"];
+const CODE_TAB = ["CODE", "Mã kiểm thử"];
 
 function normalizeConfidence(value) {
     const n = Number(value);
@@ -30,7 +33,7 @@ function dataFieldRows(testData) {
     return [];
 }
 
-export default function AutomationInspector({ testCase, moduleName, functionName, activeTab, isReady, onTabChange, onUpdate, onRemove, onRestore }) {
+export default function AutomationInspector({ testCase, moduleName, functionName, activeTab, isReady, onTabChange, onUpdate, onRemove, onRestore, onClose }) {
     if (!testCase) return <section className="automation-inspector automation-inspector--empty"><h3>Chi tiết testcase</h3><p>Chọn một testcase để xem.</p></section>;
     const update = patch => onUpdate(testCase.id, patch);
     const rows = dataFieldRows(testCase.testData);
@@ -48,9 +51,11 @@ export default function AutomationInspector({ testCase, moduleName, functionName
         }
     }, [activeTab, ready, testCase?.id]);
 
+    // Chỉ hiện tab Mã kiểm thử khi đã generate.
+    const tabs = [REVIEW_TAB, DATA_TAB, ...(testCase.generatedCode ? [CODE_TAB] : [])];
     return <section className="automation-inspector">
-        <div className="automation-inspector__heading"><div><p className="workflow-id">{testCase.id}</p><h3>Chi tiết testcase</h3></div><button className="button button--danger" type="button" onClick={() => testCase.includedInSession ? onRemove(testCase.id) : onRestore(testCase.id)}>{testCase.includedInSession ? "Bỏ khỏi phiên" : "Khôi phục"}</button></div>
-        <div className="automation-tabs" role="tablist">{TABS.map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}</div>
+        <div className="automation-inspector__heading"><div><p className="workflow-id">{testCase.id}</p><h3>Chi tiết testcase</h3></div><div className="automation-inspector__heading-actions"><button className="button button--danger" type="button" onClick={() => testCase.includedInSession ? onRemove(testCase.id) : onRestore(testCase.id)}>{testCase.includedInSession ? "Bỏ khỏi phiên" : "Khôi phục"}</button>{onClose && <button className="button button--secondary" type="button" onClick={onClose}>Đóng</button>}</div></div>
+        <div className="automation-tabs" role="tablist">{tabs.map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}</div>
         <div className="automation-inspector__body">
             {activeTab === "INFO" && <div className="automation-form-grid">
                 <label>ID<input value={testCase.id} readOnly /></label>

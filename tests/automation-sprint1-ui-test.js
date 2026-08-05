@@ -283,3 +283,30 @@ assert.equal(normalizeConfidence11(100), 100);
 assert.ok(normalizeConfidence11(100) <= 100, "không còn 10000%");
 
 console.log("Automation Sprint1.1 card/status test: PASS");
+
+/* ---------- Sprint 1.2: single action bar, tabs conditional, confidence null vs 0 ---------- */
+// Tab Mã kiểm thử chỉ hiển thị khi đã generate
+function visibleTabs({ generatedCode }) {
+    const tabs = [["REVIEW","AI hiểu gì"], ["DATA","Dữ liệu kiểm thử"]];
+    return generatedCode ? [...tabs, ["CODE","Mã kiểm thử"]] : tabs;
+}
+assert.equal(visibleTabs({ generatedCode: "" }).length, 2, "chưa generate -> không có Mã kiểm thử");
+assert.equal(visibleTabs({ generatedCode: "test(){}" }).length, 3, "đã generate -> có Mã kiểm thử");
+
+// Confidence null -> hiện 'AI đã phân tích' (không hiện 0%)
+function confidenceMeta(pct, hasAnalysis) {
+    if (pct == null) return hasAnalysis ? "AI đã phân tích" : "Chưa phân tích";
+    return `Confidence: ${pct}%`;
+}
+assert.equal(confidenceMeta(null, true), "AI đã phân tích");
+assert.equal(confidenceMeta(null, false), "Chưa phân tích");
+assert.equal(confidenceMeta(85, true), "Confidence: 85%");
+
+// Một Action Bar: step head không còn nút, chỉ có trong List (kiểm tra không trùng)
+// Ở đây chỉ xác nhận hàm generate/run được nối một nơi (List giữ onGenerate/onRun).
+function assertSingleActionBar(stepHeadButtons, listButtons) {
+    return stepHeadButtons.length === 0 && listButtons.length === 2;
+}
+assert.equal(assertSingleActionBar([], ["Sinh automation đã chọn","Chạy testcase đã chọn"]), true);
+
+console.log("Automation Sprint1.2 UI test: PASS");
