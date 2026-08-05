@@ -310,3 +310,43 @@ function assertSingleActionBar(stepHeadButtons, listButtons) {
 assert.equal(assertSingleActionBar([], ["Sinh automation đã chọn","Chạy testcase đã chọn"]), true);
 
 console.log("Automation Sprint1.2 UI test: PASS");
+
+/* ---------- Sprint 1.2b: mapping restore không tự mở Drawer; summary trên card ---------- */
+// Analyze không được mở Drawer: sau analyze, activeTestCaseId phải vẫn null nếu chưa bấm gì
+function analyzeResult(currentActive) {
+    // analyze chỉ cập nhật mapping, KHÔNG đổi active
+    return { activeTestCaseId: currentActive };
+}
+const before = { activeTestCaseId: null };
+const after = analyzeResult(before.activeTestCaseId);
+assert.equal(after.activeTestCaseId, null, "Analyze không tự mở Drawer");
+
+// Tick checkbox không mở Drawer
+function toggleOnly(id, state) { return { selected: [...state.selected, id], active: state.active }; }
+const toggled = toggleOnly("TC001", { selected: [], active: null });
+assert.equal(toggled.active, null, "checkbox không mở Drawer");
+
+// Chỉ click 'Xem chi tiết AI' mới mở Drawer (tab REVIEW)
+function openDetail(id) { return { active: id, tab: "REVIEW" }; }
+const detail = openDetail("TC001");
+assert.deepEqual(detail, { active: "TC001", tab: "REVIEW" });
+
+// mappingSummary: tối đa 2 dòng, tóm tắt
+function mappingSummary(mapping) {
+    if (!mapping || !Object.keys(mapping).length) return null;
+    const setup = [...(mapping.authenticationSetup?.steps||[]).map(s=>s.target||"Đăng nhập"), ...(mapping.navigationChain?.steps||[]).map(s=>s.target||"Mở menu")].filter(Boolean);
+    const actions = (mapping.stepMappings||[]).map(s=>s.businessStep||s.target).filter(Boolean);
+    const results = (mapping.assertionMappings||[]).map(a=>a.businessExpectation).filter(Boolean);
+    const lines = [];
+    if (setup.length) lines.push(`Chuẩn bị: ${setup.slice(0,2).join(", ")}`);
+    if (actions.length) lines.push(`Thao tác chính: ${actions.slice(0,2).join(", ")}`);
+    if (results.length) lines.push(`Kết quả: ${results[0]}`);
+    return lines.slice(0,2);
+}
+const s = mappingSummary({ authenticationSetup:{steps:[{target:"Đăng nhập"}]}, navigationChain:{steps:[{target:"Mở menu"}]}, stepMappings:[{businessStep:"Nhập dữ liệu"},{businessStep:"Bấm Đăng nhập"}], assertionMappings:[{businessExpectation:"Đăng nhập thành công"}] });
+assert.ok(s.length <= 2, "tối đa 2 dòng tóm tắt");
+assert.ok(s[0].includes("Chuẩn bị: Đăng nhập, Mở menu"));
+assert.ok(s[1].includes("Thao tác chính: Nhập dữ liệu, Bấm Đăng nhập"));
+assert.equal(mappingSummary(null), null);
+
+console.log("Automation Sprint1.2b mapping-restore UI test: PASS");

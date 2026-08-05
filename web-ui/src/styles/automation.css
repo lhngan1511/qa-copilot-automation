@@ -494,3 +494,17 @@
 .automation-testcase-card__title span { font-size: 13px; }
 .automation-testcase-card__meta { font-size: 11px; }
 .automation-action-bar { padding: 4px 0; }
+
+/* Sprint 1.2b — mapping summary on card + drawer overlay backdrop */
+.automation-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 79;
+}
+.automation-summary { display: flex; flex-direction: column; gap: 2px; }
+.automation-summary__title { font-weight: 700; color: #065f46; font-size: 12px; }
+.automation-summary__line { font-size: 11px; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.automation-testcase-card__title { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1; min-width: 0; }
+.automation-testcase-card__title strong { color: #111827; font-size: 13px; }
+.automation-testcase-card__title span { color: #374151; font-size: 14px; font-weight: 600; word-break: break-word; }

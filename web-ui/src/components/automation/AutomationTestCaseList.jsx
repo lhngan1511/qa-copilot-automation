@@ -6,6 +6,22 @@ function normalizeConfidence(value) {
     return Math.round(pct);
 }
 
+// Tóm tắt mapping tối đa 1-2 dòng để hiện trên card (không bung toàn bộ).
+function mappingSummary(mapping) {
+    if (!mapping || !Object.keys(mapping).length) return null;
+    const setup = [
+        ...(Array.isArray(mapping.authenticationSetup?.steps) ? mapping.authenticationSetup.steps.map(s => s.target || "Đăng nhập") : []),
+        ...(Array.isArray(mapping.navigationChain?.steps) ? mapping.navigationChain.steps.map(s => s.target || "Mở menu") : [])
+    ].filter(Boolean);
+    const actions = (Array.isArray(mapping.stepMappings) ? mapping.stepMappings : []).map(s => s.businessStep || s.target || s.locator).filter(Boolean);
+    const results = (Array.isArray(mapping.assertionMappings) ? mapping.assertionMappings : []).map(a => a.businessExpectation || "Kết quả mong đợi").filter(Boolean);
+    const lines = [];
+    if (setup.length) lines.push(`Chuẩn bị: ${setup.slice(0, 2).join(", ")}`);
+    if (actions.length) lines.push(`Thao tác chính: ${actions.slice(0, 2).join(", ")}`);
+    if (results.length) lines.push(`Kết quả: ${results[0]}`);
+    return lines.slice(0, 2);
+}
+
 export default function AutomationTestCaseList({
     testCases,
     searchQuery,
@@ -14,6 +30,7 @@ export default function AutomationTestCaseList({
     activeId,
     isReady,
     confidenceOf,
+    analyzed,
     onSearch,
     onFilter,
     onSelectAll,
@@ -60,24 +77,32 @@ export default function AutomationTestCaseList({
                     const pct = normalizeConfidence(confidence);
                     const confCls = pct == null ? "" : pct >= 70 ? "confidence--high" : pct >= 40 ? "confidence--mid" : "confidence--low";
                     const hasAnalysis = Boolean(testCase.mapping && Object.keys(testCase.mapping).length);
+                    const summary = mappingSummary(testCase.mapping);
                     return <div className={`automation-testcase-card ${activeId === testCase.id ? "automation-testcase-card--active" : ""} ${!testCase.includedInSession ? "automation-testcase-card--removed" : ""}`} key={testCase.id}>
                         <div className="automation-testcase-card__top">
                             <input type="checkbox" aria-label={`Chọn ${testCase.id}`} checked={selectedIds.includes(testCase.id)} disabled={!testCase.includedInSession} onChange={() => onToggle(testCase.id)} />
-                            <button type="button" className="automation-testcase-card__title" onClick={() => onOpen(testCase.id)}>
+                            <div className="automation-testcase-card__title">
                                 <strong>{testCase.id}</strong>
                                 <span>{testCase.title || "Chưa có tiêu đề"}</span>
-                            </button>
+                            </div>
                             {ready
                                 ? <span className="automation-status automation-status--ready">🟢 Sẵn sàng</span>
                                 : <button type="button" className="automation-status automation-status--warn automation-status--action" onClick={() => onOpenData(testCase.id)}>🟡 Cần bổ sung dữ liệu</button>}
                         </div>
-                        <div className="automation-testcase-card__meta">
-                            {pct == null
-                                ? <span>{hasAnalysis ? "AI đã phân tích" : "Chưa phân tích"}</span>
-                                : <span>Confidence: <span className={`automation-confidence ${confCls}`}>{pct}%</span></span>}
-                        </div>
+                        {analyzed ? (
+                            <div className="automation-testcase-card__meta">
+                                {summary ? (
+                                    <div className="automation-summary">
+                                        <span className="automation-summary__title">✓ AI đã hiểu</span>
+                                        {summary.map((line, i) => <span key={i} className="automation-summary__line">{line}</span>)}
+                                    </div>
+                                ) : <span>AI chưa xác định được</span>}
+                            </div>
+                        ) : (
+                            <div className="automation-testcase-card__meta"><span>Chưa phân tích</span></div>
+                        )}
                         <div className="automation-testcase-card__actions">
-                            <button className="button button--secondary" type="button" onClick={() => onOpen(testCase.id)}>Xem AI hiểu gì</button>
+                            {analyzed && <button className="button button--secondary" type="button" onClick={() => onOpen(testCase.id)}>Xem chi tiết AI</button>}
                             {!ready && <button className="button button--secondary" type="button" onClick={() => onOpenData(testCase.id)}>Bổ sung dữ liệu</button>}
                         </div>
                     </div>;

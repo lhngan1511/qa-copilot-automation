@@ -93,13 +93,18 @@ export default function AutomationWorkspacePage() {
         const normalized = items.map(normalizeTestCase);
         setTestCases(normalized);
         setSelectedTestCaseIds([]);
-        setActiveTestCaseId(normalized[0]?.id || null);
+        setActiveTestCaseId(null); // không tự mở Drawer khi upload
         setSourceFileName(fileName);
         setAnalyzed(false);
         setNotice("");
     };
     const handleToggle = id => setSelectedTestCaseIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
-    // Click "Cần bổ sung dữ liệu" -> chọn testcase + mở Inspector + chuyển tab Dữ liệu kiểm thử.
+    // Click "Xem chi tiết AI" -> mở Drawer tab Review (không tự mở từ nơi khác).
+    const handleOpenDetail = id => {
+        setActiveTestCaseId(id);
+        setActiveTab("REVIEW");
+    };
+    // Click "Cần bổ sung dữ liệu" -> chọn testcase + mở Drawer + chuyển tab Dữ liệu kiểm thử.
     const handleOpenData = id => {
         setSelectedTestCaseIds(ids => ids.includes(id) ? ids : [...ids, id]);
         setActiveTestCaseId(id);
@@ -211,16 +216,19 @@ export default function AutomationWorkspacePage() {
                     <div className="automation-step__head">
                         <h3>Chọn testcase, review và sinh automation</h3>
                     </div>
-                    <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
+                    <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} analyzed={analyzed} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={handleOpenDetail} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
                 </div>
             </div>
         )}
 
-        {/* Drawer Inspector: mở bên phải, không inline; danh sách giữ nguyên */}
+        {/* Drawer Inspector: overlay, không inline; danh sách giữ nguyên. Không tự mở. */}
         {activeTestCase && (
+            <>
+            <div className="automation-drawer-backdrop" onClick={() => setActiveTestCaseId(null)}></div>
             <div className="automation-drawer">
                 <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} onClose={() => setActiveTestCaseId(null)} />
             </div>
+            </>
         )}
     </section>;
 }
