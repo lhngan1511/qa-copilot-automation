@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AutomationHeader from "../components/automation/AutomationHeader.jsx";
 import AutomationTestCaseList from "../components/automation/AutomationTestCaseList.jsx";
@@ -32,12 +32,21 @@ function isReady(tc) {
     return r === "READY";
 }
 
+// Chuẩn hóa confidence một lần: <=1 => *100; >1 => giữ nguyên; clamp 0..100.
+function normalizeConfidence(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    let pct = n <= 1 ? n * 100 : n;
+    pct = Math.min(100, Math.max(0, pct));
+    return Math.round(pct);
+}
+
 function confidenceOf(mapping) {
     const steps = Array.isArray(mapping?.stepMappings) ? mapping.stepMappings : [];
-    const values = steps.map(s => Number(s?.confidence)).filter(n => Number.isFinite(n));
+    const values = steps.map(s => normalizeConfidence(s?.confidence)).filter(n => n != null);
     if (values.length === 0) return null;
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    return Math.round(avg * 100);
+    return Math.round(avg);
 }
 
 export default function AutomationWorkspacePage() {
@@ -53,6 +62,10 @@ export default function AutomationWorkspacePage() {
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
     const [analyzed, setAnalyzed] = useState(false);
+    const [analyzeStatus, setAnalyzeStatus] = useState("idle"); // idle | loading | success | error
+    const [analyzeCount, setAnalyzeCount] = useState(0); // số testcase đã phân tích
+    const analyzingRef = useRef(false); // in-flight guard đồng bộ
+    const reviewRef = useRef(null); // cuộn tới bước review khi thành công
 
     const selectedCount = useMemo(() => selectedTestCaseIds.length, [selectedTestCaseIds]);
 
@@ -92,9 +105,17 @@ export default function AutomationWorkspacePage() {
         try { for (const item of items) { const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" } : currentItem)); } } catch (error) { setNotice(error.message || "Sinh mã kiểm thử không thành công."); } finally { setBusy(false); }
     };
     const analyzeRequest = async () => {
+        // In-flight guard đồng bộ: một lần bấm = một phiên Analyze; chặn lần bấm thứ hai.
+        if (analyzingRef.current) {
+            console.warn("[ANALYZE] bỏ qua lần bấm trùng — đang phân tích.");
+            return;
+        }
         const items = testCases.filter(item => item.includedInSession);
         if (!codeGenFile?.content || !items.length) return;
-        setBusy(true); setNotice("");
+        analyzingRef.current = true;
+        setBusy(true);
+        setAnalyzeStatus("loading");
+        setNotice("");
         try {
             const result = await analyzeAutomation({ module: moduleName, testCases: items, codegenText: codeGenFile.content });
             const mappings = Array.isArray(result?.testCaseMappings) ? result.testCaseMappings : Array.isArray(result?.mappings) ? result.mappings : [];
@@ -103,8 +124,19 @@ export default function AutomationWorkspacePage() {
                 return mapping ? { ...item, mapping: mapping.mapping || mapping, status: item.status === "READY" ? "READY" : item.status } : item;
             }));
             setAnalyzed(true);
-            setNotice(`AI đã phân tích ${mappings.length} testcase. Hãy review rồi Sinh mã.`);
-        } catch (error) { setNotice(error.message || "Không thể phân tích dữ liệu bằng AI."); } finally { setBusy(false); }
+            setAnalyzeStatus("success");
+            setAnalyzeCount(mappings.length);
+            setNotice(`Đã phân tích ${mappings.length} testcase. Hãy review rồi Sinh mã.`);
+            // Tự cuộn xuống bước review (không tự Generate).
+            requestAnimationFrame(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+        } catch (error) {
+            setAnalyzeStatus("error");
+            setAnalyzed(false);
+            setNotice(`Phân tích thất bại: ${error.message || "Không thể phân tích dữ liệu bằng AI."}`);
+        } finally {
+            analyzingRef.current = false;
+            setBusy(false);
+        }
     };
     const restoreTestCase = id => setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: true, status: item.generatedCode ? "GENERATED" : "EDITED" } : item));
 
@@ -136,13 +168,24 @@ export default function AutomationWorkspacePage() {
             <div className="automation-step__body">
                 <h3>AI phân tích</h3>
                 <p>AI đọc module, feature, test data và hiểu CodeGen, rồi lập ánh xạ cho từng testcase.</p>
-                <button className="button button--primary" type="button" disabled={!bothUploaded || busy} onClick={analyzeRequest}>Phân tích bằng AI</button>
+                {analyzeStatus === "loading" ? (
+                    <div className="automation-analyze-loading" role="status">
+                        <span className="automation-spinner" aria-hidden="true"></span>
+                        <span>AI đang phân tích CodeGen và {testCases.filter(tc => tc.includedInSession).length} testcase…</span>
+                    </div>
+                ) : (
+                    <button className="button button--primary" type="button" disabled={!bothUploaded || busy} onClick={analyzeRequest}>
+                        {busy ? "Đang phân tích…" : "Phân tích bằng AI"}
+                    </button>
+                )}
+                {analyzeStatus === "success" && <div className="automation-analyze-success">✓ Đã phân tích {analyzeCount} testcase</div>}
+                {analyzeStatus === "error" && <div className="automation-analyze-error">✗ Phân tích thất bại. Vui lòng thử lại.</div>}
             </div>
         </div>
 
         {/* BƯỚC 3+4+5: Chọn testcase + Review + Generate + Run */}
         {testCases.length > 0 && (
-            <div className="automation-step">
+            <div className="automation-step" ref={reviewRef}>
                 <div className="automation-step__num">③</div>
                 <div className="automation-step__body">
                     <div className="automation-step__head">

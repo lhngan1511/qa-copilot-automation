@@ -1,5 +1,13 @@
 const TABS = [["REVIEW", "AI hiểu gì"], ["INFO", "Thông tin"], ["DATA", "Dữ liệu kiểm thử"], ["CODE", "Mã kiểm thử"]];
 
+function normalizeConfidence(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    let pct = n <= 1 ? n * 100 : n;
+    pct = Math.min(100, Math.max(0, pct));
+    return Math.round(pct);
+}
+
 /*
  Sprint 1 (refine) — giữ nguyên testData object từ approved-testcases.json.
  Module / Feature chỉ hiển thị (không phải form nhập).
@@ -67,9 +75,9 @@ function ReviewMapping({ testCase, onAccept, onEdit }) {
     if (!m || !Object.keys(m).length) return <div className="automation-empty-state automation-empty-state--large"><><strong>Chưa có ánh xạ</strong><span>Phân tích bằng AI sẽ hiển thị tại đây.</span></></div>;
     const confidence = (() => {
         const steps = Array.isArray(m.stepMappings) ? m.stepMappings : [];
-        const vals = steps.map(s => Number(s?.confidence)).filter(n => Number.isFinite(n));
+        const vals = steps.map(s => normalizeConfidence(s?.confidence)).filter(n => n != null);
         if (!vals.length) return null;
-        return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100);
+        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     })();
     const setup = [
         ...(Array.isArray(m.authenticationSetup?.steps) ? m.authenticationSetup.steps.map(s => s.target || "Đăng nhập") : []),

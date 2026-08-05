@@ -177,3 +177,52 @@ assert.deepEqual(review.thaoTácChính, ["Nhập tên", "Bấm Lưu"]);
 assert.deepEqual(review.kếtQuả, ["Thông báo thành công"]);
 
 console.log("Automation Sprint1 UI wiring test: PASS");
+
+/* ---------- Sprint 1 P0: analyze in-flight guard + confidence normalization ---------- */
+
+// Chuẩn hóa confidence (cùng logic với UI)
+function normalizeConfidence(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    let pct = n <= 1 ? n * 100 : n;
+    pct = Math.min(100, Math.max(0, pct));
+    return Math.round(pct);
+}
+assert.equal(normalizeConfidence(0.85), 85);
+assert.equal(normalizeConfidence(85), 85);
+assert.equal(normalizeConfidence(100), 100);
+assert.equal(normalizeConfidence(0.5), 50);
+assert.equal(normalizeConfidence(1), 100);
+assert.ok(normalizeConfidence(100) <= 100, "không hiển thị 10000%");
+assert.ok(normalizeConfidence(0.85) === 85, "0.85 -> 85%");
+
+// One click -> one request: mô phỏng in-flight guard (analyzingRef)
+function makeAnalyzeController() {
+    let inFlight = false;
+    let calls = 0;
+    return {
+        async analyze() {
+            if (inFlight) return { skipped: true };
+            inFlight = true;
+            calls += 1;
+            await new Promise(r => setTimeout(r, 5));
+            inFlight = false;
+            return { calls };
+        },
+        calls: () => calls
+    };
+}
+(async () => {
+    const ctrl = makeAnalyzeController();
+    // double click: 2 lần gọi analyzeRequest nhưng guard chặn lần 2
+    const p1 = ctrl.analyze();
+    const p2 = ctrl.analyze(); // bị chặn (inFlight=true)
+    await Promise.all([p1, p2]);
+    await new Promise(r => setTimeout(r, 20));
+    assert.equal(ctrl.calls(), 1, "double click chỉ tạo 1 request");
+    // bấm lần nữa sau khi xong -> request mới
+    const p3 = ctrl.analyze();
+    await p3;
+    assert.equal(ctrl.calls(), 2);
+    console.log("P0 analyze guard + confidence: PASS");
+})();

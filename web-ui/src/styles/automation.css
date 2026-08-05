@@ -390,3 +390,42 @@
 .automation-review__title { font-size: 14px; font-weight: 700; color: #111827; }
 .automation-review__block li { list-style: none; }
 .automation-review__block ul { padding-left: 0; }
+
+/* Sprint 1 P0 — analyze loading / spinner / status */
+.automation-analyze-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 600;
+}
+.automation-spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #bfdbfe;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: automation-spin 0.8s linear infinite;
+    display: inline-block;
+}
+@keyframes automation-spin { to { transform: rotate(360deg); } }
+.automation-analyze-success {
+    margin-top: 10px;
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 13px;
+}
+.automation-analyze-error {
+    margin-top: 10px;
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
