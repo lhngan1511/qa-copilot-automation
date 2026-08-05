@@ -11,6 +11,11 @@ function readFile(file) {
 
 const ENVS = ["UAT", "TEST", "DEV"];
 
+/*
+ Sprint 1 (polish) — Header chỉ là bước Upload.
+ Không có nút "Phân tích bằng AI" ở đây (chuyển sang bước ② của page).
+ Module / Feature / Môi trường hiển thị, không nhập.
+*/
 export default function AutomationHeader({
     sourceFileName,
     codeGenFile,
@@ -19,7 +24,6 @@ export default function AutomationHeader({
     environment,
     onApprovedTestCases,
     onCodeGenFile,
-    onAnalyze,
     onEnvironmentChange
 }) {
     const approvedInput = useRef(null);
@@ -40,12 +44,8 @@ export default function AutomationHeader({
         try {
             const content = await readFile(file);
             const parsed = JSON.parse(content);
-            const testCases = Array.isArray(parsed)
-                ? parsed
-                : parsed?.testCases ?? parsed?.testcases ?? parsed?.items;
-            if (!Array.isArray(testCases)) {
-                throw new Error("File phải chứa một danh sách testcase hoặc thuộc tính testCases.");
-            }
+            const testCases = Array.isArray(parsed) ? parsed : parsed?.testCases ?? parsed?.testcases ?? parsed?.items;
+            if (!Array.isArray(testCases)) throw new Error("File phải chứa một danh sách testcase hoặc thuộc tính testCases.");
             if (testCases.length === 0) throw new Error("File không có testcase nào.");
             const invalidIndex = testCases.findIndex(item => !item || typeof item !== "object" || !String(item.id ?? item.testcaseId ?? "").trim());
             if (invalidIndex >= 0) throw new Error(`Testcase thứ ${invalidIndex + 1} thiếu mã ID hợp lệ.`);
@@ -73,17 +73,10 @@ export default function AutomationHeader({
     };
 
     return (
-        <section className="automation-header">
-            <div className="automation-section-heading">
-                <div>
-                    <p className="workflow-id">BẮT ĐẦU</p>
-                    <h3>Chọn dữ liệu và CodeGen</h3>
-                </div>
-                <span>File testcase đã duyệt + CodeGen.js</span>
-            </div>
+        <div className="automation-header">
             <div className="automation-header__grid">
-                <div className="automation-field automation-field--wide">
-                    <label htmlFor="approved-testcases-file">File testcase đã duyệt (approved-testcases.json)</label>
+                <div className="automation-field">
+                    <label htmlFor="approved-testcases-file">① approved-testcases.json</label>
                     <div className="automation-file-control">
                         <button className="button button--secondary" type="button" onClick={() => approvedInput.current?.click()}>
                             Tải file testcase
@@ -93,8 +86,8 @@ export default function AutomationHeader({
                     </div>
                     {approvedError && <p className="automation-field-error" role="alert">{approvedError}</p>}
                 </div>
-                <div className="automation-field automation-field--wide">
-                    <label htmlFor="codegen-file">CodeGen.js</label>
+                <div className="automation-field">
+                    <label htmlFor="codegen-file">② CodeGen.js</label>
                     <div className="automation-file-control">
                         <button className="button button--secondary" type="button" onClick={() => codeGenInput.current?.click()}>
                             Tải CodeGen.js
@@ -104,19 +97,7 @@ export default function AutomationHeader({
                     </div>
                     {codeGenError && <p className="automation-field-error" role="alert">{codeGenError}</p>}
                 </div>
-            </div>
-
-            {/* Module / Feature — chỉ hiển thị, không phải form nhập */}
-            <div className="automation-header__summary">
-                <div className="automation-summary-item">
-                    <label>Module</label>
-                    <strong>{moduleName || "—"}</strong>
-                </div>
-                <div className="automation-summary-item">
-                    <label>Feature</label>
-                    <strong>{functionName || "—"}</strong>
-                </div>
-                <div className="automation-summary-item">
+                <div className="automation-field">
                     <label>Môi trường chạy</label>
                     {editingEnv ? (
                         <div className="automation-env-edit">
@@ -134,11 +115,6 @@ export default function AutomationHeader({
                     )}
                 </div>
             </div>
-
-            <div className="automation-header__footer">
-                <span>Hệ thống tự đọc Module, Feature và dữ liệu từ file testcase.</span>
-                <button className="button button--primary" type="button" disabled={!sourceFileName || !codeGenFile || !codeGenFile.content} onClick={onAnalyze}>Phân tích bằng AI</button>
-            </div>
-        </section>
+        </div>
     );
 }

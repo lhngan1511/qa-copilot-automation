@@ -6,12 +6,12 @@ import AutomationInspector from "../components/automation/AutomationInspector.js
 import { analyzeAutomation, generateAutomation, runAutomation } from "../api/automationApi.js";
 
 /*
- Sprint 1 (refine) — Automation Intelligence
- - Giữ nguyên testData object từ approved-testcases.json (Single Source of Truth).
- - Module/Feature/Môi trường tự đọc; không bắt nhập lại.
- - Sửa bug testCaseMappings: UI đọc result.testCaseMappings.
- - executionReadiness: disable Generate/Run khi DATA_REQUIRED.
- - Hiển thị confidence từ AI analysis nếu có.
+ Sprint 1 (polish) — Automation Intelligence là "màn hình xử lý", không phải form.
+ Flow:  Upload 2 file → AI phân tích → Review → Generate → Run.
+ - Upload là bước đầu, hiển thị tóm tắt thành công (✓ testcase, ✓ Module, ✓ Feature).
+ - AI Analysis là trung tâm.
+ - Review mapping dùng ngôn ngữ Tester (Chuẩn bị / Thao tác chính / Kết quả / Độ tin cậy).
+ - Chọn testcase MỘT LẦN, có Generate Selected / Run Selected.
  */
 
 function normalizeTestCase(item, index) {
@@ -26,7 +26,6 @@ function normalizeTestCase(item, index) {
     };
 }
 
-// Testcase sẵn sàng chạy khi executionReadiness = READY (hoặc không xác định -> cho phép).
 function isReady(tc) {
     const r = String(tc?.executionReadiness ?? "").toUpperCase();
     if (!r) return true;
@@ -49,22 +48,19 @@ export default function AutomationWorkspacePage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [codeGenFile, setCodeGenFile] = useState(null);
-    const [activeTab, setActiveTab] = useState("INFO");
+    const [activeTab, setActiveTab] = useState("REVIEW");
     const [environment, setEnvironment] = useState(import.meta.env.VITE_ENV || "");
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
-    const [analysisSummary, setAnalysisSummary] = useState(null); // {total, ready, dataRequired}
+    const [analyzed, setAnalyzed] = useState(false);
 
     const selectedCount = useMemo(() => selectedTestCaseIds.length, [selectedTestCaseIds]);
 
-    const moduleName = useMemo(() => {
-        const value = testCases.find(tc => tc.module && String(tc.module).trim())?.module ?? "";
-        return String(value ?? "");
-    }, [testCases]);
-    const functionName = useMemo(() => {
-        const value = testCases.find(tc => (tc.feature || tc.function) && String(tc.feature || tc.function).trim())?.feature || testCases.find(tc => tc.function)?.function || "";
-        return String(value ?? "");
-    }, [testCases]);
+    const moduleName = useMemo(() => testCases.find(tc => tc.module && String(tc.module).trim())?.module ?? "", [testCases]);
+    const functionName = useMemo(() => testCases.find(tc => (tc.feature || tc.function) && String(tc.feature || tc.function).trim())?.feature || testCases.find(tc => tc.function)?.function || "", [testCases]);
+
+    // Cả 2 file đã tải?
+    const bothUploaded = Boolean(sourceFileName && codeGenFile?.content);
 
     const handleApprovedTestCases = (items, fileName) => {
         const normalized = items.map(normalizeTestCase);
@@ -72,12 +68,12 @@ export default function AutomationWorkspacePage() {
         setSelectedTestCaseIds([]);
         setActiveTestCaseId(normalized[0]?.id || null);
         setSourceFileName(fileName);
-        setAnalysisSummary(null);
+        setAnalyzed(false);
+        setNotice("");
     };
     const handleToggle = id => setSelectedTestCaseIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
     const handleSelectAll = (ids, allSelected) => setSelectedTestCaseIds(current => allSelected ? current.filter(id => !ids.includes(id)) : [...new Set([...current, ...ids])]);
     const updateEnvironment = value => setEnvironment(value);
-    const selectedTestCases = ids => testCases.filter(item => ids.includes(item.id) && item.includedInSession);
     const activeTestCase = testCases.find(item => item.id === activeTestCaseId) || null;
     const updateTestCase = (id, patch) => setTestCases(current => current.map(item => {
         if (item.id !== id) return item;
@@ -87,11 +83,11 @@ export default function AutomationWorkspacePage() {
     }));
     const removeTestCase = id => { setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: false, status: "REMOVED" } : item)); setSelectedTestCaseIds(current => current.filter(item => item !== id)); };
     const runRequest = async ids => {
-        const items = selectedTestCases(ids).filter(isReady);
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession).filter(isReady);
         for (const item of items) { if (!item.generatedFile) continue; const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" } : currentItem)); }
     };
     const generateRequest = async ids => {
-        const items = selectedTestCases(ids).filter(isReady);
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession).filter(isReady);
         if (!codeGenFile?.content) return; setBusy(true); setNotice("");
         try { for (const item of items) { const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" } : currentItem)); } } catch (error) { setNotice(error.message || "Sinh mã kiểm thử không thành công."); } finally { setBusy(false); }
     };
@@ -106,24 +102,62 @@ export default function AutomationWorkspacePage() {
                 const mapping = mappings.find(value => String(value.testCaseId || value.id) === item.id);
                 return mapping ? { ...item, mapping: mapping.mapping || mapping, status: item.status === "READY" ? "READY" : item.status } : item;
             }));
-            const ready = items.filter(isReady).length;
-            setAnalysisSummary({ total: items.length, ready, dataRequired: items.length - ready });
-            setNotice(`Phân tích bằng AI đã hoàn tất (${mappings.length} testcase).`);
+            setAnalyzed(true);
+            setNotice(`AI đã phân tích ${mappings.length} testcase. Hãy review rồi Sinh mã.`);
         } catch (error) { setNotice(error.message || "Không thể phân tích dữ liệu bằng AI."); } finally { setBusy(false); }
     };
     const restoreTestCase = id => setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: true, status: item.generatedCode ? "GENERATED" : "EDITED" } : item));
 
     return <section className="page automation-page">
         <Link className="back-link" to="/">← Về Dashboard</Link>
-        <header className="automation-page__heading"><div><p className="workflow-id">AUTOMATION INTELLIGENCE</p><h2>Automation Workspace</h2><p>Phân tích, sinh mã và thực thi testcase.</p></div><span className="status-badge status-badge--neutral">{selectedCount} testcase được chọn</span></header>
+        <header className="automation-page__heading"><div><p className="workflow-id">AUTOMATION INTELLIGENCE</p><h2>Automation Workspace</h2><p>Đưa hai file vào, AI sẽ làm phần còn lại. Bạn chỉ cần review.</p></div></header>
         {notice && <div className="automation-notice" role="status">{notice}</div>}
         {busy && <div className="automation-notice" role="status">Đang xử lý...</div>}
-        {analysisSummary && analysisSummary.dataRequired > 0 && (
-            <div className="automation-notice automation-notice--warn" role="status">
-                {analysisSummary.dataRequired} testcase cần bổ sung dữ liệu (đã tạm ẩn khỏi Sinh mã / Thực thi). Hãy mở từng testcase để thêm dữ liệu còn thiếu.
+
+        {/* BƯỚC 1: Upload */}
+        <div className="automation-step">
+            <div className="automation-step__num">①</div>
+            <div className="automation-step__body">
+                <h3>Upload hai file</h3>
+                <p>approved-testcases.json + CodeGen.js</p>
+                <AutomationHeader sourceFileName={sourceFileName} codeGenFile={codeGenFile} moduleName={moduleName} functionName={functionName} environment={environment} onApprovedTestCases={handleApprovedTestCases} onCodeGenFile={setCodeGenFile} onEnvironmentChange={updateEnvironment} />
+                {bothUploaded && <div className="automation-upload-success">
+                    <p>✓ Đọc thành công</p>
+                    <span>✓ {testCases.length} testcase</span>
+                    {moduleName && <span>✓ Module: {moduleName}</span>}
+                    {functionName && <span>✓ Feature: {functionName}</span>}
+                </div>}
+            </div>
+        </div>
+
+        {/* BƯỚC 2: AI Analysis */}
+        <div className="automation-step">
+            <div className="automation-step__num">②</div>
+            <div className="automation-step__body">
+                <h3>AI phân tích</h3>
+                <p>AI đọc module, feature, test data và hiểu CodeGen, rồi lập ánh xạ cho từng testcase.</p>
+                <button className="button button--primary" type="button" disabled={!bothUploaded || busy} onClick={analyzeRequest}>Phân tích bằng AI</button>
+            </div>
+        </div>
+
+        {/* BƯỚC 3+4+5: Chọn testcase + Review + Generate + Run */}
+        {testCases.length > 0 && (
+            <div className="automation-step">
+                <div className="automation-step__num">③</div>
+                <div className="automation-step__body">
+                    <div className="automation-step__head">
+                        <h3>Chọn testcase, review và sinh automation</h3>
+                        <span className="automation-step__tools">
+                            <button className="button button--secondary" type="button" disabled={selectedCount === 0 || !analyzed} onClick={() => generateRequest([...selectedTestCaseIds])}>Generate Selected</button>
+                            <button className="button button--secondary" type="button" disabled={selectedCount === 0} onClick={() => runRequest([...selectedTestCaseIds])}>Run Selected</button>
+                        </span>
+                    </div>
+                    <div className="automation-main-grid">
+                        <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onGenerate={generateRequest} onRun={runRequest} />
+                        <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} />
+                    </div>
+                </div>
             </div>
         )}
-        <AutomationHeader sourceFileName={sourceFileName} codeGenFile={codeGenFile} moduleName={moduleName} functionName={functionName} environment={environment} onApprovedTestCases={handleApprovedTestCases} onCodeGenFile={setCodeGenFile} onAnalyze={analyzeRequest} onEnvironmentChange={updateEnvironment} />
-        <div className="automation-main-grid"><AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onGenerate={generateRequest} onRun={runRequest} /><AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} /></div>
     </section>;
 }

@@ -1,4 +1,4 @@
-const TABS = [["INFO", "Thông tin"], ["DATA", "Dữ liệu kiểm thử"], ["MAPPING", "Ánh xạ tự động"], ["CODE", "Mã kiểm thử"]];
+const TABS = [["REVIEW", "AI hiểu gì"], ["INFO", "Thông tin"], ["DATA", "Dữ liệu kiểm thử"], ["CODE", "Mã kiểm thử"]];
 
 /*
  Sprint 1 (refine) — giữ nguyên testData object từ approved-testcases.json.
@@ -55,35 +55,34 @@ export default function AutomationInspector({ testCase, moduleName, functionName
                     {row.requiresTesterInput && <span className="automation-data-hint">Cần dữ liệu</span>}
                 </div>) : <div className="automation-empty-state"><strong>{testCase.testData?.value ? "Đã có dữ liệu" : "Không có field chi tiết"}</strong><span>{testCase.testData?.value || "approved-testcases.json không cung cấp field chi tiết."}</span></div>}
             </div>}
-            {activeTab === "MAPPING" && <ReviewMapping testCase={testCase} onAccept={() => update({ mappingStatus: "ACCEPTED" })} onEdit={() => update({ mappingStatus: "EDITED", status: "EDITED" })} />}
+            {activeTab === "REVIEW" && <ReviewMapping testCase={testCase} onAccept={() => update({ mappingStatus: "ACCEPTED" })} onEdit={() => update({ mappingStatus: "EDITED", status: "EDITED" })} />}
             {activeTab === "CODE" && <div className="automation-empty-state automation-empty-state--large">{testCase.generatedCode ? <pre className="automation-code-preview">{testCase.generatedCode}</pre> : <><strong>Chưa có mã kiểm thử</strong><span>Hãy sinh mã kiểm thử sau khi dữ liệu và ánh xạ đã sẵn sàng.</span></>}</div>}
         </div>
     </section>;
 }
 
-/* Review mapping dễ hiểu: không hiện JSON, hiện Setup / Business / Assertion / Confidence. */
+/* Review mapping dễ hiểu: không hiện JSON — "AI đã hiểu testcase này như sau". */
 function ReviewMapping({ testCase, onAccept, onEdit }) {
     const m = testCase.mapping;
-    if (!m || !Object.keys(m).length) return <div className="automation-empty-state automation-empty-state--large"><><strong>Chưa có ánh xạ</strong><span>Phân tích bằng AI sẽ hiển thị mapping tại đây.</span></></div>;
+    if (!m || !Object.keys(m).length) return <div className="automation-empty-state automation-empty-state--large"><><strong>Chưa có ánh xạ</strong><span>Phân tích bằng AI sẽ hiển thị tại đây.</span></></div>;
     const confidence = (() => {
         const steps = Array.isArray(m.stepMappings) ? m.stepMappings : [];
         const vals = steps.map(s => Number(s?.confidence)).filter(n => Number.isFinite(n));
         if (!vals.length) return null;
         return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100);
     })();
-    const confidenceLabel = confidence == null ? "—" : confidence >= 70 ? `${confidence}% · Độ tin cậy cao` : confidence >= 40 ? `${confidence}% · Cần kiểm tra` : `${confidence}% · Cần xem lại`;
     const setup = [
-        ...(Array.isArray(m.authenticationSetup?.steps) ? m.authenticationSetup.steps.map(s => s.target || s.actionType || "Login") : []),
-        ...(Array.isArray(m.navigationChain?.steps) ? m.navigationChain.steps.map(s => s.target || "Menu") : [])
+        ...(Array.isArray(m.authenticationSetup?.steps) ? m.authenticationSetup.steps.map(s => s.target || "Đăng nhập") : []),
+        ...(Array.isArray(m.navigationChain?.steps) ? m.navigationChain.steps.map(s => s.target || "Mở menu") : [])
     ].filter(Boolean);
-    const business = (Array.isArray(m.stepMappings) ? m.stepMappings : []).map(s => s.businessStep || s.target || s.locator || "Bước");
-    const assertions = (Array.isArray(m.assertionMappings) ? m.assertionMappings : []).map(a => a.businessExpectation || "Kết quả mong đợi");
+    const actions = (Array.isArray(m.stepMappings) ? m.stepMappings : []).map(s => s.businessStep || s.target || s.locator || "Bước");
+    const expectations = (Array.isArray(m.assertionMappings) ? m.assertionMappings : []).map(a => a.businessExpectation || "Kết quả mong đợi");
     return <div className="automation-review">
-        <div className="automation-review__row"><label>AI xác định</label></div>
-        {setup.length > 0 && <div className="automation-review__block"><strong>Setup</strong><ul>{setup.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
-        {business.length > 0 && <div className="automation-review__block"><strong>Business</strong><ul>{business.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
-        {assertions.length > 0 && <div className="automation-review__block"><strong>Assertion</strong><ul>{assertions.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
-        <div className="automation-review__confidence">Confidence: {confidenceLabel}</div>
+        <div className="automation-review__title">AI đã hiểu testcase này như sau</div>
+        {setup.length > 0 && <div className="automation-review__block"><strong>Chuẩn bị</strong><ul>{setup.map((x, i) => <li key={i}>✓ {x}</li>)}</ul></div>}
+        {actions.length > 0 && <div className="automation-review__block"><strong>Thao tác chính</strong><ul>{actions.map((x, i) => <li key={i}>✓ {x}</li>)}</ul></div>}
+        {expectations.length > 0 && <div className="automation-review__block"><strong>Kết quả mong đợi</strong><ul>{expectations.map((x, i) => <li key={i}>✓ {x}</li>)}</ul></div>}
+        <div className="automation-review__confidence">Độ tin cậy: {confidence == null ? "—" : `${confidence}%`}</div>
         <div className="automation-review__actions"><button className="button button--primary" type="button" onClick={onAccept}>Chấp nhận</button><button className="button button--secondary" type="button" onClick={onEdit}>Chỉnh sửa</button></div>
     </div>;
 }

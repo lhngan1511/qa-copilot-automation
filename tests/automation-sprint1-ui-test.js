@@ -139,3 +139,41 @@ const items = [
 assert.deepEqual(runnable(items).map(i => i.id), ["TC001"]);
 
 console.log("Automation Sprint1 UI wiring test: PASS");
+
+/* ---------- Sprint 1 polish: step flow + review language + single selection ---------- */
+// bothUploaded: cần cả 2 file để bước ② (AI Analysis) bật
+function canAnalyze({ sourceFileName, codeGenFile }) {
+    return Boolean(sourceFileName && codeGenFile?.content);
+}
+assert.equal(canAnalyze({ sourceFileName: "a.json", codeGenFile: { content: "x" } }), true);
+assert.equal(canAnalyze({ sourceFileName: "a.json", codeGenFile: null }), false);
+
+// Bước ③: Generate/Run Selected dùng đúng testcase đã chọn (chọn 1 lần)
+function selectedTestCases(testCases, ids, included = true) {
+    return testCases.filter(tc => ids.includes(tc.id) && (included ? tc.includedInSession !== false : true));
+}
+const all = [
+    { id: "TC001", executionReadiness: "READY", includedInSession: true },
+    { id: "TC002", executionReadiness: "READY", includedInSession: true },
+    { id: "TC003", executionReadiness: "READY", includedInSession: true }
+];
+assert.deepEqual(selectedTestCases(all, ["TC001", "TC002"]).map(t => t.id), ["TC001", "TC002"]);
+
+// Review mapping: map sang ngôn ngữ tester
+function toReviewLabels(mapping) {
+    const setup = [...(mapping.authenticationSetup?.steps || []), ...(mapping.navigationChain?.steps || [])].map(s => s.target);
+    const actions = (mapping.stepMappings || []).map(s => s.businessStep);
+    const expectations = (mapping.assertionMappings || []).map(a => a.businessExpectation);
+    return { chuẩnBị: setup, thaoTácChính: actions, kếtQuả: expectations };
+}
+const review = toReviewLabels({
+    authenticationSetup: { steps: [{ target: "Đăng nhập" }] },
+    navigationChain: { steps: [{ target: "Mở menu" }] },
+    stepMappings: [{ businessStep: "Nhập tên" }, { businessStep: "Bấm Lưu" }],
+    assertionMappings: [{ businessExpectation: "Thông báo thành công" }]
+});
+assert.deepEqual(review.chuẩnBị, ["Đăng nhập", "Mở menu"]);
+assert.deepEqual(review.thaoTácChính, ["Nhập tên", "Bấm Lưu"]);
+assert.deepEqual(review.kếtQuả, ["Thông báo thành công"]);
+
+console.log("Automation Sprint1 UI wiring test: PASS");
