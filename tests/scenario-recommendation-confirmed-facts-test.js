@@ -76,4 +76,39 @@ assert.ok(
     confirmed.every(item => !/Kiểm tra hành vi đã được tester xác nhận/.test(item.title)),
     "no generic grouped title"
 );
+
+/*
+ Confirmation-only answers (yes/no / N-A / not applicable / not mentioned)
+ confirm the existing requirement without adding a business behaviour, so
+ they must not produce confirmed-fact scenarios.
+ */
+const confirmOnlyKnowledge = new RequirementKnowledge({
+    module: { id: "MOD001", name: "Đăng nhập" },
+    functions: [
+        { id: "FUNC001", name: "Đăng nhập", description: "Đăng nhập", expectedResults: [] }
+    ],
+    businessRules: ["Đúng", "Không", "Có", "Không áp dụng", "Requirement không đề cập", "N/A"],
+    knowledgeSources: {
+        businessRules: {
+            "đúng": [{ sourceType: "CLARIFICATION", sourceId: "CL-Y1" }],
+            "không": [{ sourceType: "CLARIFICATION", sourceId: "CL-N1" }],
+            "có": [{ sourceType: "CLARIFICATION", sourceId: "CL-Y2" }],
+            "không áp dụng": [{ sourceType: "CLARIFICATION", sourceId: "CL-NA1" }],
+            "requirement không đề cập": [{ sourceType: "CLARIFICATION", sourceId: "CL-NM1" }],
+            "n/a": [{ sourceType: "CLARIFICATION", sourceId: "CL-NA2" }]
+        }
+    }
+});
+const confirmOnlyScenarios = new ScenarioRecommendationEngine().generate(confirmOnlyKnowledge, {
+    module: "Đăng nhập",
+    features: [{ id: "FUNC001", name: "Đăng nhập", expectedResults: [] }]
+});
+const confirmOnlyConfirmed = confirmOnlyScenarios.filter(item =>
+    (item.sourceReferences ?? []).some(ref => ref.sourceType === "CLARIFICATION")
+);
+assert.equal(
+    confirmOnlyConfirmed.length,
+    0,
+    "confirmation-only answers must not generate confirmed-fact scenarios"
+);
 console.log("Scenario recommendation confirmed facts test: PASS");

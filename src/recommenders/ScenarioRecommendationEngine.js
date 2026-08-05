@@ -167,6 +167,14 @@ class ScenarioRecommendationEngine {
                  rule already represented by the normal recommendation flow.
                  */
                 if (field !== "confirmedFacts" && references.length === 0) return;
+                /*
+                 Confirmation-only answers (yes/no / N-A / "not applicable" /
+                 "not mentioned") merely confirm or negate what the requirement
+                 already states. They are already merged into RequirementKnowledge
+                 by the mapper but carry no new business behaviour, so they must
+                 not become confirmed-fact scenarios.
+                 */
+                if (this.isConfirmationOnlyAnswer(fact)) return;
                 if (result.some(item => this.normalizeForComparison(item.fact) === normalized)) {
                     return;
                 }
@@ -175,6 +183,35 @@ class ScenarioRecommendationEngine {
         });
 
         return result;
+    }
+
+    isConfirmationOnlyAnswer(fact) {
+        const normalized = this.comparable(fact)
+            .replace(/[.!?;:,]+$/g, "")
+            .trim();
+        const confirmations = new Set([
+            "dung",
+            "sai",
+            "co",
+            "khong",
+            "khong co",
+            "khong dung",
+            "khong dung / sai",
+            "khong co / na",
+            "khong de cap",
+            "khong de cap den",
+            "requirement khong de cap",
+            "khong ap dung",
+            "khong ap dung / na",
+            "na",
+            "n/a",
+            "chua xac dinh",
+            "khong xac dinh",
+            "khong ro",
+            "khong y",
+            "khong khong"
+        ]);
+        return confirmations.has(normalized);
     }
 
     matchesConfirmedFact(scenario, normalized) {
