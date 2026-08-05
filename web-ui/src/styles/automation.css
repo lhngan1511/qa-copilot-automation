@@ -273,3 +273,61 @@
 .codegen-modal--wide {
     max-width: 720px;
 }
+
+/* Sprint 1 — header summary (Module / Chức năng / Môi trường tự đọc) */
+.automation-header__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.automation-summary-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: grid;
+    gap: 4px;
+}
+
+.automation-summary-item label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.04em;
+}
+
+.automation-summary-item strong {
+    font-size: 15px;
+    color: #111827;
+}
+
+.automation-summary-item small {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.automation-summary-item input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.automation-data-requirement {
+    font-size: 12px;
+    color: #374151;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 0 0 10px;
+}
+
+.automation-data-hint {
+    font-size: 11px;
+    color: #b45309;
+}
