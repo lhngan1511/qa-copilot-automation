@@ -27,6 +27,7 @@ class ScenarioRecommendationEngine {
         ) {
             this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
             this.generateOwnedSuggestions(knowledge, scenarios, requirement);
+            this.mergeConfirmedFacts(knowledge, scenarios, requirement);
             return this.removeDuplicateScenarios(scenarios);
         }
 
@@ -66,7 +67,268 @@ class ScenarioRecommendationEngine {
             requirement
         );
 
+        this.mergeConfirmedFacts(knowledge, scenarios, requirement);
         return this.removeDuplicateScenarios(scenarios);
+    }
+
+    mergeConfirmedFacts(knowledge, scenarios, requirement) {
+        const confirmed = this.collectConfirmedKnowledge(knowledge);
+        if (confirmed.length === 0) return;
+
+        /*
+         Feed the confirmed knowledge into the existing recommendation
+         context: each fact that already maps onto a business scenario
+         (matched by its covered rules / expected results) is attached to
+         that scenario and traced back to its CLARIFICATION source. This is
+         the primary path - confirmed facts stay inside the business
+         scenario they belong to instead of becoming standalone entries.
+         */
+
+        const uncovered = [];
+        confirmed.forEach(item => {
+            const normalized = this.normalizeForComparison(item.fact);
+            const existing = scenarios.find(scenario =>
+                this.matchesConfirmedFact(scenario, normalized)
+            );
+            if (existing) {
+                existing.sourceReferences = this.mergeSourceReferences(
+                    existing.sourceReferences,
+                    item.references
+                );
+                if (
+                    Array.isArray(existing.expectedResults) &&
+                    !existing.expectedResults.some(value =>
+                        this.normalizeForComparison(value) === normalized
+                    )
+                ) {
+                    existing.expectedResults.push(item.fact);
+                }
+                return;
+            }
+            uncovered.push(item);
+        });
+
+        /*
+         Facts that are not covered by an existing business scenario are
+         classified semantically:
+         - a fact that describes an independent test behaviour becomes its own
+           business scenario (never a generic "group" of unrelated facts);
+         - the scenario type and title are derived from the fact's meaning
+           (login failure -> NEGATIVE, masking -> VALIDATION, attempt limit ->
+           BUSINESS_RULE), so the final test type is not a catch-all
+           CONFIRMED_FACT when a concrete business type is known.
+         Each scenario keeps its CLARIFICATION source reference.
+         */
+
+        if (uncovered.length === 0) return;
+
+        uncovered.forEach(item => {
+            const scenario = this.buildConfirmedFactScenario(knowledge, item, requirement);
+            if (!scenario) return;
+            this.generateFromList(
+                [scenario],
+                scenario.type,
+                scenario.priority || "HIGH",
+                scenarios,
+                requirement
+            );
+        });
+    }
+
+    collectConfirmedKnowledge(knowledge) {
+        const sourceMap = this.isPlainObject(knowledge?.knowledgeSources)
+            ? knowledge.knowledgeSources
+            : {};
+        const result = [];
+
+        [
+            "confirmedFacts",
+            "businessRules",
+            "validationRules",
+            "permissions",
+            "boundaryCases"
+        ].forEach(field => {
+            const facts = Array.isArray(knowledge[field]) ? knowledge[field] : [];
+            const bucket = this.isPlainObject(sourceMap[field]) ? sourceMap[field] : {};
+            facts.forEach(fact => {
+                if (typeof fact !== "string" || !fact.trim()) return;
+                const normalized = this.normalizeForComparison(fact);
+                const trackedKey = Object.keys(bucket).find(
+                    key => this.normalizeForComparison(key) === normalized
+                );
+                const references =
+                    trackedKey !== undefined && Array.isArray(bucket[trackedKey])
+                        ? bucket[trackedKey]
+                        : [];
+                /*
+                 Only the dedicated confirmedFacts bucket is trusted on its
+                 own. For the semantic collections a confirmed fact must carry
+                 a CLARIFICATION source reference, otherwise it is a regular
+                 rule already represented by the normal recommendation flow.
+                 */
+                if (field !== "confirmedFacts" && references.length === 0) return;
+                if (result.some(item => this.normalizeForComparison(item.fact) === normalized)) {
+                    return;
+                }
+                result.push({ fact, references, field });
+            });
+        });
+
+        return result;
+    }
+
+    matchesConfirmedFact(scenario, normalized) {
+        const candidateTexts = [
+            ...this.getArray(scenario.coveredRules),
+            ...this.getArray(scenario.expectedResults),
+            ...this.getArray(scenario.sourceItems).map(item =>
+                this.getText(item?.content ?? item?.rule ?? item?.title ?? "")
+            )
+        ];
+        return candidateTexts.some(value =>
+            this.normalizeForComparison(value) === normalized
+        );
+    }
+
+    buildConfirmedFactScenario(knowledge, item, requirement) {
+        const feature = this.resolveConfirmedFeature(knowledge, requirement);
+        const moduleName =
+            this.getText(knowledge?.module?.name) ||
+            this.extractModuleFromFeature(this.getText(requirement?.feature)) ||
+            this.getText(feature) ||
+            "Chức năng";
+        const fact = item.fact;
+        const classification = this.classifyConfirmedFact(feature, fact);
+
+        return {
+            module: moduleName,
+            moduleId: this.getText(knowledge?.module?.id),
+            feature,
+            functionId: this.getText(knowledge?.module?.id),
+            functionName: feature,
+            title: classification.title,
+            type: classification.type,
+            priority: classification.priority || "HIGH",
+            reason: "Tester-confirmed fact",
+            description: classification.title,
+            expectedResults: [fact],
+            coveredRules: [fact],
+            sourceReferences: this.cloneRefs(item.references)
+        };
+    }
+
+    classifyConfirmedFact(feature, fact) {
+        const f = this.capitalize(this.getText(feature) || "Chức năng");
+        const normalized = this.comparable(fact);
+
+        /*
+         Attempt limit / lockout -> a boundary-style business rule.
+         Keep the confirmed count in the title when present.
+         */
+        if (
+            /(gioi han|so lan|khong qua|toi da|toi thieu|khoa tai khoan|khoa tai khoan sau|\blan\b)/.test(
+                normalized
+            )
+        ) {
+            const count = String(fact ?? "").match(/\d+/)?.[0];
+            const limit = count ? `${count} lần` : "số lần quy định";
+            return {
+                title: `${f} sai quá ${limit} và kiểm tra cơ chế giới hạn`,
+                type: "BUSINESS_RULE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Password masking / hidden input -> a validation concern.
+         */
+        if (/che dau|masking|bi an|an mat|khong hien thi/.test(normalized)) {
+            return {
+                title: `${f} với mật khẩu được che dấu khi nhập`,
+                type: "VALIDATION",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Wrong credentials / failed login -> negative behaviour.
+         */
+        if (
+            /(sai (mat khau|tai khoan)|sai thong tin dang nhap|khong duoc dang nhap|dang nhap that bai|dang nhap khong thanh cong|mat khau.*khong (dung|chinh xac)|tai khoan.*khong (dung|chinh xac))/.test(
+                normalized
+            )
+        ) {
+            return {
+                title: `${f} sai mật khẩu và kiểm tra phản hồi`,
+                type: "NEGATIVE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Generic failure handling.
+         */
+        if (/(loi|fail|that bai|khong hop le|khong duoc)/.test(normalized)) {
+            return {
+                title: `${f} và xử lý đúng phản hồi lỗi`,
+                type: "NEGATIVE",
+                priority: "HIGH"
+            };
+        }
+
+        /*
+         Fallback: treat as an independent confirmed behaviour with a business
+         title (never the raw fact as title).
+         */
+        return {
+            title: `${f}: ${this.getText(fact)}`,
+            type: "CONFIRMED_FACT",
+            priority: "HIGH"
+        };
+    }
+
+    resolveConfirmedFeature(knowledge, requirement) {
+        const functions = this.getArray(knowledge?.functions).filter(
+            fn => this.getText(fn?.name)
+        );
+        if (functions.length === 1) {
+            return this.getText(functions[0].name);
+        }
+        const moduleName = this.getText(knowledge?.module?.name);
+        if (moduleName) {
+            return this.capitalize(moduleName);
+        }
+        const feature = this.getText(requirement?.feature);
+        return feature || "Chức năng";
+    }
+
+    comparable(value) {
+        return String(value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "d")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    cloneRefs(references) {
+        return (Array.isArray(references) ? references : []).map(reference => ({ ...reference }));
+    }
+
+    capitalize(value) {
+        const text = this.getText(value);
+        return text ? text.charAt(0).toLocaleUpperCase("vi") + text.slice(1) : "";
+    }
+
+    mergeSourceReferences(current, incoming) {
+        const result = Array.isArray(current) ? [...current] : [];
+        (Array.isArray(incoming) ? incoming : []).forEach(reference => {
+            if (!reference || !reference.sourceType || !reference.sourceId) return;
+            if (!result.some(item => item.sourceType === reference.sourceType && item.sourceId === reference.sourceId)) result.push({ ...reference });
+        });
+        return result;
     }
 
     generateFromStructuredFunctions(knowledge, scenarios, requirement) {
@@ -429,6 +691,8 @@ class ScenarioRecommendationEngine {
                 coveredRules: this.getArray(item?.coveredRules),
 
                 sourceItems: this.getArray(item?.sourceItems),
+
+                sourceReferences: this.getArray(item?.sourceReferences),
 
                 riskReason: this.getText(item?.riskReason),
 
@@ -838,6 +1102,10 @@ class ScenarioRecommendationEngine {
 
     getArray(value) {
         return Array.isArray(value) ? value : [];
+    }
+
+    isPlainObject(value) {
+        return Boolean(value && typeof value === "object" && !Array.isArray(value));
     }
 
     getTestData(value) {

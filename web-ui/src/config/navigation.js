@@ -23,19 +23,20 @@ export const navigationGroups = [
         items: [
             {
                 label: "Automation Intelligence",
-                description: "Automation Intelligence",
-                icon: "automation",
-                soon: true
+                description: "Sinh mã và thực thi testcase",
+                to: "/automation/workspaces/new",
+                activePrefix: "/automation",
+                icon: "automation"
             },
             {
                 label: "CodeGen",
-                description: "AI Code Generation",
+                description: "Thư viện CodeGen",
                 icon: "code",
                 soon: true
             },
             {
                 label: "Reports",
-                description: "Báo cáo & thống kê",
+                description: "Báo cáo và thống kê",
                 icon: "reports",
                 soon: true
             }

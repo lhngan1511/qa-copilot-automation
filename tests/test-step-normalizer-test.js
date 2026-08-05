@@ -236,4 +236,29 @@ assert.deepEqual(
     ["Kích hoạt đồng bộ dữ liệu"]
 );
 
+// Regression: a short real main action must NOT be swallowed by a longer
+// precondition that merely contains it (e.g. action "Đăng nhập" vs.
+// precondition "Người dùng chưa đăng nhập").
+const loginActionKept = normalizer.normalize(
+    [
+        { order: 1, action: "Mở chức năng Đăng nhập" },
+        { order: 2, action: "Đăng nhập" },
+        { order: 3, action: "Kiểm tra kết quả nghiệp vụ" }
+    ],
+    {
+        feature: "Đăng nhập",
+        operation: "AUTHENTICATE",
+        preconditions: [
+            "Người dùng chưa đăng nhập",
+            "Người dùng có tài khoản trong hệ thống",
+            "Người dùng đang ở màn hình đăng nhập"
+        ]
+    }
+);
+const loginActions = loginActionKept.map(step => step.action);
+assert.ok(
+    loginActions.includes("Đăng nhập"),
+    `main action "Đăng nhập" must be kept, got: ${JSON.stringify(loginActions)}`
+);
+
 console.log("Test step normalizer test PASSED");

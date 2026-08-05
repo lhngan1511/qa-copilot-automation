@@ -156,7 +156,58 @@ export default class RequirementKnowledgeMapper {
             this.collect([parsedRequirement.risks, parsedRequirement.riskAreas])
         ]);
 
+        this.mergeApprovedClarifications(knowledge, artifact);
         return knowledge;
+    }
+
+    mergeApprovedClarifications(knowledge, artifact) {
+        if (artifact.approvalStatus !== "approved" || !Array.isArray(artifact.questions)) return;
+        const sources = this.isObject(knowledge.knowledgeSources) ? knowledge.knowledgeSources : {};
+        for (const question of artifact.questions) {
+            if (!this.isObject(question) || question.status !== "answered") continue;
+            const answer = String(question.answer ?? "").trim();
+            if (!answer) continue;
+            const sourceId = String(question.questionId ?? question.id ?? "").trim();
+            const category = this.mapClarificationCategory(question.category ?? question.type);
+            const field = category.field;
+            if (field) {
+                knowledge[field] = this.mergeStringFact(knowledge[field], answer);
+                sources[field] = sources[field] ?? {};
+                this.addSourceReference(sources[field], answer, sourceId);
+            } else {
+                knowledge.confirmedFacts = this.mergeStringFact(knowledge.confirmedFacts, answer);
+                sources.confirmedFacts = sources.confirmedFacts ?? {};
+                this.addSourceReference(sources.confirmedFacts, answer, sourceId);
+            }
+        }
+        knowledge.knowledgeSources = sources;
+    }
+
+    mapClarificationCategory(value) {
+        const category = String(value ?? "").trim().toLowerCase();
+        if (category === "business rule" || category === "business_rule") return { field: "businessRules" };
+        if (category === "validation") return { field: "validationRules" };
+        if (category === "permission") return { field: "permissions" };
+        if (category === "boundary") return { field: "boundaryCases" };
+        return { field: "" };
+    }
+
+    mergeStringFact(values, fact) {
+        const current = Array.isArray(values) ? values.filter(value => typeof value === "string") : [];
+        const key = this.normalizeFactKey(fact);
+        return current.some(value => this.normalizeFactKey(value) === key) ? current : [...current, fact];
+    }
+
+    addSourceReference(bucket, fact, sourceId) {
+        const key = this.normalizeFactKey(fact);
+        const references = Array.isArray(bucket[key]) ? bucket[key] : [];
+        const source = { sourceType: "CLARIFICATION", sourceId };
+        if (sourceId && !references.some(item => item?.sourceType === source.sourceType && item?.sourceId === source.sourceId)) references.push(source);
+        bucket[key] = references;
+    }
+
+    normalizeFactKey(value) {
+        return String(value ?? "").trim().toLowerCase().replace(/\\s+/g, " ");
     }
 
     normalizeFunctions(functions, module) {

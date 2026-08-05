@@ -100,6 +100,10 @@ class TestCaseGenerator {
                 testCase.sourceItem =
                     scenario.sourceItem === undefined ? null : this.cloneValue(scenario.sourceItem);
 
+                testCase.sourceReferences = Array.isArray(scenario.sourceReferences)
+                    ? this.cloneValue(scenario.sourceReferences)
+                    : [];
+
                 testCase.ruleClassification = scenario.ruleClassification ?? "";
 
                 testCase.needsClarification = scenario.needsClarification ?? false;

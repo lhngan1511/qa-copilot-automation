@@ -4,6 +4,7 @@ import { resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 const FINAL_TYPES = new Set([
     "POSITIVE",
+    "CONFIRMED_FACT",
     "VALIDATION",
     "NEGATIVE",
     "BUSINESS_RULE",

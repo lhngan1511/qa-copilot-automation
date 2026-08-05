@@ -1295,8 +1295,15 @@ class QACopilot {
         knowledge = this.requirementKnowledgeMapper.map({
             approvedArtifact: analysisArtifact,
             clarificationQuestions: analysisArtifact.questions,
-            clarificationAnswers: analysisArtifact.questions
+            clarificationAnswers: analysisArtifact.questions.filter(question =>
+                this.isAnsweredClarificationQuestion(question)
+            )
         });
+
+        console.log(
+            "[Clarification] RequirementKnowledge before core generation:",
+            JSON.stringify(knowledge.clarificationAnswers)
+        );
 
         if (!knowledge.isApproved()) {
             throw new Error(
@@ -1489,7 +1496,20 @@ class QACopilot {
             )
             .filter(Boolean);
 
+        /*
+         A scenario carrying a CLARIFICATION source reference is a
+         tester-confirmed behaviour and must always reach testcase
+         generation, whatever its classified business type.
+         */
+        if (
+            (Array.isArray(scenario?.sourceReferences) ? scenario.sourceReferences : []).some(
+                reference => reference?.sourceType === "CLARIFICATION"
+            )
+        ) {
+            return true;
+        }
         if (type === "POSITIVE") return true;
+        if (type === "CONFIRMED_FACT") return true;
         if (
             type === "BUSINESS_RULE" &&
             (groupType === "BUSINESS_RULE" || sourceTypes.includes("BUSINESS_RULE"))

@@ -78,11 +78,30 @@ class ScenarioEnrichmentEngine {
             assertions
         );
 
-        const title = this.contentNormalizer.normalizeTitle({
-            ...sourceScenario,
-            sourceItem: context.sourceItem,
-            operation: context.operation
-        });
+        /*
+         Tester-confirmed scenarios carry a CLARIFICATION source reference and
+         already have a meaningful business title from the recommendation
+         engine. Preserve that title instead of re-normalizing it (which would
+         overwrite e.g. the confirmed attempt-limit count).
+         */
+        const isConfirmedScenario = (
+            Array.isArray(sourceScenario?.sourceReferences)
+                ? sourceScenario.sourceReferences
+                : []
+        ).some(reference => reference?.sourceType === "CLARIFICATION");
+
+        const title = isConfirmedScenario
+            ? String(
+                  sourceScenario?.title ??
+                      sourceScenario?.testScenario ??
+                      sourceScenario?.scenario ??
+                      ""
+              ).trim()
+            : this.contentNormalizer.normalizeTitle({
+                  ...sourceScenario,
+                  sourceItem: context.sourceItem,
+                  operation: context.operation
+              });
         const preconditions = this.cloneValue(context.preconditions);
         const businessRuleIds = this.contentNormalizer.extractBusinessRuleIds(
             sourceScenario.title,

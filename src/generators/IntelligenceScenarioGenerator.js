@@ -108,6 +108,10 @@ class IntelligenceScenarioGenerator {
             ? this.cloneValue(item.sourceItems)
             : [];
 
+        scenario.sourceReferences = Array.isArray(item.sourceReferences)
+            ? this.cloneValue(item.sourceReferences)
+            : [];
+
         scenario.riskReason = item.riskReason ?? "";
 
         scenario.testDataHints = Array.isArray(item.testDataHints) ? [...item.testDataHints] : [];
