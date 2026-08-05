@@ -66,8 +66,8 @@ export default function AutomationTestCaseList({
             <div className="automation-action-bar">
                 <label className="automation-select-all"><input type="checkbox" checked={allSelected} onChange={() => onSelectAll(selectable.map(item => item.id), allSelected)} /> Chọn tất cả</label>
                 <span className="automation-action-bar__buttons">
-                    <button className="button button--secondary" type="button" disabled={selectedIds.length === 0} onClick={() => onGenerate([...selectedIds])}>Sinh automation đã chọn</button>
-                    <button className="button button--secondary" type="button" disabled={selectedIds.length === 0} onClick={() => onRun([...selectedIds])}>Chạy testcase đã chọn</button>
+                    <button className="button button--secondary" type="button" disabled={selectedIds.length === 0 || !analyzed} onClick={() => onGenerate([...selectedIds])}>Sinh automation đã chọn</button>
+                    <button className="button button--secondary" type="button" disabled={selectedIds.length === 0 || !analyzed} onClick={() => onRun([...selectedIds])}>Chạy testcase đã chọn</button>
                 </span>
             </div>
             <div className="automation-testcase-items">

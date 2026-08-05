@@ -120,12 +120,15 @@ export default function AutomationWorkspacePage() {
         return { ...item, ...patch, status: contentChanged ? (item.generatedCode ? "REGENERATE_REQUIRED" : "EDITED") : patch.status || item.status };
     }));
     const removeTestCase = id => { setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: false, status: "REMOVED" } : item)); setSelectedTestCaseIds(current => current.filter(item => item !== id)); };
+    // Run: cần file đã sinh + testcase sẵn dữ liệu (isReady).
     const runRequest = async ids => {
         const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession).filter(isReady);
         for (const item of items) { if (!item.generatedFile) continue; const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" } : currentItem)); }
     };
+    // Generate: cần MAPPING (sau Analyze), KHÔNG cần test-data ready.
     const generateRequest = async ids => {
-        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession).filter(isReady);
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0);
+        if (!items.length) { setNotice("Chưa có mapping để sinh automation. Hãy chạy 'Phân tích bằng AI' trước."); return; }
         if (!codeGenFile?.content) return; setBusy(true); setNotice("");
         try { for (const item of items) { const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" } : currentItem)); } } catch (error) { setNotice(error.message || "Sinh mã kiểm thử không thành công."); } finally { setBusy(false); }
     };
@@ -168,6 +171,22 @@ export default function AutomationWorkspacePage() {
     return <section className="page automation-page">
         <Link className="back-link" to="/">← Về Dashboard</Link>
         <header className="automation-page__heading"><div><p className="workflow-id">AUTOMATION INTELLIGENCE</p><h2>Automation Workspace</h2><p>Đưa hai file vào, AI sẽ làm phần còn lại. Bạn chỉ cần review.</p></div></header>
+
+        {/* Stepper định hướng */}
+        <div className="automation-stepper">
+            {[
+                ["① Upload", "approved-testcases + CodeGen"],
+                ["② AI phân tích", "tạo mapping"],
+                ["③ Review", "xem chi tiết AI"],
+                ["④ Sinh automation", "tạo spec.js"],
+                ["⑤ Chạy", "PASS / FAIL"]
+            ].map(([label, sub], i) => (
+                <div className={`automation-stepper__item ${i === 0 ? "automation-stepper__item--active" : ""}`} key={label}>
+                    <span className="automation-stepper__label">{label}</span>
+                    <span className="automation-stepper__sub">{sub}</span>
+                </div>
+            ))}
+        </div>
         {notice && <div className="automation-notice" role="status">{notice}</div>}
         {busy && <div className="automation-notice" role="status">Đang xử lý...</div>}
 

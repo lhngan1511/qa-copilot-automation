@@ -508,3 +508,37 @@
 .automation-testcase-card__title { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1; min-width: 0; }
 .automation-testcase-card__title strong { color: #111827; font-size: 13px; }
 .automation-testcase-card__title span { color: #374151; font-size: 14px; font-weight: 600; word-break: break-word; }
+
+/* Sprint G1 — stepper + font lớn hơn cho tester */
+.automation-stepper {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 4px 0 16px;
+}
+.automation-stepper__item {
+    flex: 1 1 150px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.automation-stepper__item--active { border-color: #3b82f6; background: #eff6ff; }
+.automation-stepper__label { font-size: 15px; font-weight: 700; color: #111827; }
+.automation-stepper__sub { font-size: 12px; color: #6b7280; }
+
+/* Tăng font toàn trang Automation Intelligence */
+.automation-page { font-size: 16px; }
+.automation-page h2 { font-size: 22px; }
+.automation-page h3 { font-size: 18px; }
+.automation-testcase-card__title span { font-size: 16px; }
+.automation-testcase-card__title strong { font-size: 14px; }
+.automation-summary__line { font-size: 13px; }
+.automation-summary__title { font-size: 13px; }
+.automation-status { font-size: 13px; }
+.automation-inspector { font-size: 15px; }
+.automation-review__block li { font-size: 15px; }
+.automation-data-row input { font-size: 15px; padding: 9px 11px; }
