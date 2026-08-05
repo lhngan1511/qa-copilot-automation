@@ -44,7 +44,9 @@ export default class CodeGenSessionManager {
         store = null,
         runner = null,
         spawnFn = spawn,
-        playwrightBin = null
+        playwrightBin = null,
+        playwrightCliPath = null,
+        execPath = process.execPath
     } = {}) {
         this.rootDir = rootDir;
         this.tempDir = tempDir ?? path.join(os.tmpdir(), "qa-copilot-codegen");
@@ -52,7 +54,9 @@ export default class CodeGenSessionManager {
         this.store = store ?? new CodeGenRecordingStore({ scriptsDir: path.resolve(rootDir, "outputs", "codegen") });
         this.runner = runner;
         this.spawnFn = spawnFn;
+        this.execPath = execPath;
         this.playwrightBin = playwrightBin ?? this.resolvePlaywrightBin();
+        this.playwrightCliPath = playwrightCliPath ?? this.resolvePlaywrightCli();
 
         this.session = null; // phiên ghi đang chạy
         this.status = "IDLE";
@@ -66,6 +70,20 @@ export default class CodeGenSessionManager {
         return process.platform === "win32"
             ? path.join(binDir, "playwright.cmd")
             : path.join(binDir, "playwright");
+    }
+
+    /**
+     * Resolve Playwright CLI JS entry (node_modules/playwright/cli.js).
+     * Dùng process.execPath (node) để spawn file .js này: chạy ổn định trên
+     * Windows (tránh lỗi EINVAL khi spawn .cmd trực tiếp) và trên các OS khác.
+     */
+    resolvePlaywrightCli() {
+        const cli = path.join(this.rootDir, "node_modules", "playwright", "cli.js");
+        if (fs.existsSync(cli)) return cli;
+        // Fallback: bin symlink từ .bin
+        const bin = this.resolvePlaywrightBin();
+        if (fs.existsSync(bin)) return bin;
+        return cli;
     }
 
     ensureTempDir() {
@@ -132,20 +150,68 @@ export default class CodeGenSessionManager {
         ];
         if (channel) args.push("--channel", channel);
 
-        const child = this.spawnFn(this.playwrightBin, args, {
+        /*
+         Spawn Playwright CodeGen ổn định đa nền tảng:
+         - command = process.execPath (node) + Playwright CLI .js (đã resolve
+           từ node_modules/playwright/cli.js). Tránh spawn .cmd trực tiếp vốn
+           lỗi EINVAL trên Windows.
+         - URL / browser / output path là từng phần tử args riêng (không ghép
+           chuỗi lệnh).
+        */
+        const command = this.execPath;
+        const spawnArgs = [this.playwrightCliPath, ...args];
+
+        console.log("[CodeGen] start before spawn:", JSON.stringify({
+            platform: process.platform,
+            command,
+            args: spawnArgs,
             cwd: this.rootDir,
-            env: {
-                ...process.env,
-                PLAYWRIGHT_BROWSER_CHANNEL: channel || ""
-            },
-            stdio: ["ignore", "pipe", "pipe"]
-        });
+            outputPath: recordingFile,
+            browser: normalizedBrowser,
+            channel: channel || null,
+            url: normalizedUrl
+        }));
+
+        let child;
+        try {
+            child = this.spawnFn(command, spawnArgs, {
+                cwd: this.rootDir,
+                env: {
+                    ...process.env,
+                    PLAYWRIGHT_BROWSER_CHANNEL: channel || ""
+                },
+                stdio: ["ignore", "pipe", "pipe"]
+            });
+        } catch (error) {
+            // spawn lỗi đồng bộ (vd EINVAL): cập nhật recording sang ERROR và trả lỗi rõ.
+            const detail = this.describeSpawnError(error, command, spawnArgs);
+            this.store.update(recording.recordingId, {
+                status: "ERROR",
+                lastRunResult: { status: "ERROR", passed: false, error: detail.message, output: detail.message }
+            });
+            throw detail.error;
+        }
+
+        console.log(`[CodeGen] spawned PID: ${child?.pid ?? "unknown"}`);
 
         let log = "";
         child.stdout?.on("data", chunk => (log += String(chunk)));
         child.stderr?.on("data", chunk => (log += String(chunk)));
 
-        this.session = { url: normalizedUrl, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log };
+        // Bắt lỗi async từ process (vd EINVAL emit qua 'error' event).
+        child.on("error", error => {
+            console.error("[CodeGen] spawn error event:", JSON.stringify(this.describeSpawnError(error, command, spawnArgs)));
+            if (this.session?.recordingId === recording.recordingId) {
+                const detail = this.describeSpawnError(error, command, spawnArgs);
+                this.store.update(recording.recordingId, {
+                    status: "ERROR",
+                    lastRunResult: { status: "ERROR", passed: false, error: detail.message, output: detail.message }
+                });
+                this.status = "ERROR";
+            }
+        });
+
+        this.session = { url: normalizedUrl, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log, pid: child?.pid ?? null };
         this.status = "RECORDING";
         this.activeRecording = recording.recordingId;
 
@@ -343,6 +409,32 @@ export default class CodeGenSessionManager {
     truncateOutput(text, max = 4000) {
         const value = String(text ?? "");
         return value.length > max ? `${value.slice(0, max)}...` : value;
+    }
+
+    /**
+     * Mô tả lỗi spawn đầy đủ (name/message/code/errno/syscall + command/args)
+     * và trả Error rõ ràng cho UI.
+     */
+    describeSpawnError(error, command, args) {
+        const e = error instanceof Error ? error : new Error(String(error ?? "Spawn failed"));
+        const detail = {
+            name: e.name ?? "Error",
+            message: e.message ?? String(error ?? ""),
+            code: e.code ?? null,
+            errno: e.errno ?? null,
+            syscall: e.syscall ?? null,
+            command,
+            args: Array.isArray(args) ? args : []
+        };
+        const hint =
+            e.code === "EINVAL" || e.errno === "EINVAL"
+                ? "spawn EINVAL: có thể do spawn command không hợp lệ trên nền tảng này. CodeGen dùng process.execPath + Playwright CLI .js để tránh lỗi .cmd trên Windows."
+                : "";
+        const message = `Không thể khởi chạy Playwright CodeGen. Chi tiết: ${JSON.stringify(detail)}${hint ? ` ${hint}` : ""}`;
+        const wrapped = new Error(message);
+        wrapped.code = "CODE_GEN_SPAWN_FAILED";
+        wrapped.details = detail;
+        return { error: wrapped, message };
     }
 
     /** Open Folder — chỉ khi có serverFilePath. */

@@ -7,8 +7,10 @@ import CodeGenSessionManager from "../src/codegen/CodeGenSessionManager.js";
 import CodeGenRecordingStore from "../src/codegen/CodeGenRecordingStore.js";
 import ApprovedTestcaseLoader from "../src/codegen/ApprovedTestcaseLoader.js";
 
+let fakePidCounter = 1000;
 function fakeChild() {
     const child = new EventEmitter();
+    child.pid = fakePidCounter++;
     child.kill = () => {
         child.killed = true;
         process.nextTick(() => child.emit("exit", 0));
@@ -19,15 +21,19 @@ function fakeChild() {
     return child;
 }
 
-function buildManager({ fakeRunner = null, seedMetadata = null } = {}) {
+function buildManager({ fakeRunner = null, seedMetadata = null, execPath = process.execPath, playwrightCliPath = null, spawnThrow = null } = {}) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-test-"));
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-data-"));
     const metadataFile = path.join(dataDir, "codegen-recordings.json");
     const scriptsDir = path.join(dataDir, "codegen-scripts");
     let child = null;
+    let lastSpawn = null;
     const spawnFn = (bin, args) => {
+        lastSpawn = { bin, args };
+        if (spawnThrow) throw spawnThrow;
         child = fakeChild();
         child.args = args;
+        child.command = bin;
         return child;
     };
     const store = new CodeGenRecordingStore({ metadataFile, scriptsDir });
@@ -46,10 +52,11 @@ function buildManager({ fakeRunner = null, seedMetadata = null } = {}) {
                 }
             };
         })();
-    const manager = new CodeGenSessionManager({ rootDir: process.cwd(), tempDir, store, runner, spawnFn });
+    const manager = new CodeGenSessionManager({ rootDir: process.cwd(), tempDir, store, runner, spawnFn, execPath, playwrightCliPath });
     manager._child = () => child;
     manager._store = () => store;
     manager._dataDir = () => dataDir;
+    manager._lastSpawn = () => lastSpawn;
     return manager;
 }
 
@@ -88,15 +95,54 @@ function buildManager({ fakeRunner = null, seedMetadata = null } = {}) {
     const m = buildManager();
     const rec = await m.start({ url: "https://example.com/login", browser: "chrome", mode: "FULL_FLOW" });
     assert.equal(rec.status, "RECORDING");
-    assert.equal(m._child().args[0], "codegen");
-    assert.ok(m._child().args.includes("--channel"));
-    assert.ok(m._child().args.includes("chrome"));
+    // spawn dùng process.execPath + Playwright CLI .js (không spawn .cmd trực tiếp)
+    const spawn = m._lastSpawn();
+    assert.equal(spawn.bin, process.execPath);
+    assert.equal(spawn.args[0], m.resolvePlaywrightCli());
+    assert.equal(spawn.args[1], "codegen");
+    assert.ok(spawn.args.includes("https://example.com/login"));
+    assert.ok(spawn.args.includes("-o"));
+    assert.ok(spawn.args.includes("--browser"));
+    assert.ok(spawn.args.includes("chromium"));
+    // chrome -> --channel chrome
+    assert.ok(spawn.args.includes("--channel"));
+    assert.ok(spawn.args.includes("chrome"));
+    // có PID
+    assert.ok(m._child().pid > 0);
+
+    // edge -> msedge
+    const mEdge = buildManager();
+    await mEdge.start({ url: "https://example.com", browser: "edge", mode: "FULL_FLOW" });
+    assert.ok(mEdge._lastSpawn().args.includes("msedge"));
+    await mEdge.dispose();
+    fs.rmSync(mEdge._store().metadataFile && path.dirname(mEdge._store().metadataFile), { recursive: true, force: true });
+    fs.rmSync(mEdge.tempDir, { recursive: true, force: true });
 
     await assert.rejects(() => m.start({ url: "https://other.com" }), /đang ghi/);
     await assert.rejects(() => m.start({ url: "" }), /URL/);
     await assert.rejects(() => m.start({ url: "https://x.com", browser: "safari" }), /Browser/);
 
     await m.dispose();
+    fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
+    fs.rmSync(m.tempDir, { recursive: true, force: true });
+}
+
+// ---------- spawn lỗi (EINVAL) -> trả lỗi rõ, không im lặng ----------
+{
+    const einval = Object.assign(new Error("spawn EINVAL"), { code: "EINVAL", errno: "EINVAL", syscall: "spawn" });
+    const m = buildManager({ spawnThrow: einval });
+    let thrown = null;
+    try {
+        await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
+    } catch (error) {
+        thrown = error;
+    }
+    assert.ok(thrown, "spawn lỗi phải ném ra");
+    assert.equal(thrown.code, "CODE_GEN_SPAWN_FAILED");
+    assert.match(thrown.message, /EINVAL/);
+    // recording phải chuyển sang ERROR trong store
+    const storeRec = m._store().recordings[0];
+    assert.equal(storeRec.status, "ERROR");
     fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
     fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
