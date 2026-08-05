@@ -96,3 +96,12 @@ export async function getCodeGenStatus({ signal } = {}) {
     const response = await apiClient.get("/codegen/status", { signal });
     return response.data;
 }
+
+export async function focusCodeGenBrowser({ signal } = {}) {
+    const response = await apiClient.post("/codegen/focus", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        signal
+    });
+    return response.data;
+}

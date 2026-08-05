@@ -12,7 +12,8 @@ import {
     openReport,
     deleteRecording,
     getApprovedTestcases,
-    getCodeGenStatus
+    getCodeGenStatus,
+    focusCodeGenBrowser
 } from "../api/codeGenApi.js";
 
 const recordingsKey = ["codegen", "recordings"];
@@ -72,6 +73,7 @@ export function useCodeGenActions() {
     const openFolderMut = useMutation({ mutationFn: input => openFolder(input.recordingId, input) });
     const openReportMut = useMutation({ mutationFn: input => openReport(input.recordingId, input) });
     const remove = useMutation({ mutationFn: input => deleteRecording(input.recordingId, input), onSuccess: refresh });
+    const focus = useMutation({ mutationFn: input => focusCodeGenBrowser(input) });
 
-    return { start, stop, rename, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove };
+    return { start, stop, rename, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus };
 }

@@ -194,3 +194,53 @@
     color: #6b7280;
     font-size: 11px;
 }
+
+/* CodeGen focus modal */
+.codegen-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+}
+
+.codegen-modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 26px;
+    max-width: 480px;
+    width: 100%;
+    display: grid;
+    gap: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.codegen-modal h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.codegen-modal p {
+    margin: 0;
+    font-size: 13px;
+    color: #374151;
+}
+
+.codegen-modal-meta {
+    display: grid;
+    gap: 4px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #111827;
+}
+
+.codegen-modal-message {
+    color: #b45309 !important;
+    font-size: 12px !important;
+}

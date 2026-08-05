@@ -39,6 +39,7 @@ export default function CodeGenPage() {
     const [activeId, setActiveId] = useState("");
     const [linkMode, setLinkMode] = useState(false);
     const [selectedTestcaseIds, setSelectedTestcaseIds] = useState([]);
+    const [focusModal, setFocusModal] = useState(null); // { recordingId, url, browser, pid, message } | null
 
     const recordingsQuery = useCodeGenRecordings();
     const statusQuery = useCodeGenStatus();
@@ -68,9 +69,46 @@ export default function CodeGenPage() {
         try {
             const rec = await actions.start.mutateAsync({ url: url.trim(), browser, mode });
             setActiveId(rec.recordingId);
-            setNotice("Đã bắt đầu ghi. Thao tác trên trình duyệt CodeGen rồi bấm Dừng ghi.");
+            setNotice(`Đã bắt đầu ghi (PID ${rec.pid ?? "?"}). Đang đưa cửa sổ ghi lên foreground...`);
+            try {
+                const focus = await actions.focus.mutateAsync({});
+                if (focus?.focused) {
+                    setNotice(`Đã đưa cửa sổ ghi lên foreground (${focus.message || "PID " + (rec.pid ?? "?")}).`);
+                } else {
+                    setFocusModal({
+                        recordingId: rec.recordingId,
+                        url: url.trim(),
+                        browser,
+                        pid: rec.pid ?? null,
+                        message: focus?.message || "Không thể focus tự động."
+                    });
+                }
+            } catch {
+                setFocusModal({
+                    recordingId: rec.recordingId,
+                    url: url.trim(),
+                    browser,
+                    pid: rec.pid ?? null,
+                    message: "Không thể focus cửa sổ ghi tự động."
+                });
+            }
         } catch (error) {
             setNotice(error.message || "Không thể bắt đầu ghi.");
+        }
+    };
+
+    const handleFocusBrowser = async () => {
+        if (!focusModal) return;
+        try {
+            const focus = await actions.focus.mutateAsync({});
+            if (focus?.focused) {
+                setNotice("Đã đưa cửa sổ ghi lên foreground.");
+                setFocusModal(null);
+            } else {
+                setFocusModal(current => ({ ...current, message: focus?.message || "Vẫn chưa focus được." }));
+            }
+        } catch (error) {
+            setFocusModal(current => ({ ...current, message: error.message || "Không thể focus." }));
         }
     };
 
@@ -333,6 +371,28 @@ export default function CodeGenPage() {
                     )}
                 </div>
             </div>
+            {focusModal && (
+                <div className="codegen-modal-overlay" role="dialog" aria-modal="true" aria-label="Cửa sổ ghi">
+                    <div className="codegen-modal">
+                        <h3>Trình duyệt ghi thao tác đã được mở ở cửa sổ khác</h3>
+                        <p>Nhấn <strong>Alt+Tab</strong> và chọn <strong>Chrome / Playwright Inspector</strong> để thao tác.</p>
+                        <div className="codegen-modal-meta">
+                            <span><strong>Browser:</strong> {focusModal.browser}</span>
+                            <span><strong>PID:</strong> {focusModal.pid ?? "?"}</span>
+                            <span><strong>URL:</strong> {focusModal.url}</span>
+                        </div>
+                        {focusModal.message && <p className="codegen-modal-message">{focusModal.message}</p>}
+                        <div className="codegen-row">
+                            <button className="button button--primary" type="button" disabled={actions.focus.isPending} onClick={handleFocusBrowser}>
+                                {actions.focus.isPending ? "Đang focus..." : "Focus browser"}
+                            </button>
+                            <button className="button button--secondary" type="button" onClick={() => setFocusModal(null)}>
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

@@ -46,7 +46,10 @@ export default class CodeGenSessionManager {
         spawnFn = spawn,
         playwrightBin = null,
         playwrightCliPath = null,
-        execPath = process.execPath
+        execPath = process.execPath,
+        platform = process.platform,
+        focusFn = null,
+        powershell = "powershell.exe"
     } = {}) {
         this.rootDir = rootDir;
         this.tempDir = tempDir ?? path.join(os.tmpdir(), "qa-copilot-codegen");
@@ -55,14 +58,92 @@ export default class CodeGenSessionManager {
         this.runner = runner;
         this.spawnFn = spawnFn;
         this.execPath = execPath;
+        this.platform = platform;
+        this.focusFn = focusFn ?? null;
+        this.powershell = powershell;
         this.playwrightBin = playwrightBin ?? this.resolvePlaywrightBin();
         this.playwrightCliPath = playwrightCliPath ?? this.resolvePlaywrightCli();
 
         this.session = null; // phiên ghi đang chạy
         this.status = "IDLE";
         this.activeRecording = null; // recording record của phiên đang ghi
+        this.error = null;
 
         this.ensureTempDir();
+    }
+
+    /** Thông tin phiên hiện tại (cho status endpoint). */
+    getSessionInfo() {
+        const s = this.session;
+        const rec = s?.recordingId ? this.store.get(s.recordingId) : null;
+        return {
+            status: this.status,
+            recordingId: s?.recordingId ?? this.activeRecording ?? null,
+            pid: s?.pid ?? null,
+            url: s?.url ?? null,
+            browser: rec?.browser ?? s?.browser ?? null,
+            command: s?.command ?? null,
+            processAlive: s?.child ? s.child.exitCode == null : false,
+            startedAt: s?.startedAt ?? null,
+            error: this.error ?? null
+        };
+    }
+
+    /**
+     * Best-effort: đưa cửa sổ browser CodeGen lên foreground (chỉ Windows).
+     * Nếu nền tảng khác hoặc không focus được -> focused:false, không crash.
+     */
+    async focusBrowserWindow() {
+        if (this.platform !== "win32") {
+            return {
+                attempted: false,
+                focused: false,
+                supported: false,
+                message: "Không hỗ trợ focus tự động trên nền tảng này (chỉ Windows). Hãy Alt+Tab sang cửa sổ Chrome/Playwright Inspector.",
+                pid: this.session?.pid ?? null
+            };
+        }
+        if (this.focusFn) {
+            return this.focusFn({ session: this.session });
+        }
+        const result = await this.focusViaPowerShell();
+        return result;
+    }
+
+    focusViaPowerShell() {
+        return new Promise(resolve => {
+            const script =
+                "Get-Process | Where-Object { $_.ProcessName -match 'chrome|msedge|chromium|headless' -and $_.MainWindowTitle } " +
+                "| Sort-Object StartTime -Descending | Select-Object -First 1 | ForEach-Object { " +
+                "$wshell = New-Object -ComObject wscript.shell; $null = $wshell.AppActivate($_.Id); 'FOCUSED:' + $_.Id }";
+            let out = "";
+            let err = "";
+            let child;
+            try {
+                child = this.spawnFn(this.powershell, ["-NoProfile", "-Command", script], {
+                    windowsHide: true,
+                    stdio: ["ignore", "pipe", "pipe"]
+                });
+            } catch (e) {
+                resolve({ attempted: true, focused: false, supported: true, message: `Không thể gọi PowerShell: ${e.message}`, pid: this.session?.pid ?? null });
+                return;
+            }
+            child.stdout?.on("data", d => (out += String(d)));
+            child.stderr?.on("data", d => (err += String(d)));
+            child.on("error", e => resolve({ attempted: true, focused: false, supported: true, message: `Lỗi PowerShell: ${e.message}`, pid: this.session?.pid ?? null }));
+            child.on("close", code => {
+                const found = /FOCUSED:\d+/.test(out);
+                resolve({
+                    attempted: true,
+                    focused: found,
+                    supported: true,
+                    message: found
+                        ? `Đã đưa cửa sổ ghi lên foreground (PID ${out.match(/FOCUSED:(\d+)/)?.[1] ?? ""}).`
+                        : `Không tìm thấy cửa sổ ghi (exit=${code}). Hãy Alt+Tab sang Chrome/Playwright Inspector. ${err}`,
+                    pid: this.session?.pid ?? null
+                });
+            });
+        });
     }
 
     resolvePlaywrightBin() {
@@ -208,17 +289,45 @@ export default class CodeGenSessionManager {
                     lastRunResult: { status: "ERROR", passed: false, error: detail.message, output: detail.message }
                 });
                 this.status = "ERROR";
+                this.error = detail.error;
             }
         });
 
-        this.session = { url: normalizedUrl, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log, pid: child?.pid ?? null };
+        // Chỉ coi là RECORDING khi spawn thành công VÀ có PID.
+        const pid = child?.pid ?? null;
+        if (!pid) {
+            const detail = this.describeSpawnError(new Error("Process spawned nhưng không có PID."), command, spawnArgs);
+            this.store.update(recording.recordingId, {
+                status: "ERROR",
+                lastRunResult: { status: "ERROR", passed: false, error: detail.message, output: detail.message }
+            });
+            throw detail.error;
+        }
+
+        console.log(`[CodeGen] recording started: ${JSON.stringify({
+            recordingId: recording.recordingId,
+            pid,
+            command,
+            url: normalizedUrl,
+            browser: normalizedBrowser
+        })}`);
+
+        this.session = { url: normalizedUrl, browser: normalizedBrowser, command, child, recordingFile, recordingId: recording.recordingId, startedAt: new Date().toISOString(), log, pid };
         this.status = "RECORDING";
         this.activeRecording = recording.recordingId;
+        this.error = null;
+        const startedAtMs = Date.now();
 
         child.on("exit", code => {
             if (this.status === "RECORDING" && this.session?.recordingId === recording.recordingId) {
                 const content = this.readRecordingFile(recordingFile);
-                const status = content.trim() ? "STOPPED" : "ERROR";
+                const elapsedMs = Date.now() - startedAtMs;
+                // Browser đóng ngay (chưa đủ thời gian ghi) -> INTERRUPTED, không để RECORDING giả.
+                const status = content.trim()
+                    ? "STOPPED"
+                    : elapsedMs < 5000
+                      ? "INTERRUPTED"
+                      : "ERROR";
                 this.store.update(recording.recordingId, {
                     scriptContent: content,
                     status,
@@ -226,12 +335,20 @@ export default class CodeGenSessionManager {
                 });
                 this.status = status;
                 this.error = !content.trim()
-                    ? { code: "CODE_GEN_BROWSER_UNAVAILABLE", message: `Không thể mở trình duyệt: ${log.slice(-400)}` }
+                    ? {
+                          code: status === "INTERRUPTED" ? "CODE_GEN_BROWSER_CLOSED_EARLY" : "CODE_GEN_BROWSER_UNAVAILABLE",
+                          message:
+                              status === "INTERRUPTED"
+                                  ? `Trình duyệt ghi đã đóng ngay sau khi mở (exit=${code}, sau ${elapsedMs}ms). Không có script. Hãy bắt đầu ghi lại.`
+                                  : `Không thể mở trình duyệt: ${log.slice(-400)}`
+                      }
                     : null;
             }
         });
 
-        return this.get(recording.recordingId);
+        const started = this.get(recording.recordingId);
+        // Đính kèm pid của process ghi (lưu trong session, không ở store).
+        return { ...started, pid };
     }
 
     readRecordingFile(filePath) {

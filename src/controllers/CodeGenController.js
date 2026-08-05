@@ -116,10 +116,19 @@ export default class CodeGenController {
 
     async status(req, res) {
         try {
-            const data = { status: this.manager.status, activeRecording: this.manager.activeRecording };
+            const data = this.manager.getSessionInfo();
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 500, "CODE_GEN_STATUS_FAILED", "Không thể đọc trạng thái CodeGen.");
+        }
+    }
+
+    async focus(req, res) {
+        try {
+            const data = await this.manager.focusBrowserWindow();
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_FOCUS_FAILED", "Không thể focus cửa sổ ghi.");
         }
     }
 

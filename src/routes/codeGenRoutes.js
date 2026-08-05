@@ -32,6 +32,7 @@ export default function createCodeGenRoutes({
 
     router.post("/start", (req, res) => controller.start(req, res));
     router.post("/stop", (req, res) => controller.stop(req, res));
+    router.post("/focus", (req, res) => controller.focus(req, res));
     router.get("/testcases", (req, res) => controller.testcases(req, res));
     router.post("/cleanup", (req, res) => controller.cleanup(req, res));
 

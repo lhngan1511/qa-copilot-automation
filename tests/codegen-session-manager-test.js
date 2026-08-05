@@ -21,7 +21,7 @@ function fakeChild() {
     return child;
 }
 
-function buildManager({ fakeRunner = null, seedMetadata = null, execPath = process.execPath, playwrightCliPath = null, spawnThrow = null } = {}) {
+function buildManager({ fakeRunner = null, seedMetadata = null, execPath = process.execPath, playwrightCliPath = null, spawnThrow = null, focusFn = null } = {}) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-test-"));
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "codegen-data-"));
     const metadataFile = path.join(dataDir, "codegen-recordings.json");
@@ -52,7 +52,7 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
                 }
             };
         })();
-    const manager = new CodeGenSessionManager({ rootDir: process.cwd(), tempDir, store, runner, spawnFn, execPath, playwrightCliPath });
+    const manager = new CodeGenSessionManager({ rootDir: process.cwd(), tempDir, store, runner, spawnFn, execPath, playwrightCliPath, focusFn });
     manager._child = () => child;
     manager._store = () => store;
     manager._dataDir = () => dataDir;
@@ -279,6 +279,52 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     assert.equal(cases.length, 2);
     assert.deepEqual(cases.map(c => c.id), ["TC001", "TC002"]);
     fs.rmSync(dir, { recursive: true, force: true });
+}
+
+// ---------- Session info + focus (non-win32) + INTERRUPTED when browser closes early ----------
+{
+    const m = buildManager();
+    const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
+    const info = m.getSessionInfo();
+    assert.equal(info.status, "RECORDING");
+    assert.ok(info.pid > 0, "phải có PID");
+    assert.equal(info.url, "https://example.com");
+    assert.equal(info.browser, "chrome");
+    assert.equal(info.processAlive, true);
+
+    // focus trên nền tảng không phải win32 -> focused:false, không crash
+    const focus = await m.focusBrowserWindow();
+    assert.equal(focus.focused, false);
+    assert.equal(focus.supported, false);
+
+    // mô phỏng browser đóng ngay (exit không script) -> INTERRUPTED
+    await m.disposeSession();
+    const rec2 = await m.start({ url: "https://example.com/x", browser: "chrome", mode: "FULL_FLOW" });
+    assert.equal(rec2.status, "RECORDING");
+    m._child().emit("exit", 0);
+    await new Promise(r => setTimeout(r, 20));
+    const after = m.getSessionInfo();
+    assert.equal(after.status, "INTERRUPTED");
+    const rec2Store = m._store().get(rec2.recordingId);
+    assert.equal(rec2Store.status, "INTERRUPTED");
+
+    fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
+    fs.rmSync(m.tempDir, { recursive: true, force: true });
+}
+
+// ---------- focus khi win32: dùng focusFn inject ----------
+{
+    const m = buildManager({
+        focusFn: async ({ session }) => ({ attempted: true, focused: session?.pid ? true : false, supported: true, message: "FOCUSED", pid: session?.pid })
+    });
+    const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
+    // ép nền tảng win32 để chạy nhánh focusFn
+    m.platform = "win32";
+    const focus = await m.focusBrowserWindow();
+    assert.equal(focus.focused, true);
+    assert.equal(focus.supported, true);
+    fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
+    fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
 
 console.log("CodeGen Session Manager (recording-centric) test: PASS");
