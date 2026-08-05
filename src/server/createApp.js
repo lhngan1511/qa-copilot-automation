@@ -7,6 +7,8 @@ import QACopilotApplicationService from "../services/QACopilotApplicationService
 import QACopilotController from "../controllers/QACopilotController.js";
 import createWorkflowRoutes from "../routes/workflowRoutes.js";
 import createAutomationWorkspaceRoutes from "../routes/automationWorkspaceRoutes.js";
+import createCodeGenRoutes from "../routes/codeGenRoutes.js";
+import CodeGenSessionManager from "../codegen/CodeGenSessionManager.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
 import fs from "node:fs";
@@ -95,6 +97,9 @@ export default function createApp({
 
     app.use("/api/automation-workspace", createAutomationWorkspaceRoutes({ dataDir }));
 
+    const codeGenManager = new CodeGenSessionManager({ rootDir: projectDirectory });
+    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager }));
+
     app.use(express.static(resolvedPublicDirectory, { index: false }));
 
     app.use((req, res, next) => {
@@ -120,6 +125,7 @@ export default function createApp({
         applicationService,
         controller: resolvedController,
         requirementUploadService,
+        codeGenManager,
         publicDirectory: resolvedPublicDirectory,
         indexFile,
         indexExists: fs.existsSync(indexFile)

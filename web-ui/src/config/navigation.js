@@ -22,17 +22,18 @@ export const navigationGroups = [
         label: "Intelligence",
         items: [
             {
+                label: "CodeGen",
+                description: "Ghi thao tác và sinh script Playwright",
+                to: "/codegen",
+                activePrefix: "/codegen",
+                icon: "code"
+            },
+            {
                 label: "Automation Intelligence",
-                description: "Sinh mã và thực thi testcase",
+                description: "Sinh mã và thực thi testcase (sẽ có)",
                 to: "/automation/workspaces/new",
                 activePrefix: "/automation",
                 icon: "automation"
-            },
-            {
-                label: "CodeGen",
-                description: "Thư viện CodeGen",
-                icon: "code",
-                soon: true
             },
             {
                 label: "Reports",
