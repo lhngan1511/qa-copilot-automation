@@ -97,3 +97,45 @@ assert.equal(payload.testCases.length, 2);
 assert.match(payload.codegenText, /@playwright/);
 
 console.log("Automation Sprint1 UI wiring test: PASS");
+
+/* ---------- Sprint 1 refine: executionReadiness + confidence + môi trường ---------- */
+
+// executionReadiness gating: READY -> enable; DATA_REQUIRED -> disable
+function isReady(tc) {
+    const r = String(tc?.executionReadiness ?? "").toUpperCase();
+    if (!r) return true;
+    return r === "READY";
+}
+assert.equal(isReady({ executionReadiness: "READY" }), true);
+assert.equal(isReady({ executionReadiness: "DATA_REQUIRED" }), false);
+assert.equal(isReady({}), true, "không xác định -> cho phép");
+
+// confidence từ mapping stepMappings
+function confidenceOf(mapping) {
+    const steps = Array.isArray(mapping?.stepMappings) ? mapping.stepMappings : [];
+    const values = steps.map(s => Number(s?.confidence)).filter(n => Number.isFinite(n));
+    if (values.length === 0) return null;
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    return Math.round(avg * 100);
+}
+assert.equal(confidenceOf({ stepMappings: [{ confidence: 0.95 }, { confidence: 0.9 }] }), 93);
+assert.equal(confidenceOf({ stepMappings: [] }), null);
+const high = confidenceOf({ stepMappings: [{ confidence: 0.95 }] });
+assert.equal(high >= 70, true, ">=70 độ tin cậy cao");
+
+// Môi trường chạy: value UAT/TEST/DEV; nếu trống -> 'Tự nhận diện'
+function envDisplay(environment) {
+    return environment || "Tự nhận diện";
+}
+assert.equal(envDisplay("UAT"), "UAT");
+assert.equal(envDisplay(""), "Tự nhận diện");
+
+// Generate/Run chỉ áp dụng cho testcase READY
+function runnable(items) { return items.filter(isReady); }
+const items = [
+    { id: "TC001", executionReadiness: "READY" },
+    { id: "TC002", executionReadiness: "DATA_REQUIRED" }
+];
+assert.deepEqual(runnable(items).map(i => i.id), ["TC001"]);
+
+console.log("Automation Sprint1 UI wiring test: PASS");

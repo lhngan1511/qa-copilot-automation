@@ -9,6 +9,8 @@ function readFile(file) {
     });
 }
 
+const ENVS = ["UAT", "TEST", "DEV"];
+
 export default function AutomationHeader({
     sourceFileName,
     codeGenFile,
@@ -24,6 +26,7 @@ export default function AutomationHeader({
     const codeGenInput = useRef(null);
     const [approvedError, setApprovedError] = useState("");
     const [codeGenError, setCodeGenError] = useState("");
+    const [editingEnv, setEditingEnv] = useState(false);
 
     const handleApprovedFile = async event => {
         const file = event.target.files?.[0];
@@ -73,14 +76,14 @@ export default function AutomationHeader({
         <section className="automation-header">
             <div className="automation-section-heading">
                 <div>
-                    <p className="workflow-id">NGUỒN DỮ LIỆU</p>
-                    <h3>Chuẩn bị dữ liệu</h3>
+                    <p className="workflow-id">BẮT ĐẦU</p>
+                    <h3>Chọn dữ liệu và CodeGen</h3>
                 </div>
-                <span>approved-testcases.json + CodeGen.js</span>
+                <span>File testcase đã duyệt + CodeGen.js</span>
             </div>
             <div className="automation-header__grid">
                 <div className="automation-field automation-field--wide">
-                    <label htmlFor="approved-testcases-file">approved-testcases.json</label>
+                    <label htmlFor="approved-testcases-file">File testcase đã duyệt (approved-testcases.json)</label>
                     <div className="automation-file-control">
                         <button className="button button--secondary" type="button" onClick={() => approvedInput.current?.click()}>
                             Tải file testcase
@@ -103,28 +106,37 @@ export default function AutomationHeader({
                 </div>
             </div>
 
+            {/* Module / Feature — chỉ hiển thị, không phải form nhập */}
             <div className="automation-header__summary">
                 <div className="automation-summary-item">
                     <label>Module</label>
                     <strong>{moduleName || "—"}</strong>
-                    {!moduleName && <small>Tự đọc từ approved-testcases.json khi tải.</small>}
                 </div>
                 <div className="automation-summary-item">
-                    <label>Chức năng</label>
+                    <label>Feature</label>
                     <strong>{functionName || "—"}</strong>
-                    {!functionName && <small>Tự đọc từ approved-testcases.json khi tải.</small>}
                 </div>
                 <div className="automation-summary-item">
-                    <label>Môi trường chạy (UAT / TEST / DEV)</label>
-                    <strong>{environment || "Tự nhận diện"}</strong>
-                    <small>
-                        <input value={environment} onChange={event => onEnvironmentChange(event.target.value)} placeholder="Bỏ trống nếu không cần" aria-label="Môi trường chạy" />
-                    </small>
+                    <label>Môi trường chạy</label>
+                    {editingEnv ? (
+                        <div className="automation-env-edit">
+                            <select value={environment || ""} onChange={event => onEnvironmentChange(event.target.value)} aria-label="Môi trường chạy">
+                                <option value="">Tự nhận diện</option>
+                                {ENVS.map(env => <option key={env} value={env}>{env}</option>)}
+                            </select>
+                            <button className="text-button" type="button" onClick={() => setEditingEnv(false)}>Xong</button>
+                        </div>
+                    ) : (
+                        <div className="automation-env-display">
+                            <strong className={environment ? "" : "automation-env--auto"}>{environment || "Tự nhận diện"}</strong>
+                            <button className="text-button" type="button" onClick={() => setEditingEnv(true)}>Chỉnh sửa</button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="automation-header__footer">
-                <span>Bắt buộc: approved-testcases.json + CodeGen.js</span>
+                <span>Hệ thống tự đọc Module, Feature và dữ liệu từ file testcase.</span>
                 <button className="button button--primary" type="button" disabled={!sourceFileName || !codeGenFile || !codeGenFile.content} onClick={onAnalyze}>Phân tích bằng AI</button>
             </div>
         </section>

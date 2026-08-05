@@ -331,3 +331,25 @@
     font-size: 11px;
     color: #b45309;
 }
+
+/* Sprint 1 refine — tester-friendly */
+.automation-readonly-value { margin: 2px 0; font-size: 15px; color: #111827; }
+.automation-env-display { display: flex; align-items: center; gap: 8px; }
+.automation-env-display strong { font-size: 15px; }
+.automation-env--auto { color: #6b7280; font-style: italic; }
+.automation-env-edit { display: flex; align-items: center; gap: 6px; }
+.automation-env-edit select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+.automation-notice--warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.automation-data-required { font-size: 12px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 6px 10px; display: inline-block; margin: 4px 0; }
+.automation-confidence { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+.automation-confidence.confidence--high { color: #065f46; background: #d1fae5; }
+.automation-confidence.confidence--mid { color: #92400e; background: #fef3c7; }
+.automation-confidence.confidence--low { color: #991b1b; background: #fee2e2; }
+.automation-review { display: grid; gap: 10px; }
+.automation-review__row label { font-size: 11px; text-transform: uppercase; color: #6b7280; }
+.automation-review__block { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; }
+.automation-review__block strong { display: block; font-size: 12px; text-transform: uppercase; color: #374151; margin-bottom: 6px; }
+.automation-review__block ul { margin: 0; padding-left: 18px; }
+.automation-review__block li { font-size: 13px; color: #111827; }
+.automation-review__confidence { font-size: 14px; font-weight: 700; color: #1f2937; }
+.automation-review__actions { display: flex; gap: 8px; }
