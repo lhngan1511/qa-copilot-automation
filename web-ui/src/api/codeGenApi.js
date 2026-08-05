@@ -64,10 +64,10 @@ export async function saveRecording(recordingId, { fileName, signal }) {
     return response.data;
 }
 
-export async function runRecording(recordingId, { env = {}, signal }) {
+export async function runRecording(recordingId, { script, env = {}, signal }) {
     const response = await apiClient.post(`/codegen/recordings/${encodeURIComponent(recordingId)}/run`, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ env }),
+        body: JSON.stringify({ script, env }),
         signal
     });
     return response.data;

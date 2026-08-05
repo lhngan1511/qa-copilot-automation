@@ -258,3 +258,18 @@
     resize: vertical;
     box-sizing: border-box;
 }
+
+/* CodeGen MVP simplified UI */
+.codegen-card--sub {
+    background: #f9fafb;
+}
+
+.codegen-sub-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.codegen-modal--wide {
+    max-width: 720px;
+}

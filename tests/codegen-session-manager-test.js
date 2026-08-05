@@ -292,7 +292,49 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
 
-// ---------- ApprovedTestcaseLoader: chỉ đọc approved-testcases.json ----------
+// ---------- Run dùng trực tiếp script override (textarea), không cần lưu trước ----------
+{
+    const m = buildManager({
+        fakeRunner: { async runFile() { return { status: "PASSED", diagnostic: null, log: "ok", durationMs: 5, resultsFile: null }; } }
+    });
+    const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
+    const id = rec.recordingId;
+    await m.stop({ timeoutMs: 200 });
+    // KHÔNG gọi setScript trước — run dùng script override trực tiếp.
+    const result = await m.run(id, { script: "test('paste', async ({page})=>{ await page.click('#x'); });" });
+    assert.equal(result.passed, true);
+    fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
+    fs.rmSync(m.tempDir, { recursive: true, force: true });
+}
+
+// ---------- Link testcase là metadata thuần; reload giữ liên kết; không đụng approved-testcases ----------
+{
+    const m = buildManager();
+    const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
+    const id = rec.recordingId;
+    await m.stop({ timeoutMs: 200 });
+    m.setScript(id, { script: "test('x',()=>{});" });
+
+    const before = m.get(id);
+    assert.deepEqual(before.testcaseIds, []);
+    // Link không đổi nội dung script
+    const linked = m.linkTestcases(id, { testcaseIds: ["TC001", "TC002", "TC005"] });
+    assert.deepEqual(linked.testcaseIds, ["TC001", "TC002", "TC005"]);
+    assert.match(m.get(id).scriptContent, /test\('x'/);
+
+    // Reload (recreate manager với cùng store metadata file) giữ liên kết
+    const metadataFile = m._store().metadataFile;
+    const scriptsDir = m._store().scriptsDir;
+    const store2 = new CodeGenRecordingStore({ metadataFile, scriptsDir });
+    const m2 = new CodeGenSessionManager({ rootDir: process.cwd(), tempDir: m.tempDir, store: store2, spawnFn: m.spawnFn });
+    assert.deepEqual(m2.get(id).testcaseIds, ["TC001", "TC002", "TC005"]);
+    // approved-testcases.json không bị sửa — loader chỉ đọc; không có file nào trong dataDir tên approved
+    const approvedFiles = fs.readdirSync(path.dirname(metadataFile)).filter(f => f.includes("approved"));
+    assert.deepEqual(approvedFiles, []);
+
+    fs.rmSync(path.dirname(metadataFile), { recursive: true, force: true });
+    fs.rmSync(m.tempDir, { recursive: true, force: true });
+}
 {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cg-loader-"));
     fs.mkdirSync(path.join(dir, "outputs", "production", "json"), { recursive: true });

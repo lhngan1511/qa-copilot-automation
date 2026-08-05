@@ -620,15 +620,16 @@ export default class CodeGenSessionManager {
     /**
      * Chạy script của recording. Trả PASS/FAIL + report/trace path.
      */
-    async run(recordingId, { env = {} } = {}) {
+    async run(recordingId, { script, env = {} } = {}) {
         const rec = this.store.get(recordingId);
         if (!rec) {
             const error = new Error(`Recording '${recordingId}' không tồn tại.`);
             error.code = "RECORDING_NOT_FOUND";
             throw error;
         }
-        const raw = this.store.recordings.find(item => item.recordingId === recordingId);
-        const content = String(raw?.scriptContent ?? "").trim();
+        // Cho phép Run trực tiếp từ nội dung textarea (script override), không
+        // bắt buộc lưu script trước. Nếu không có script override thì đọc từ store.
+        const content = String(script ?? this.store.recordings.find(item => item.recordingId === recordingId)?.scriptContent ?? "").trim();
         if (!content) {
             const error = new Error("Chưa có script để chạy.");
             error.code = "CODE_GEN_EMPTY_SCRIPT";
