@@ -72,6 +72,17 @@ function normalizeTestData(testData, context = {}) {
  order. A line whose value is an intentional-empty marker ("Để trống") sets
  the field value to "" (tester already decided). No field name is hardcoded.
  */
+/*
+ A field is eligible to receive a tester-entered value only when it actually
+ needs data. Fields with purpose "EMPTY" represent an intentional blank (the
+ value must always be "") and must never be filled from testData.value or by
+ positional fallback.
+ */
+function fieldAcceptsTesterValue(field) {
+    if (!field || typeof field !== "object") return true;
+    return String(field.purpose ?? "").toUpperCase() !== "EMPTY";
+}
+
 function syncTesterValuesIntoFields(fields, rawValue) {
     const fieldNames = Object.keys(fields);
     if (!rawValue || fieldNames.length === 0) return false;
@@ -89,15 +100,25 @@ function syncTesterValuesIntoFields(fields, rawValue) {
             const match = fieldNames.find(
                 fieldName => fieldName.toLowerCase() === name.toLowerCase()
             );
-            if (match && value !== "") {
+            if (match && value !== "" && fieldAcceptsTesterValue(fields[match])) {
                 applyTesterValue(fields, match, value);
                 assigned.add(match);
             }
         }
     });
 
+    /*
+     Positional fallback: only fill fields that still need a value - fields
+     with purpose EMPTY are skipped so an intentional blank is never
+     overwritten, and fields that already hold a value are left untouched.
+     */
     if (assigned.size < fieldNames.length) {
-        const unassigned = fieldNames.filter(name => !assigned.has(name));
+        const unassigned = fieldNames.filter(
+            name =>
+                !assigned.has(name) &&
+                fieldAcceptsTesterValue(fields[name]) &&
+                !fields[name]?.value
+        );
         let cursor = 0;
         lines.forEach(line => {
             const trimmed = line.trim();
