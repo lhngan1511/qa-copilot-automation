@@ -192,7 +192,7 @@ export default class CodeGenSessionManager {
     /**
      * Start một Recording Session (tự do, không bắt buộc testcase).
      */
-    async start({ url = "", browser = "chrome", mode = "FULL_FLOW" } = {}) {
+    async start({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null } = {}) {
         const normalizedUrl = String(url ?? "").trim();
         if (!normalizedUrl) {
             const error = new Error("URL không được để trống.");
@@ -215,7 +215,8 @@ export default class CodeGenSessionManager {
         this.ensureTempDir();
 
         // Tạo recording record (persistent metadata) trước.
-        const recording = this.store.create({ mode, url: normalizedUrl, browser: normalizedBrowser });
+        // context (module/feature/artifactId/session) dùng để lọc đối chiếu testcase.
+        const recording = this.store.create({ mode, url: normalizedUrl, browser: normalizedBrowser, context });
 
         const recordingFile = path.join(this.tempDir, "recordings", `${recording.recordingId}.js`);
         const channel = this.channelFor(normalizedBrowser);
@@ -570,6 +571,43 @@ export default class CodeGenSessionManager {
      * Gắn testcase (0/1/n) sau khi recording hoàn tất.
      * TESTCASE_SEGMENT bắt buộc link >=1 testcase.
      */
+    /**
+     * Gán context (module/feature/artifactId/session) cho recording để lọc
+     * đối chiếu testcase đúng ngữ cảnh AI Test Design.
+     */
+    setContext(recordingId, { context = null } = {}) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        const normalized = context && typeof context === "object" ? { ...context } : null;
+        return this.store.update(recordingId, { context: normalized });
+    }
+
+    /** Trả context đã lưu của recording (nếu có). */
+    getContext(recordingId) {
+        const rec = this.store.get(recordingId);
+        return rec?.context ?? null;
+    }
+
+    /**
+     * Kiểm tra recording có context đáng tin cậy để đối chiếu testcase không.
+     */
+    hasReliableContext(recordingId) {
+        const ctx = this.getContext(recordingId);
+        if (!ctx) return false;
+        return Boolean(
+            ctx.artifactId ||
+                ctx.workflowSessionId ||
+                ctx.moduleId ||
+                ctx.functionId ||
+                ctx.module ||
+                ctx.feature
+        );
+    }
+
     linkTestcases(recordingId, { testcaseIds = [] } = {}) {
         const rec = this.store.get(recordingId);
         if (!rec) {
@@ -580,6 +618,15 @@ export default class CodeGenSessionManager {
         if (rec.status === "RECORDING") {
             const error = new Error("Chưa thể gắn testcase khi đang ghi. Hãy dừng ghi trước.");
             error.code = "CODE_GEN_LINK_WHILE_RECORDING";
+            throw error;
+        }
+        // BUG 2: chỉ cho phép đối chiếu khi recording có context đáng tin cậy từ
+        // AI Test Design; nếu không có context -> chặn để tránh liên kết sai.
+        if (!this.hasReliableContext(recordingId)) {
+            const error = new Error(
+                "Chỉ khả dụng khi mở CodeGen từ một bộ testcase đã duyệt (cần context module/feature/session)."
+            );
+            error.code = "CODE_GEN_NO_CONTEXT";
             throw error;
         }
         const ids = [...new Set((Array.isArray(testcaseIds) ? testcaseIds : []).map(id => String(id).trim()).filter(Boolean))];
@@ -636,14 +683,33 @@ export default class CodeGenSessionManager {
             throw error;
         }
 
-        // Ghi file run tạm (tempDir/runs).
-        const runFile = path.join(this.tempDir, "runs", `${recordingId}.spec.js`);
-        fs.mkdirSync(path.dirname(runFile), { recursive: true });
+        /*
+         BUG 1 fix: temp file phải nằm TRONG testDir của Playwright config
+         (./outputs/generated-tests) để Playwright discover được. Trước đây ghi
+         vào os.tmpdir()/qa-copilot-codegen/runs nằm NGOÀI project root nên
+         path relative vượt ra ngoài testDir -> "No tests found".
+         Ghi file `recording-<id>.spec.js` vào outputs/generated-tests.
+        */
+        const runDir = path.join(this.rootDir, "outputs", "generated-tests");
+        fs.mkdirSync(runDir, { recursive: true });
+        const runFileName = `recording-${recordingId}.spec.js`;
+        const runFile = path.join(runDir, runFileName);
         fs.writeFileSync(runFile, content, "utf8");
+
+        const fileExists = fs.existsSync(runFile);
+        const fileSize = fileExists ? fs.statSync(runFile).size : 0;
+        if (!fileExists || fileSize <= 0) {
+            const error = new Error("Không tạo được file run tạm cho Playwright.");
+            error.code = "CODE_GEN_RUN_FILE_FAILED";
+            throw error;
+        }
 
         const channel = this.channelFor(rec.browser);
         const runner = this.runner ?? new PlaywrightRunner({ rootDir: this.rootDir, browserChannel: channel });
-        const result = await runner.runFile(path.relative(this.rootDir, runFile), { env });
+        // Truyền RELATIVE path từ project root (forward slash) để Playwright
+        // match đúng file trong testDir; không bao giờ truyền raw script.
+        const rel = path.relative(this.rootDir, runFile).split(path.sep).join("/");
+        const result = await runner.runFile(rel, { env });
 
         const reportPath = result?.resultsFile && fs.existsSync(result.resultsFile)
             ? path.relative(this.rootDir, result.resultsFile)
@@ -656,7 +722,10 @@ export default class CodeGenSessionManager {
             error: result?.error ?? null,
             output: this.truncateOutput(result?.log ?? result?.diagnostic ?? ""),
             durationMs: result?.durationMs ?? 0,
-            reportPath
+            reportPath,
+            tempFilePath: path.relative(this.rootDir, runFile),
+            command: result?.diag?.command ?? this.resolvePlaywrightBin(),
+            args: result?.diag?.commandArgs ?? [`test`, rel]
         };
 
         this.store.update(recordingId, { lastRunResult: runResult, reportPath });

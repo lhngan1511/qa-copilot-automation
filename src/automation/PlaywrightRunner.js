@@ -196,6 +196,7 @@ export default class PlaywrightRunner {
             const started = Date.now();
             const args = this.buildArgs({ filePath: rel });
             diag.commandArgs = args;
+            diag.command = bin;
             const child = spawn(bin, args, {
                 shell: process.platform === "win32",
                 cwd: this.rootDir,

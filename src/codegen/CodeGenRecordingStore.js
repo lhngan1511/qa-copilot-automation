@@ -62,12 +62,13 @@ export default class CodeGenRecordingStore {
         return rec ? this.sanitize(rec) : null;
     }
 
-    create({ mode = "FULL_FLOW", url = "", browser = "chrome" } = {}) {
+    create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null } = {}) {
         const recording = {
             recordingId: newRecordingId(),
             mode: MODES.has(mode) ? mode : "FULL_FLOW",
             url,
             browser,
+            context: context && typeof context === "object" ? { ...context } : null,
             status: "RECORDING",
             scriptContent: "",
             storageMode: "TEMP",

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     useCodeGenRecordings,
     useCodeGenStatus,
@@ -36,10 +36,24 @@ export default function CodeGenPage() {
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkSearch, setLinkSearch] = useState("");
     const [selectedTestcaseIds, setSelectedTestcaseIds] = useState([]);
+    const [searchParams] = useSearchParams();
+
+    // Context từ AI Test Design khi mở CodeGen kèm tham số (module/feature/artifactId).
+    const incomingContext = useMemo(() => {
+        const ctx = {};
+        const module = searchParams.get("module");
+        const feature = searchParams.get("feature");
+        const artifactId = searchParams.get("artifactId");
+        const workflowSessionId = searchParams.get("workflowSessionId");
+        if (module) ctx.module = module;
+        if (feature) ctx.feature = feature;
+        if (artifactId) ctx.artifactId = artifactId;
+        if (workflowSessionId) ctx.workflowSessionId = workflowSessionId;
+        return Object.keys(ctx).length > 0 ? ctx : null;
+    }, [searchParams]);
 
     const recordingsQuery = useCodeGenRecordings();
     const statusQuery = useCodeGenStatus();
-    const testcasesQuery = useApprovedTestcases();
     const actions = useCodeGenActions();
 
     const recordings = recordingsQuery.data ?? [];
@@ -49,7 +63,18 @@ export default function CodeGenPage() {
     const isRecording = statusQuery.data?.status === "RECORDING";
     const busy = actions.start.isPending || actions.stop.isPending || actions.run.isPending;
 
-    const testcases = useMemo(() => testcasesQuery.data ?? [], [testcasesQuery.data]);
+    // Chỉ đối chiếu khi recording có context đáng tin cậy (có module/feature/artifactId...).
+    const hasReliableContext = Boolean(
+        active?.context &&
+            (active.context.module ||
+                active.context.feature ||
+                active.context.moduleId ||
+                active.context.functionId ||
+                active.context.artifactId ||
+                active.context.workflowSessionId)
+    );
+    const testcasesQuery = useApprovedTestcases(hasReliableContext ? activeId : null);
+    const testcases = useMemo(() => testcasesQuery.data?.testcases ?? [], [testcasesQuery.data]);
     const filteredTestcases = useMemo(() => {
         const q = linkSearch.trim().toLocaleLowerCase("vi");
         if (!q) return testcases;
@@ -67,7 +92,7 @@ export default function CodeGenPage() {
             return;
         }
         try {
-            const rec = await actions.start.mutateAsync({ url: url.trim(), browser, mode });
+            const rec = await actions.start.mutateAsync({ url: url.trim(), browser, mode, context: incomingContext });
             setNotice("Đã bắt đầu ghi. Thao tác trên Playwright Inspector rồi bấm Dừng ghi.");
             try {
                 const focus = await actions.focus.mutateAsync({});
@@ -237,11 +262,15 @@ export default function CodeGenPage() {
                             ? `Đã đối chiếu ${active.testcaseIds.length} testcase (${active.testcaseIds.join(", ")})`
                             : "Chưa đối chiếu testcase"}
                     </span>
-                    <button className="button button--secondary" type="button" onClick={openLinkModal} disabled={!activeId}>
+                    <button className="button button--secondary" type="button" onClick={openLinkModal} disabled={!activeId || !hasReliableContext} title={!hasReliableContext ? "Chỉ khả dụng khi mở CodeGen từ một bộ testcase đã duyệt" : ""}>
                         Đối chiếu testcase
                     </button>
                 </div>
-                <p className="codegen-hint">Liên kết recording với testcase để truy vết. Không ảnh hưởng nội dung script.</p>
+                {hasReliableContext ? (
+                    <p className="codegen-hint">Liên kết recording với testcase để truy vết. Không ảnh hưởng nội dung script.</p>
+                ) : (
+                    <p className="codegen-hint">Chỉ khả dụng khi mở CodeGen từ một bộ testcase đã duyệt.</p>
+                )}
             </div>
 
             {focusModal && (

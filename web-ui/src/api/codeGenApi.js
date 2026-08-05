@@ -1,9 +1,18 @@
 import { apiClient } from "./apiClient.js";
 
-export async function startCodeGen({ url, browser, mode, signal }) {
+export async function startCodeGen({ url, browser, mode, context, signal }) {
     const response = await apiClient.post("/codegen/start", {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, browser, mode }),
+        body: JSON.stringify({ url, browser, mode, context }),
+        signal
+    });
+    return response.data;
+}
+
+export async function setRecordingContext(recordingId, { context, signal }) {
+    const response = await apiClient.post(`/codegen/recordings/${encodeURIComponent(recordingId)}/context`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context }),
         signal
     });
     return response.data;
@@ -96,8 +105,11 @@ export async function deleteRecording(recordingId, { signal }) {
     return response.data;
 }
 
-export async function getApprovedTestcases({ signal } = {}) {
-    const response = await apiClient.get("/codegen/testcases", { signal });
+export async function getApprovedTestcases({ recordingId, signal } = {}) {
+    const response = await apiClient.get(
+        `/codegen/testcases${recordingId ? `?recordingId=${encodeURIComponent(recordingId)}` : ""}`,
+        { signal }
+    );
     return response.data;
 }
 

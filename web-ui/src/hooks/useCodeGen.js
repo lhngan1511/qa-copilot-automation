@@ -14,7 +14,8 @@ import {
     deleteRecording,
     getApprovedTestcases,
     getCodeGenStatus,
-    focusCodeGenBrowser
+    focusCodeGenBrowser,
+    setRecordingContext
 } from "../api/codeGenApi.js";
 
 const recordingsKey = ["codegen", "recordings"];
@@ -55,10 +56,11 @@ export function useRecording(recordingId) {
     });
 }
 
-export function useApprovedTestcases() {
+export function useApprovedTestcases(recordingId) {
     return useQuery({
-        queryKey: testcasesKey,
-        queryFn: ({ signal }) => getApprovedTestcases({ signal })
+        queryKey: [testcasesKey, recordingId ?? "none"],
+        queryFn: ({ signal }) => getApprovedTestcases({ recordingId, signal }),
+        enabled: Boolean(recordingId)
     });
 }
 
@@ -76,6 +78,7 @@ export function useCodeGenActions() {
     const openReportMut = useMutation({ mutationFn: input => openReport(input.recordingId, input) });
     const remove = useMutation({ mutationFn: input => deleteRecording(input.recordingId, input), onSuccess: refresh });
     const focus = useMutation({ mutationFn: input => focusCodeGenBrowser(input) });
+    const setContext = useMutation({ mutationFn: input => setRecordingContext(input.recordingId, input), onSuccess: refresh });
 
-    return { start, stop, rename, setScript, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus };
+    return { start, stop, rename, setScript, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus, setContext };
 }

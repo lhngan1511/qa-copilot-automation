@@ -116,10 +116,57 @@ export default class CodeGenController {
 
     async testcases(req, res) {
         try {
-            const data = this.testcaseLoader ? this.testcaseLoader.loadAll() : [];
-            return res.status(200).json({ success: true, data, error: null });
+            const recordingId = req.query?.recordingId || req.body?.recordingId || null;
+            const hasContext = recordingId
+                ? this.manager.hasReliableContext(recordingId)
+                : false;
+            let testcases = [];
+            if (recordingId && hasContext) {
+                const ctx = this.manager.getContext(recordingId);
+                const all = this.testcaseLoader ? this.testcaseLoader.loadAll() : [];
+                testcases = this.filterTestcasesByContext(all, ctx);
+            }
+            return res.status(200).json({
+                success: true,
+                data: { enabled: hasContext, context: recordingId ? this.manager.getContext(recordingId) : null, testcases },
+                error: null
+            });
         } catch (error) {
             return this.fail(res, error, 500, "CODE_GEN_TESTCASES_FAILED", "Không thể đọc danh sách testcase.");
+        }
+    }
+
+    /**
+     * Lọc testcase khớp context (module/feature/moduleId/functionId) và chỉ giữ
+     * APPROVED. Không dùng một approved-testcases.json rời làm mặc định.
+     */
+    filterTestcasesByContext(testcases, ctx = {}) {
+        const ctxModule = String(ctx.module ?? "").trim().toLowerCase();
+        const ctxFeature = String(ctx.feature ?? "").trim().toLowerCase();
+        const ctxModuleId = String(ctx.moduleId ?? "").trim().toLowerCase();
+        const ctxFunctionId = String(ctx.functionId ?? "").trim().toLowerCase();
+        return (Array.isArray(testcases) ? testcases : []).filter(tc => {
+            const review = String(tc.reviewStatus ?? "").trim().toUpperCase();
+            if (review && review !== "APPROVED") return false;
+            const m = String(tc.module ?? "").trim().toLowerCase();
+            const f = String(tc.feature ?? "").trim().toLowerCase();
+            const mi = String(tc.moduleId ?? "").trim().toLowerCase();
+            const fi = String(tc.functionId ?? "").trim().toLowerCase();
+            // khớp nếu context module/feature/id trùng
+            const matchModule = !ctxModule || (m && m.includes(ctxModule)) || (ctxModule && ctxModule.includes(m));
+            const matchFeature = !ctxFeature || (f && f.includes(ctxFeature)) || (ctxFeature && ctxFeature.includes(f));
+            const matchModuleId = !ctxModuleId || (mi && mi === ctxModuleId);
+            const matchFunctionId = !ctxFunctionId || (fi && fi === ctxFunctionId);
+            return matchModule && matchFeature && matchModuleId && matchFunctionId;
+        });
+    }
+
+    async setContext(req, res) {
+        try {
+            const data = this.manager.setContext(req.params.recordingId, req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_SET_CONTEXT_FAILED", "Không thể gán context.");
         }
     }
 

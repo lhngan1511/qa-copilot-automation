@@ -200,6 +200,7 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     const id = rec.recordingId;
     fs.writeFileSync(path.join(m.tempDir, "recordings", `${id}.js`), "test('x',()=>{});", "utf8");
     await m.stop({ timeoutMs: 300 });
+    m.setContext(id, { context: { module: "Đăng nhập", feature: "Đăng nhập" } });
 
     // TESTCASE_SEGMENT không gắn testcase -> lỗi
     assert.throws(() => m.linkTestcases(id, { testcaseIds: [] }), /TESTCASE_SEGMENT/);
@@ -207,12 +208,13 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     const linked = m.linkTestcases(id, { testcaseIds: ["TC001", "TC002"] });
     assert.deepEqual(linked.testcaseIds, ["TC001", "TC002"]);
 
-    // FULL_FLOW link 0 testcase OK
+    // FULL_FLOW link 0 testcase OK (cần context)
     const m2 = buildManager();
     const rec2 = await m2.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
     const id2 = rec2.recordingId;
     fs.writeFileSync(path.join(m2.tempDir, "recordings", `${id2}.js`), "test('x',()=>{});", "utf8");
     await m2.stop({ timeoutMs: 300 });
+    m2.setContext(id2, { context: { module: "Thiết bị", feature: "Thiết bị" } });
     const linked0 = m2.linkTestcases(id2, { testcaseIds: [] });
     assert.deepEqual(linked0.testcaseIds, []);
 
@@ -294,17 +296,33 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
 
 // ---------- Run dùng trực tiếp script override (textarea), không cần lưu trước ----------
 {
+    let receivedPath = null;
     const m = buildManager({
-        fakeRunner: { async runFile() { return { status: "PASSED", diagnostic: null, log: "ok", durationMs: 5, resultsFile: null }; } }
+        fakeRunner: {
+            async runFile(filePath) {
+                receivedPath = filePath;
+                return { status: "PASSED", diagnostic: null, log: "ok", durationMs: 5, resultsFile: null, diag: { commandArgs: ["test", filePath], command: "playwright" } };
+            }
+        }
     });
     const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
     const id = rec.recordingId;
     await m.stop({ timeoutMs: 200 });
     // KHÔNG gọi setScript trước — run dùng script override trực tiếp.
-    const result = await m.run(id, { script: "test('paste', async ({page})=>{ await page.click('#x'); });" });
+    const script = "test('paste', async ({page})=>{ await page.click('#x'); });";
+    const result = await m.run(id, { script });
     assert.equal(result.passed, true);
+    // BUG 1: runner phải nhận FILE PATH (đuôi .spec.js), không nhận raw script.
+    assert.ok(receivedPath && /\.spec\.js$/.test(receivedPath), `runner nhận file path, got: ${receivedPath}`);
+    assert.notEqual(receivedPath, script, "không truyền raw script làm test filter");
+    // temp file thực sự tồn tại trong outputs/generated-tests (testDir)
+    assert.ok(receivedPath, "có tempFilePath");
+    assert.equal(result.status, "PASSED");
+    const generatedDir = path.join(process.cwd(), "outputs", "generated-tests");
+    assert.ok(fs.existsSync(generatedDir), "tạo được thư mục outputs/generated-tests");
     fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
     fs.rmSync(m.tempDir, { recursive: true, force: true });
+    fs.rmSync(generatedDir, { recursive: true, force: true });
 }
 
 // ---------- Link testcase là metadata thuần; reload giữ liên kết; không đụng approved-testcases ----------
@@ -317,6 +335,11 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
 
     const before = m.get(id);
     assert.deepEqual(before.testcaseIds, []);
+    // BUG 2: không context -> link bị chặn
+    assert.throws(() => m.linkTestcases(id, { testcaseIds: ["TC001"] }), /context|duyệt/i);
+    // Gán context từ AI Test Design (module Đăng nhập)
+    m.setContext(id, { context: { module: "Đăng nhập", feature: "Đăng nhập", artifactId: "ART-1" } });
+    assert.equal(m.hasReliableContext(id), true);
     // Link không đổi nội dung script
     const linked = m.linkTestcases(id, { testcaseIds: ["TC001", "TC002", "TC005"] });
     assert.deepEqual(linked.testcaseIds, ["TC001", "TC002", "TC005"]);
