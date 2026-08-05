@@ -244,3 +244,17 @@
     color: #b45309 !important;
     font-size: 12px !important;
 }
+
+/* CodeGen paste textarea */
+.codegen-textarea {
+    width: 100%;
+    min-height: 180px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}

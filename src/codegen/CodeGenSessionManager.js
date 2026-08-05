@@ -463,47 +463,24 @@ export default class CodeGenSessionManager {
      * đọc script. Nếu không capture được script -> CODE_GEN_SCRIPT_NOT_CAPTURED,
      * status STOP_FAILED, không trả STOPPED giả.
      */
-    async stop({ timeoutMs = 1500, flushWaitMs = 5000, treeKill = null } = {}) {
+    async stop({ timeoutMs = 1500, treeKill = null } = {}) {
         if (this.status !== "RECORDING" || !this.session) {
             const error = new Error("Không có phiên CodeGen đang ghi để dừng.");
             error.code = "CODE_GEN_NO_ACTIVE_SESSION";
             throw error;
         }
-        const { child, recordingFile, recordingId, pid } = this.session;
-        console.log(`[CodeGen] stop requested: ${JSON.stringify({ recordingId, pid, outputPath: recordingFile, existedBefore: fs.existsSync(recordingFile) })}`);
+        const { child, recordingId, pid } = this.session;
+        const raw = this.store.recordings.find(item => item.recordingId === recordingId);
+        const existingContent = String(raw?.scriptContent ?? "").trim();
+        console.log(`[CodeGen] stop requested: ${JSON.stringify({ recordingId, pid, outputPath: this.session.recordingFile ?? null })}`);
 
         await this.shutdownProcessTree(child, { treeKill });
-        console.log(`[CodeGen] process tree stopped (pid=${pid}). Chờ output file flush...`);
+        console.log(`[CodeGen] process tree stopped (pid=${pid}).`);
 
-        const content = await this.waitForScriptFile(recordingFile, { timeoutMs: flushWaitMs });
-
-        if (!content) {
-            const err = new Error(
-                "Không lấy được script sau khi dừng (Playwright chưa ghi/flush file output). " +
-                "Hãy đóng Playwright Inspector rồi bấm Dừng lần nữa, hoặc kiểm tra output path."
-            );
-            err.code = "CODE_GEN_SCRIPT_NOT_CAPTURED";
-            this.store.update(recordingId, {
-                scriptContent: "",
-                status: "STOP_FAILED",
-                lastRunResult: { status: "ERROR", passed: false, error: err.message, output: err.message }
-            });
-            this.status = "STOP_FAILED";
-            this.session = null;
-            this.activeRecording = null;
-            this.error = { code: err.code, message: err.message };
-            return {
-                recordingId,
-                status: "STOP_FAILED",
-                outputPath: recordingFile,
-                scriptLength: 0,
-                scriptContent: "",
-                error: { code: err.code, message: err.message }
-            };
-        }
-
+        // Cơ chế thủ công: backend KHÔNG tự capture từ output file -o. Script
+        // do tester dán vào sau đó. Giữ script đã có (nếu từng dán trước), chỉ
+        // cập nhật trạng thái session. Không báo lỗi nếu chưa có script.
         this.store.update(recordingId, {
-            scriptContent: content,
             status: "STOPPED",
             lastRunResult: null
         });
@@ -512,11 +489,36 @@ export default class CodeGenSessionManager {
         this.activeRecording = null;
         this.error = null;
 
-        console.log(`[CodeGen] stop done: ${JSON.stringify({ recordingId, status: "STOPPED", outputPath: recordingFile, scriptLength: content.length })}`);
+        console.log(`[CodeGen] stop done: ${JSON.stringify({ recordingId, status: "STOPPED", scriptLength: existingContent.length })}`);
         return {
             recordingId,
             status: "STOPPED",
-            outputPath: recordingFile,
+            scriptLength: existingContent.length,
+            scriptContent: existingContent
+        };
+    }
+
+    /**
+     * Lưu script do tester dán từ Playwright Inspector (cơ chế thủ công).
+     * Không phụ thuộc output file -o.
+     */
+    setScript(recordingId, { script = "" } = {}) {
+        const rec = this.store.get(recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        const content = String(script ?? "").trim();
+        this.store.update(recordingId, {
+            scriptContent: content,
+            status: content ? "SAVED" : rec.status === "RECORDING" ? "RECORDING" : "STOPPED",
+            lastRunResult: null
+        });
+        const updated = this.get(recordingId);
+        return {
+            recordingId,
+            status: updated.status,
             scriptLength: content.length,
             scriptContent: content
         };

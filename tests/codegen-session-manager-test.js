@@ -150,34 +150,16 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
 
-// ---------- Manager: stop lưu toàn bộ script (file flush sau khi kill) ----------
+// ---------- Stop: cơ chế thủ công - dừng process, KHÔNG tự capture file ----------
 {
     const m = buildManager();
     const rec = await m.start({ url: "https://example.com", browser: "edge", mode: "TESTCASE_SEGMENT" });
     const recordingId = rec.recordingId;
-    const recordingPath = path.join(m.tempDir, "recordings", `${recordingId}.js`);
-    // Mô phỏng Playwright: file chưa tồn tại khi start, chỉ được ghi/flush sau
-    // khi process bị kill (Inspector đóng). Dùng treeKill để ghi file sau đó.
-    const treeKill = async () => {
-        await new Promise(r => setTimeout(r, 60));
-        fs.writeFileSync(recordingPath, "const { test } = require('@playwright/test');\n", "utf8");
-        // taskkill /T cũng dừng process ghi -> emit close
-        const c = m._child();
-        if (c) {
-            c.killed = true;
-            c.emit("close", 0);
-        }
-    };
-    assert.equal(fs.existsSync(recordingPath), false, "lúc start chưa có file");
-    const stopped = await m.stop({ timeoutMs: 200, flushWaitMs: 1500, treeKill });
+    // Không cần output file: stop chỉ dừng process + cập nhật trạng thái.
+    const stopped = await m.stop({ timeoutMs: 200 });
     assert.equal(stopped.status, "STOPPED");
     assert.equal(m._child().killed, true);
     assert.equal(stopped.recordingId, recordingId);
-    assert.equal(stopped.outputPath, recordingPath);
-    assert.ok(stopped.scriptLength > 0, "scriptLength phải > 0 sau stop");
-    assert.match(stopped.scriptContent, /@playwright\/test/);
-
-    // store đã được cập nhật
     assert.equal(m._store().get(recordingId).status, "STOPPED");
 
     await assert.rejects(() => m.stop(), /đang ghi/);
@@ -185,19 +167,28 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
 
-// ---------- stop: không capture được script -> STOP_FAILED + CODE_GEN_SCRIPT_NOT_CAPTURED ----------
+// ---------- setScript (paste thủ công): lưu vào scriptContent, reload giữ script ----------
 {
     const m = buildManager();
     const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
-    const recordingId = rec.recordingId;
-    const recordingPath = path.join(m.tempDir, "recordings", `${recordingId}.js`);
-    // Không ghi file (Playwright không flush) -> không capture được script.
-    const treeKill = async () => { /* no file written */ };
-    const stopped = await m.stop({ timeoutMs: 150, flushWaitMs: 500, treeKill });
-    assert.equal(stopped.status, "STOP_FAILED");
-    assert.equal(stopped.scriptLength, 0);
-    assert.equal(stopped.error?.code, "CODE_GEN_SCRIPT_NOT_CAPTURED");
-    assert.equal(m._store().get(recordingId).status, "STOP_FAILED");
+    const id = rec.recordingId;
+    await m.stop({ timeoutMs: 200 });
+
+    const pasted = "const { test } = require('@playwright/test');\ntest('demo', async ({ page }) => { await page.click('#x'); });";
+    const saved = m.setScript(id, { script: pasted });
+    assert.equal(saved.recordingId, id);
+    assert.ok(saved.scriptLength > 0, "scriptLength phải > 0 sau khi dán");
+    assert.match(saved.scriptContent, /page\.click/);
+    assert.equal(m._store().get(id).status, "SAVED");
+
+    // reload recording giữ script
+    assert.match(m.get(id).scriptContent, /page\.click/);
+
+    // xoá nội dung
+    const cleared = m.setScript(id, { script: "" });
+    assert.equal(cleared.scriptLength, 0);
+    assert.equal(m._store().get(id).status, "STOPPED");
+
     fs.rmSync(m._store().metadataFile && path.dirname(m._store().metadataFile), { recursive: true, force: true });
     fs.rmSync(m.tempDir, { recursive: true, force: true });
 }
@@ -236,8 +227,8 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     const m = buildManager();
     const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
     const id = rec.recordingId;
-    fs.writeFileSync(path.join(m.tempDir, "recordings", `${id}.js`), "test('x',()=>{});", "utf8");
     await m.stop({ timeoutMs: 300 });
+    m.setScript(id, { script: "test('x',()=>{});" });
 
     // Open folder trước khi lưu server -> lỗi
     assert.throws(() => m.openFolder(id), /server/i);
@@ -267,8 +258,8 @@ function buildManager({ fakeRunner = null, seedMetadata = null, execPath = proce
     });
     const rec = await m.start({ url: "https://example.com", browser: "chrome", mode: "FULL_FLOW" });
     const id = rec.recordingId;
-    fs.writeFileSync(path.join(m.tempDir, "recordings", `${id}.js`), "test('x',()=>{});", "utf8");
     await m.stop({ timeoutMs: 300 });
+    m.setScript(id, { script: "test('x',()=>{});" });
 
     const r1 = await m.run(id);
     assert.equal(r1.passed, true);

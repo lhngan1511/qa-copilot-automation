@@ -5,6 +5,7 @@ import {
     listRecordings,
     getRecording,
     renameRecording,
+    setRecordingScript,
     linkTestcases,
     saveRecording,
     runRecording,
@@ -67,6 +68,7 @@ export function useCodeGenActions() {
     const start = useMutation({ mutationFn: input => startCodeGen(input), onSuccess: refresh });
     const stop = useMutation({ mutationFn: input => stopCodeGen(input), onSuccess: refresh });
     const rename = useMutation({ mutationFn: input => renameRecording(input.recordingId, input), onSuccess: refresh });
+    const setScript = useMutation({ mutationFn: input => setRecordingScript(input.recordingId, input), onSuccess: refresh });
     const link = useMutation({ mutationFn: input => linkTestcases(input.recordingId, input), onSuccess: refresh });
     const save = useMutation({ mutationFn: input => saveRecording(input.recordingId, input), onSuccess: refresh });
     const run = useMutation({ mutationFn: input => runRecording(input.recordingId, input), onSuccess: refresh });
@@ -75,5 +77,5 @@ export function useCodeGenActions() {
     const remove = useMutation({ mutationFn: input => deleteRecording(input.recordingId, input), onSuccess: refresh });
     const focus = useMutation({ mutationFn: input => focusCodeGenBrowser(input) });
 
-    return { start, stop, rename, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus };
+    return { start, stop, rename, setScript, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus };
 }

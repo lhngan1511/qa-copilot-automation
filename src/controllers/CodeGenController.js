@@ -23,6 +23,15 @@ export default class CodeGenController {
         }
     }
 
+    async setScript(req, res) {
+        try {
+            const data = this.manager.setScript(req.params.recordingId, req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_SET_SCRIPT_FAILED", "Không thể lưu script.");
+        }
+    }
+
     async list(req, res) {
         try {
             const data = this.manager.list();

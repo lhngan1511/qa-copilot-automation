@@ -117,14 +117,34 @@ export default function CodeGenPage() {
         try {
             const rec = await actions.stop.mutateAsync({});
             setActiveId(rec.recordingId);
-            if (rec.status === "STOP_FAILED" || !rec.scriptContent) {
-                setNotice(rec.error?.message || "Dừng ghi nhưng không lấy được script. Hãy thử lại.");
-            } else {
-                setNotice(`Đã dừng ghi. Script dài ${rec.scriptLength} ký tự. Xem và gắn testcase nếu cần.`);
-            }
+            setNotice("Đã dừng ghi. Mở Playwright Inspector, bấm Copy, rồi dán script vào ô bên dưới.");
         } catch (error) {
             setNotice(error.message || "Không thể dừng ghi.");
         }
+    };
+
+    const [pasteText, setPasteText] = useState("");
+
+    const handleSavePaste = async () => {
+        if (!activeId) {
+            setNotice("Chọn một recording để lưu script.");
+            return;
+        }
+        try {
+            const res = await actions.setScript.mutateAsync({ recordingId: activeId, script: pasteText });
+            setPasteText(res.scriptContent ?? "");
+            setNotice(res.scriptLength > 0 ? `Đã lưu script (${res.scriptLength} ký tự).` : "Đã xoá nội dung script.");
+        } catch (error) {
+            setNotice(error.message || "Không thể lưu script.");
+        }
+    };
+
+    const handleClearPaste = () => {
+        setPasteText("");
+        if (activeId) {
+            actions.setScript.mutateAsync({ recordingId: activeId, script: "" }).catch(() => {});
+        }
+        setNotice("Đã xoá nội dung.");
     };
 
     const handleSaveAs = () => {
@@ -321,9 +341,30 @@ export default function CodeGenPage() {
                                 </div>
                             </div>
 
-                            {/* SCRIPT */}
+                            {/* PASTE SCRIPT */}
                             <div className="codegen-card">
-                                <label className="codegen-label">Script (toàn bộ luồng)</label>
+                                <label className="codegen-label">Dán script từ Playwright Inspector</label>
+                                <p className="codegen-hint">Trong Playwright Inspector bấm Copy, rồi dán vào đây. Lưu để gắn script vào recording này.</p>
+                                <textarea
+                                    className="codegen-textarea"
+                                    rows="10"
+                                    placeholder="// Dán script Playwright ở đây..."
+                                    value={pasteText}
+                                    onChange={e => setPasteText(e.target.value)}
+                                />
+                                <div className="codegen-row">
+                                    <button className="button button--primary" type="button" disabled={!activeId || actions.setScript.isPending} onClick={handleSavePaste}>
+                                        {actions.setScript.isPending ? "Đang lưu..." : "Lưu script"}
+                                    </button>
+                                    <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleClearPaste}>
+                                        Xóa nội dung
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* SCRIPT PREVIEW */}
+                            <div className="codegen-card">
+                                <label className="codegen-label">Script đã lưu ({active.scriptContent?.length ?? 0} ký tự)</label>
                                 <pre className="codegen-script">
                                     {active.scriptContent?.trim() || "// Chưa có script."}
                                 </pre>

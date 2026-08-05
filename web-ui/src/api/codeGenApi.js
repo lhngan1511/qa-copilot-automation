@@ -28,6 +28,15 @@ export async function getRecording(recordingId, { signal } = {}) {
     return response.data;
 }
 
+export async function setRecordingScript(recordingId, { script, signal }) {
+    const response = await apiClient.post(`/codegen/recordings/${encodeURIComponent(recordingId)}/script`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ script }),
+        signal
+    });
+    return response.data;
+}
+
 export async function renameRecording(recordingId, { fileName, signal }) {
     const response = await apiClient.post(`/codegen/recordings/${encodeURIComponent(recordingId)}/rename`, {
         headers: { "Content-Type": "application/json" },

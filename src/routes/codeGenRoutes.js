@@ -23,6 +23,7 @@ export default function createCodeGenRoutes({
     router.get("/recordings", (req, res) => controller.list(req, res));
     router.get("/recordings/:recordingId", (req, res) => controller.get(req, res));
     router.post("/recordings/:recordingId/rename", (req, res) => controller.rename(req, res));
+    router.post("/recordings/:recordingId/script", (req, res) => controller.setScript(req, res));
     router.post("/recordings/:recordingId/link", (req, res) => controller.linkTestcases(req, res));
     router.post("/recordings/:recordingId/save", (req, res) => controller.save(req, res));
     router.post("/recordings/:recordingId/run", (req, res) => controller.run(req, res));
