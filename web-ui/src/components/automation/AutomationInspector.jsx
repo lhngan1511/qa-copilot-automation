@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 const TABS = [["REVIEW", "AI hiểu gì"], ["INFO", "Thông tin"], ["DATA", "Dữ liệu kiểm thử"], ["CODE", "Mã kiểm thử"]];
 
 function normalizeConfidence(value) {
@@ -39,7 +41,12 @@ export default function AutomationInspector({ testCase, moduleName, functionName
         update({ testData: { ...(testCase.testData ?? {}), fields } });
     };
     // Chỉ field còn thiếu (rỗng / cần nhập) mới được Edit khi chưa READY.
-    const editableField = row => !ready && (!String(row.value).trim() || row.requiresTesterInput);
+    const firstMissingRef = useRef(null);
+    useEffect(() => {
+        if (activeTab === "DATA" && !ready && firstMissingRef.current) {
+            firstMissingRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [activeTab, ready, testCase?.id]);
 
     return <section className="automation-inspector">
         <div className="automation-inspector__heading"><div><p className="workflow-id">{testCase.id}</p><h3>Chi tiết testcase</h3></div><button className="button button--danger" type="button" onClick={() => testCase.includedInSession ? onRemove(testCase.id) : onRestore(testCase.id)}>{testCase.includedInSession ? "Bỏ khỏi phiên" : "Khôi phục"}</button></div>
@@ -57,11 +64,19 @@ export default function AutomationInspector({ testCase, moduleName, functionName
                 <div className="automation-subheading"><div><h4>Dữ liệu kiểm thử</h4><p>Dùng dữ liệu từ approved-testcases.json. {!ready ? "Chỉ cần bổ sung dữ liệu còn thiếu." : "Đã đủ dữ liệu."}</p></div></div>
                 {testCase.testData?.requirement && <p className="automation-data-requirement">Yêu cầu: {testCase.testData.requirement}</p>}
                 {!ready && <p className="automation-data-required">Cần bổ sung dữ liệu.</p>}
-                {rows.length ? rows.map((row, index) => <div className="automation-data-row" key={`${testCase.id}-data-${index}`}>
-                    <input aria-label="Tên trường" value={row.name} readOnly />
-                    <input aria-label="Giá trị" value={row.value} disabled={!editableField(row)} onChange={event => updateDataField(row.name, event.target.value)} placeholder={row.requiresTesterInput ? (row.instruction || "Cần dữ liệu") : row.value} />
-                    {row.requiresTesterInput && <span className="automation-data-hint">Cần dữ liệu</span>}
-                </div>) : <div className="automation-empty-state"><strong>{testCase.testData?.value ? "Đã có dữ liệu" : "Không có field chi tiết"}</strong><span>{testCase.testData?.value || "approved-testcases.json không cung cấp field chi tiết."}</span></div>}
+                {(() => {
+                    // Khi chưa READY chỉ hiển thị field còn thiếu; field đã đủ -> không cho sửa.
+                    const shownRows = ready ? rows : rows.filter(row => !String(row.value).trim() || row.requiresTesterInput);
+                    if (!shownRows.length) {
+                        return rows.length ? <div className="automation-empty-state"><strong>Đã đủ dữ liệu</strong><span>Tất cả field đều có giá trị.</span></div>
+                            : <div className="automation-empty-state"><strong>{testCase.testData?.value ? "Đã có dữ liệu" : "Không có field chi tiết"}</strong><span>{testCase.testData?.value || "approved-testcases.json không cung cấp field chi tiết."}</span></div>;
+                    }
+                    return shownRows.map((row, index) => <div className="automation-data-row" key={`${testCase.id}-data-${index}`} ref={index === 0 ? firstMissingRef : null}>
+                        <label className="automation-data-field-label">{row.name}</label>
+                        <input aria-label="Giá trị" value={row.value} onChange={event => updateDataField(row.name, event.target.value)} placeholder={row.requiresTesterInput ? (row.instruction || "Cần dữ liệu") : "Nhập giá trị"} />
+                        {row.requiresTesterInput && <span className="automation-data-hint">Cần dữ liệu</span>}
+                    </div>);
+                })()}
             </div>}
             {activeTab === "REVIEW" && <ReviewMapping testCase={testCase} onAccept={() => update({ mappingStatus: "ACCEPTED" })} onEdit={() => update({ mappingStatus: "EDITED", status: "EDITED" })} />}
             {activeTab === "CODE" && <div className="automation-empty-state automation-empty-state--large">{testCase.generatedCode ? <pre className="automation-code-preview">{testCase.generatedCode}</pre> : <><strong>Chưa có mã kiểm thử</strong><span>Hãy sinh mã kiểm thử sau khi dữ liệu và ánh xạ đã sẵn sàng.</span></>}</div>}

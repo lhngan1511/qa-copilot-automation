@@ -26,7 +26,21 @@ function normalizeTestCase(item, index) {
     };
 }
 
+// Sẵn sàng khi: có fields và mọi field đã có giá trị (hoặc purpose EMPTY), HOẶC
+// executionReadiness = READY. Nếu có fields mà còn field trống -> DATA_REQUIRED.
 function isReady(tc) {
+    const fields = tc?.testData?.fields;
+    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+        const entries = Object.entries(fields);
+        if (entries.length > 0) {
+            return entries.every(([, f]) => {
+                if (!f || typeof f !== "object") return true;
+                if (f.requiresTesterInput === true) return false;
+                if (String(f.purpose ?? "").toUpperCase() === "EMPTY") return true;
+                return String(f.value ?? "").trim() !== "";
+            });
+        }
+    }
     const r = String(tc?.executionReadiness ?? "").toUpperCase();
     if (!r) return true;
     return r === "READY";
@@ -85,6 +99,12 @@ export default function AutomationWorkspacePage() {
         setNotice("");
     };
     const handleToggle = id => setSelectedTestCaseIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
+    // Click "Cần bổ sung dữ liệu" -> chọn testcase + mở Inspector + chuyển tab Dữ liệu kiểm thử.
+    const handleOpenData = id => {
+        setSelectedTestCaseIds(ids => ids.includes(id) ? ids : [...ids, id]);
+        setActiveTestCaseId(id);
+        setActiveTab("DATA");
+    };
     const handleSelectAll = (ids, allSelected) => setSelectedTestCaseIds(current => allSelected ? current.filter(id => !ids.includes(id)) : [...new Set([...current, ...ids])]);
     const updateEnvironment = value => setEnvironment(value);
     const activeTestCase = testCases.find(item => item.id === activeTestCaseId) || null;
@@ -191,12 +211,12 @@ export default function AutomationWorkspacePage() {
                     <div className="automation-step__head">
                         <h3>Chọn testcase, review và sinh automation</h3>
                         <span className="automation-step__tools">
-                            <button className="button button--secondary" type="button" disabled={selectedCount === 0 || !analyzed} onClick={() => generateRequest([...selectedTestCaseIds])}>Generate Selected</button>
-                            <button className="button button--secondary" type="button" disabled={selectedCount === 0} onClick={() => runRequest([...selectedTestCaseIds])}>Run Selected</button>
+                            <button className="button button--secondary" type="button" disabled={selectedCount === 0 || !analyzed} onClick={() => generateRequest([...selectedTestCaseIds])}>Sinh automation đã chọn</button>
+                            <button className="button button--secondary" type="button" disabled={selectedCount === 0} onClick={() => runRequest([...selectedTestCaseIds])}>Chạy testcase đã chọn</button>
                         </span>
                     </div>
                     <div className="automation-main-grid">
-                        <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onGenerate={generateRequest} onRun={runRequest} />
+                        <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={setActiveTestCaseId} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
                         <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} />
                     </div>
                 </div>

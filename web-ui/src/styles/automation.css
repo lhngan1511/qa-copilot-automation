@@ -429,3 +429,47 @@
     padding: 8px 12px;
     font-size: 13px;
 }
+
+/* Sprint 1.1 — testcase cards + action bar + status */
+.automation-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 2px;
+}
+.automation-action-bar__buttons { display: flex; gap: 8px; }
+.automation-testcase-items { display: grid; gap: 10px; }
+.automation-testcase-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: grid;
+    gap: 8px;
+}
+.automation-testcase-card--active { border-color: #3b82f6; background: #f8faff; }
+.automation-testcase-card--removed { opacity: 0.55; }
+.automation-testcase-card__top { display: flex; align-items: flex-start; gap: 10px; }
+.automation-testcase-card__top input { margin-top: 3px; }
+.automation-testcase-card__title { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 0; background: none; text-align: left; cursor: pointer; flex: 1; }
+.automation-testcase-card__title strong { color: #111827; font-size: 13px; }
+.automation-testcase-card__title span { color: #374151; font-size: 14px; font-weight: 600; }
+.automation-testcase-card__meta { font-size: 12px; color: #6b7280; }
+.automation-testcase-card__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.automation-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+.automation-status--ready { color: #065f46; background: #d1fae5; }
+.automation-status--warn { color: #92400e; background: #fef3c7; }
+.automation-status--action { border: 0; cursor: pointer; font-family: inherit; }
+.automation-data-field-label { font-size: 12px; font-weight: 600; color: #374151; min-width: 120px; }
+.automation-data-row { display: flex; align-items: center; gap: 8px; }
+.automation-data-row input { flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+
+@media (max-width: 640px) {
+    .automation-action-bar { flex-direction: column; align-items: flex-start; }
+    .automation-action-bar__buttons { width: 100%; }
+    .automation-action-bar__buttons .button { flex: 1; }
+    .automation-testcase-card__top { flex-wrap: wrap; }
+    .automation-data-row { flex-direction: column; align-items: stretch; }
+}

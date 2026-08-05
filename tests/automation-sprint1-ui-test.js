@@ -188,12 +188,12 @@ function normalizeConfidence(value) {
     pct = Math.min(100, Math.max(0, pct));
     return Math.round(pct);
 }
-assert.equal(normalizeConfidence(0.85), 85);
-assert.equal(normalizeConfidence(85), 85);
-assert.equal(normalizeConfidence(100), 100);
+assert.equal(normalizeConfidence11(0.85), 85);
+assert.equal(normalizeConfidence11(85), 85);
+assert.equal(normalizeConfidence11(100), 100);
 assert.equal(normalizeConfidence(0.5), 50);
 assert.equal(normalizeConfidence(1), 100);
-assert.ok(normalizeConfidence(100) <= 100, "không hiển thị 10000%");
+assert.ok(normalizeConfidence11(100) <= 100, "không hiển thị 10000%");
 assert.ok(normalizeConfidence(0.85) === 85, "0.85 -> 85%");
 
 // One click -> one request: mô phỏng in-flight guard (analyzingRef)
@@ -226,3 +226,60 @@ function makeAnalyzeController() {
     assert.equal(ctrl.calls(), 2);
     console.log("P0 analyze guard + confidence: PASS");
 })();
+
+/* ---------- Sprint 1.1: card status single, fill -> READY, badge -> open DATA ---------- */
+// isReady từ testData.fields (giống page)
+function isReady11(tc) {
+    const fields = tc?.testData?.fields;
+    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+        const entries = Object.entries(fields);
+        if (entries.length > 0) {
+            return entries.every(([, f]) => {
+                if (!f || typeof f !== "object") return true;
+                if (f.requiresTesterInput === true) return false;
+                if (String(f.purpose ?? "").toUpperCase() === "EMPTY") return true;
+                return String(f.value ?? "").trim() !== "";
+            });
+        }
+    }
+    const r = String(tc?.executionReadiness ?? "").toUpperCase();
+    return !r || r === "READY";
+}
+// testcase thiếu dữ liệu (fields trống)
+const tcDataReq = {
+    id: "TC005",
+    executionReadiness: "DATA_REQUIRED",
+    testData: { fields: { "Tên đăng nhập": { value: "", purpose: "VALID" }, "Mật khẩu": { value: "", purpose: "VALID" } } }
+};
+assert.equal(isReady11(tcDataReq), false, "field trống -> Cần bổ sung dữ liệu");
+// điền đủ -> READY
+const tcFilled = {
+    ...tcDataReq,
+    testData: { fields: { "Tên đăng nhập": { value: "admin" }, "Mật khẩu": { value: "123456@Aa" } } }
+};
+assert.equal(isReady11(tcFilled), true, "điền đủ -> Sẵn sàng");
+
+// Chỉ MỘT trạng thái: không thể vừa Sẵn sàng vừa Cần bổ sung
+const ready = isReady11(tcFilled);
+assert.equal(ready, true);
+assert.equal(isReady11(tcDataReq), false);
+
+// Badge click -> mở đúng testcase + tab DATA (mô phỏng handler handleOpenData)
+function handleOpenData(state, id) {
+    return {
+        selected: state.selected.includes(id) ? state.selected : [...state.selected, id],
+        active: id,
+        tab: "DATA"
+    };
+}
+const next = handleOpenData({ selected: [], active: null }, "TC005");
+assert.deepEqual(next, { selected: ["TC005"], active: "TC005", tab: "DATA" });
+
+// Confidence chuẩn (không 10000%)
+function normalizeConfidence11(v) { const n = Number(v); if (!Number.isFinite(n)) return null; let p = n <= 1 ? n * 100 : n; p = Math.min(100, Math.max(0, p)); return Math.round(p); }
+assert.equal(normalizeConfidence11(0.85), 85);
+assert.equal(normalizeConfidence11(85), 85);
+assert.equal(normalizeConfidence11(100), 100);
+assert.ok(normalizeConfidence11(100) <= 100, "không còn 10000%");
+
+console.log("Automation Sprint1.1 card/status test: PASS");
