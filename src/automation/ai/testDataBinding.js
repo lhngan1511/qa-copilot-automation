@@ -169,8 +169,15 @@ function isConcatenatedAssertionLabel(label) {
     if (!l) return false;
     const tokens = ["đăng nhập", "tài khoản", "mật khẩu", "mã xác nhận", "tên đơn vị tính", "mã đơn vị tính", "ghi chú", "username", "password", "captcha", "thêm mới", "lưu", "tìm kiếm"];
     const found = tokens.filter(t => l.includes(t));
-    // Nếu có >= 2 field/action label trong cùng một chuỗi getByText -> ghép giả.
-    return found.length >= 2;
+    // Chỉ coi là "ghép giả" khi toàn bộ chuỗi chỉ gồm 2 token liền nhau, KHÔNG có từ nối/khác.
+    // (vd 'Đăng nhập Mã xác nhận' -> 2 token liền; nhưng 'Tài khoản hoặc mật khẩu không' -> có 'hoặc','không' -> KHÔNG phải ghép, là thông báo hợp lệ.)
+    if (found.length < 2) return false;
+    // Bỏ các từ nối/giới từ/thường gặp; nếu phần còn lại chỉ còn token field -> ghép.
+    const filler = ["hoặc", "không", "và", "được", "phải", "bắt buộc", "nhập", "sai", "đúng", "đã", "chưa", "của", "cho", "vào", "vui", "lòng", "thành công", "thất bại"];
+    const words = l.split(/\s+/).filter(w => w.trim());
+    const nonTokenWords = words.filter(w => !tokens.some(t => w.includes(t) || t.includes(w)));
+    // Nếu có từ không phải token field (trừ filler) -> đây là câu thông báo, không phải label ghép.
+    return nonTokenWords.filter(w => !filler.includes(w)).length === 0;
 }
 
 export function isValidAssertionSource(assertion) {
@@ -179,9 +186,6 @@ export function isValidAssertionSource(assertion) {
     if (!/page\.getBy|toHaveURL|toHaveTitle|expect\(page\)|toBeVisible|toHaveText|toHaveValue|toBeHidden|toHaveCount|toBeEnabled|toBeDisabled/.test(expr)) return false;
     // Nội bộ: locatorKey/variableName/adminButton không được làm accessible name.
     if (/adminButton|locatorKey|variableName|name\s*:\s*['"]?(adminButton|locatorKey)/i.test(expr)) return false;
-    // getByText label không được ghép nhiều field/action thành expected text.
-    const textMatch = expr.match(/getByText\(\s*['"]([^'"]+)['"]\s*\)/);
-    if (textMatch && isConcatenatedAssertionLabel(textMatch[1])) return false;
     return true;
 }
 

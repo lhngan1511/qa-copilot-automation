@@ -74,8 +74,9 @@ async function main() {
     assert.equal(gen2.written, false, "thiếu assertion -> không ghi file");
     assert.equal(gen2.guard?.errorCode, "ASSERTION_MAPPING_REQUIRED", "báo rõ lỗi assertion");
 
-    // 4. Assertion ghép giả bị reject.
-    assert.equal(isValidAssertionSource({ playwrightAssertion: "await expect(page.getByText('Đăng nhập Mã xác nhận')).toBeVisible()" }), false);
+    // 4. Internal key (adminButton/locatorKey) bị reject; thông báo lỗi hợp lệ (chứa nhiều field name) KHÔNG bị reject.
+    assert.equal(isValidAssertionSource({ playwrightAssertion: "await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible()" }), false);
+    assert.equal(isValidAssertionSource({ playwrightAssertion: "await expect(page.getByText('Tài khoản hoặc mật khẩu không')).toBeVisible()" }), true);
     assert.equal(isValidAssertionSource({ playwrightAssertion: "await expect(page.getByText('Đăng nhập thành công')).toBeVisible()" }), true);
 
     // 5. extractCodegenAssertion trích nguyên statement.

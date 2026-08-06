@@ -150,17 +150,21 @@ export function parseStatements(codegenText) {
  */
 export function segmentIntoBlocks(stmts, codegenText) {
     const s = String(codegenText ?? "");
-    const blocks = [];
-    let current = null;
-    for (const st of stmts) {
-        // Một test block bắt đầu khi gặp assertion/action mới sau một `test(` gần nhất.
-        // Dễ hơn: dò `test(` trong source để cắt block.
-    }
-    // Cắt theo `test('...'`:
-    const testRe = /\btest\s*\(\s*['"`]([^'"`]*)['"`]\s*,\s*async\s*\(\s*\{\s*page\s*\}\s*\)\s*=>\s*\{/g;
+    // Cắt theo khai báo test(): linh hoạt format.
+    //   test('title', async ({ page }) => {   | test("title", async ({ page, ... }) => {
+    //   test('title', async function({ page })   | test('title', ({ page }) => {
+    // Không đòi đúng `{ page }` — chỉ cần test('...', <fn> { để mở block.
+    const testRe = /\btest\s*\(\s*['"`]([^'"`]*)['"`]\s*,\s*(?:async\s*)?(?:function\s*)?\(\s*\{\s*[^}]*\}\s*(?:,\s*[^)]*)?\)\s*(?:=>)?\s*\{/g;
     let m;
     const testStarts = [];
     while ((m = testRe.exec(s)) !== null) testStarts.push({ title: m[1], start: m.index, line: s.slice(0, m.index).split("\n").length });
+    // Fallback: nếu regex trên không match (format lạ), tìm bất kỳ `test('...'` hoặc `test("..."`
+    if (testStarts.length === 0) {
+        const loose = /\btest\s*\(\s*['"`]([^'"`]*)['"`]\s*[,)]/g;
+        let mm;
+        while ((mm = loose.exec(s)) !== null) testStarts.push({ title: mm[1], start: mm.index, line: s.slice(0, mm.index).split("\n").length });
+    }
+    const blocks = [];
     for (let i = 0; i < testStarts.length; i++) {
         const block = testStarts[i];
         const end = i + 1 < testStarts.length ? testStarts[i + 1].start : s.length;
@@ -308,7 +312,8 @@ export function isErrorAssertion(st) {
     const txt = String(st?.stmt ?? st ?? "").toLowerCase();
     const name = String(st?.name ?? "").toLowerCase();
     const combined = txt + " " + name;
-    return /vui lòng|không hợp lệ|không hợp lệ|bắt buộc|không được|không thành công|thất bại|lỗi|error|required|invalid|mời bạn|nhập (đúng|sai)|đã tồn tại|trùng|không thể|chưa nhập|thiếu/.test(combined);
+    // Thông báo lỗi/validation: từ phủ định "không" + "vui lòng/hoặc...", required/invalid/error...
+    return /vui lòng|không hợp lệ|không hợp lệ|bắt buộc|không được|không thành công|thất bại|lỗi|error|required|invalid|mời bạn|nhập (đúng|sai)|đã tồn tại|trùng|không thể|chưa nhập|thiếu|hoặc .* không|không \w|không$|tài khoản hoặc mật khẩu/.test(combined);
 }
 
 /** Testcase có phải loại "thành công" (cần assertion chứng minh kết quả dương)? */
