@@ -1,45 +1,91 @@
-import { useMemo, useState } from "react";
-import V3WorkspaceStepper from "../components/automationV3/V3WorkspaceStepper.jsx";
+import { useEffect, useMemo, useState } from "react";
 import V3UploadPanel from "../components/automationV3/V3UploadPanel.jsx";
 import V3TestCaseList from "../components/automationV3/V3TestCaseList.jsx";
 import V3ActionBar from "../components/automationV3/V3ActionBar.jsx";
 import {
     createWorkspace,
+    getWorkspace,
     selectTestCase,
     unselectTestCase
 } from "../api/automationV3Api.js";
 
 /*
- AutomationV3Page — UI Bước 5A (Workspace + Upload + Chọn testcase).
+ AutomationV3Page — Automation Workspace (bước 5A).
 
- Luồng:
-   Upload approved-testcases.json
-     → parse (chỉ APPROVED) → POST /api/automation-v3/workspaces
-     → hiển thị toàn bộ approved testcase
-     → chọn/bỏ chọn gọi select/unselect API.
-
- Chưa làm ở Bước 5A: Record, Review, Assertion, Generate, Run.
- Không có upload CodeGen, không AI Mapping, không Drawer tự mở.
+ Tư duy: Workspace là MÀN HÌNH GỐC, không phải Upload.
+   - Upload approved-testcases.json chỉ xuất hiện khi TẠO Workspace mới.
+   - Khi đã có Workspace → không hiển thị Upload Panel, chỉ hiển thị workspace.
+   - Nút trên card thay đổi theo trạng thái testcase (chọn/bỏ chọn).
+   - Mỗi card chỉ có một hành động chính (checkbox).
+   - Không hiển thị khái niệm 5A/5B/5C cho người dùng.
+ Workspace hiện tại được ghi nhớ (localStorage) để mở lại sau khi tải lại trang.
 */
 
-const STEP_LABEL = "Workspace & chọn testcase";
+const STORAGE_KEY = "qa-copilot.automation.workspaceId";
+const DISPLAY_KEY = "qa-copilot.automation.display";
+
+function readDisplayMap() {
+    try {
+        return JSON.parse(window.localStorage.getItem(DISPLAY_KEY) || "{}");
+    } catch {
+        return {};
+    }
+}
 
 export default function AutomationV3Page() {
-    const [approveData, setApproveData] = useState(null); // { result, fileName }
     const [workspace, setWorkspace] = useState(null); // { workspaceId, items }
+    const [displayMap, setDisplayMap] = useState(() => readDisplayMap());
+    const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        const savedId = window.localStorage.getItem(STORAGE_KEY);
+        if (!savedId) {
+            setCreating(true);
+            return;
+        }
+        getWorkspace(savedId)
+            .then(data => {
+                if (cancelled) return;
+                setWorkspace({ workspaceId: savedId, items: Array.isArray(data.items) ? data.items : [] });
+            })
+            .catch(() => {
+                if (cancelled) return;
+                window.localStorage.removeItem(STORAGE_KEY);
+                setCreating(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const selectedIds = useMemo(() => {
         if (!workspace?.items) return [];
         return workspace.items.filter(item => item.selectedForAutomation).map(item => item.testCaseId);
     }, [workspace]);
 
-    const handleApproved = async ({ result, fileName }) => {
+    const meta = useMemo(() => {
+        const items = workspace?.items ?? [];
+        return {
+            count: items.length,
+            module: items[0]?.module ?? ""
+        };
+    }, [workspace]);
+
+    const enrichedItems = useMemo(() => {
+        if (!workspace?.items) return [];
+        return workspace.items.map(item => ({
+            ...item,
+            ...(displayMap[item.testCaseId] ?? {})
+        }));
+    }, [workspace, displayMap]);
+
+    const handleCreated = async ({ result, fileName }) => {
         setError("");
         setNotice("");
-        setApproveData({ result, fileName });
         setBusy(true);
         try {
             const payload = (result.rawApproved ?? []).map(tc => ({
@@ -55,19 +101,40 @@ export default function AutomationV3Page() {
                 module: result.meta.module,
                 source: "NEW"
             });
-            setWorkspace({
+            const next = {
                 workspaceId: created.workspaceId,
                 items: Array.isArray(created.items) ? created.items : []
-            });
-            setNotice(
-                `Đã đọc thành công — ${created.approvedCount ?? result.meta.count} testcase đã duyệt`
-            );
+            };
+            setWorkspace(next);
+            window.localStorage.setItem(STORAGE_KEY, created.workspaceId);
+            // Lưu metadata hiển thị (automationCandidate/executionReadiness/dataNote) để mở lại.
+            const map = {};
+            for (const tc of result.approved ?? []) {
+                map[tc.testCaseId] = {
+                    automationCandidate: tc.automationCandidate,
+                    automationDisabledReason: tc.automationDisabledReason,
+                    executionReadiness: tc.executionReadiness,
+                    dataNote: tc.dataNote
+                };
+            }
+            setDisplayMap(map);
+            window.localStorage.setItem(DISPLAY_KEY, JSON.stringify(map));
+            setCreating(false);
+            setNotice(`Đã tạo Workspace — ${created.approvedCount ?? result.meta.count} testcase`);
         } catch (caught) {
             setError(caught?.message ?? "Không tạo được workspace.");
-            setWorkspace(null);
         } finally {
             setBusy(false);
         }
+    };
+
+    const handleCreateStart = () => {
+        setError("");
+        setCreating(true);
+    };
+
+    const handleCreateCancel = () => {
+        setCreating(false);
     };
 
     const handleError = message => setError(message);
@@ -101,71 +168,67 @@ export default function AutomationV3Page() {
         }
     };
 
-    const approvedList = approveData?.result?.approved ?? [];
-
     return (
         <div className="v3-page">
             <div className="v3-page__head">
                 <div>
-                    <h1 className="v3-page__title">Automation — Record by Testcase</h1>
-                    <p className="v3-page__sub">{STEP_LABEL}</p>
+                    <h1 className="v3-page__title">Automation Workspace</h1>
+                    <p className="v3-page__sub">
+                        {workspace
+                            ? `${meta.count} testcase đã duyệt · module ${meta.module || "—"}`
+                            : "Chọn testcase cần tự động hóa"}
+                    </p>
                 </div>
+                {workspace ? (
+                    <button type="button" className="v3-btn v3-btn--secondary" onClick={handleCreateStart}>
+                        Tạo workspace mới
+                    </button>
+                ) : null}
             </div>
-
-            <V3WorkspaceStepper />
 
             {error ? (
                 <div className="v3-banner v3-banner--error" role="alert">
                     {error}
                 </div>
             ) : null}
+            {notice ? <div className="v3-banner v3-banner--ok">{notice}</div> : null}
 
-            {!workspace ? (
-                <section className="v3-section" aria-label="Bước 1: Workspace">
-                    <V3UploadPanel onApproved={handleApproved} onError={handleError} busy={busy} />
+            {creating ? (
+                <section className="v3-section" aria-label="Tạo workspace mới">
+                    <div className="v3-section__title">
+                        <h2>Tạo Workspace mới</h2>
+                        <span className="v3-section__hint">Tải approved-testcases.json</span>
+                    </div>
+                    <V3UploadPanel onApproved={handleCreated} onError={handleError} busy={busy} />
+                    {workspace ? (
+                        <button type="button" className="v3-btn v3-btn--ghost" onClick={handleCreateCancel}>
+                            Quay lại workspace
+                        </button>
+                    ) : null}
                 </section>
-            ) : (
-                <>
-                    <section className="v3-section" aria-label="Bước 1: Workspace">
-                        <div className="v3-ok">
-                            <span className="v3-ok__check" aria-hidden="true">✓</span>
-                            <div>
-                                <b>Đã đọc thành công</b>
-                                <div className="v3-ok__meta">
-                                    <span className="v3-chip">
-                                        <b>{approveData.result.meta.count}</b> testcase đã duyệt
-                                    </span>
-                                    {approveData.result.meta.module ? (
-                                        <span className="v3-chip">
-                                            Module: <b>{approveData.result.meta.module}</b>
-                                        </span>
-                                    ) : null}
-                                    {approveData.result.meta.feature ? (
-                                        <span className="v3-chip">
-                                            Chức năng: <b>{approveData.result.meta.feature}</b>
-                                        </span>
-                                    ) : null}
-                                    <span className="v3-chip">
-                                        Workspace: <b>{workspace.workspaceId}</b>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+            ) : null}
 
-                    <section className="v3-section" aria-label="Bước 2: Chọn testcase">
-                        <div className="v3-section__title">
-                            <h2>Chọn testcase</h2>
-                            <span className="v3-section__hint">
-                                Chỉ hiển thị testcase đã duyệt (reviewStatus = APPROVED)
-                            </span>
-                        </div>
-                        <V3TestCaseList testCases={approvedList} selectedIds={selectedIds} onToggle={handleToggle} />
-                    </section>
-                </>
-            )}
+            {!creating && !workspace ? (
+                <div className="v3-empty v3-empty--action">
+                    <strong>Chưa có Automation Workspace</strong>
+                    <span>Tạo workspace để chọn testcase cần ghi.</span>
+                    <button type="button" className="v3-btn v3-btn--primary" onClick={handleCreateStart}>
+                        Tạo workspace mới
+                    </button>
+                </div>
+            ) : null}
 
-            {workspace && selectedIds.length > 0 ? (
+            {!creating && workspace ? (
+                <section className="v3-section" aria-label="Chọn testcase">
+                    <div className="v3-section__title">
+                        <h2>Testcase đã duyệt</h2>
+                        <span className="v3-section__hint">Chỉ hiển thị reviewStatus = APPROVED</span>
+                    </div>
+                    <V3TestCaseList testCases={enrichedItems} selectedIds={selectedIds} onToggle={handleToggle} />
+                </section>
+            ) : null}
+
+            {workspace && selectedIds.length > 0 && !creating ? (
                 <V3ActionBar selectedCount={selectedIds.length} busy={busy} />
             ) : null}
         </div>

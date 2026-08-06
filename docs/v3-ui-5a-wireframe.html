@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wireframe — Bước 5A: Workspace + Upload + Chọn testcase (V3)</title>
+<title>Wireframe — Automation Workspace (bước 5A)</title>
 <style>
   :root {
     --background:#f6f8fb; --surface:#ffffff; --surface-subtle:#f8fafc;
@@ -22,11 +22,10 @@
   .wb-toolbar strong { font-size:14px; }
   .wb-toolbar .tag { margin-left:auto; font-size:12px; background:rgba(255,255,255,.16);
     padding:4px 10px; border-radius:999px; }
-  .wb-canvas { max-width:1180px; margin:0 auto; padding:28px 24px 80px; }
+  .wb-canvas { max-width:1080px; margin:0 auto; padding:28px 24px 80px; }
   .wb-title { margin:0 0 4px; font-size:22px; letter-spacing:-.01em; }
   .wb-sub { margin:0 0 24px; color:var(--muted); font-size:13px; }
   .wb-section { margin:36px 0 12px; font-size:15px; font-weight:700; color:#2a3350; }
-  .wb-section small { font-weight:500; color:var(--muted); font-size:12px; }
   .wb-frame { background:var(--surface); border:1px solid var(--border); border-radius:14px;
     box-shadow:var(--shadow); overflow:hidden; margin-bottom:28px; }
   .wb-frame-head { display:flex; align-items:center; gap:10px; padding:10px 16px;
@@ -36,199 +35,167 @@
   .wb-note { background:#f1f5ff; border:1px dashed #a9c2f5; color:#35539c; border-radius:10px;
     padding:10px 14px; font-size:12px; margin-top:14px; }
 
-  /* Stepper */
-  .v3-stepper { display:flex; gap:6px; align-items:center; padding:4px 0 20px; flex-wrap:wrap; }
-  .v3-step { display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
-    border:1px solid var(--border); background:#fff; color:var(--muted); font-size:13px; }
-  .v3-step b { font-weight:600; }
-  .v3-step .n { width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
-    background:#e9edf5; color:#47506b; font-size:12px; font-weight:700; }
-  .v3-step--active { border-color:var(--primary); background:var(--primary-soft); color:var(--primary-dark); }
-  .v3-step--active .n { background:var(--primary); color:#fff; }
-  .v3-step--locked { opacity:.55; }
-  .v3-step .lock { font-size:11px; }
-
-  /* Buttons (không dùng HTML button mặc định) */
   .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px;
     min-height:40px; padding:0 16px; border:1px solid transparent; border-radius:8px;
     font-size:14px; font-weight:600; cursor:pointer; }
   .btn--primary { background:var(--primary); color:#fff; }
-  .btn--primary:hover { background:var(--primary-dark); }
   .btn--secondary { background:#fff; color:var(--primary-dark); border-color:#b8c7ea; }
-  .btn--ghost { background:transparent; color:var(--muted); border-color:var(--border); }
   .btn--disabled { background:#eef1f6; color:#9aa3b5; cursor:not-allowed; }
 
-  /* Upload */
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .page-head h1 { margin:0; font-size:19px; }
+  .page-head p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+
+  .empty { display:grid; gap:12px; place-items:center; padding:52px 20px; text-align:center;
+    border:1px dashed var(--border); border-radius:12px; background:var(--surface-subtle); }
+  .empty b { font-size:15px; }
+  .empty span { color:var(--muted); font-size:13px; }
+
   .upload { display:grid; place-items:center; gap:10px; padding:28px; border:2px dashed #b9c7e4;
     border-radius:12px; background:var(--surface-subtle); text-align:center; }
-  .upload .ico { font-size:26px; }
-  .upload h4 { margin:0; font-size:15px; }
+  .upload h4 { margin:0 0 4px; font-size:15px; }
   .upload p { margin:0; color:var(--muted); font-size:13px; }
 
-  /* Upload success */
   .ok-banner { display:flex; align-items:center; gap:12px; background:var(--success-soft);
     border:1px solid #a7e3c8; color:var(--success); border-radius:12px; padding:12px 16px; margin-bottom:16px; }
-  .ok-banner .check { width:24px; height:24px; border-radius:50%; background:#12b76a; color:#fff;
-    display:grid; place-items:center; font-size:14px; flex:0 0 auto; }
   .ok-banner b { color:var(--success); }
-  .ok-meta { display:flex; gap:12px; flex-wrap:wrap; }
-  .ok-meta .chip { background:#fff; border:1px solid var(--border); border-radius:8px;
-    padding:8px 12px; font-size:13px; color:var(--muted); }
-  .ok-meta .chip b { color:var(--text); }
 
-  /* Testcase list */
   .tc-list { display:grid; gap:12px; }
-  .tc-card { display:grid; gap:10px; background:#fff; border:1px solid var(--border);
-    border-radius:12px; padding:14px 16px; }
+  .tc-card { display:grid; background:#fff; border:1px solid var(--border); border-radius:12px;
+    padding:14px 16px; }
   .tc-card--selected { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
   .tc-card--disabled { opacity:.7; }
   .tc-top { display:flex; align-items:flex-start; gap:12px; }
   .chk { width:20px; height:20px; border:1.5px solid #9aa6bd; border-radius:5px; flex:0 0 auto;
-    margin-top:2px; display:grid; place-items:center; font-size:13px; color:#fff; }
+    margin-top:2px; display:grid; place-items:center; font-size:13px; color:#fff; background:#fff; }
   .chk--on { background:var(--primary); border-color:var(--primary); }
-  .chk--off { background:#fff; }
-  .tc-id { font-weight:700; font-size:14px; color:var(--primary-dark); min-width:56px; }
+  .tc-id { font-weight:700; font-size:14px; color:var(--primary-dark); min-width:52px; }
   .tc-body { min-width:0; flex:1; }
   .tc-title { font-size:15px; font-weight:600; overflow-wrap:anywhere; }
   .tc-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; }
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px;
-    font-size:12px; font-weight:600; }
+  .badge { display:inline-flex; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; }
   .badge--type { background:#eef2f9; color:#3d4867; }
   .badge--sel { background:var(--primary-soft); color:var(--primary-dark); }
   .badge--nosel { background:#eef1f6; color:#6b768c; }
-  .badge--info { background:var(--warning-soft); color:var(--warning); }
   .badge--warn { background:#fff0ea; color:#b54708; }
-  .data-line { font-size:13px; color:var(--muted); overflow-wrap:anywhere; }
-  .data-line b { color:#3a445c; }
-  .card-action { margin-top:4px; }
-  .card-action .btn { min-height:36px; font-size:13px; }
+  .data-line { font-size:13px; color:var(--muted); margin-top:6px; }
 
-  /* Action bar */
   .action-bar { display:flex; align-items:center; justify-content:space-between; gap:16px;
     background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 16px;
     box-shadow:var(--shadow); flex-wrap:wrap; }
-  .action-count b { color:var(--primary-dark); }
-  .action-right { display:flex; align-items:center; gap:10px; }
-  .coming-note { font-size:12px; color:var(--muted); }
 
-  /* Mobile */
   .device { max-width:400px; margin:0 auto; background:#fff; border:1px solid var(--border);
     border-radius:18px; overflow:hidden; box-shadow:var(--shadow); }
-  .device .dhead { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border);
+  .device .dhead { padding:10px 14px; border-bottom:1px solid var(--border);
     background:var(--surface-subtle); font-size:13px; font-weight:700; }
   .device .dbody { padding:14px; display:grid; gap:12px; }
-
-  .state-panel { display:grid; place-items:center; gap:6px; padding:40px 20px; text-align:center; color:var(--muted); }
-  .state-panel b { color:var(--text); }
 </style>
 </head>
 <body>
 <div class="wb-toolbar">
-  <strong>Wireframe — Bước 5A: UI Foundation (Workspace + Upload + Chọn testcase)</strong>
-  <span class="tag">Chờ duyệt trước khi code</span>
+  <strong>Wireframe — Automation Workspace (bước 5A) · Tư duy mới</strong>
+  <span class="tag">Workspace là màn hình gốc</span>
 </div>
 <div class="wb-canvas">
-  <h1 class="wb-title">Màn hình Automation — Record by Testcase (V3)</h1>
-  <p class="wb-sub">Stepper 5 bước: ① Workspace ② Chọn testcase ③ Ghi testcase ④ Review ⑤ Sinh &amp; chạy — Bước 5A chỉ triển khai ① &amp; ②. Các bước sau hiển thị khóa (lock).</p>
+  <h1 class="wb-title">Automation Workspace</h1>
+  <p class="wb-sub">Workspace là màn hình gốc. Upload chỉ xuất hiện khi TẠO workspace mới. Không stepper, không phiên bản. Nút trên card thay đổi theo trạng thái testcase.</p>
 
-  <div class="v3-stepper">
-    <div class="v3-step v3-step--active"><span class="n">1</span><b>Workspace</b></div>
-    <div class="v3-step v3-step--active"><span class="n">2</span><b>Chọn testcase</b></div>
-    <div class="v3-step v3-step--locked"><span class="n">3</span><b>Ghi testcase</b><span class="lock">🔒</span></div>
-    <div class="v3-step v3-step--locked"><span class="n">4</span><b>Review</b><span class="lock">🔒</span></div>
-    <div class="v3-step v3-step--locked"><span class="n">5</span><b>Sinh &amp; chạy</b><span class="lock">🔒</span></div>
-  </div>
-
-  <!-- ============ Screen 1: chưa upload ============ -->
-  <h2 class="wb-section">Màn hình 1 — Chưa upload <small>(Workspace trống)</small></h2>
+  <!-- 1. Chưa có workspace -->
+  <h2 class="wb-section">Màn hình 1 — Chưa có workspace</h2>
   <div class="wb-frame">
-    <div class="wb-frame-head"><span class="wb-dot"></span> Máy tính / responsive</div>
+    <div class="wb-frame-head"><span class="wb-dot"></span> Màn hình gốc khi chưa có workspace</div>
     <div class="wb-frame-body">
-      <div class="upload">
-        <div class="ico">📄</div>
-        <h4>Tải approved-testcases.json</h4>
-        <p>Kéo thả hoặc chọn file. Chỉ đọc testcase đã duyệt (reviewStatus = APPROVED).</p>
-        <button class="btn btn--primary" type="button">Chọn file</button>
+      <div class="page-head">
+        <div><h1>Automation Workspace</h1><p>Chọn testcase cần tự động hóa</p></div>
       </div>
-      <div class="state-panel">
-        <b>Chưa có workspace</b>
-        <span>Tải file để tạo Automation Workspace và chọn testcase cần ghi.</span>
+      <div class="empty">
+        <b>Chưa có Automation Workspace</b>
+        <span>Tạo workspace để chọn testcase cần ghi.</span>
+        <button class="btn btn--primary" type="button">Tạo workspace mới</button>
       </div>
     </div>
   </div>
 
-  <!-- ============ Screen 2: upload thành công ============ -->
-  <h2 class="wb-section">Màn hình 2 — Upload thành công <small>(Workspace đã tạo, liệt kê approved)</small></h2>
+  <!-- 2. Tạo workspace mới (upload) -->
+  <h2 class="wb-section">Màn hình 2 — Tạo workspace mới (Upload)</h2>
   <div class="wb-frame">
-    <div class="wb-frame-head"><span class="wb-dot"></span> Máy tính</div>
+    <div class="wb-frame-head"><span class="wb-dot"></span> Upload chỉ xuất hiện trong luồng tạo workspace</div>
     <div class="wb-frame-body">
-      <div class="ok-banner">
-        <span class="check">✓</span>
-        <div><b>Đã đọc thành công</b></div>
+      <div class="page-head">
+        <div><h1>Automation Workspace</h1><p>Tạo workspace mới · Tải approved-testcases.json</p></div>
       </div>
-      <div class="ok-meta">
-        <div class="chip"><b>6</b> testcase đã duyệt</div>
-        <div class="chip">Module: <b>Đăng nhập</b></div>
-        <div class="chip">Chức năng: <b>Login</b></div>
-        <div class="chip">Workspace: <b>WS-1786…</b></div>
+      <div class="upload">
+        <h4>Tải approved-testcases.json</h4>
+        <p>Chỉ đọc testcase đã duyệt (reviewStatus = APPROVED).</p>
+        <button class="btn btn--primary" type="button">Chọn file</button>
       </div>
-      <div class="tc-list" style="margin-top:16px;">
+      <div class="wb-note">Sau khi tạo thành công → chuyển về Màn hình 3 (Workspace). Không còn hiển thị Upload Panel.</div>
+    </div>
+  </div>
+
+  <!-- 3. Workspace có testcase -->
+  <h2 class="wb-section">Màn hình 3 — Workspace (có testcase đã duyệt)</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-head"><span class="wb-dot"></span> Workspace gốc — không Upload, không stepper</div>
+    <div class="wb-frame-body">
+      <div class="page-head">
+        <div><h1>Automation Workspace</h1><p>6 testcase đã duyệt · module Đăng nhập</p></div>
+        <button class="btn btn--secondary" type="button">Tạo workspace mới</button>
+      </div>
+      <div class="tc-list">
         <div class="tc-card">
           <div class="tc-top">
-            <span class="chk chk--off"></span>
-            <div class="tc-id">TC001</div>
+            <span class="chk"></span>
+            <span class="tc-id">TC001</span>
             <div class="tc-body">
               <div class="tc-title">Đăng nhập thành công với thông tin hợp lệ</div>
               <div class="tc-row">
                 <span class="badge badge--type">POSITIVE</span>
                 <span class="badge badge--nosel">Chưa chọn</span>
               </div>
-              <div class="data-line" style="margin-top:6px;">Dữ liệu: sẵn sàng</div>
+              <div class="data-line">Dữ liệu: Sẵn sàng</div>
             </div>
           </div>
         </div>
         <div class="tc-card tc-card--selected">
           <div class="tc-top">
             <span class="chk chk--on">✓</span>
-            <div class="tc-id">TC002</div>
+            <span class="tc-id">TC002</span>
             <div class="tc-body">
               <div class="tc-title">Đổi mật khẩu thành công</div>
               <div class="tc-row">
                 <span class="badge badge--type">POSITIVE</span>
                 <span class="badge badge--sel">Đã chọn</span>
               </div>
-              <div class="data-line" style="margin-top:6px;">Dữ liệu: sẵn sàng</div>
-              <div class="card-action">
-                <button class="btn btn--secondary btn--disabled" type="button">Ghi testcase · bước sau</button>
-              </div>
+              <div class="data-line">Dữ liệu: Sẵn sàng</div>
             </div>
           </div>
         </div>
         <div class="tc-card tc-card--disabled">
           <div class="tc-top">
-            <span class="chk chk--off" style="opacity:.4"></span>
-            <div class="tc-id">TC003</div>
+            <span class="chk" style="opacity:.4"></span>
+            <span class="tc-id">TC003</span>
             <div class="tc-body">
               <div class="tc-title">Quên mật khẩu</div>
               <div class="tc-row">
                 <span class="badge badge--type">NEGATIVE</span>
                 <span class="badge badge--nosel">Chưa chọn</span>
               </div>
-              <div class="data-line" style="margin-top:6px;">automationCandidate = false — <b>Không đủ thông tin</b></div>
+              <div class="data-line" style="color:var(--warning)">Không đủ thông tin</div>
             </div>
           </div>
         </div>
         <div class="tc-card">
           <div class="tc-top">
-            <span class="chk chk--off"></span>
-            <div class="tc-id">TC004</div>
+            <span class="chk"></span>
+            <span class="tc-id">TC004</span>
             <div class="tc-body">
               <div class="tc-title">Đăng nhập sai mật khẩu</div>
               <div class="tc-row">
                 <span class="badge badge--type">NEGATIVE</span>
-                <span class="badge badge--warn">Cần bổ sung dữ liệu</span>
+                <span class="badge badge--nosel">Chưa chọn</span>
               </div>
-              <div class="data-line" style="margin-top:6px;">Dữ liệu: <b>Cần bổ sung dữ liệu trước khi chạy</b></div>
+              <div class="data-line" style="color:var(--warning)">Cần bổ sung dữ liệu trước khi chạy</div>
             </div>
           </div>
         </div>
@@ -236,117 +203,88 @@
     </div>
   </div>
 
-  <!-- ============ Screen 3: card NOT_SELECTED ============ -->
-  <h2 class="wb-section">Màn hình 3 — Card NOT_SELECTED</h2>
+  <!-- 4. Card NOT_SELECTED -->
+  <h2 class="wb-section">Màn hình 4 — Card NOT_SELECTED</h2>
   <div class="wb-frame">
-    <div class="wb-frame-head"><span class="wb-dot"></span> Thành phần card — trạng thái "Chưa chọn"</div>
+    <div class="wb-frame-head"><span class="wb-dot"></span> 1 hành động chính = checkbox</div>
     <div class="wb-frame-body" style="max-width:560px;">
       <div class="tc-card">
         <div class="tc-top">
-          <span class="chk chk--off"></span>
-          <div class="tc-id">TC001</div>
+          <span class="chk"></span>
+          <span class="tc-id">TC001</span>
           <div class="tc-body">
             <div class="tc-title">Đăng nhập thành công với thông tin hợp lệ</div>
             <div class="tc-row">
               <span class="badge badge--type">POSITIVE</span>
               <span class="badge badge--nosel">Chưa chọn</span>
             </div>
-            <div class="data-line" style="margin-top:6px;">Dữ liệu: sẵn sàng</div>
+            <div class="data-line">Dữ liệu: Sẵn sàng</div>
           </div>
         </div>
       </div>
-      <div class="wb-note">Chỉ 1 trạng thái chính + 1 dòng dữ liệu. Không primary action khi chưa chọn.</div>
     </div>
   </div>
 
-  <!-- ============ Screen 4: card SELECTED ============ -->
-  <h2 class="wb-section">Màn hình 4 — Card SELECTED</h2>
+  <!-- 5. Card SELECTED -->
+  <h2 class="wb-section">Màn hình 5 — Card SELECTED</h2>
   <div class="wb-frame">
-    <div class="wb-frame-head"><span class="wb-dot"></span> Thành phần card — trạng thái "Đã chọn"</div>
+    <div class="wb-frame-head"><span class="wb-dot"></span> 1 hành động chính = checkbox (đã chọn)</div>
     <div class="wb-frame-body" style="max-width:560px;">
       <div class="tc-card tc-card--selected">
         <div class="tc-top">
           <span class="chk chk--on">✓</span>
-          <div class="tc-id">TC002</div>
+          <span class="tc-id">TC002</span>
           <div class="tc-body">
             <div class="tc-title">Đổi mật khẩu thành công</div>
             <div class="tc-row">
               <span class="badge badge--type">POSITIVE</span>
               <span class="badge badge--sel">Đã chọn</span>
             </div>
-            <div class="data-line" style="margin-top:6px;">Dữ liệu: sẵn sàng</div>
-            <div class="card-action">
-              <button class="btn btn--secondary btn--disabled" type="button">Ghi testcase · bước sau</button>
-            </div>
+            <div class="data-line">Dữ liệu: Sẵn sàng</div>
           </div>
         </div>
       </div>
-      <div class="wb-note">Primary action duy nhất hiển thị nhưng disabled, chú thích "bước sau" (triển khai ở Bước 5B).</div>
+      <div class="wb-note">Không nút "Ghi testcase" trên từng card ở bước này — hành động chính duy nhất là checkbox. Nút primary tổng hợp nằm ở Action Bar.</div>
     </div>
   </div>
 
-  <!-- ============ Screen 5: Action Bar ============ -->
-  <h2 class="wb-section">Màn hình 5 — Action Bar</h2>
+  <!-- 6. Action Bar -->
+  <h2 class="wb-section">Màn hình 6 — Action Bar</h2>
   <div class="wb-frame">
-    <div class="wb-frame-head"><span class="wb-dot"></span> Thanh hành động dưới cùng khi có testcase được chọn</div>
+    <div class="wb-frame-head"><span class="wb-dot"></span> Thanh hành động duy nhất</div>
     <div class="wb-frame-body" style="max-width:760px;">
       <div class="action-bar">
-        <div class="action-count">Đã chọn <b>2</b> testcase</div>
-        <div class="action-right">
-          <span class="coming-note">Triển khai ở bước tiếp theo</span>
-          <button class="btn btn--primary btn--disabled" type="button">Tiếp tục ghi testcase</button>
-        </div>
+        <span>Đã chọn <b>2</b> testcase</span>
+        <button class="btn btn--primary btn--disabled" type="button">Tiếp tục ghi testcase</button>
       </div>
-      <div class="wb-note">Chỉ 1 primary action. Không nút batch, không Export/Run ở Bước 5A.</div>
+      <div class="wb-note">Chỉ 1 primary action. Không nhiều nút batch.</div>
     </div>
   </div>
 
-  <!-- ============ Screen 6: mobile ============ -->
-  <h2 class="wb-section">Màn hình 6 — Mobile layout <small>(không vỡ layout, không scroll ngang)</small></h2>
+  <!-- 7. Mobile -->
+  <h2 class="wb-section">Màn hình 7 — Mobile layout</h2>
   <div class="device">
     <div class="dhead">📱 400px — Automation</div>
     <div class="dbody">
-      <div class="ok-banner">
-        <span class="check">✓</span>
-        <div><b>Đã đọc thành công</b> · 6 testcase</div>
-      </div>
-      <div class="tc-card">
-        <div class="tc-top">
-          <span class="chk chk--off"></span>
-          <div class="tc-id">TC001</div>
-          <div class="tc-body">
-            <div class="tc-title">Đăng nhập thành công với thông tin hợp lệ và dài dòng</div>
-            <div class="tc-row">
-              <span class="badge badge--type">POSITIVE</span>
-              <span class="badge badge--nosel">Chưa chọn</span>
-            </div>
-            <div class="data-line">Dữ liệu: sẵn sàng</div>
-          </div>
-        </div>
-      </div>
       <div class="tc-card tc-card--selected">
         <div class="tc-top">
           <span class="chk chk--on">✓</span>
-          <div class="tc-id">TC002</div>
+          <span class="tc-id">TC002</span>
           <div class="tc-body">
             <div class="tc-title">Đổi mật khẩu thành công</div>
             <div class="tc-row">
               <span class="badge badge--type">POSITIVE</span>
               <span class="badge badge--sel">Đã chọn</span>
             </div>
-            <div class="data-line">Dữ liệu: sẵn sàng</div>
+            <div class="data-line">Dữ liệu: Sẵn sàng</div>
           </div>
         </div>
       </div>
-      <div class="action-bar" style="border-radius:12px;">
-        <div class="action-count">Đã chọn <b>1</b> testcase</div>
+      <div class="action-bar" style="flex-direction:column;">
+        <span>Đã chọn <b>1</b> testcase</span>
         <button class="btn btn--primary btn--disabled" style="width:100%;" type="button">Tiếp tục ghi testcase</button>
       </div>
     </div>
-  </div>
-
-  <div class="wb-note" style="background:#eefbf3;border-color:#a7e3c8;color:#067647;">
-    Nhận xét: card co giãn, path/title dài dùng <code>overflow-wrap:anywhere</code>, checkbox + badge đồng nhất, toàn bộ spacing 8/12/16/24, font tối thiểu 14px, button tối thiểu 40px.
   </div>
 </div>
 </body>

@@ -28,65 +28,6 @@
     font-size: 14px;
 }
 
-/* ---- Stepper ---- */
-.v3-stepper {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin: 0;
-    padding: 8px 0 12px;
-    list-style: none;
-}
-
-.v3-step {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--muted);
-    font-size: 13px;
-}
-
-.v3-step strong {
-    font-weight: 600;
-}
-
-.v3-step__n {
-    display: inline-grid;
-    width: 22px;
-    height: 22px;
-    place-items: center;
-    border-radius: 50%;
-    background: #e9edf5;
-    color: #47506b;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.v3-step--active {
-    border-color: var(--primary);
-    background: var(--primary-soft);
-    color: var(--primary-dark);
-}
-
-.v3-step--active .v3-step__n {
-    background: var(--primary);
-    color: #fff;
-}
-
-.v3-step--locked {
-    opacity: 0.55;
-}
-
-.v3-step__lock {
-    font-size: 11px;
-    line-height: 1;
-}
-
 /* ---- Buttons (KHÔNG dùng HTML button mặc định) ---- */
 .v3-btn {
     display: inline-flex;
@@ -113,10 +54,16 @@
     background: var(--primary-dark);
 }
 
-.v3-btn--ghost {
+.v3-btn--secondary {
     background: var(--surface);
     color: var(--primary-dark);
     border-color: #b8c7ea;
+}
+
+.v3-btn--ghost {
+    background: transparent;
+    color: var(--primary-dark);
+    border-color: var(--border);
 }
 
 .v3-btn--disabled,
@@ -138,6 +85,12 @@
     background: var(--danger-soft);
     border: 1px solid #fec5bb;
     color: var(--danger);
+}
+
+.v3-banner--ok {
+    background: var(--success-soft);
+    border: 1px solid #a7e3c8;
+    color: var(--success);
 }
 
 /* ---- Upload ---- */
@@ -448,6 +401,11 @@
     text-align: center;
     color: var(--muted);
     font-size: 14px;
+}
+
+.v3-empty--action {
+    gap: 12px;
+    padding: 48px 16px;
 }
 
 .v3-empty strong {

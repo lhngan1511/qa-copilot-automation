@@ -95,10 +95,11 @@ const pageSource = read("pages/AutomationV3Page.jsx");
 assert.ok(pageSource.includes("selectTestCase") && pageSource.includes("unselectTestCase"), "page gọi select/unselect API");
 assert.ok(pageSource.includes("createWorkspace"), "page gọi createWorkspace");
 
-// ---- 8. Card chỉ một trạng thái chính ----
+// ---- 8. Card chỉ một trạng thái chính + một hành động chính (checkbox, không nút phụ) ----
 const cardSource = read("components/automationV3/V3TestCaseCard.jsx");
 assert.equal((cardSource.match(/v3-badge--sel/g) ?? []).length, 1, "1 nhánh badge 'Đã chọn'");
 assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 1, "1 nhánh badge 'Chưa chọn'");
+assert.ok(!cardSource.includes("v3-card__action"), "card không có nút primary action riêng");
 
 // Loại bỏ comment JS để tránh false-positive khi check nội dung cấm.
 function stripComments(code) {
@@ -116,8 +117,7 @@ const allSources = [
     cardSource,
     read("components/automationV3/V3TestCaseList.jsx"),
     read("components/automationV3/V3UploadPanel.jsx"),
-    read("components/automationV3/V3ActionBar.jsx"),
-    read("components/automationV3/V3WorkspaceStepper.jsx")
+    read("components/automationV3/V3ActionBar.jsx")
 ].join("\n");
 const allClean = stripComments(allSources);
 
@@ -140,5 +140,22 @@ assert.ok(css.includes("@media (max-width: 640px)"), "có media query mobile");
 assert.ok(css.includes("overflow-wrap: anywhere"), "path/title dài không vỡ layout");
 assert.ok(css.includes("min-height: 40px"), "button >= 40px");
 assert.ok(css.includes("font-size: 14px") || css.includes("font-size:14px"), "font >= 14px");
+
+// ---- Sidebar chỉ hiển thị "Automation", không có "Automation V3" ----
+const navSource = read("config/navigation.js");
+const navClean = stripComments(navSource);
+assert.ok(/label:\s*"Automation"/.test(navClean), "có mục 'Automation'");
+assert.ok(!navClean.includes("Automation V3") && !navClean.includes("Automation Intelligence"), "không có 'Automation V3'/'Automation Intelligence'");
+assert.ok(navClean.includes('"/automation"'), "trỏ /automation");
+
+// ---- Workspace là màn hình gốc, Upload chỉ khi tạo workspace mới ----
+const pageClean = stripComments(pageSource);
+assert.ok(!pageClean.includes("Record by Testcase"), "không hiển thị tên phiên bản");
+assert.ok(pageClean.includes("Chưa có Automation Workspace"), "empty state khi chưa có workspace");
+assert.ok(pageClean.includes("V3UploadPanel") && pageClean.includes("creating"), "Upload chỉ trong luồng tạo workspace (creating)");
+assert.ok(pageClean.includes("localStorage") && pageClean.includes("getWorkspace"), "mở lại workspace đã lưu");
+
+// ---- Không hiển thị khái niệm 5A/5B/5C / 'bước sau' ----
+assert.ok(!/5A|5B|5C|bước sau|Bước sau/.test(allClean), "không lộ 5A/5B/5C hay 'bước sau'");
 
 console.log("Automation V3 UI test: PASS");

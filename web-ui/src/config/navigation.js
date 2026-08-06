@@ -29,17 +29,10 @@ export const navigationGroups = [
                 icon: "code"
             },
             {
-                label: "Automation Intelligence",
-                description: "Sinh mã và thực thi testcase (sẽ có)",
-                to: "/automation/workspaces/new",
-                activePrefix: "/automation/workspaces/new",
-                icon: "automation"
-            },
-            {
-                label: "Automation (V3)",
-                description: "Record by testcase — workspace & chọn testcase",
-                to: "/automation/v3",
-                activePrefix: "/automation/v3",
+                label: "Automation",
+                description: "Automation Workspace — chọn testcase cần ghi",
+                to: "/automation",
+                activePrefix: "/automation",
                 icon: "recording"
             },
             {

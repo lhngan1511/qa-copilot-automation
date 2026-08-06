@@ -1,17 +1,9 @@
 /*
- V3TestCaseCard — Card testcase (Bước 5A).
+ V3TestCaseCard — Card testcase (bước 5A).
 
- Nội dung tối đa:
-   checkbox + testCaseId + title + type + 1 trạng thái automation + 1 dòng dữ liệu
-   + tối đa 1 primary action.
-
- Trạng thái:
-   NOT_SELECTED → checkbox trống, badge "Chưa chọn", không primary action.
-   SELECTED     → checkbox đã chọn, badge "Đã chọn", primary "Ghi testcase" disabled.
-   automationCandidate=false → disable checkbox + hiện lý do ngắn.
-   executionReadiness=DATA_REQUIRED → vẫn chọn được + hiện "Cần bổ sung dữ liệu...".
-
- Không có: Xem chi tiết / Review / Generate / Run / Export / nhiều nút.
+ Mỗi card chỉ có MỘT hành động chính: checkbox chọn/bỏ chọn.
+ Nội dung tối đa: checkbox + testCaseId + title + type + 1 trạng thái automation
+ + 1 dòng dữ liệu. Không nút phụ / Review / Generate / Run / Export.
 */
 
 export default function V3TestCaseCard({ testCase, selected = false, onToggle, disabled = false }) {
@@ -64,13 +56,6 @@ export default function V3TestCaseCard({ testCase, selected = false, onToggle, d
                             <span className="v3-note">{testCase.dataNote}</span>
                         )}
                     </div>
-                    {isSelected ? (
-                        <div className="v3-card__action">
-                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--disabled" disabled>
-                                Ghi testcase · bước sau
-                            </button>
-                        </div>
-                    ) : null}
                 </div>
             </div>
         </div>

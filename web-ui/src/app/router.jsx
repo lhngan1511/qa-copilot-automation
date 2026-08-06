@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
                 element: <AutomationWorkspacePage />
             },
             {
-                path: "automation/v3",
+                path: "automation",
                 element: <AutomationV3Page />
             },
             {
