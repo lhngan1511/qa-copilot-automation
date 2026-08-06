@@ -1,0 +1,23 @@
+{
+  "workspaceId": "WS-DEMO-01",
+  "testCaseId": "SETUP",
+  "type": "SETUP",
+  "source": "PLAYWRIGHT_RECORD",
+  "status": "RECORDED",
+  "browser": "chrome",
+  "url": "http://172.16.1.100:9230/wasuco/login",
+  "steps": [
+    { "stepOrder": 1, "actionType": "GOTO", "target": "Login", "locator": "http://172.16.1.100:9230/wasuco/login", "valueKind": "URL", "sourceRange": [1, 1] },
+    { "stepOrder": 2, "actionType": "FILL", "target": "Tài khoản", "locator": "page.getByRole('textbox', { name: 'Tài khoản' })", "valueKind": "ENV", "sourceRange": [2, 2] },
+    { "stepOrder": 3, "actionType": "FILL", "target": "Mật khẩu", "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })", "valueKind": "ENV", "sourceRange": [3, 3] },
+    { "stepOrder": 4, "actionType": "FILL", "target": "Mã xác nhận", "locator": "page.getByRole('textbox', { name: 'Mã xác nhận' })", "valueKind": "ENV", "sourceRange": [4, 4] },
+    { "stepOrder": 5, "actionType": "CLICK", "target": "Đăng nhập", "locator": "page.getByRole('button', { name: 'Đăng nhập' })", "valueKind": null, "sourceRange": [5, 5] },
+    { "stepOrder": 6, "actionType": "CLICK", "target": "Quản lý hệ thống", "locator": "page.getByRole('link', { name: 'Quản lý hệ thống' })", "valueKind": null, "sourceRange": [6, 6] },
+    { "stepOrder": 7, "actionType": "CLICK", "target": "Danh mục", "locator": "page.getByRole('link', { name: 'Danh mục' })", "valueKind": null, "sourceRange": [7, 7] },
+    { "stepOrder": 8, "actionType": "CLICK", "target": "Đơn vị tính", "locator": "page.getByRole('link', { name: 'Đơn vị tính' })", "valueKind": null, "sourceRange": [8, 8] }
+  ],
+  "assertions": [],
+  "recordedValues": {},
+  "startedAt": "2026-08-06T00:00:00.000Z",
+  "completedAt": "2026-08-06T00:01:30.000Z"
+}

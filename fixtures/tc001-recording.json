@@ -1,0 +1,26 @@
+{
+  "workspaceId": "WS-DEMO-01",
+  "testCaseId": "TC001",
+  "type": "TESTCASE",
+  "source": "PLAYWRIGHT_RECORD",
+  "status": "RECORDED",
+  "browser": "chrome",
+  "url": "http://172.16.1.100:9230/wasuco/login",
+  "steps": [
+    { "stepOrder": 1, "actionType": "FILL", "target": "Tài khoản", "locator": "page.getByRole('textbox', { name: 'Tài khoản' })", "valueKind": "ENV", "sourceRange": [1, 1] },
+    { "stepOrder": 2, "actionType": "FILL", "target": "Mật khẩu", "locator": "page.getByRole('textbox', { name: 'Mật khẩu' })", "valueKind": "ENV", "sourceRange": [2, 2] },
+    { "stepOrder": 3, "actionType": "FILL", "target": "Mã xác nhận", "locator": "page.getByRole('textbox', { name: 'Mã xác nhận' })", "valueKind": "ENV", "sourceRange": [3, 3] },
+    { "stepOrder": 4, "actionType": "CLICK", "target": "Đăng nhập", "locator": "page.getByRole('button', { name: 'Đăng nhập' })", "valueKind": null, "sourceRange": [4, 4] },
+    { "stepOrder": 5, "actionType": "EXPECT", "target": "Danh mục phần mềm quản lý", "locator": "page.getByText('Danh mục phần mềm quản lý')", "valueKind": "ASSERTION", "sourceRange": [5, 5] }
+  ],
+  "assertions": [
+    { "statement": "expect(page.getByText('Danh mục phần mềm quản lý')).toBeVisible()", "sourceRange": [5, 5] }
+  ],
+  "recordedValues": {
+    "Tài khoản": "admin",
+    "Mật khẩu": "123456@Aa",
+    "Mã xác nhận": "122222"
+  },
+  "startedAt": "2026-08-06T00:00:00.000Z",
+  "completedAt": "2026-08-06T00:01:00.000Z"
+}
