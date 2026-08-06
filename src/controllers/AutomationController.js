@@ -31,4 +31,13 @@ export default class AutomationController {
             return res.status(500).json({ success: false, data: null, error: { message: "Testcase thất bại tại bước thực thi.", technical: error.message, diagnostic: "PLAYWRIGHT_RUN_FAILED" } });
         }
     }
+
+    async export(req, res) {
+        try {
+            const data = await this.service.exportSelected(req.body ?? {});
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return res.status(500).json({ success: false, data: null, error: { message: "Không thể xuất testcase đã chọn.", technical: error.message, diagnostic: "EXPORT_FAILED" } });
+        }
+    }
 }

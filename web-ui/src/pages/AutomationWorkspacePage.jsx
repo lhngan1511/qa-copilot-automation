@@ -3,15 +3,20 @@ import { Link } from "react-router-dom";
 import AutomationHeader from "../components/automation/AutomationHeader.jsx";
 import AutomationTestCaseList from "../components/automation/AutomationTestCaseList.jsx";
 import AutomationInspector from "../components/automation/AutomationInspector.jsx";
-import { analyzeAutomation, generateAutomation, runAutomation } from "../api/automationApi.js";
+import { analyzeAutomation, generateAutomation, runAutomation, exportAutomation } from "../api/automationApi.js";
+import { isReady } from "../utils/automationDerived.js";
 
 /*
- Sprint 1 (polish) — Automation Intelligence là "màn hình xử lý", không phải form.
- Flow:  Upload 2 file → AI phân tích → Review → Generate → Run.
- - Upload là bước đầu, hiển thị tóm tắt thành công (✓ testcase, ✓ Module, ✓ Feature).
- - AI Analysis là trung tâm.
- - Review mapping dùng ngôn ngữ Tester (Chuẩn bị / Thao tác chính / Kết quả / Độ tin cậy).
- - Chọn testcase MỘT LẦN, có Generate Selected / Run Selected.
+ Giai đoạn 2 (Sprint 2) — Automation Intelligence là "màn hình xử lý".
+ Workflow 6 bước: ① Upload ② AI Mapping ③ Review ④ Generate ⑤ Run ⑥ Export.
+
+ - ① Upload đọc CẢ HAI file, chỉ báo "đọc thành công" + số lượng (testcase,
+   locator/action/page), CHƯA sinh gì. Xong thì "Đã sẵn sàng phân tích".
+ - ② AI Mapping đối chiếu từng testcase ↔ codegen (locator/action/assertion).
+ - ③ Review: card testcase hiển thị JSON / CODEGEN / Mapping % / Run.
+ - ④ Generate sinh Playwright cho testcase đã chọn.
+ - ⑤ Run chạy file đã sinh (PASS / FAIL).
+ - ⑥ Export xuất selected-testcases.json để dùng lại / chia sẻ / CI-CD.
  */
 
 function normalizeTestCase(item, index) {
@@ -26,118 +31,78 @@ function normalizeTestCase(item, index) {
     };
 }
 
-// Sẵn sàng khi: có fields và mọi field đã có giá trị (hoặc purpose EMPTY), HOẶC
-// executionReadiness = READY. Nếu có fields mà còn field trống -> DATA_REQUIRED.
-function isReady(tc) {
-    const fields = tc?.testData?.fields;
-    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
-        const entries = Object.entries(fields);
-        if (entries.length > 0) {
-            return entries.every(([, f]) => {
-                if (!f || typeof f !== "object") return true;
-                if (f.requiresTesterInput === true) return false;
-                if (String(f.purpose ?? "").toUpperCase() === "EMPTY") return true;
-                return String(f.value ?? "").trim() !== "";
-            });
-        }
-    }
-    const r = String(tc?.executionReadiness ?? "").toUpperCase();
-    if (!r) return true;
-    return r === "READY";
-}
-
-// Chuẩn hóa confidence một lần: <=1 => *100; >1 => giữ nguyên; clamp 0..100.
-function normalizeConfidence(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return null;
-    let pct = n <= 1 ? n * 100 : n;
-    pct = Math.min(100, Math.max(0, pct));
-    return Math.round(pct);
-}
-
-function confidenceOf(mapping) {
-    const steps = Array.isArray(mapping?.stepMappings) ? mapping.stepMappings : [];
-    const values = steps.map(s => normalizeConfidence(s?.confidence)).filter(n => n != null);
-    if (values.length === 0) return null;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    return Math.round(avg);
-}
+const STEPS = [
+    ["① Upload", "testcase + CodeGen"],
+    ["② AI Mapping", "testcase ↔ code"],
+    ["③ Review", "kiểm tra AI"],
+    ["④ Sinh automation", "tạo spec.js"],
+    ["⑤ Chạy", "PASS / FAIL"],
+    ["⑥ Export", "selected-testcases.json"]
+];
 
 export default function AutomationWorkspacePage() {
     const [sourceFileName, setSourceFileName] = useState("");
     const [testCases, setTestCases] = useState([]);
+    const [codeGenFile, setCodeGenFile] = useState(null);
+    const [codeGenStats, setCodeGenStats] = useState({ locators: 0, actions: 0, pages: [], pageCount: 0 });
     const [selectedTestCaseIds, setSelectedTestCaseIds] = useState([]);
     const [activeTestCaseId, setActiveTestCaseId] = useState(null);
+    const [activeTab, setActiveTab] = useState("REVIEW");
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
-    const [codeGenFile, setCodeGenFile] = useState(null);
-    const [activeTab, setActiveTab] = useState("REVIEW");
     const [environment, setEnvironment] = useState(import.meta.env.VITE_ENV || "");
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
-    const [analyzed, setAnalyzed] = useState(false);
     const [analyzeStatus, setAnalyzeStatus] = useState("idle"); // idle | loading | success | error
-    const [analyzeCount, setAnalyzeCount] = useState(0); // số testcase đã phân tích
-    const analyzingRef = useRef(false); // in-flight guard đồng bộ
-    const reviewRef = useRef(null); // cuộn tới bước review khi thành công
+    const [analyzeCount, setAnalyzeCount] = useState(0);
+    const [exportInfo, setExportInfo] = useState(null);
+    const analyzingRef = useRef(false);
+    const reviewRef = useRef(null);
 
     const selectedCount = useMemo(() => selectedTestCaseIds.length, [selectedTestCaseIds]);
-
     const moduleName = useMemo(() => testCases.find(tc => tc.module && String(tc.module).trim())?.module ?? "", [testCases]);
-    const functionName = useMemo(() => testCases.find(tc => (tc.feature || tc.function) && String(tc.feature || tc.function).trim())?.feature || testCases.find(tc => tc.function)?.function || "", [testCases]);
-
-    // Cả 2 file đã tải?
     const bothUploaded = Boolean(sourceFileName && codeGenFile?.content);
 
     const handleApprovedTestCases = (items, fileName) => {
-        const normalized = items.map(normalizeTestCase);
-        setTestCases(normalized);
+        setTestCases(items.map(normalizeTestCase));
         setSelectedTestCaseIds([]);
-        setActiveTestCaseId(null); // không tự mở Drawer khi upload
+        setActiveTestCaseId(null);
         setSourceFileName(fileName);
-        setAnalyzed(false);
+        setAnalyzeStatus("idle");
+        setExportInfo(null);
         setNotice("");
     };
-    const handleToggle = id => setSelectedTestCaseIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
-    // Click "Xem chi tiết AI" -> mở Drawer tab Review (không tự mở từ nơi khác).
-    const handleOpenDetail = id => {
-        setActiveTestCaseId(id);
-        setActiveTab("REVIEW");
+    const handleCodeGenFile = file => {
+        setCodeGenFile(file);
+        setNotice("");
     };
-    // Click "Cần bổ sung dữ liệu" -> chọn testcase + mở Drawer + chuyển tab Dữ liệu kiểm thử.
+    const handleCodeGenStats = stats => {
+        setCodeGenStats(stats);
+        setNotice("");
+    };
+
+    const handleToggle = id => setSelectedTestCaseIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
+    const handleSelectAll = (ids, allSelected) => setSelectedTestCaseIds(current => allSelected ? current.filter(id => !ids.includes(id)) : [...new Set([...current, ...ids])]);
+    const handleOpenDetail = id => { setActiveTestCaseId(id); setActiveTab("REVIEW"); };
     const handleOpenData = id => {
         setSelectedTestCaseIds(ids => ids.includes(id) ? ids : [...ids, id]);
         setActiveTestCaseId(id);
         setActiveTab("DATA");
     };
-    const handleSelectAll = (ids, allSelected) => setSelectedTestCaseIds(current => allSelected ? current.filter(id => !ids.includes(id)) : [...new Set([...current, ...ids])]);
-    const updateEnvironment = value => setEnvironment(value);
+    const handleClose = () => setActiveTestCaseId(null);
+
     const activeTestCase = testCases.find(item => item.id === activeTestCaseId) || null;
+
     const updateTestCase = (id, patch) => setTestCases(current => current.map(item => {
         if (item.id !== id) return item;
         const changedKeys = Object.keys(patch);
         const contentChanged = changedKeys.some(key => ["title", "objective", "description", "module", "function", "testData", "mapping", "mappingStatus"].includes(key));
         return { ...item, ...patch, status: contentChanged ? (item.generatedCode ? "REGENERATE_REQUIRED" : "EDITED") : patch.status || item.status };
     }));
-    const removeTestCase = id => { setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: false, status: "REMOVED" } : item)); setSelectedTestCaseIds(current => current.filter(item => item !== id)); };
-    // Run: cần file đã sinh + testcase sẵn dữ liệu (isReady).
-    const runRequest = async ids => {
-        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession).filter(isReady);
-        for (const item of items) { if (!item.generatedFile) continue; const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" } : currentItem)); }
-    };
-    // Generate: cần MAPPING (sau Analyze), KHÔNG cần test-data ready.
-    const generateRequest = async ids => {
-        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0);
-        if (!items.length) { setNotice("Chưa có mapping để sinh automation. Hãy chạy 'Phân tích bằng AI' trước."); return; }
-        if (!codeGenFile?.content) return; setBusy(true); setNotice("");
-        try { for (const item of items) { const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content }); setTestCases(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" } : currentItem)); } } catch (error) { setNotice(error.message || "Sinh mã kiểm thử không thành công."); } finally { setBusy(false); }
-    };
+    const restoreTestCase = id => setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: true, status: item.generatedCode ? "GENERATED" : "EDITED" } : item));
+
     const analyzeRequest = async () => {
-        // In-flight guard đồng bộ: một lần bấm = một phiên Analyze; chặn lần bấm thứ hai.
-        if (analyzingRef.current) {
-            console.warn("[ANALYZE] bỏ qua lần bấm trùng — đang phân tích.");
-            return;
-        }
+        if (analyzingRef.current) { console.warn("[ANALYZE] bỏ qua lần bấm trùng"); return; }
         const items = testCases.filter(item => item.includedInSession);
         if (!codeGenFile?.content || !items.length) return;
         analyzingRef.current = true;
@@ -151,36 +116,106 @@ export default function AutomationWorkspacePage() {
                 const mapping = mappings.find(value => String(value.testCaseId || value.id) === item.id);
                 return mapping ? { ...item, mapping: mapping.mapping || mapping, status: item.status === "READY" ? "READY" : item.status } : item;
             }));
-            setAnalyzed(true);
             setAnalyzeStatus("success");
             setAnalyzeCount(mappings.length);
-            setNotice(`Đã phân tích ${mappings.length} testcase. Hãy review rồi Sinh mã.`);
-            // Tự cuộn xuống bước review (không tự Generate).
+            setNotice(`AI đã đối chiếu ${mappings.length} testcase với CodeGen. Hãy review mapping ở bước ③.`);
             requestAnimationFrame(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
         } catch (error) {
             setAnalyzeStatus("error");
-            setAnalyzed(false);
-            setNotice(`Phân tích thất bại: ${error.message || "Không thể phân tích dữ liệu bằng AI."}`);
+            setNotice(`AI Mapping thất bại: ${error.message || "Không thể đối chiếu dữ liệu."}`);
         } finally {
             analyzingRef.current = false;
             setBusy(false);
         }
     };
-    const restoreTestCase = id => setTestCases(current => current.map(item => item.id === id ? { ...item, includedInSession: true, status: item.generatedCode ? "GENERATED" : "EDITED" } : item));
+
+    const generateRequest = async ids => {
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0);
+        if (!items.length) { setNotice("Chưa có mapping để sinh automation. Hãy chạy 'AI Mapping' trước."); return; }
+        if (!codeGenFile?.content) return;
+        setBusy(true);
+        setNotice("");
+        try {
+            for (const item of items) {
+                const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content });
+                setTestCases(current => current.map(currentItem => currentItem.id === item.id
+                    ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" }
+                    : currentItem));
+            }
+            setNotice(`Đã sinh automation cho ${items.length} testcase. Chuyển sang bước ⑤ để chạy.`);
+        } catch (error) {
+            setNotice(error.message || "Sinh mã kiểm thử không thành công.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const runRequest = async ids => {
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item));
+        if (!items.length) { setNotice("Không có testcase nào sẵn dữ liệu và đã sinh mã để chạy."); return; }
+        setBusy(true);
+        setNotice("");
+        try {
+            for (const item of items) {
+                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
+                setTestCases(current => current.map(currentItem => currentItem.id === item.id
+                    ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" }
+                    : currentItem));
+            }
+        } catch (error) {
+            setNotice(`Chạy testcase thất bại: ${error.message || ""}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    // Chạy 1 testcase ngay trong Drawer (tab Chạy thử).
+    const runOne = async id => {
+        const item = testCases.find(t => t.id === id);
+        if (!item?.generatedFile) { setNotice("Testcase này chưa sinh mã — hãy sinh automation trước."); return; }
+        if (!isReady(item)) { setNotice("Testcase này còn thiếu dữ liệu — hãy bổ sung ở tab 'Dữ liệu kiểm thử'."); return; }
+        setBusy(true);
+        setNotice("");
+        try {
+            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
+            setTestCases(current => current.map(currentItem => currentItem.id === id
+                ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" }
+                : currentItem));
+        } catch (error) {
+            setNotice(`Chạy thất bại: ${error.message || ""}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const exportRequest = async ids => {
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession);
+        if (!items.length) { setNotice("Hãy chọn ít nhất một testcase để xuất."); return; }
+        setBusy(true);
+        setNotice("");
+        try {
+            const result = await exportAutomation({ module: moduleName, testCases: items });
+            setExportInfo(result);
+            setNotice(`Đã xuất ${result?.count ?? items.length} testcase vào ${result?.filePath ?? "selected-testcases.json"}.`);
+        } catch (error) {
+            setNotice(`Xuất thất bại: ${error.message || "Không thể xuất testcase."}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const generateableCount = testCases.filter(item => selectedTestCaseIds.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0).length;
+    const runnableCount = testCases.filter(item => selectedTestCaseIds.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item)).length;
 
     return <section className="page automation-page">
         <Link className="back-link" to="/">← Về Dashboard</Link>
-        <header className="automation-page__heading"><div><p className="workflow-id">AUTOMATION INTELLIGENCE</p><h2>Automation Workspace</h2><p>Đưa hai file vào, AI sẽ làm phần còn lại. Bạn chỉ cần review.</p></div></header>
+        <header className="automation-page__heading">
+            <div><p className="workflow-id">AUTOMATION INTELLIGENCE</p><h2>Automation Workspace</h2><p>Upload testcase + CodeGen, AI đối chiếu, bạn review và quyết định cuối cùng.</p></div>
+        </header>
 
-        {/* Stepper định hướng */}
+        {/* Stepper 6 bước định hướng */}
         <div className="automation-stepper">
-            {[
-                ["① Upload", "approved-testcases + CodeGen"],
-                ["② AI phân tích", "tạo mapping"],
-                ["③ Review", "xem chi tiết AI"],
-                ["④ Sinh automation", "tạo spec.js"],
-                ["⑤ Chạy", "PASS / FAIL"]
-            ].map(([label, sub], i) => (
+            {STEPS.map(([label, sub], i) => (
                 <div className={`automation-stepper__item ${i === 0 ? "automation-stepper__item--active" : ""}`} key={label}>
                     <span className="automation-stepper__label">{label}</span>
                     <span className="automation-stepper__sub">{sub}</span>
@@ -188,65 +223,150 @@ export default function AutomationWorkspacePage() {
             ))}
         </div>
         {notice && <div className="automation-notice" role="status">{notice}</div>}
-        {busy && <div className="automation-notice" role="status">Đang xử lý...</div>}
+        {busy && <div className="automation-notice" role="status">Đang xử lý…</div>}
 
-        {/* BƯỚC 1: Upload */}
+        {/* ① Upload */}
         <div className="automation-step">
             <div className="automation-step__num">①</div>
             <div className="automation-step__body">
-                <h3>Upload hai file</h3>
-                <p>approved-testcases.json + CodeGen.js</p>
-                <AutomationHeader sourceFileName={sourceFileName} codeGenFile={codeGenFile} moduleName={moduleName} functionName={functionName} environment={environment} onApprovedTestCases={handleApprovedTestCases} onCodeGenFile={setCodeGenFile} onEnvironmentChange={updateEnvironment} />
-                {bothUploaded && <div className="automation-upload-success">
-                    <p>✓ Đọc thành công</p>
-                    <span>✓ {testCases.length} testcase</span>
-                    {moduleName && <span>✓ Module: {moduleName}</span>}
-                    {functionName && <span>✓ Feature: {functionName}</span>}
-                </div>}
+                <h3>Upload dữ liệu</h3>
+                <p>Đưa approved-testcases.json và CodeGen.js vào. Hệ thống chỉ đọc — chưa sinh gì.</p>
+                <AutomationHeader
+                    sourceFileName={sourceFileName}
+                    codeGenFile={codeGenFile}
+                    moduleName={moduleName}
+                    functionName={testCases.find(tc => (tc.feature || tc.function))?.feature || ""}
+                    environment={environment}
+                    onApprovedTestCases={handleApprovedTestCases}
+                    onCodeGenFile={handleCodeGenFile}
+                    onCodeGenStats={handleCodeGenStats}
+                    onEnvironmentChange={setEnvironment}
+                />
+                {bothUploaded && (
+                    <div className="automation-upload-success">
+                        <p><strong>Đã sẵn sàng phân tích.</strong></p>
+                        <span>✓ Đọc testcase thành công ({testCases.length} testcase)</span>
+                        {moduleName && <span>✓ Module: {moduleName}</span>}
+                        <span>✓ Đọc CodeGen thành công ({codeGenStats.locators} locator · {codeGenStats.actions} action · {codeGenStats.pageCount} page)</span>
+                    </div>
+                )}
             </div>
         </div>
 
-        {/* BƯỚC 2: AI Analysis */}
+        {/* ② AI Mapping */}
         <div className="automation-step">
             <div className="automation-step__num">②</div>
             <div className="automation-step__body">
-                <h3>AI phân tích</h3>
-                <p>AI đọc module, feature, test data và hiểu CodeGen, rồi lập ánh xạ cho từng testcase.</p>
+                <h3>AI Mapping</h3>
+                <p>AI đối chiếu từng testcase với CodeGen: locator, action, assertion cho mỗi testcase.</p>
                 {analyzeStatus === "loading" ? (
                     <div className="automation-analyze-loading" role="status">
                         <span className="automation-spinner" aria-hidden="true"></span>
-                        <span>AI đang phân tích CodeGen và {testCases.filter(tc => tc.includedInSession).length} testcase…</span>
+                        <span>AI đang đối chiếu {testCases.filter(tc => tc.includedInSession).length} testcase với CodeGen…</span>
                     </div>
                 ) : (
                     <button className="button button--primary" type="button" disabled={!bothUploaded || busy} onClick={analyzeRequest}>
-                        {busy ? "Đang phân tích…" : "Phân tích bằng AI"}
+                        {busy ? "Đang phân tích…" : "Chạy AI Mapping"}
                     </button>
                 )}
-                {analyzeStatus === "success" && <div className="automation-analyze-success">✓ Đã phân tích {analyzeCount} testcase</div>}
-                {analyzeStatus === "error" && <div className="automation-analyze-error">✗ Phân tích thất bại. Vui lòng thử lại.</div>}
+                {analyzeStatus === "success" && <div className="automation-analyze-success">✓ Đã đối chiếu {analyzeCount} testcase</div>}
+                {analyzeStatus === "error" && <div className="automation-analyze-error">✗ AI Mapping thất bại. Vui lòng thử lại.</div>}
             </div>
         </div>
 
-        {/* BƯỚC 3+4+5: Chọn testcase + Review + Generate + Run */}
+        {/* ③ Review */}
         {testCases.length > 0 && (
             <div className="automation-step" ref={reviewRef}>
                 <div className="automation-step__num">③</div>
                 <div className="automation-step__body">
-                    <div className="automation-step__head">
-                        <h3>Chọn testcase, review và sinh automation</h3>
-                    </div>
-                    <AutomationTestCaseList testCases={testCases} searchQuery={searchQuery} statusFilter={statusFilter} selectedIds={selectedTestCaseIds} activeId={activeTestCaseId} isReady={isReady} confidenceOf={confidenceOf} analyzed={analyzed} onSearch={setSearchQuery} onFilter={setStatusFilter} onSelectAll={handleSelectAll} onToggle={handleToggle} onOpen={handleOpenDetail} onOpenData={handleOpenData} onGenerate={generateRequest} onRun={runRequest} />
+                    <h3>Review mapping</h3>
+                    <p>Chọn testcase cần xử lý. Bấm "Xem chi tiết AI" để kiểm tra mapping, bổ sung dữ liệu nếu cần.</p>
+                    <AutomationTestCaseList
+                        testCases={testCases}
+                        searchQuery={searchQuery}
+                        statusFilter={statusFilter}
+                        selectedIds={selectedTestCaseIds}
+                        activeId={activeTestCaseId}
+                        analyzed={analyzeStatus === "success"}
+                        onSearch={setSearchQuery}
+                        onFilter={setStatusFilter}
+                        onSelectAll={handleSelectAll}
+                        onToggle={handleToggle}
+                        onOpen={handleOpenDetail}
+                        onOpenData={handleOpenData}
+                    />
                 </div>
             </div>
         )}
 
-        {/* Drawer Inspector: overlay, không inline; danh sách giữ nguyên. Không tự mở. */}
+        {/* ④ Generate */}
+        {testCases.length > 0 && (
+            <div className="automation-step">
+                <div className="automation-step__num">④</div>
+                <div className="automation-step__body">
+                    <h3>Sinh automation</h3>
+                    <p>Tạo file Playwright cho testcase đã chọn (cần đã có mapping từ bước ②).</p>
+                    <div className="automation-step__tools">
+                        <button className="button button--secondary" type="button" disabled={selectedCount === 0 || generateableCount === 0 || busy} onClick={() => generateRequest([...selectedTestCaseIds])}>
+                            Sinh automation đã chọn ({generateableCount})
+                        </button>
+                        <span className="automation-hint-text">{selectedCount === 0 ? "Chưa chọn testcase nào ở bước ③." : `Đã chọn ${selectedCount} testcase, trong đó ${generateableCount} có mapping.`}</span>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ⑤ Run */}
+        {testCases.length > 0 && (
+            <div className="automation-step">
+                <div className="automation-step__num">⑤</div>
+                <div className="automation-step__body">
+                    <h3>Chạy kiểm thử</h3>
+                    <p>Chạy file đã sinh bằng Playwright. Kết quả PASS / FAIL hiển thị trên card và trong cửa sổ chi tiết.</p>
+                    <div className="automation-step__tools">
+                        <button className="button button--secondary" type="button" disabled={selectedCount === 0 || runnableCount === 0 || busy} onClick={() => runRequest([...selectedTestCaseIds])}>
+                            Chạy testcase đã chọn ({runnableCount})
+                        </button>
+                        <span className="automation-hint-text">{selectedCount === 0 ? "Chưa chọn testcase nào." : `${runnableCount} testcase sẵn dữ liệu và đã sinh mã.`}</span>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ⑥ Export */}
+        {testCases.length > 0 && (
+            <div className="automation-step">
+                <div className="automation-step__num">⑥</div>
+                <div className="automation-step__body">
+                    <h3>Export testcase</h3>
+                    <p>Xuất testcase đã chọn ra selected-testcases.json để dùng lại, chia cho tester khác hoặc chạy CI/CD.</p>
+                    <div className="automation-step__tools">
+                        <button className="button button--primary" type="button" disabled={selectedCount === 0 || busy} onClick={() => exportRequest([...selectedTestCaseIds])}>
+                            Xuất testcase JSON ({selectedCount})
+                        </button>
+                        {exportInfo && <span className="automation-hint-text">✓ Đã xuất {exportInfo.count} testcase → {exportInfo.filePath}</span>}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Drawer Inspector: overlay, không tự mở; giữ selection/scroll. */}
         {activeTestCase && (
             <>
-            <div className="automation-drawer-backdrop" onClick={() => setActiveTestCaseId(null)}></div>
-            <div className="automation-drawer">
-                <AutomationInspector testCase={activeTestCase} moduleName={moduleName} functionName={functionName} activeTab={activeTab} isReady={isReady} onTabChange={setActiveTab} onUpdate={updateTestCase} onRemove={removeTestCase} onRestore={restoreTestCase} onClose={() => setActiveTestCaseId(null)} />
-            </div>
+                <div className="automation-drawer-backdrop" onClick={handleClose}></div>
+                <div className="automation-drawer">
+                    <AutomationInspector
+                        testCase={activeTestCase}
+                        moduleName={moduleName}
+                        activeTab={activeTab}
+                        environment={environment}
+                        onTabChange={setActiveTab}
+                        onUpdate={updateTestCase}
+                        onRestore={restoreTestCase}
+                        onRunOne={runOne}
+                        onClose={handleClose}
+                    />
+                </div>
             </>
         )}
     </section>;

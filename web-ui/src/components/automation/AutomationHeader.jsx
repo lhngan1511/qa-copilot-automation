@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { analyzeCodegen } from "../../utils/codegenStats.js";
 
 function readFile(file) {
     return new Promise((resolve, reject) => {
@@ -24,6 +25,7 @@ export default function AutomationHeader({
     environment,
     onApprovedTestCases,
     onCodeGenFile,
+    onCodeGenStats,
     onEnvironmentChange
 }) {
     const approvedInput = useRef(null);
@@ -67,6 +69,9 @@ export default function AutomationHeader({
         try {
             const content = await readFile(file);
             onCodeGenFile({ fileName: file.name, content });
+            if (typeof onCodeGenStats === "function") {
+                onCodeGenStats(analyzeCodegen(content));
+            }
         } catch (error) {
             setCodeGenError(`Không thể đọc CodeGen: ${error.message}`);
         }
@@ -84,6 +89,7 @@ export default function AutomationHeader({
                         <span>{sourceFileName || "Chưa chọn file"}</span>
                         <input ref={approvedInput} id="approved-testcases-file" type="file" accept=".json,application/json" hidden onChange={handleApprovedFile} />
                     </div>
+                    {sourceFileName && <p className="automation-field-ok">✓ Đã đọc</p>}
                     {approvedError && <p className="automation-field-error" role="alert">{approvedError}</p>}
                 </div>
                 <div className="automation-field">
@@ -95,6 +101,7 @@ export default function AutomationHeader({
                         <span>{codeGenFile?.fileName || "Chưa chọn CodeGen"}</span>
                         <input ref={codeGenInput} id="codegen-file" type="file" accept=".js,application/javascript" hidden onChange={handleCodeGenFile} />
                     </div>
+                    {codeGenFile?.content && <p className="automation-field-ok">✓ Đã đọc</p>}
                     {codeGenError && <p className="automation-field-error" role="alert">{codeGenError}</p>}
                 </div>
                 <div className="automation-field">

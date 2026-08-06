@@ -60,3 +60,15 @@ export function runAutomation({ filePath, env = {}, signal } = {}) {
         signal
     );
 }
+
+export function exportAutomation({ module = "", testCases, filePath, signal } = {}) {
+    return post(
+        "/automation-workspace/export",
+        {
+            module,
+            testCases,
+            filePath
+        },
+        signal
+    );
+}

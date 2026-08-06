@@ -9,5 +9,6 @@ export default function createAutomationWorkspaceRoutes({ rootDir = process.cwd(
     router.post("/analyze", (req, res) => controller.analyze(req, res));
     router.post("/generate", (req, res) => controller.generate(req, res));
     router.post("/run", (req, res) => controller.run(req, res));
+    router.post("/export", (req, res) => controller.export(req, res));
     return router;
 }

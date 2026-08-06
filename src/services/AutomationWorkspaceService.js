@@ -92,4 +92,36 @@ export default class AutomationWorkspaceService {
         if (!filePath) throw new Error("Thiếu file kiểm thử đã sinh.");
         return this.runner.runFile(filePath, { env });
     }
+
+    /**
+     * Xuất danh sách testcase đã chọn ra file selected-testcases.json
+     * (để dùng lại / chia cho tester khác / chạy CI-CD).
+     */
+    async exportSelected({ module = "", testCases = [], filePath = null } = {}) {
+        if (!Array.isArray(testCases) || testCases.length === 0) {
+            throw new Error("Không có testcase nào được chọn để xuất.");
+        }
+        const fs = await import("node:fs");
+        const path = await import("node:path");
+        const outDir = path.join(this.rootDir, "outputs", "automation-export");
+        fs.mkdirSync(outDir, { recursive: true });
+        const target = filePath
+            ? path.join(this.rootDir, filePath)
+            : path.join(outDir, "selected-testcases.json");
+        const payload = {
+            module,
+            exportedAt: new Date().toISOString(),
+            source: "Automation Intelligence Workspace",
+            count: testCases.length,
+            testCases: testCases.map((tc) => {
+                const { mapping, ...rest } = tc ?? {};
+                return {
+                    ...rest,
+                    mapping
+                };
+            })
+        };
+        fs.writeFileSync(target, JSON.stringify(payload, null, 2), "utf8");
+        return { filePath: path.relative(this.rootDir, target), count: testCases.length };
+    }
 }
