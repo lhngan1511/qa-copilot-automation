@@ -20,7 +20,8 @@ import {
     envValueForField,
     envKeyForFieldKey,
     TESTDATA_SOURCES,
-    traceAction
+    traceAction,
+    renderGotoStatement
 } from "./testDataBinding.js";
 import { extractCodegenActions, matchCodegenAction } from "./codegenActions.js";
 
@@ -84,9 +85,8 @@ export function renderStepLine(st, { testCase = null, codegenAction = null, envV
 export function setupPrefixLines(mapping, { testCase = null, codegenActions = [], envValues = {} } = {}) {
     const lines = [];
     const entryRoute = mapping?.entryRoute?.value;
-    if (entryRoute && !/->|→/.test(entryRoute)) {
-        lines.push(`  await page.goto(process.env.BASE_URL + ${JSON.stringify(entryRoute)});`);
-    }
+    const goto = renderGotoStatement(entryRoute);
+    if (goto) lines.push(goto);
     for (const st of mapping?.authenticationSetup?.steps ?? []) {
         const cg = matchCodegenAction(codegenActions, st);
         const line = renderStepLine(st, { testCase, codegenAction: cg, envValues });

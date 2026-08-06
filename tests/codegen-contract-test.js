@@ -172,3 +172,19 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
+
+/* ---------- P0 URL: entryRoute absolute không nối BASE_URL (tránh URL đúp) ---------- */
+{
+    const m = (await import("../src/automation/ai/testDataBinding.js")).default || (await import("../src/automation/ai/testDataBinding.js"));
+    const { renderGotoStatement } = await import("../src/automation/ai/testDataBinding.js");
+    // URL tuyệt đối -> không nối BASE_URL.
+    const abs = renderGotoStatement("http://172.16.1.100:9230/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F");
+    assert.match(abs, /page\.goto\("http:\/\/172\.16\.1\.100:9230\/wasuco\/login/, "giữ nguyên URL tuyệt đối");
+    assert.ok(!abs.includes("process.env.BASE_URL +"), "KHÔNG nối BASE_URL với URL tuyệt đối");
+    // Path tương đối -> vẫn nối BASE_URL.
+    const rel = renderGotoStatement("/wasuco/login");
+    assert.match(rel, /process\.env\.BASE_URL \+ "\/wasuco\/login"/);
+    // Mô tả -> null.
+    assert.equal(renderGotoStatement("Danh mục -> Đơn vị tính"), null);
+}
+console.log("Codegen Contract (URL absolute) test: PASS");

@@ -15,6 +15,7 @@ import path from "node:path";
 import { extractFencedCode, validateGeneratedCode } from "./codegenGuard.js";
 import { buildSpecFromMapping } from "./codegenSkeleton.js";
 import { extractCodegenLocators } from "./locatorValidation.js";
+import { renderGotoStatement } from "./testDataBinding.js";
 
 // Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
 const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
@@ -338,9 +339,9 @@ export default class AIAutomationCodegen {
         const lines = [];
         const entryRoute = mapping?.entryRoute?.value;
         // Chỉ loại bỏ nếu là mô tả (chứa '->' hoặc '→'), KHÔNG loại URL path có dấu gạch (vd /danh-muc).
-        if (entryRoute && !/->|→/.test(entryRoute)) {
-            lines.push(`  await page.goto(process.env.BASE_URL + ${JSON.stringify(entryRoute)});`);
-        }
+        // Nếu entryRoute là URL tuyệt đối -> không nối BASE_URL (tránh URL đúp).
+        const goto = renderGotoStatement(entryRoute);
+        if (goto) lines.push(goto);
         // authenticationSetup steps (đã approved)
         for (const st of mapping?.authenticationSetup?.steps ?? []) {
             lines.push(this.renderStep(st));

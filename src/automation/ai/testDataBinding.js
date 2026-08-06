@@ -21,6 +21,27 @@ export const TESTDATA_SOURCES = {
     MISSING: "MISSING"
 };
 
+/** entryRoute có phải URL tuyệt đối (http/https)? */
+export function isAbsoluteUrl(route) {
+    return /^https?:\/\//i.test(String(route ?? "").trim());
+}
+
+/**
+ * Render statement `page.goto(...)` cho entryRoute.
+ * - URL tuyệt đối (http://...) -> page.goto('url') (KHÔNG nối BASE_URL).
+ * - Path tương đối (/wasuco/login) -> page.goto(process.env.BASE_URL + '/path').
+ * @returns {string|null}
+ */
+export function renderGotoStatement(entryRoute) {
+    const route = String(entryRoute ?? "").trim();
+    if (!route || /->|→/.test(route)) return null;
+    if (isAbsoluteUrl(route)) {
+        // Không nối BASE_URL — tránh URL đúp (vd BASE_URL + 'http://...').
+        return `  await page.goto(${JSON.stringify(route)});`;
+    }
+    return `  await page.goto(process.env.BASE_URL + ${JSON.stringify(route)});`;
+}
+
 /**
  * Alias ngữ nghĩa để resolve fieldKey. Chỉ phục vụ resolve field, KHÔNG hardcode business flow.
  * key = fieldKey chuẩn; value = các label/alias khớp.
