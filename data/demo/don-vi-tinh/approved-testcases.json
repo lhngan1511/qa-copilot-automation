@@ -1,0 +1,166 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD002",
+    "functionId": "FUNC002",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Thêm mới đơn vị tính thành công",
+    "testScenario": "Thêm mới đơn vị tính thành công",
+    "type": "POSITIVE",
+    "testObjective": "Xác minh thêm mới đơn vị tính thành công khi nhập đủ thông tin hợp lệ",
+    "objective": "Xác minh thêm mới đơn vị tính thành công khi nhập đủ thông tin hợp lệ",
+    "requirementReference": "Danh mục đơn vị tính",
+    "coveredRules": [
+      "Tên đơn vị tính là trường bắt buộc",
+      "Mã đơn vị tính phải là duy nhất"
+    ],
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống",
+      "Người dùng có quyền thêm mới đơn vị tính",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "READY",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "testData": {
+      "requirement": "Nhập thông tin hợp lệ cho đơn vị tính rồi lưu",
+      "fields": {
+        "Mã đơn vị tính": { "value": "DVT001", "purpose": "VALID", "requiresTesterInput": false },
+        "Tên đơn vị tính": { "value": "Chiếc", "purpose": "VALID", "requiresTesterInput": false },
+        "Ghi chú": { "value": "Đơn vị tính dùng cho thiết bị", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "CREATE_SUCCESS",
+        "target": "Đơn vị tính",
+        "expected": "Hệ thống tạo mới đơn vị tính thành công và hiển thị thông báo"
+      }
+    ],
+    "expectedResult": "Đơn vị tính được tạo thành công và hiển thị trong danh sách",
+    "expectedResults": [
+      "Đơn vị tính được tạo thành công và hiển thị trong danh sách"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình Danh mục đơn vị tính", "target": "Danh mục đơn vị tính", "value": "", "expected": "Màn hình được hiển thị" },
+      { "order": 2, "action": "Chọn chức năng Thêm mới", "target": "Thêm mới", "value": "", "expected": "Biểu mẫu thêm mới được hiển thị" },
+      { "order": 3, "action": "Nhập mã đơn vị tính", "target": "Mã đơn vị tính", "value": "DVT001", "expected": "Trường nhận giá trị" },
+      { "order": 4, "action": "Nhập tên đơn vị tính", "target": "Tên đơn vị tính", "value": "Chiếc", "expected": "Trường nhận giá trị" },
+      { "order": 5, "action": "Nhập ghi chú", "target": "Ghi chú", "value": "Đơn vị tính dùng cho thiết bị", "expected": "Trường nhận giá trị" },
+      { "order": 6, "action": "Lưu dữ liệu", "target": "Lưu", "value": "", "expected": "Hệ thống kiểm tra tính hợp lệ" },
+      { "order": 7, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Đơn vị tính", "value": "", "expected": "Đơn vị tính được tạo thành công và hiển thị trong danh sách" }
+    ],
+    "automationHints": { "screen": "UnitOfMeasure", "operation": "CREATE", "route": "/wasuco/danh-muc/don-vi-tinh", "authenticationRequired": true }
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD002",
+    "functionId": "FUNC004",
+    "function": "Tìm kiếm đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Tìm kiếm đơn vị tính",
+    "title": "Tìm kiếm đơn vị tính theo tên",
+    "testScenario": "Tìm kiếm đơn vị tính theo tên",
+    "type": "POSITIVE",
+    "testObjective": "Xác minh tìm kiếm đơn vị tính theo tên hiển thị đúng kết quả",
+    "objective": "Xác minh tìm kiếm đơn vị tính theo tên hiển thị đúng kết quả",
+    "requirementReference": "Danh mục đơn vị tính",
+    "coveredRules": [
+      "Cho phép tìm kiếm theo tên đơn vị tính"
+    ],
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "READY",
+    "priority": "HIGH",
+    "severity": "MEDIUM",
+    "testData": {
+      "requirement": "Nhập từ khóa tên đơn vị tính để tìm kiếm",
+      "fields": {
+        "Từ khóa tìm kiếm": { "value": "Chiếc", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "SEARCH_RESULT",
+        "target": "Danh sách đơn vị tính",
+        "expected": "Hệ thống hiển thị đúng đơn vị tính có tên phù hợp từ khóa"
+      }
+    ],
+    "expectedResult": "Hệ thống hiển thị đúng đơn vị tính có tên phù hợp từ khóa tìm kiếm",
+    "expectedResults": [
+      "Hệ thống hiển thị đúng đơn vị tính có tên phù hợp từ khóa tìm kiếm"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình Danh mục đơn vị tính", "target": "Danh mục đơn vị tính", "value": "", "expected": "Màn hình được hiển thị" },
+      { "order": 2, "action": "Nhập từ khóa tìm kiếm", "target": "Từ khóa tìm kiếm", "value": "Chiếc", "expected": "Ô tìm kiếm nhận giá trị" },
+      { "order": 3, "action": "Thực hiện tìm kiếm", "target": "Tìm kiếm", "value": "", "expected": "Hệ thống xử lý từ khóa" },
+      { "order": 4, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Danh sách đơn vị tính", "value": "", "expected": "Hệ thống hiển thị đúng đơn vị tính có tên phù hợp từ khóa tìm kiếm" }
+    ],
+    "automationHints": { "screen": "UnitOfMeasure", "operation": "SEARCH", "route": "/wasuco/danh-muc/don-vi-tinh", "authenticationRequired": true }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD002",
+    "functionId": "FUNC002",
+    "function": "Thêm mới đơn vị tính",
+    "module": "Danh mục đơn vị tính",
+    "feature": "Thêm mới đơn vị tính",
+    "title": "Thêm mới thất bại khi để trống Tên đơn vị tính",
+    "testScenario": "Thêm mới thất bại khi để trống Tên đơn vị tính",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh Tên đơn vị tính là bắt buộc, không được để trống",
+    "objective": "Xác minh Tên đơn vị tính là bắt buộc, không được để trống",
+    "requirementReference": "Danh mục đơn vị tính",
+    "coveredRules": [
+      "Tên đơn vị tính không được để trống"
+    ],
+    "preconditions": [
+      "Người dùng đã đăng nhập vào hệ thống",
+      "Người dùng đang ở màn hình Danh mục đơn vị tính"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "DATA_REQUIRED",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "testData": {
+      "requirement": "Nhập mã đơn vị tính nhưng để trống Tên đơn vị tính rồi lưu",
+      "fields": {
+        "Mã đơn vị tính": { "value": "DVT999", "purpose": "VALID", "requiresTesterInput": false },
+        "Tên đơn vị tính": { "value": "", "purpose": "VALID", "requiresTesterInput": true },
+        "Ghi chú": { "value": "", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "REQUIRED_VALIDATION",
+        "target": "Tên đơn vị tính",
+        "expected": "Hệ thống đánh dấu Tên đơn vị tính là bắt buộc và không lưu dữ liệu"
+      }
+    ],
+    "expectedResult": "Hệ thống đánh dấu Tên đơn vị tính là bắt buộc và không tạo đơn vị tính",
+    "expectedResults": [
+      "Hệ thống đánh dấu Tên đơn vị tính là bắt buộc và không tạo đơn vị tính"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình Danh mục đơn vị tính", "target": "Danh mục đơn vị tính", "value": "", "expected": "Màn hình được hiển thị" },
+      { "order": 2, "action": "Chọn chức năng Thêm mới", "target": "Thêm mới", "value": "", "expected": "Biểu mẫu thêm mới được hiển thị" },
+      { "order": 3, "action": "Nhập mã đơn vị tính", "target": "Mã đơn vị tính", "value": "DVT999", "expected": "Trường nhận giá trị" },
+      { "order": 4, "action": "Để trống tên đơn vị tính", "target": "Tên đơn vị tính", "value": "", "expected": "Trường không có giá trị" },
+      { "order": 5, "action": "Lưu dữ liệu", "target": "Lưu", "value": "", "expected": "Hệ thống kiểm tra tính hợp lệ" },
+      { "order": 6, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Tên đơn vị tính", "value": "", "expected": "Hệ thống đánh dấu Tên đơn vị tính là bắt buộc và không tạo đơn vị tính" }
+    ],
+    "automationHints": { "screen": "UnitOfMeasure", "operation": "CREATE", "route": "/wasuco/danh-muc/don-vi-tinh", "authenticationRequired": true }
+  }
+]

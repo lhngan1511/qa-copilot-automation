@@ -1,0 +1,162 @@
+[
+  {
+    "id": "TC001",
+    "scenarioId": "SC001",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Đăng nhập thành công với thông tin hợp lệ",
+    "testScenario": "Đăng nhập thành công với thông tin hợp lệ",
+    "type": "POSITIVE",
+    "testObjective": "Xác minh người dùng đăng nhập thành công khi nhập đúng tài khoản và mật khẩu",
+    "objective": "Xác minh người dùng đăng nhập thành công khi nhập đúng tài khoản và mật khẩu",
+    "requirementReference": "Đăng nhập",
+    "coveredRules": [
+      "Người dùng đăng nhập thành công khi tài khoản và mật khẩu hợp lệ"
+    ],
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "READY",
+    "priority": "HIGH",
+    "severity": "HIGH",
+    "testData": {
+      "requirement": "Nhập tài khoản và mật khẩu hợp lệ rồi bấm Đăng nhập",
+      "fields": {
+        "Tài khoản": { "value": "admin", "purpose": "VALID", "requiresTesterInput": false },
+        "Mật khẩu": { "value": "Admin@123", "purpose": "VALID", "requiresTesterInput": false },
+        "Mã xác nhận": { "value": "1234", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "AUTHENTICATED",
+        "target": "Đăng nhập",
+        "expected": "Người dùng đăng nhập thành công và được chuyển vào trang chính"
+      }
+    ],
+    "expectedResult": "Người dùng đăng nhập thành công và được chuyển vào trang chính",
+    "expectedResults": [
+      "Người dùng đăng nhập thành công và được chuyển vào trang chính"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình đăng nhập", "target": "Login", "value": "", "expected": "Màn hình đăng nhập được hiển thị" },
+      { "order": 2, "action": "Nhập tài khoản", "target": "Tài khoản", "value": "admin", "expected": "Trường Tài khoản nhận giá trị" },
+      { "order": 3, "action": "Nhập mật khẩu", "target": "Mật khẩu", "value": "Admin@123", "expected": "Trường Mật khẩu nhận giá trị" },
+      { "order": 4, "action": "Nhập mã xác nhận", "target": "Mã xác nhận", "value": "1234", "expected": "Trường Mã xác nhận nhận giá trị" },
+      { "order": 5, "action": "Chọn Đăng nhập", "target": "Login", "value": "", "expected": "Hệ thống kiểm tra tài khoản và mật khẩu" },
+      { "order": 6, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Login", "value": "", "expected": "Người dùng đăng nhập thành công và được chuyển vào trang chính" }
+    ],
+    "automationHints": { "screen": "Login", "operation": "LOGIN", "route": "/wasuco/login" }
+  },
+  {
+    "id": "TC002",
+    "scenarioId": "SC002",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Đăng nhập thất bại khi nhập sai mật khẩu",
+    "testScenario": "Đăng nhập thất bại khi nhập sai mật khẩu",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh hệ thống không cho đăng nhập khi mật khẩu sai",
+    "objective": "Xác minh hệ thống không cho đăng nhập khi mật khẩu sai",
+    "requirementReference": "Đăng nhập",
+    "coveredRules": [
+      "Sai tài khoản hoặc mật khẩu thì không được đăng nhập"
+    ],
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "READY",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "testData": {
+      "requirement": "Nhập đúng tài khoản nhưng sai mật khẩu rồi bấm Đăng nhập",
+      "fields": {
+        "Tài khoản": { "value": "admin", "purpose": "VALID", "requiresTesterInput": false },
+        "Mật khẩu": { "value": "SaiMatKhau@123", "purpose": "INVALID", "requiresTesterInput": false },
+        "Mã xác nhận": { "value": "1234", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "ERROR_MESSAGE",
+        "target": "Đăng nhập",
+        "expected": "Hệ thống hiển thị thông báo lỗi và không cho đăng nhập"
+      }
+    ],
+    "expectedResult": "Hệ thống hiển thị thông báo lỗi và không cho đăng nhập",
+    "expectedResults": [
+      "Hệ thống hiển thị thông báo lỗi và không cho đăng nhập"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình đăng nhập", "target": "Login", "value": "", "expected": "Màn hình đăng nhập được hiển thị" },
+      { "order": 2, "action": "Nhập tài khoản", "target": "Tài khoản", "value": "admin", "expected": "Trường Tài khoản nhận giá trị" },
+      { "order": 3, "action": "Nhập sai mật khẩu", "target": "Mật khẩu", "value": "SaiMatKhau@123", "expected": "Trường Mật khẩu nhận giá trị" },
+      { "order": 4, "action": "Chọn Đăng nhập", "target": "Login", "value": "", "expected": "Hệ thống kiểm tra tài khoản và mật khẩu" },
+      { "order": 5, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Login", "value": "", "expected": "Hệ thống hiển thị thông báo lỗi và không cho đăng nhập" }
+    ],
+    "automationHints": { "screen": "Login", "operation": "LOGIN", "route": "/wasuco/login" }
+  },
+  {
+    "id": "TC003",
+    "scenarioId": "SC003",
+    "moduleId": "MOD001",
+    "functionId": "FUNC001",
+    "function": "Đăng nhập",
+    "module": "Đăng nhập",
+    "feature": "Đăng nhập",
+    "title": "Đăng nhập thất bại khi để trống tài khoản",
+    "testScenario": "Đăng nhập thất bại khi để trống tài khoản",
+    "type": "NEGATIVE",
+    "testObjective": "Xác minh tài khoản là bắt buộc, không được để trống",
+    "objective": "Xác minh tài khoản là bắt buộc, không được để trống",
+    "requirementReference": "Đăng nhập",
+    "coveredRules": [
+      "Tài khoản không được để trống"
+    ],
+    "preconditions": [
+      "Người dùng đang ở màn hình đăng nhập"
+    ],
+    "postconditions": [],
+    "executable": true,
+    "executionReadiness": "DATA_REQUIRED",
+    "priority": "MEDIUM",
+    "severity": "MEDIUM",
+    "testData": {
+      "requirement": "Để trống tài khoản, nhập mật khẩu và mã xác nhận rồi bấm Đăng nhập",
+      "fields": {
+        "Tài khoản": { "value": "", "purpose": "VALID", "requiresTesterInput": true },
+        "Mật khẩu": { "value": "Admin@123", "purpose": "VALID", "requiresTesterInput": false },
+        "Mã xác nhận": { "value": "1234", "purpose": "VALID", "requiresTesterInput": false }
+      }
+    },
+    "assertions": [
+      {
+        "type": "REQUIRED_VALIDATION",
+        "target": "Tài khoản",
+        "expected": "Hệ thống đánh dấu trường Tài khoản là bắt buộc và không cho đăng nhập"
+      }
+    ],
+    "expectedResult": "Hệ thống đánh dấu trường Tài khoản là bắt buộc và không cho đăng nhập",
+    "expectedResults": [
+      "Hệ thống đánh dấu trường Tài khoản là bắt buộc và không cho đăng nhập"
+    ],
+    "steps": [
+      { "order": 1, "action": "Mở màn hình đăng nhập", "target": "Login", "value": "", "expected": "Màn hình đăng nhập được hiển thị" },
+      { "order": 2, "action": "Để trống tài khoản", "target": "Tài khoản", "value": "", "expected": "Trường Tài khoản không có giá trị" },
+      { "order": 3, "action": "Nhập mật khẩu", "target": "Mật khẩu", "value": "Admin@123", "expected": "Trường Mật khẩu nhận giá trị" },
+      { "order": 4, "action": "Chọn Đăng nhập", "target": "Login", "value": "", "expected": "Hệ thống kiểm tra điều kiện nghiệp vụ" },
+      { "order": 5, "action": "Kiểm tra kết quả nghiệp vụ", "target": "Tài khoản", "value": "", "expected": "Hệ thống đánh dấu trường Tài khoản là bắt buộc và không cho đăng nhập" }
+    ],
+    "automationHints": { "screen": "Login", "operation": "LOGIN", "route": "/wasuco/login" }
+  }
+]
