@@ -30,6 +30,13 @@ const iconPaths = {
         <>
             <path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18" />
         </>
+    ),
+    recording: (
+        <>
+            <circle cx="12" cy="12" r="3" />
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 4V2m0 20v-2" />
+        </>
     )
 };
 

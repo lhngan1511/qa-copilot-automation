@@ -32,8 +32,15 @@ export const navigationGroups = [
                 label: "Automation Intelligence",
                 description: "Sinh mã và thực thi testcase (sẽ có)",
                 to: "/automation/workspaces/new",
-                activePrefix: "/automation",
+                activePrefix: "/automation/workspaces/new",
                 icon: "automation"
+            },
+            {
+                label: "Automation (V3)",
+                description: "Record by testcase — workspace & chọn testcase",
+                to: "/automation/v3",
+                activePrefix: "/automation/v3",
+                icon: "recording"
             },
             {
                 label: "Reports",

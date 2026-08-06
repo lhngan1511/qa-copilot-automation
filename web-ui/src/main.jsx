@@ -5,6 +5,7 @@ import App from "./app/App.jsx";
 import { queryClient } from "./app/queryClient.js";
 import "./styles/global.css";
 import "./styles/automation.css";
+import "./styles/automationV3.css";
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>

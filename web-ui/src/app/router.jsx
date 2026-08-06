@@ -4,6 +4,7 @@ import DashboardPage from "../pages/DashboardPage.jsx";
 import NewWorkflowPage from "../pages/NewWorkflowPage.jsx";
 import WorkflowDetailPage from "../pages/WorkflowDetailPage.jsx";
 import AutomationWorkspacePage from "../pages/AutomationWorkspacePage.jsx";
+import AutomationV3Page from "../pages/AutomationV3Page.jsx";
 import CodeGenPage from "../pages/CodeGenPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
             {
                 path: "automation/workspaces/new",
                 element: <AutomationWorkspacePage />
+            },
+            {
+                path: "automation/v3",
+                element: <AutomationV3Page />
             },
             {
                 path: "codegen",

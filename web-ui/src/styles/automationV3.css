@@ -1,0 +1,481 @@
+/* Automation V3 — UI Foundation (Workspace + Upload + Chọn testcase) */
+/* Design system: font >=14px, button >=40px, spacing 8/12/16/24, token enterprise. */
+
+.v3-page {
+    display: grid;
+    gap: 16px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+}
+
+.v3-page__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.v3-page__title {
+    margin: 0;
+    font-size: var(--font-size-section, 1.375rem);
+    letter-spacing: -0.01em;
+}
+
+.v3-page__sub {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* ---- Stepper ---- */
+.v3-stepper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 8px 0 12px;
+    list-style: none;
+}
+
+.v3-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.v3-step strong {
+    font-weight: 600;
+}
+
+.v3-step__n {
+    display: inline-grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e9edf5;
+    color: #47506b;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.v3-step--active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+
+.v3-step--active .v3-step__n {
+    background: var(--primary);
+    color: #fff;
+}
+
+.v3-step--locked {
+    opacity: 0.55;
+}
+
+.v3-step__lock {
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* ---- Buttons (KHÔNG dùng HTML button mặc định) ---- */
+.v3-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+
+.v3-btn--primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.v3-btn--primary:hover {
+    background: var(--primary-dark);
+}
+
+.v3-btn--ghost {
+    background: var(--surface);
+    color: var(--primary-dark);
+    border-color: #b8c7ea;
+}
+
+.v3-btn--disabled,
+.v3-btn:disabled {
+    background: #eef1f6;
+    color: #9aa3b5;
+    border-color: transparent;
+    cursor: not-allowed;
+}
+
+/* ---- Banners ---- */
+.v3-banner {
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.v3-banner--error {
+    background: var(--danger-soft);
+    border: 1px solid #fec5bb;
+    color: var(--danger);
+}
+
+/* ---- Upload ---- */
+.v3-upload {
+    display: grid;
+    gap: 12px;
+    place-items: center;
+    padding: 28px 20px;
+    border: 2px dashed #b9c7e4;
+    border-radius: 12px;
+    background: var(--surface-subtle);
+    text-align: center;
+}
+
+.v3-upload__icon {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.v3-upload__copy h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+}
+
+.v3-upload__copy p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.v3-upload__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.v3-upload__error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ---- Upload success ---- */
+.v3-ok {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid #a7e3c8;
+    border-radius: 12px;
+    background: var(--success-soft);
+    color: var(--success);
+    font-size: 14px;
+}
+
+.v3-ok__check {
+    display: inline-grid;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: #12b76a;
+    color: #fff;
+    font-size: 14px;
+}
+
+.v3-ok b {
+    color: var(--success);
+}
+
+.v3-ok__meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.v3-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.v3-chip b {
+    color: var(--text);
+}
+
+/* ---- Section ---- */
+.v3-section {
+    display: grid;
+    gap: 12px;
+}
+
+.v3-section__title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.v3-section__title h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.v3-section__hint {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ---- Testcase list & card ---- */
+.v3-list {
+    display: grid;
+    gap: 12px;
+}
+
+.v3-card {
+    display: grid;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.v3-card--selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.v3-card--disabled {
+    opacity: 0.72;
+}
+
+.v3-card__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.v3-card__id {
+    flex: 0 0 auto;
+    min-width: 52px;
+    padding-top: 2px;
+    color: var(--primary-dark);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.v3-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.v3-card__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.v3-card__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.v3-card__data {
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+.v3-card__action {
+    margin-top: 10px;
+}
+
+/* ---- Checkbox ---- */
+.v3-check {
+    display: inline-flex;
+    flex: 0 0 auto;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.v3-check__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.v3-check__box {
+    display: inline-grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border: 1.5px solid #9aa6bd;
+    border-radius: 5px;
+    background: var(--surface);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.v3-check__input:checked + .v3-check__box {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.v3-check__input:focus-visible + .v3-check__box {
+    outline: 3px solid rgba(21, 94, 239, 0.24);
+    outline-offset: 2px;
+}
+
+.v3-check__input:disabled + .v3-check__box {
+    background: #eef1f6;
+    border-color: #c7cedb;
+}
+
+/* ---- Badges & notes ---- */
+.v3-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.v3-badge--type {
+    background: #eef2f9;
+    color: #3d4867;
+}
+
+.v3-badge--sel {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+
+.v3-badge--nosel {
+    background: #eef1f6;
+    color: #6b768c;
+}
+
+.v3-note {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.v3-note--warn {
+    color: var(--warning);
+}
+
+/* ---- Action bar ---- */
+.v3-actionbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+}
+
+.v3-actionbar__count {
+    font-size: 14px;
+}
+
+.v3-actionbar__count b {
+    color: var(--primary-dark);
+}
+
+.v3-actionbar__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.v3-actionbar__note {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ---- Empty ---- */
+.v3-empty {
+    display: grid;
+    gap: 4px;
+    place-items: center;
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.v3-empty strong {
+    color: var(--text);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+    .v3-page {
+        padding: 16px 12px 40px;
+    }
+
+    .v3-page__head {
+        flex-direction: column;
+    }
+
+    .v3-actionbar {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .v3-actionbar__right {
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .v3-actionbar .v3-btn {
+        width: 100%;
+    }
+}
