@@ -83,11 +83,22 @@ export default class AutomationWorkspaceService {
         if (!mapping) throw new Error("Thiếu mapping đã phân tích.");
         const codegen = new AIAutomationCodegen(this.provider(), { rootDir: this.rootDir });
         const result = await codegen.generate({ testCase, mapping, codegenText, confirmedFacts });
-        if (!result.validation?.ok) return { ...result, filePath: null, exists: false };
+        // Không ghi file nếu code chưa hoàn chỉnh / hỏng encoding / syntax lỗi.
+        if (!result.validation?.ok) return { ...result, filePath: null, exists: false, written: false };
+        if (result.guard && !result.guard.ok) {
+            return {
+                ...result,
+                filePath: null,
+                exists: false,
+                written: false,
+                guardError: result.guard.errorCode,
+                guardReason: result.guard.reason
+            };
+        }
         const filePath = codegen.writeFile({ code: result.code, testCaseId: testCase.id, module: testCase.module || "Module" });
         const fs = await import("node:fs");
         // Trả đường dẫn tuyệt đối chuẩn + xác nhận file tồn tại ngay sau khi ghi.
-        return { ...result, filePath, exists: fs.existsSync(filePath) };
+        return { ...result, filePath, exists: fs.existsSync(filePath), written: true };
     }
 
     async run({ filePath, env = {}, testCaseId = "", headed = null, slowMo = null }) {

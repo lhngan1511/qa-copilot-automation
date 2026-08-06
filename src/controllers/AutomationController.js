@@ -16,6 +16,9 @@ export default class AutomationController {
     async generate(req, res) {
         try {
             const data = await this.service.generate(req.body ?? {});
+            // Ưu tiên báo rõ lỗi truncation / encoding / syntax.
+            if (data.guardError === "AI_CODEGEN_TRUNCATED") return res.status(200).json({ success: false, data, error: { message: "Mã AI sinh ra chưa hoàn chỉnh. Hãy sinh lại.", diagnostic: "AI_CODEGEN_TRUNCATED" } });
+            if (data.guardError) return res.status(200).json({ success: false, data, error: { message: data.guardReason || "Mã AI sinh ra không hợp lệ. Hãy sinh lại.", diagnostic: data.guardError } });
             if (!data.validation?.ok) return res.status(200).json({ success: false, data, error: { message: "Sinh mã kiểm thử không thành công.", diagnostic: "AI_CODEGEN_REJECTED" } });
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {

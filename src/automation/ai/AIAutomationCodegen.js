@@ -12,6 +12,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { extractFencedCode, validateGeneratedCode } from "./codegenGuard.js";
 
 // Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
 const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
@@ -371,8 +372,19 @@ export default class AIAutomationCodegen {
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
         const prompt = this.buildPrompt({ testCase, mapping, confirmedFacts });
-        const code = await this.aiProvider.generate(prompt);
-        const clean = code.replace(/^```(?:js|javascript)?\s*/i, "").replace(/```\s*$/, "").trim();
+        // Ghi nhận finishReason nếu provider trả kèm (vd MAX_TOKENS -> cắt cụt).
+        let code = "";
+        this.lastFinishReason = null;
+        const raw = await this.aiProvider.generate(prompt);
+        if (typeof raw === "string") {
+            code = raw;
+        } else if (raw && typeof raw === "object") {
+            code = String(raw.text ?? raw.code ?? "");
+            this.lastFinishReason = raw.finishReason ?? raw.finish_reason ?? null;
+        } else {
+            code = String(raw ?? "");
+        }
+        const clean = extractFencedCode(code);
 
         // Loại bỏ phần auth/nav Gemini sinh trùng (nếu mapping có authSetup/navChain)
         const stripped = this.stripDuplicateSetup(clean, mapping);
@@ -395,13 +407,30 @@ export default class AIAutomationCodegen {
             codegenText: text,
             testCaseId: testCase.id ?? testCase.testcaseId ?? ""
         });
-        return { code: final, validation };
+
+        // Truy vết độ dài từng tầng (không log credential).
+        console.log(`[CODEGEN_AI_RAW] characterCount=${String(code ?? "").length} finishReason=${this.lastFinishReason ?? "?"}`);
+        console.log(
+            `[CODEGEN_EXTRACTED] characterCount=${String(final ?? "").length} ` +
+            `startsWith=${JSON.stringify(String(final).slice(0, 30))} ` +
+            `endsWith=${JSON.stringify(String(final).slice(-40))} ` +
+            `hasClosingTestBlock=${validateGeneratedCode({ code: final, runSyntax: false }).ok}`
+        );
+
+        // Kiểm tra hoàn chỉnh + encoding trước khi ghi.
+        const guard = validateGeneratedCode({ code: final, testCaseId: testCase.id ?? testCase.testcaseId ?? "" });
+        console.log(`[CODEGEN_GUARD] ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
+        return { code: final, validation, guard };
     }
 
     writeFile({ code, testCaseId, module = "Login" }) {
         fs.mkdirSync(this.outputDir, { recursive: true });
         const file = path.join(this.outputDir, `${testCaseId}.spec.js`);
-        fs.writeFileSync(file, code);
+        // Ghi UTF-8 tường minh (không dùng Buffer latin1/binary, không URI-encode).
+        fs.writeFileSync(file, code, "utf8");
+        const stat = fs.statSync(file);
+        // Truy vết sau khi ghi.
+        console.log(`[CODEGEN_WRITE] characterCount=${String(code ?? "").length} fileSize=${stat.size} encoding=utf8`);
         return file;
     }
 }
