@@ -1,7 +1,8 @@
 /*
- V3RecordingPanel — Banner ghi cố định khi đang ghi.
- "Đang ghi TCxxx — tên [Dừng ghi]".
- Vùng "Dán code Playwright CodeGen" để thu source (record), rồi Dừng ghi.
+ V3RecordingPanel — Banner nhập bản ghi cố định.
+ "Nhập bản ghi testcase TCxxx — tên [Nhập xong]".
+ Vùng "Dán mã Playwright đã ghi cho TCxxx" để thu source, rồi Nhập xong.
+ (Chưa điều khiển Playwright Recorder thật — chỉ dán source.)
 */
 
 export default function V3RecordingPanel({ active, source = "", onSourceChange, busy = false, onStop }) {
@@ -14,7 +15,7 @@ export default function V3RecordingPanel({ active, source = "", onSourceChange, 
             <div className="v3-rec-banner">
                 <span className="v3-rec-banner__dot" aria-hidden="true" />
                 <span className="v3-rec-banner__text">
-                    Đang ghi <b>{label}</b>
+                    Nhập bản ghi testcase <b>{label}</b>
                 </span>
                 <button
                     type="button"
@@ -22,11 +23,11 @@ export default function V3RecordingPanel({ active, source = "", onSourceChange, 
                     disabled={busy}
                     onClick={() => onStop?.(source)}
                 >
-                    ■ Dừng ghi
+                    Nhập xong
                 </button>
             </div>
             <div className="v3-rec-source">
-                <label htmlFor="v3-rec-code">Dán code đã ghi (Playwright recorder)</label>
+                <label htmlFor="v3-rec-code">Dán mã Playwright đã ghi cho {active.testCaseId}</label>
                 <textarea
                     id="v3-rec-code"
                     className="v3-rec-source__input"

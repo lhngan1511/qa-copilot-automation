@@ -2,8 +2,8 @@
  V3TestCaseCard — Card testcase (Bước 5B).
 
  Mỗi card MỘT primary action đổi theo trạng thái testcase:
-   SELECTED       → [Ghi testcase]
-   RECORDING      → [Dừng ghi]
+   SELECTED       → [Gắn bản ghi testcase]
+   RECORDING      → [Nhập xong]
    REVIEW_REQUIRED→ [Xem và duyệt] + menu "…"
    APPROVED       → badge "Đã duyệt" + menu "…"
    NOT_SELECTED   → không action
@@ -14,7 +14,7 @@
 
 const STATUS_BADGE = {
     SELECTED: ["v3-badge--sel", "Đã chọn"],
-    RECORDING: ["v3-badge--rec", "Đang ghi"],
+    RECORDING: ["v3-badge--rec", "Nhập bản ghi"],
     REVIEW_REQUIRED: ["v3-badge--review", "Cần duyệt"],
     APPROVED: ["v3-badge--ok", "Đã duyệt"]
 };
@@ -33,8 +33,8 @@ export default function V3TestCaseCard({
     const status = testCase.automationStatus;
 
     let primary = null;
-    if (status === "SELECTED") primary = { key: "record", label: "Ghi testcase", danger: false, disabled: recordingActive };
-    else if (status === "RECORDING") primary = { key: "stop", label: "Dừng ghi", danger: true };
+    if (status === "SELECTED") primary = { key: "record", label: "Gắn bản ghi testcase", danger: false, disabled: recordingActive };
+    else if (status === "RECORDING") primary = { key: "stop", label: "Nhập xong", danger: false };
     else if (status === "REVIEW_REQUIRED") primary = { key: "review", label: "Xem và duyệt", danger: false };
 
     const showMenu = status === "REVIEW_REQUIRED" || status === "APPROVED";

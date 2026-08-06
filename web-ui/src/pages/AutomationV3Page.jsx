@@ -20,10 +20,10 @@ import {
  AutomationV3Page — Automation Workspace (bước 5A + 5B).
 
  Bước 5B:
-   - Ghi testcase (banner đang ghi) / Dừng ghi / cập nhật card.
+   - Gắn bản ghi testcase (banner nhập bản ghi) / Nhập xong / cập nhật card.
    - Review Recording mở theo Drawer khi tester chủ động.
    - Approve / Reject / Ghi lại / Xóa recording (xác nhận).
- Chưa Generate / Run / AI assertion.
+ Chưa Generate / Run / AI assertion. Chưa điều khiển Playwright Recorder thật (chỉ dán source).
 */
 
 const STORAGE_KEY = "qa-copilot.automation.workspaceId";

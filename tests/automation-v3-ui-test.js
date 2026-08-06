@@ -114,8 +114,10 @@ assert.ok(
 const cardClean = stripComments(cardSource);
 assert.ok(!cardClean.includes("Xem chi tiết"), "không có Xem chi tiết");
 assert.ok(!cardClean.includes("Generate") && !cardClean.includes("Export"), "card không Generate/Export");
-// Card có đủ 4 trạng thái primary: Ghi testcase / Dừng ghi / Xem và duyệt
-assert.ok(cardClean.includes("Ghi testcase") && cardClean.includes("Dừng ghi") && cardClean.includes("Xem và duyệt"), "đủ primary action theo trạng thái");
+// Card có đủ primary action theo trạng thái (gắn/nhập bản ghi + duyệt).
+assert.ok(cardClean.includes("Gắn bản ghi testcase") && cardClean.includes("Nhập xong") && cardClean.includes("Xem và duyệt"), "đủ primary action theo trạng thái");
+// Không dùng nhãn gây hiểu nhầm khi chưa có Recorder thật.
+assert.ok(!cardClean.includes("Đang ghi") && !cardClean.includes("Dừng ghi") && !cardClean.includes("Ghi testcase"), "không dùng 'Đang ghi'/'Dừng ghi' khi chưa spawn recorder");
 
 // ---- 9/10/11. Không Generate/Run, không upload CodeGen, không AI Mapping ----
 const allSources = [
@@ -177,8 +179,11 @@ assert.ok(
         pageClean2.includes("deleteRecording"),
     "page gọi start/stop/approve/reject/delete recording"
 );
-assert.ok(pageClean2.includes("V3RecordingPanel"), "có banner ghi");
-assert.ok(stripComments(read("components/automationV3/V3RecordingPanel.jsx")).includes("Đang ghi"), "banner có chuỗi 'Đang ghi'");
+assert.ok(pageClean2.includes("V3RecordingPanel"), "có banner nhập bản ghi");
+const recPanelClean = stripComments(read("components/automationV3/V3RecordingPanel.jsx"));
+assert.ok(recPanelClean.includes("Nhập bản ghi testcase"), "banner nhập bản ghi");
+assert.ok(recPanelClean.includes("Dán mã Playwright đã ghi cho"), "panel dán mã Playwright cho testcase");
+assert.ok(!recPanelClean.includes("Đang ghi") && !recPanelClean.includes("Dừng ghi"), "không 'Đang ghi'/'Dừng ghi'");
 assert.ok(!pageClean2.includes("getRecordingSource"), "page không tải source mặc định (lazy ở 'Xem mã')");
 
 // ---- Bước 5B: Drawer 2 tab (Thông tin, Recording), không tab Dữ liệu ----

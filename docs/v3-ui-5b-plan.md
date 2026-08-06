@@ -4,12 +4,18 @@
 > Branch `arena/automation-record-by-testcase` @ `d74147f`.
 
 ## Phạm vi (Bước 5B)
-- Ghi đúng testcase đang chọn; banner ghi cố định.
-- Dừng ghi, cập nhật card tại chỗ.
+- Gắn bản ghi đúng testcase đang chọn; banner nhập bản ghi cố định.
+- Nhập xong, cập nhật card tại chỗ.
 - Review mở theo Drawer khi tester chủ động bấm "Xem và duyệt".
 - Tab Recording: danh sách bước gọn.
 - Approve / Reject / Ghi lại recording.
 - **Chưa làm:** Generate, Run, AI assertion confirmation.
+
+## Ghi nhận quan trọng (trước 5C)
+- UI **chưa điều khiển Playwright Recorder thật** — mới hỗ trợ **dán source** và gắn source với `testCaseId` đang chọn.
+- Không dùng nhãn gây hiểu nhầm "Đang ghi": dùng **"Gắn bản ghi testcase"** / **"Nhập xong"**, panel **"Dán mã Playwright đã ghi cho TCxxx"**.
+- Giữ contract recording ↔ `testCaseId`.
+- Backlog riêng: **RECORDER_INTEGRATION** (`docs/backlog.md`) — KHÔNG làm trong 5C.
 
 ## 4 điểm đã chỉnh theo duyệt
 1. **Menu "…" chỉ xuất hiện khi card có recording**: `REVIEW_REQUIRED` / `APPROVED`. Không menu ở `SELECTED` / `RECORDING`.
