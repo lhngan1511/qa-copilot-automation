@@ -70,6 +70,11 @@ export default class CodeGenRecordingStore {
         return this.sanitize(recorded ?? matches[0]);
     }
 
+    /** V3 — trả recording GỐC (kèm scriptContent) theo id, để renderer check hash. */
+    getRaw(recordingId) {
+        return this.recordings.find(item => item.recordingId === recordingId) ?? null;
+    }
+
     /** V3 — tất cả recording của testCaseId (để tính version, không overwrite). */
     allByTestCase(testCaseId) {
         return this.recordings
