@@ -62,10 +62,12 @@ export default class CodeGenRecordingStore {
         return rec ? this.sanitize(rec) : null;
     }
 
-    /** V3 — tìm recording theo testCaseId (mỗi testcase 1 recording). */
+    /** V3 — tìm recording theo testCaseId; ưu tiên recording đã hoàn tất (RECORDED) hơn STOPPED. */
     getByTestCase(testCaseId) {
-        const rec = this.recordings.find(item => item.testCaseId === testCaseId) ?? null;
-        return rec ? this.sanitize(rec) : null;
+        const matches = this.recordings.filter(item => item.testCaseId === testCaseId);
+        if (matches.length === 0) return null;
+        const recorded = matches.find(r => r.status === "RECORDED");
+        return this.sanitize(recorded ?? matches[0]);
     }
 
     create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE" } = {}) {
