@@ -1,9 +1,12 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import { chromium } from "@playwright/test";
 import ExecutionResult from "./ExecutionResult.js";
 import { buildRunResponse, ERROR_CODES, ERROR_MESSAGES } from "./diagnose.js";
+
+const __require = createRequire(import.meta.url);
 
 /**
  * PlaywrightRunner
@@ -30,13 +33,15 @@ export default class PlaywrightRunner {
      * @param {string} [options.rootDir]
      * @param {string|null} [options.browserChannel]  mặc định đọc process.env.PLAYWRIGHT_BROWSER_CHANNEL
      */
-    constructor({ rootDir = process.cwd(), browserChannel = null, headed = null, slowMo = null } = {}) {
+    constructor({ rootDir = process.cwd(), browserChannel = null, headed = null, slowMo = null, spawnFn = null } = {}) {
         this.rootDir = rootDir;
         this.browserChannel = browserChannel ?? process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? null;
         // Demo mặc định: HIỂN THỊ browser thật (headed) + slow motion 500ms để xem thao tác.
         // Có thể ghi đè qua env PLAYWRIGHT_HEADLESS / PLAYWRIGHT_SLOW_MO hoặc option.
         this.headed = headed ?? (String(process.env.PLAYWRIGHT_HEADLESS ?? "false").toLowerCase() !== "true");
         this.slowMo = slowMo ?? (Number(process.env.PLAYWRIGHT_SLOW_MO ?? "500") || 0);
+        // Injectable spawn để test (mặc định dùng spawn thật). Signature: spawnFn(bin, args, opts).
+        this.spawnFn = spawnFn ?? spawn;
     }
 
     /** Channel đã cấu hình (chuẩn hóa lower). */
@@ -50,12 +55,33 @@ export default class PlaywrightRunner {
         return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
-    /** Đường dẫn playwright binary — Windows cần .cmd (spawn không chạy được shim unix). */
-    playwrightBin() {
-        const binDir = path.join(this.rootDir, "node_modules", ".bin");
-        return process.platform === "win32"
-            ? path.join(binDir, "playwright.cmd")
-            : path.join(binDir, "playwright");
+    /**
+     * Resolve đường dẫn CLI JS thật của Playwright (không dùng .cmd shim).
+     * Spawn qua process.execPath để chạy đúng trên Windows (không lệ thuộc shell).
+     */
+    cliPath() {
+        // Thử resolve từ rootDir (dự án có node_modules riêng), rồi từ chính package này.
+        const candidates = [
+            path.join(this.rootDir, "package.json"),
+            path.join(import.meta.dirname ?? process.cwd(), "package.json")
+        ];
+        for (const base of candidates) {
+            try {
+                const req = createRequire(base);
+                try {
+                    return req.resolve("@playwright/test/cli");
+                } catch { /* fallthrough */ }
+                try {
+                    return req.resolve("playwright/cli.js");
+                } catch { /* fallthrough */ }
+            } catch { /* fallthrough */ }
+        }
+        // Dự phòng: tìm cli.js trong node_modules của rootDir.
+        for (const base of ["@playwright/test", "playwright"]) {
+            const candidate = path.join(this.rootDir, "node_modules", base, "cli.js");
+            if (fs.existsSync(candidate)) return candidate;
+        }
+        throw new Error("Không tìm thấy Playwright CLI (cli.js). Hãy cài @playwright/test.");
     }
 
     /**
@@ -164,7 +190,7 @@ export default class PlaywrightRunner {
                 resolve({ ok: false, raw: browser.diagnostic, results: null, resultsFile: null, error: browser.diagnostic });
                 return;
             }
-            const bin = this.playwrightBin();
+            const cliPath = this.cliPath();
             const resultsFile = path.join(projectDir, "test-results.json");
             try {
                 if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
@@ -183,7 +209,8 @@ export default class PlaywrightRunner {
                 return;
             }
             const args = this.buildArgs({ projectDir, extraArgs, project: proj.name });
-            const child = spawn(bin, args, {
+            // Spawn bằng process.execPath + CLI JS thật (không .cmd, không shell) — ổn định trên Windows.
+            const child = this.spawnFn(process.execPath, [cliPath, ...args], {
                 cwd: this.rootDir,
                 env: {
                     ...process.env,
@@ -192,13 +219,17 @@ export default class PlaywrightRunner {
                     PLAYWRIGHT_HEADLESS: this.headed ? "false" : "true",
                     PLAYWRIGHT_SLOW_MO: String(this.slowMo || 0)
                 },
-                stdio: ["ignore", "pipe", "pipe"]
+                stdio: ["ignore", "pipe", "pipe"],
+                windowsHide: false
             });
             let stdout = "";
             let stderr = "";
             child.stdout.on("data", (d) => (stdout += d));
             child.stderr.on("data", (d) => (stderr += d));
-            child.on("error", (err) => resolve({ ok: false, raw: String(err), results: null, resultsFile: null }));
+            child.on("spawn", () => {
+                /* spawn thành công — không làm gì thêm (chỉ cần listener để tránh lỗi). */
+            });
+            child.on("error", (err) => resolve({ ok: false, raw: String(err), results: null, resultsFile: null, error: String(err) }));
             child.on("close", () => {
                 let results = null;
                 if (fs.existsSync(resultsFile)) {
@@ -339,19 +370,20 @@ export default class PlaywrightRunner {
             // Relative path từ project root, dùng forward slash (Windows path có '\\' làm hỏng regex của Playwright).
             const relRaw = path.relative(this.rootDir, abs).split(path.sep).join("/");
             const rel = this.escapeRegex(relRaw);
-            const bin = this.playwrightBin();
+            const cliPath = this.cliPath();
             const started = Date.now();
             const args = this.buildArgs({ filePath: rel, project: proj.name });
             diag.commandArgs = args;
-            diag.command = bin;
+            diag.command = process.execPath;
+            diag.cliPath = cliPath;
             diag.headed = effectiveHeaded;
             diag.slowMo = effectiveSlowMo;
             const browserLabel = this.configuredChannel() ?? "chromium";
             console.log(
-                `[RUN_START] requestId=${requestId} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel} command=${bin} args=${JSON.stringify(args)}`
+                `[RUN_START] requestId=${requestId} command=${process.execPath} cliPath=${cliPath} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel} cwd=${this.rootDir} args=${JSON.stringify(args)}`
             );
-            // spawn executable + args array riêng (không shell:true — tránh DEP0190; path có dấu cách vẫn chạy đúng).
-            const child = spawn(bin, args, {
+            // Spawn bằng process.execPath + CLI JS thật (không .cmd, không shell:true) — ổn định trên Windows.
+            const child = this.spawnFn(process.execPath, [cliPath, ...args], {
                 cwd: this.rootDir,
                 env: {
                     ...process.env,
@@ -361,17 +393,25 @@ export default class PlaywrightRunner {
                     PLAYWRIGHT_HEADLESS: effectiveHeaded ? "false" : "true",
                     PLAYWRIGHT_SLOW_MO: String(effectiveSlowMo || 0)
                 },
-                stdio: ["ignore", "pipe", "pipe"]
+                stdio: ["ignore", "pipe", "pipe"],
+                windowsHide: false
             });
             let stdout = "";
             let stderr = "";
-            child.stdout.on("data", (d) => (stdout += d));
-            child.stderr.on("data", (d) => (stderr += d));
+            child.stdout.on("data", (d) => {
+                stdout += d;
+                console.log(`[RUN_STDOUT] requestId=${requestId} ${String(d).trimEnd()}`);
+            });
+            child.stderr.on("data", (d) => {
+                stderr += d;
+                console.log(`[RUN_STDERR] requestId=${requestId} ${String(d).trimEnd()}`);
+            });
             child.on("spawn", () => {
-                console.log(`[RUN_START] requestId=${requestId} pid=${child.pid ?? "?"}`);
+                console.log(`[RUN_SPAWNED] requestId=${requestId} pid=${child.pid ?? "?"}`);
             });
             child.on("error", (err) => {
-                console.error(`[RUN_END] requestId=${requestId} status=SPAWN_FAILED exitCode=? durationMs=${Date.now() - started}`);
+                // Mọi lỗi spawn đều được catch — không làm server crash.
+                console.error(`[RUN_END] requestId=${requestId} status=SPAWN_FAILED exitCode=? durationMs=${Date.now() - started} error=${String(err)}`);
                 respond(
                     { status: "DIAGNOSTIC", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath, requestedFilePath: filePath, fileExists: true, testCaseId: testCaseId || null },
                     { errorCode: ERROR_CODES.SPAWN_FAILED, errorMessage: ERROR_MESSAGES.SPAWN_FAILED, filePath, fileExists: true }
