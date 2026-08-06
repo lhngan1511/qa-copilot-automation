@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { extractFencedCode, validateGeneratedCode } from "./codegenGuard.js";
 import { buildSpecFromMapping } from "./codegenSkeleton.js";
+import { extractCodegenLocators } from "./locatorValidation.js";
 
 // Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
 const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
@@ -212,7 +213,7 @@ export default class AIAutomationCodegen {
      * Validate code sau khi sinh.
      * Trả về errors (rỗng = OK).
      */
-    validateCode({ code, mapping, codegenText, testCaseId }) {
+    validateCode({ code, mapping, codegenText, testCaseId, allowCodegenLocators = false }) {
         const errors = [];
         const id = testCaseId || "";
 
@@ -291,11 +292,17 @@ export default class AIAutomationCodegen {
         }
 
         // 6. locator — đối chiếu CHÍNH XÁC từng locator với allowlist (approved mapping).
-        //    Không chấp nhận locator ngoài mapping, kể cả nếu có trong codegen.
+        //    Khi fallback deterministic dùng assertion/locator trích từ CodeGen, cho phép
+        //    thêm locator CÓ trong codegen source (CodeGen là nguồn "làm gì" theo contract).
         const allowlist = this.buildLocatorAllowlist(mapping);
         const allowedSet = new Set(
             Array.from(allowlist.values()).map((l) => this.normalizeLocator(l))
         );
+        if (allowCodegenLocators && String(codegenText ?? "").trim()) {
+            for (const loc of extractCodegenLocators(String(codegenText))) {
+                allowedSet.add(this.normalizeLocator(loc));
+            }
+        }
         const re = /page\.(getByRole|getByText|getByPlaceholder|getByTestId|getByLabel|locator)\([^;]*?\)/g;
         let m;
         let foundLocator = false;
@@ -512,12 +519,20 @@ export default class AIAutomationCodegen {
             `finishReasons=${JSON.stringify(finishReasons)}`
         );
 
+        // Truy vết khoảng đứt: EXTRACTED -> rule validation -> WRITE.
+        console.log(
+            `[CODEGEN_RULE_VALIDATION_START] testCaseId=${testCaseId || "?"} source=${source} characterCount=${String(final ?? "").length}`
+        );
         const validation = this.validateCode({
             code: final,
             mapping,
             codegenText: text,
-            testCaseId
+            testCaseId,
+            allowCodegenLocators: source.startsWith("deterministic-fallback")
         });
+        console.log(
+            `[CODEGEN_RULE_VALIDATION_RESULT] ok=${validation.ok} errors=${JSON.stringify(validation.errors ?? [])} warnings=${JSON.stringify(validation.warnings ?? [])} rejectedRule=${validation.ok ? "?" : "CODEGEN_RULE_VALIDATION_FAILED"}`
+        );
 
         return { code: final, validation, guard, source, finishReasons };
     }

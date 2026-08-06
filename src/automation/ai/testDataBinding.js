@@ -161,12 +161,25 @@ export function renderFillExpression({ fieldName, purpose, savedDrawerValue, app
 }
 
 /** Kiểm tra assertion có phải "thật" (không phải internal key/locatorKey làm accessible name). */
+/** Label dùng trong assertion KHÔNG được ghép từ nhiều field/action (tránh getByText('Đăng nhập Mã xác nhận')). */
+function isConcatenatedAssertionLabel(label) {
+    const l = String(label ?? "").toLowerCase();
+    if (!l) return false;
+    const tokens = ["đăng nhập", "tài khoản", "mật khẩu", "mã xác nhận", "tên đơn vị tính", "mã đơn vị tính", "ghi chú", "username", "password", "captcha", "thêm mới", "lưu", "tìm kiếm"];
+    const found = tokens.filter(t => l.includes(t));
+    // Nếu có >= 2 field/action label trong cùng một chuỗi getByText -> ghép giả.
+    return found.length >= 2;
+}
+
 export function isValidAssertionSource(assertion) {
     const expr = String(assertion?.playwrightAssertion ?? "");
     if (!expr.trim()) return false;
     if (!/page\.getBy|toHaveURL|toHaveTitle|expect\(page\)|toBeVisible|toHaveText|toHaveValue|toBeHidden|toHaveCount|toBeEnabled|toBeDisabled/.test(expr)) return false;
     // Nội bộ: locatorKey/variableName/adminButton không được làm accessible name.
     if (/adminButton|locatorKey|variableName|name\s*:\s*['"]?(adminButton|locatorKey)/i.test(expr)) return false;
+    // getByText label không được ghép nhiều field/action thành expected text.
+    const textMatch = expr.match(/getByText\(\s*['"]([^'"]+)['"]\s*\)/);
+    if (textMatch && isConcatenatedAssertionLabel(textMatch[1])) return false;
     return true;
 }
 
@@ -227,11 +240,16 @@ export function extractCodegenAssertion(codegenText) {
             }
         }
         const stmt = cg.slice(startIdx, fullEnd + 1).replace(/^await\s+/, "").trim();
-        if (isValidAssertionSource({ playwrightAssertion: stmt })) statements.push(stmt);
+        if (isValidAssertionSource({ playwrightAssertion: stmt })) {
+            // Ghi source line/start/end để chứng minh assertion nào được chọn (không log giá trị nhạy cảm).
+            const line = cg.slice(0, startIdx).split("\n").length;
+            console.log(`[CODEGEN_ASSERT_SOURCE] line=${line} start=${startIdx} end=${fullEnd + 1} assertion=${JSON.stringify(stmt.slice(0, 120))}`);
+            statements.push({ stmt, line, start: startIdx, end: fullEnd + 1 });
+        }
     }
     if (statements.length === 0) return null;
     // Chọn assertion cuối (thường là assertion kết quả).
-    return statements[statements.length - 1];
+    return statements[statements.length - 1].stmt;
 }
 
 /**

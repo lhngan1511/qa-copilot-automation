@@ -85,8 +85,25 @@ export default class AutomationWorkspaceService {
         const codegen = new AIAutomationCodegen(this.provider(), { rootDir: this.rootDir });
         const result = await codegen.generate({ testCase, mapping, codegenText, confirmedFacts });
         // Không ghi file nếu code chưa hoàn chỉnh / hỏng encoding / syntax lỗi.
-        if (!result.validation?.ok) return { ...result, filePath: null, exists: false, written: false };
+        if (!result.validation?.ok) {
+            console.log(
+                `[CODEGEN_SERVICE_GENERATE_RESULT] written=false filePath=null exists=false errorCode=CODEGEN_RULE_VALIDATION_FAILED errorMessage=${JSON.stringify(result.validation?.errors ?? [])}`
+            );
+            return {
+                ...result,
+                filePath: null,
+                exists: false,
+                written: false,
+                status: "GENERATE_FAILED",
+                errorCode: "CODEGEN_RULE_VALIDATION_FAILED",
+                errors: result.validation?.errors ?? [],
+                source: result.source
+            };
+        }
         if (result.guard && !result.guard.ok) {
+            console.log(
+                `[CODEGEN_SERVICE_GENERATE_RESULT] written=false filePath=null exists=false errorCode=${result.guard.errorCode ?? "?"} errorMessage=${JSON.stringify(result.guard.reason ?? "")}`
+            );
             return {
                 ...result,
                 filePath: null,
@@ -100,8 +117,12 @@ export default class AutomationWorkspaceService {
         const fs = await import("node:fs");
         // Runtime env (TESTDATA_*) cho Runner — từ value đã resolve theo thứ tự ưu tiên, không log giá trị.
         const runtimeEnv = runtimeEnvFor({ testCase, mapping, codegenText });
+        const exists = fs.existsSync(filePath);
+        console.log(
+            `[CODEGEN_SERVICE_GENERATE_RESULT] written=true filePath=${filePath} exists=${exists} errorCode=null errorMessage=""`
+        );
         // Trả đường dẫn tuyệt đối chuẩn + xác nhận file tồn tại ngay sau khi ghi.
-        return { ...result, filePath, exists: fs.existsSync(filePath), written: true, runtimeEnv };
+        return { ...result, filePath, exists, written: true, runtimeEnv };
     }
 
     async run({ filePath, env = {}, testCaseId = "", headed = null, slowMo = null }) {
