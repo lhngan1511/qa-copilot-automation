@@ -164,10 +164,74 @@ export function renderFillExpression({ fieldName, purpose, savedDrawerValue, app
 export function isValidAssertionSource(assertion) {
     const expr = String(assertion?.playwrightAssertion ?? "");
     if (!expr.trim()) return false;
-    if (!/page\.getBy|toHaveURL|toHaveTitle|expect\(page\)|toBeVisible|toHaveText|toHaveValue|toBeHidden|toHaveCount/.test(expr)) return false;
+    if (!/page\.getBy|toHaveURL|toHaveTitle|expect\(page\)|toBeVisible|toHaveText|toHaveValue|toBeHidden|toHaveCount|toBeEnabled|toBeDisabled/.test(expr)) return false;
     // Nội bộ: locatorKey/variableName/adminButton không được làm accessible name.
     if (/adminButton|locatorKey|variableName|name\s*:\s*['"]?(adminButton|locatorKey)/i.test(expr)) return false;
     return true;
+}
+
+/** Trích assertion `expect(...)` thật đã record trong CodeGen (nguồn #4), kèm chuỗi method (.toHaveURL/.toBeVisible...). */
+export function extractCodegenAssertion(codegenText) {
+    const cg = String(codegenText ?? "");
+    if (!cg.includes("expect(")) return null;
+    const statements = [];
+    const re = /\bexpect\s*\(/g;
+    let m;
+    while ((m = re.exec(cg)) !== null) {
+        const startIdx = m.index;
+        const openIdx = m.index + m[0].length - 1; // vị trí '(' của expect
+        // Đọc balanced `(...)` của expect, rồi nếu tiếp theo là `.method(` thì đọc luôn method.
+        let i = openIdx;
+        let depth = 0;
+        let inStr = null;
+        let inTmpl = false;
+        let expectEnd = -1;
+        while (i < cg.length) {
+            const c = cg[i];
+            if (inStr) {
+                if (c === "\\") { i += 1; continue; }
+                if (c === inStr) inStr = null;
+                i += 1; continue;
+            }
+            if (inTmpl) {
+                if (c === "\\") { i += 1; continue; }
+                if (c === "`") inTmpl = false;
+                i += 1; continue;
+            }
+            if (c === "'" || c === '"') { inStr = c; i += 1; continue; }
+            if (c === "`") { inTmpl = true; i += 1; continue; }
+            if (c === "(") depth += 1;
+            else if (c === ")") {
+                depth -= 1;
+                if (depth === 0) { expectEnd = i; break; }
+            }
+            i += 1;
+        }
+        if (expectEnd === -1) continue;
+        // Sau expect(...) có thể là .toHaveURL(...) / .toBeVisible() / .toHaveText(...)
+        let fullEnd = expectEnd;
+        const after = cg.slice(expectEnd + 1).match(/^\s*\.\s*([A-Za-z]+)\s*\(/);
+        if (after) {
+            const methodStart = expectEnd + 1 + after[0].indexOf("(");
+            const methodOpen = cg.indexOf("(", methodStart);
+            // Đọc balanced cho method
+            let d = 0; let inS2 = null; let inT2 = false;
+            for (let j = methodOpen; j < cg.length; j++) {
+                const c = cg[j];
+                if (inS2) { if (c === "\\") { j += 1; continue; } if (c === inS2) inS2 = null; continue; }
+                if (inT2) { if (c === "\\") { j += 1; continue; } if (c === "`") inT2 = false; continue; }
+                if (c === "'" || c === '"') { inS2 = c; continue; }
+                if (c === "`") { inT2 = true; continue; }
+                if (c === "(") d += 1;
+                else if (c === ")") { d -= 1; if (d === 0) { fullEnd = j; break; } }
+            }
+        }
+        const stmt = cg.slice(startIdx, fullEnd + 1).replace(/^await\s+/, "").trim();
+        if (isValidAssertionSource({ playwrightAssertion: stmt })) statements.push(stmt);
+    }
+    if (statements.length === 0) return null;
+    // Chọn assertion cuối (thường là assertion kết quả).
+    return statements[statements.length - 1];
 }
 
 /**
@@ -179,7 +243,7 @@ export function isValidAssertionSource(assertion) {
  *   5. không có -> ASSERTION_MAPPING_REQUIRED (không tự bịa).
  */
 export function resolveAssertion({ assertionMappings = [], expectedResult = "", codegenText = "" }) {
-    // 1. assertionMappings thật.
+    // 1. assertionMappings đã map từ CodeGen thật.
     const mapped = (Array.isArray(assertionMappings) ? assertionMappings : [])
         .filter(a => isValidAssertionSource(a));
     if (mapped.length > 0) {
@@ -193,6 +257,9 @@ export function resolveAssertion({ assertionMappings = [], expectedResult = "", 
     // 3. expectedResult có locator chứng minh (đoán từ expected text + codegen).
     const fromExpected = assertionFromExpected(expectedResult, codegenText);
     if (fromExpected) return { ok: true, assertion: { playwrightAssertion: fromExpected }, source: "EXPECTED_RESULT", playwrightAssertion: fromExpected.replace(/^await\s+/, "").trim() };
+    // 4. URL/heading/element thật từ CodeGen — trích assertion expect(...) đã record.
+    const fromCodegen = extractCodegenAssertion(codegenText);
+    if (fromCodegen) return { ok: true, assertion: { playwrightAssertion: fromCodegen }, source: "CODEGEN_ASSERT", playwrightAssertion: fromCodegen.replace(/^await\s+/, "").trim() };
     // 5. không có nguồn đáng tin.
     return { ok: false, assertion: null, source: "MISSING", errorCode: "ASSERTION_MAPPING_REQUIRED", reason: "Chưa có assertion thật để chứng minh kết quả mong đợi. Hãy map assertion từ CodeGen hoặc xác nhận." };
 }
