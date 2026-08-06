@@ -18,7 +18,8 @@ import {
     runBlocker,
     failDetail,
     guidanceFor,
-    recommendationCode
+    recommendationCode,
+    visibleFailFields
 } from "../../utils/runDiagnose.js";
 
 /*
@@ -59,6 +60,7 @@ export default function AutomationInspector({
     environmentValid,
     onTabChange,
     onUpdate,
+    onGenerateOne,
     onRunOne,
     onClose
 }) {
@@ -92,6 +94,16 @@ export default function AutomationInspector({
             <h3 className="automation-inspector__title">Chi tiết testcase</h3>
             <button className="automation-inspector__close" type="button" onClick={onClose} aria-label="Đóng cửa sổ" title="Đóng">✕</button>
         </div>
+        {/* Workflow một testcase: Review → Xác nhận → Sinh automation → Chạy thử → PASS/FAIL, ngay trong Drawer. */}
+        <DrawerWorkflow
+            testCase={testCase}
+            hasMapping={Boolean(testCase.mapping && Object.keys(testCase.mapping).length)}
+            auto={auto}
+            ready={ready}
+            envValid={envValid}
+            onGenerateOne={onGenerateOne}
+            onRunOne={onRunOne}
+        />
         <div className="automation-tabs" role="tablist">
             {TABS.filter(([id]) => id !== "RUN" || showRunTab).map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}
         </div>
@@ -108,6 +120,55 @@ export default function AutomationInspector({
             <CodeGenAutomationStatus cg={cg} auto={auto} />
         </div>
     </section>;
+}
+
+/* ---------- Workflow một testcase ngay trong Drawer ---------- */
+function DrawerWorkflow({ testCase, hasMapping, auto, ready, envValid, onGenerateOne, onRunOne }) {
+    const [generating, setGenerating] = useState(false);
+    const [running, setRunning] = useState(false);
+    const reviewed = testCase.mappingStatus === "ACCEPTED" || testCase.reviewed === true;
+
+    const handleGenerate = async () => {
+        setGenerating(true);
+        try { await onGenerateOne?.(testCase.id); } finally { setGenerating(false); }
+    };
+    const handleRun = async () => {
+        setRunning(true);
+        try { await onRunOne?.(testCase.id); } finally { setRunning(false); }
+    };
+
+    return <div className="automation-drawer-workflow">
+        <div className="automation-subheading"><div><h4>Luồng testcase này</h4><p>Review → Xác nhận → Sinh automation → Chạy thử ngay trong cửa sổ.</p></div></div>
+
+        {auto.generated ? (
+            <div className="automation-drawer-workflow__done">
+                <p className="automation-drawer-workflow__ok">✓ Đã sinh {auto.filePath || "spec.js"}</p>
+                {auto.filePath && <code className="automation-drawer-workflow__path">{auto.filePath}</code>}
+                <div className="automation-drawer-workflow__actions">
+                    <button className="button button--primary" type="button" disabled={running || !ready || !envValid} onClick={handleRun}>
+                        {running ? "Đang chạy…" : "Chạy testcase này"}
+                    </button>
+                    {(!ready || !envValid) && <span className="automation-hint-text">🔒 {!ready ? "Còn thiếu dữ liệu." : "Chưa có Base URL hợp lệ."}</span>}
+                </div>
+            </div>
+        ) : auto.filePath && !auto.fileExists ? (
+            <div className="automation-drawer-workflow__missing">
+                <p>⚠ File {auto.filePath} không còn tồn tại trên đĩa.</p>
+                <button className="button button--primary" type="button" disabled={generating} onClick={handleGenerate}>
+                    {generating ? "Đang sinh…" : `Sinh lại automation cho ${testCase.id}`}
+                </button>
+            </div>
+        ) : hasMapping ? (
+            <div className="automation-drawer-workflow__generate">
+                {!reviewed && <p className="automation-hint-text">Xác nhận kết quả mong đợi ở tab "Kết quả mong đợi" trước khi sinh.</p>}
+                <button className="button button--primary" type="button" disabled={generating || !reviewed} onClick={handleGenerate}>
+                    {generating ? "Đang sinh…" : `Sinh automation cho ${testCase.id}`}
+                </button>
+            </div>
+        ) : (
+            <p className="automation-hint-text">Testcase chưa có mapping — hãy chạy AI Mapping ở bước ②.</p>
+        )}
+    </div>;
 }
 
 /* ---------- Thanh trạng thái CodeGen vs Automation (tách rõ 2 khái niệm) ---------- */
@@ -254,6 +315,11 @@ function ExpectedTab({ testCase, onUpdate }) {
     const expected = testCase.expectedResult || (Array.isArray(testCase.expectedResults) && testCase.expectedResults[0]) || (Array.isArray(testCase.assertions) && testCase.assertions.map(a => a.expected).filter(Boolean)[0]) || "";
     const analysis = analyzeExpectedCoverage({ expectedResult: expected, assertionMappings: assertions });
     const covCls = analysis.coverage >= 100 ? "ok" : analysis.coverage >= 50 ? "mid" : "low";
+    const [confirmed, setConfirmed] = useState(testCase.mappingStatus === "ACCEPTED" || testCase.reviewed === true);
+    const confirmCurrent = () => {
+        onUpdate({ mappingStatus: "ACCEPTED", reviewed: true });
+        setConfirmed(true);
+    };
 
     return <div className="automation-expected">
         <div className="automation-expected__block">
@@ -303,6 +369,15 @@ function ExpectedTab({ testCase, onUpdate }) {
                 </div>
             </div>
         )}
+
+        {/* Xác nhận kết quả hiện tại — không bắt phải áp dụng mọi khuyến nghị. */}
+        <div className="automation-expected__block">
+            <h4>Xác nhận review</h4>
+            <p className="automation-hint-text">Khuyến nghị chỉ là đề xuất. Bạn có thể xác nhận kết quả hiện tại để đánh dấu đã review và sinh automation.</p>
+            {confirmed
+                ? <p className="automation-recommend-applied">✓ Đã xác nhận kết quả hiện tại</p>
+                : <button className="button button--primary" type="button" onClick={confirmCurrent}>Xác nhận kết quả hiện tại</button>}
+        </div>
     </div>;
 }
 
@@ -370,6 +445,7 @@ function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, onRun
     const blocker = runBlocker({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
     const detail = failDetail(exec);
     const guidance = guidanceFor(detail.errorCode);
+    const visible = visibleFailFields(detail);
 
     return <div className="automation-run-panel">
         <div className="automation-subheading"><div><h4>Chạy testcase này</h4><p>Chạy ngay trong cửa sổ.</p></div></div>
@@ -389,17 +465,17 @@ function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, onRun
             {exec.durationMs != null && <span className="automation-run-result__dur">{Math.round(exec.durationMs)} ms</span>}
         </div>
 
-        {/* Kết quả FAIL — chẩn đoán chi tiết */}
+        {/* Kết quả FAIL — chẩn đoán chi tiết (chỉ hiện field phù hợp loại lỗi) */}
         {display.failed && (
             <div className="automation-fail-detail">
                 <div className="automation-fail-detail__code">{detail.errorCode || "UNKNOWN_ERROR"}</div>
                 <p className="automation-fail-detail__message">{detail.errorMessage}</p>
                 <dl className="automation-fail-detail__rows">
-                    {detail.failedStep && <><dt>Bước lỗi</dt><dd>{detail.failedStep}</dd></>}
-                    {detail.failedLocator && <><dt>Locator</dt><dd><code>{detail.failedLocator}</code></dd></>}
-                    {detail.filePath && <><dt>File</dt><dd><code>{detail.filePath}{detail.line ? `:${detail.line}` : ""}</code></dd></>}
-                    {detail.expectedValue != null && <><dt>Expected</dt><dd>{detail.expectedValue}</dd></>}
-                    {detail.actualValue != null && <><dt>Received</dt><dd>{detail.actualValue}</dd></>}
+                    {visible.step && detail.failedStep && <><dt>Bước lỗi</dt><dd>{detail.failedStep}</dd></>}
+                    {visible.locator && detail.failedLocator && <><dt>Locator</dt><dd><code>{detail.failedLocator}</code></dd></>}
+                    {visible.filePath && (detail.filePath || detail.requestedFilePath) && <><dt>File</dt><dd><code>{detail.filePath || detail.requestedFilePath}{detail.line ? `:${detail.line}` : ""}</code></dd></>}
+                    {visible.expected && detail.expectedValue != null && <><dt>Expected</dt><dd>{detail.expectedValue}</dd></>}
+                    {visible.expected && detail.actualValue != null && <><dt>Received</dt><dd>{detail.actualValue}</dd></>}
                 </dl>
                 <p className="automation-fail-detail__guidance">💡 {guidance}</p>
                 {detail.output && <details className="automation-run-log"><summary>stdout / stderr (rút gọn)</summary><pre>{detail.output.slice(0, 2000)}</pre></details>}

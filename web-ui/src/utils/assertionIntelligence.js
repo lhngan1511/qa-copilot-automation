@@ -159,8 +159,13 @@ export function codegenStatus(mapping) {
 
 /** Trạng thái Automation (spec.js đã sinh chưa). */
 export function automationStatus(testCase) {
+    const hasRef = Boolean(testCase?.generatedCode || testCase?.generatedFile);
+    // Chỉ coi là "đã sinh" khi file tồn tại (generatedFileExists !== false).
+    // Generate response trả exists=true; Run trả fileExists=false khi file mất.
+    const confirmed = testCase?.generatedFileExists !== false;
     return {
-        generated: Boolean(testCase?.generatedCode || testCase?.generatedFile),
-        filePath: testCase?.generatedFile || ""
+        generated: hasRef && confirmed,
+        filePath: testCase?.generatedFile || "",
+        fileExists: confirmed && hasRef
     };
 }

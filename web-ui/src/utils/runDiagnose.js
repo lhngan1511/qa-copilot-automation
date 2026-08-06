@@ -50,6 +50,8 @@ export function failDetail(result = {}) {
         failedStep: result.failedStep ?? null,
         failedLocator: result.failedLocator ?? null,
         filePath: result.filePath ?? null,
+        requestedFilePath: result.requestedFilePath ?? null,
+        fileExists: result.fileExists ?? null,
         line: result.line ?? null,
         expectedValue: result.expectedValue ?? null,
         actualValue: result.actualValue ?? null,
@@ -58,6 +60,19 @@ export function failDetail(result = {}) {
         tracePath: result.tracePath ?? null,
         reportPath: result.reportPath ?? null
     };
+}
+
+/** Các field chỉ nên hiển thị với từng loại lỗi (tránh dữ liệu gây nhiễu). */
+export function visibleFailFields(detail) {
+    const code = detail.errorCode;
+    if (code === "SPEC_NOT_FOUND") {
+        // Không hiển thị locator/assertion vì Playwright chưa bắt đầu chạy.
+        return { filePath: true, locator: false, step: false, expected: false, output: true };
+    }
+    if (code === "LOCATOR_NOT_FOUND") return { filePath: true, locator: true, step: true, expected: false, output: true };
+    if (code === "ASSERTION_FAILED") return { filePath: true, locator: false, step: true, expected: true, output: true };
+    if (code === "BASE_URL_MISSING") return { filePath: true, locator: false, step: false, expected: false, output: true };
+    return { filePath: true, locator: true, step: true, expected: true, output: true };
 }
 
 /** Hướng dẫn xử lý ngắn cho tester theo errorCode (dự phòng khi backend chưa có). */

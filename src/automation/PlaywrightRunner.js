@@ -157,7 +157,7 @@ export default class PlaywrightRunner {
      * @param {string} filePath
      * @returns {Promise<object>}
      */
-    enrichRun({ status, durationMs = 0, errorCode = null, errorMessage = null, log = "", browserDiagnostic = null, code = 0, filePath = null }) {
+    enrichRun({ status, durationMs = 0, errorCode = null, errorMessage = null, log = "", browserDiagnostic = null, code = 0, filePath = null, testCaseId = null, requestedFilePath = null, fileExists = null }) {
         const d = buildRunResponse({
             status,
             durationMs,
@@ -175,7 +175,10 @@ export default class PlaywrightRunner {
             errorMessage: errorMessage ?? d.errorMessage,
             failedStep: d.failedStep,
             failedLocator: d.failedLocator,
-            filePath: d.filePath,
+            filePath: filePath ?? d.filePath,
+            requestedFilePath: requestedFilePath ?? filePath ?? d.filePath,
+            fileExists: fileExists ?? null,
+            testCaseId: testCaseId ?? null,
             line: d.line,
             output: d.output,
             screenshotPath: d.screenshotPath,
@@ -197,7 +200,7 @@ export default class PlaywrightRunner {
      * @param {string} filePath
      * @returns {Promise<object>}
      */
-    runFile(filePath, { env = {} } = {}) {
+    runFile(filePath, { env = {}, testCaseId = "" } = {}) {
         return new Promise((resolve) => {
             // Resolve về absolute để kiểm tra tồn tại, nhưng TRUYỀN relative từ project root cho Playwright
             const abs = path.resolve(this.rootDir, filePath);
@@ -208,24 +211,30 @@ export default class PlaywrightRunner {
             // diagnostic log (không secret)
             const diag = {
                 generatedFilePath: filePath,
+                requestedFilePath: filePath,
                 cwd: this.rootDir,
                 testDir,
                 fileExists,
-                baseName
+                baseName,
+                testCaseId: testCaseId || null
             };
             const respond = (base, overrides = {}) => resolve({ ...base, ...this.enrichRun({ ...base, ...overrides }), diag });
 
             if (!fileExists) {
+                const msg =
+                    `Không tìm thấy file kiểm thử "${filePath}" — file không tồn tại trong thư mục "${this.rootDir}". ` +
+                    "Hãy Sinh lại automation ở bước ④.";
                 respond(
-                    { status: "ERROR", durationMs: 0, log: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})`, error: null, diagnostic: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})` },
-                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: ERROR_MESSAGES.SPEC_NOT_FOUND, filePath: baseName }
+                    { status: "ERROR", durationMs: 0, log: `SPEC_NOT_FOUND: "${filePath}" không tồn tại (cwd=${this.rootDir})`, error: null, diagnostic: msg, filePath, requestedFilePath: filePath, fileExists: false },
+                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: msg, filePath, fileExists: false }
                 );
                 return;
             }
             if (!TEST_FILE_RE.test(baseName)) {
+                const msg = `File "${filePath}" không đúng tên *.spec.js/*.test.js — không thể chạy. Hãy Sinh lại automation.`;
                 respond(
-                    { status: "ERROR", durationMs: 0, log: `INVALID_TEST_FILE_NAME: "${baseName}"`, error: null, diagnostic: `INVALID_TEST_FILE_NAME: "${baseName}"` },
-                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: ERROR_MESSAGES.SPEC_NOT_FOUND, filePath: baseName }
+                    { status: "ERROR", durationMs: 0, log: `INVALID_TEST_FILE_NAME: "${filePath}"`, error: null, diagnostic: msg, filePath, requestedFilePath: filePath, fileExists: true },
+                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: msg, filePath, fileExists: true }
                 );
                 return;
             }
@@ -233,8 +242,8 @@ export default class PlaywrightRunner {
             // Thiếu BASE_URL -> lỗi cấu hình, không spawn browser.
             if (!this.baseUrl(env)) {
                 respond(
-                    { status: "DIAGNOSTIC", durationMs: 0, log: "BASE_URL_MISSING: Chưa cấu hình BASE_URL trong .env", error: null, diagnostic: "BASE_URL_MISSING" },
-                    { errorCode: ERROR_CODES.BASE_URL_MISSING, errorMessage: ERROR_MESSAGES.BASE_URL_MISSING, filePath: baseName }
+                    { status: "DIAGNOSTIC", durationMs: 0, log: "BASE_URL_MISSING: Chưa cấu hình BASE_URL", error: null, diagnostic: "BASE_URL_MISSING", filePath, requestedFilePath: filePath, fileExists: true },
+                    { errorCode: ERROR_CODES.BASE_URL_MISSING, errorMessage: ERROR_MESSAGES.BASE_URL_MISSING, filePath, fileExists: true }
                 );
                 return;
             }
@@ -242,8 +251,8 @@ export default class PlaywrightRunner {
             const browser = this.resolveBrowser();
             if (!browser.ok) {
                 respond(
-                    { status: "DIAGNOSTIC", durationMs: 0, log: browser.diagnostic, error: null, diagnostic: browser.diagnostic },
-                    { errorCode: ERROR_CODES.BROWSER_NOT_INSTALLED, errorMessage: ERROR_MESSAGES.BROWSER_NOT_INSTALLED, filePath: baseName, browserDiagnostic: browser.diagnostic }
+                    { status: "DIAGNOSTIC", durationMs: 0, log: browser.diagnostic, error: null, diagnostic: browser.diagnostic, filePath, requestedFilePath: filePath, fileExists: true },
+                    { errorCode: ERROR_CODES.BROWSER_NOT_INSTALLED, errorMessage: ERROR_MESSAGES.BROWSER_NOT_INSTALLED, filePath, browserDiagnostic: browser.diagnostic, fileExists: true }
                 );
                 return;
             }
@@ -267,7 +276,7 @@ export default class PlaywrightRunner {
             child.stdout.on("data", (d) => (stdout += d));
             child.stderr.on("data", (d) => (stderr += d));
             child.on("error", (err) => respond(
-                { status: "ERROR", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath: baseName },
+                { status: "ERROR", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath, requestedFilePath: filePath, fileExists: true, testCaseId: testCaseId || null },
                 { code: 1 }
             ));
             child.on("close", (code) => {
@@ -300,7 +309,10 @@ export default class PlaywrightRunner {
                         log,
                         diagnostic: status === "PASSED" ? null : browser.diagnostic ?? log.slice(0, 500),
                         error: code === 0 ? null : log.slice(0, 1000),
-                        filePath: baseName
+                        filePath,
+                        requestedFilePath: filePath,
+                        fileExists: true,
+                        testCaseId: testCaseId || null
                     },
                     { browserDiagnostic: status === "DIAGNOSTIC" ? browser.diagnostic : null, code }
                 );

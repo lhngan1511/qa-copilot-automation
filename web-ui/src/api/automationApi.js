@@ -52,12 +52,13 @@ export function generateAutomation({
     );
 }
 
-export function runAutomation({ filePath, env = {}, signal } = {}) {
+export function runAutomation({ filePath, env = {}, testCaseId = "", signal } = {}) {
     return post(
         "/automation-workspace/run",
         {
             filePath,
-            env
+            env,
+            testCaseId
         },
         signal
     );

@@ -83,14 +83,23 @@ export default class AutomationWorkspaceService {
         if (!mapping) throw new Error("Thiếu mapping đã phân tích.");
         const codegen = new AIAutomationCodegen(this.provider(), { rootDir: this.rootDir });
         const result = await codegen.generate({ testCase, mapping, codegenText, confirmedFacts });
-        if (!result.validation?.ok) return { ...result, filePath: null };
+        if (!result.validation?.ok) return { ...result, filePath: null, exists: false };
         const filePath = codegen.writeFile({ code: result.code, testCaseId: testCase.id, module: testCase.module || "Module" });
-        return { ...result, filePath };
+        const fs = await import("node:fs");
+        // Trả đường dẫn tuyệt đối chuẩn + xác nhận file tồn tại ngay sau khi ghi.
+        return { ...result, filePath, exists: fs.existsSync(filePath) };
     }
 
-    async run({ filePath, env = {} }) {
+    async run({ filePath, env = {}, testCaseId = "" }) {
         if (!filePath) throw new Error("Thiếu file kiểm thử đã sinh.");
-        return this.runner.runFile(filePath, { env });
+        const fs = await import("node:fs");
+        const path = await import("node:path");
+        const abs = path.resolve(this.rootDir, filePath);
+        // Log an toàn (không log password/secret): testCaseId, filePath, isAbsolute, exists, cwd.
+        console.log(
+            `[RUN_REQUEST] testCaseId=${testCaseId || "?"} filePath=${filePath} isAbsolute=${path.isAbsolute(filePath)} exists=${fs.existsSync(abs)} cwd=${this.rootDir}`
+        );
+        return this.runner.runFile(filePath, { env, testCaseId });
     }
 
     /**

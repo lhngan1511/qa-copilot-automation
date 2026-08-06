@@ -32,6 +32,22 @@ function normalizeTestCase(item, index) {
     };
 }
 
+// Trạng thái execution rỗng (xóa diagnostic cũ trước mỗi lần Run mới).
+const emptyExecution = () => ({
+    status: "NOT_RUN",
+    durationMs: null,
+    errorCode: null,
+    errorMessage: "",
+    failedStep: null,
+    failedLocator: null,
+    expectedValue: null,
+    actualValue: null,
+    output: "",
+    screenshotPath: null,
+    tracePath: null,
+    reportPath: null
+});
+
 const STEPS = [
     ["① Upload", "testcase + CodeGen"],
     ["② AI Mapping", "testcase ↔ code"],
@@ -167,6 +183,18 @@ export default function AutomationWorkspacePage() {
         }
     };
 
+    // Ghi kết quả Generate vào testcase: giữ nguyên filePath backend trả về (không lấy basename, không tự ghép).
+    const applyGenerate = (id, result) => setTestCases(current => current.map(item => item.id === id
+        ? {
+            ...item,
+            generatedCode: result?.code || "",
+            generatedFile: result?.filePath || "",
+            generatedFileExists: result?.exists === true,
+            validation: result?.validation,
+            status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED"
+        }
+        : item));
+
     const generateRequest = async ids => {
         const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0);
         if (!items.length) { setNotice("Chưa có mapping để sinh automation. Hãy chạy 'AI Mapping' trước."); return; }
@@ -176,9 +204,7 @@ export default function AutomationWorkspacePage() {
         try {
             for (const item of items) {
                 const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content, baseUrl });
-                setTestCases(current => current.map(currentItem => currentItem.id === item.id
-                    ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" }
-                    : currentItem));
+                applyGenerate(item.id, result);
             }
             setNotice(`Đã sinh automation cho ${items.length} testcase. Chuyển sang bước ⑤ để chạy.`);
         } catch (error) {
@@ -187,6 +213,37 @@ export default function AutomationWorkspacePage() {
             setBusy(false);
         }
     };
+
+    // Sinh automation cho MỘT testcase ngay trong Drawer (không phụ thuộc checkbox ngoài danh sách).
+    const generateOne = async id => {
+        const item = testCases.find(t => t.id === id);
+        if (!item) return null;
+        if (!item.mapping || !Object.keys(item.mapping).length) { setNotice("Testcase này chưa có mapping — hãy chạy AI Mapping."); return null; }
+        if (!codeGenFile?.content) { setNotice("Chưa có CodeGen để sinh automation."); return null; }
+        setBusy(true);
+        setNotice("");
+        try {
+            const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content, baseUrl });
+            applyGenerate(id, result);
+            if (result?.filePath) setNotice(`✓ Đã sinh ${result.filePath}`);
+            return result;
+        } catch (error) {
+            setNotice(error.message || "Sinh mã kiểm thử không thành công.");
+            return null;
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    // Áp dụng kết quả Run vào testcase + cập nhật generatedFileExists (SPEC_NOT_FOUND -> file mất).
+    const applyRun = (id, result) => setTestCases(current => current.map(item => item.id === id
+        ? {
+            ...item,
+            execution: result,
+            status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED",
+            generatedFileExists: item.generatedFileExists && result?.fileExists !== false
+        }
+        : item));
 
     const runRequest = async ids => {
         const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item) && environmentValid);
@@ -198,10 +255,10 @@ export default function AutomationWorkspacePage() {
         setNotice("");
         try {
             for (const item of items) {
-                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl } });
-                setTestCases(current => current.map(currentItem => currentItem.id === item.id
-                    ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
-                    : currentItem));
+                // Xóa diagnostic cũ trước mỗi lần chạy mới.
+                setTestCases(current => current.map(t => t.id === item.id ? { ...t, execution: { ...emptyExecution(), status: "RUNNING" } } : t));
+                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: item.id });
+                applyRun(item.id, result);
             }
         } catch (error) {
             setNotice(`Chạy testcase thất bại: ${error.message || ""}`);
@@ -210,21 +267,23 @@ export default function AutomationWorkspacePage() {
         }
     };
 
-    // Chạy 1 testcase ngay trong Drawer (tab Chạy thử).
+    // Chạy 1 testcase ngay trong Drawer (tab Chạy thử / nút Chạy trong Drawer).
     const runOne = async id => {
         const item = testCases.find(t => t.id === id);
-        if (!item?.generatedFile) { setNotice("Testcase này chưa sinh mã — hãy sinh automation trước."); return; }
+        if (!item?.generatedFile) { setNotice("Testcase này chưa sinh mã — hãy sinh automation."); return; }
         if (!isReady(item)) { setNotice("Testcase này còn thiếu dữ liệu — hãy bổ sung ở tab 'Dữ liệu kiểm thử'."); return; }
         if (!environmentValid) { setNotice("Chưa có Base URL hợp lệ — hãy chọn/nhập ở bước ① trước khi Run."); return; }
+        // Xóa diagnostic cũ (failedStep/failedLocator/expected/received/output/artefact) trước lần chạy mới.
+        setTestCases(current => current.map(t => t.id === id ? { ...t, execution: { ...emptyExecution(), status: "RUNNING" }, status: "RUNNING" } : t));
         setBusy(true);
         setNotice("");
         try {
-            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl } });
-            setTestCases(current => current.map(currentItem => currentItem.id === id
-                ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
-                : currentItem));
+            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: id });
+            applyRun(id, result);
+            return result;
         } catch (error) {
             setNotice(`Chạy thất bại: ${error.message || ""}`);
+            return null;
         } finally {
             setBusy(false);
         }
@@ -412,6 +471,7 @@ export default function AutomationWorkspacePage() {
                         onTabChange={setActiveTab}
                         onUpdate={updateTestCase}
                         onRestore={restoreTestCase}
+                        onGenerateOne={generateOne}
                         onRunOne={runOne}
                         onClose={handleClose}
                     />
