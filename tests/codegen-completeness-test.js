@@ -99,15 +99,18 @@ async function main() {
     assert.equal(hasClosedTestBlock(VALID_CODE), true);
     assert.ok(syntaxCheck(VALID_CODE).ok, "node --check PASS cho code hợp lệ");
 
-    // 4. Service: mojibake response -> KHÔNG ghi file, trả guardError.
+    // 4. Service: AI trả mojibake -> KHÔNG ghi code hỏng; deterministic fallback sinh file hợp lệ (UTF-8 đúng).
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cg-" ));
     const mojiCode = VALID_SIMPLE_CODE.replace("Đăng nhập thành công", "ÄĐƒng nháº­p thÃ nh cÃ´ng");
     const mojiProvider = { async generate() { return mojiCode; } };
     const svc = new AutomationWorkspaceService({ rootDir: tempRoot, aiProvider: mojiProvider });
     const gen = await svc.generate({ testCase: { id: "TC001", module: "Đăng nhập" }, mapping: SIMPLE_MAPPING, codegenText: "x", confirmedFacts: [] });
-    assert.equal(gen.written, false, "mojibake -> không ghi file");
-    assert.equal(gen.filePath, null, "không có filePath khi reject");
-    assert.equal(gen.guardError, "GENERATED_CODE_ENCODING_ERROR");
+    assert.equal(gen.written, true, "fallback phải ghi file hợp lệ");
+    assert.ok(gen.filePath && fs.existsSync(gen.filePath), "fallback tạo file");
+    assert.equal(gen.source, "deterministic-fallback", "AI hỏng -> dùng deterministic fallback");
+    const writtenMoji = fs.readFileSync(gen.filePath, "utf8");
+    assert.ok(!hasMojibake(writtenMoji), "file fallback không bị mojibake");
+    assert.ok(syntaxCheck(writtenMoji).ok, "fallback node --check PASS");
 
     // 5. Service: response đầy đủ UTF-8 -> ghi file, đọc lại chứa đúng tiếng Việt.
     const goodProvider = { async generate() { return VALID_SIMPLE_CODE; } };
@@ -115,6 +118,7 @@ async function main() {
     const gen2 = await svc2.generate({ testCase: { id: "TC001", module: "Đăng nhập" }, mapping: SIMPLE_MAPPING, codegenText: "x", confirmedFacts: [] });
     assert.equal(gen2.written, true);
     assert.ok(gen2.filePath && fs.existsSync(gen2.filePath), "file được ghi");
+    assert.equal(gen2.source, "ai", "AI hợp lệ -> dùng code AI");
     const written = fs.readFileSync(gen2.filePath, "utf8");
     assert.ok(written.includes("Đăng nhập"), "file chứa 'Đăng nhập'");
     assert.ok(written.includes("Chào mừng"), "file chứa tiếng Việt đúng");

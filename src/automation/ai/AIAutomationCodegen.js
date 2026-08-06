@@ -13,6 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { extractFencedCode, validateGeneratedCode } from "./codegenGuard.js";
+import { buildSpecFromMapping } from "./codegenSkeleton.js";
 
 // Sample CAPTCHA quan sát được trong Codegen — Generator KHÔNG được dùng lại.
 const CAPTCHA_SAMPLES = ["123456", "11111", "1234566"];
@@ -131,6 +132,49 @@ export default class AIAutomationCodegen {
             "Bạn CHỈ cần sinh PHẦN BUSINESS STEPS + ASSERTION.",
             "KHÔNG sinh lại page.goto('/wasuco/login'), KHÔNG sinh lại fill Tài khoản/Mật khẩu/Mã xác nhận/click Đăng nhập, KHÔNG sinh lại click Asset/Danh mục/Đơn vị tính.",
             "Bắt đầu trực tiếp từ business steps (vd click 'Thêm mới', fill 'Tên đơn vị tính', ...) rồi assertion."
+        ].join("\n");
+    }
+
+    /** Rút gọn prompt Generate: chỉ gửi testcase + mapping + output contract (tránh tốn token). */
+    buildCompactPrompt({ testCase, mapping, codegenText }) {
+        const id = String(testCase?.id ?? testCase?.testcaseId ?? "TC");
+        const title = testCase?.title || testCase?.testScenario || "Automation";
+        const compactTestCase = {
+            id,
+            title,
+            module: testCase?.module,
+            type: testCase?.type,
+            testData: testCase?.testData,
+            expectedResult: testCase?.expectedResult || testCase?.expectedResults?.[0] || ""
+        };
+        const compactMapping = {
+            entryRoute: mapping?.entryRoute?.value,
+            authenticationSetup: mapping?.authenticationSetup,
+            navigationChain: mapping?.navigationChain,
+            stepMappings: mapping?.stepMappings,
+            assertionMappings: mapping?.assertionMappings
+        };
+        return [
+            "Bạn là chuyên gia Playwright. Sinh file test Playwright cho testcase.",
+            "Chỉ trả JavaScript thuần (.js). KHÔNG Markdown, KHÔNG giải thích, KHÔNG code fence.",
+            "Dòng đầu: import { test, expect } from '@playwright/test'; (ES module, KHÔNG require).",
+            "Tiêu đề test phải chứa " + id + ".",
+            "page.goto dùng process.env.BASE_URL + route từ mapping (KHÔNG hardcode URL/host).",
+            "Credential (tài khoản/mật khẩu/mã xác nhận) dùng process.env.LOGIN_USERNAME/LOGIN_PASSWORD/LOGIN_CAPTCHA (KHÔNG hardcode).",
+            "Chỉ dùng locator CÓ trong mapping. KHÔNG bịa locator.",
+            "Bắt buộc: đúng một test(...); ít nhất một assertion; kết thúc chính xác bằng });",
+            "",
+            "=== TESTCASE ===",
+            JSON.stringify(compactTestCase),
+            "",
+            "=== MAPPING ===",
+            JSON.stringify(compactMapping),
+            "",
+            "=== CODEGEN (tham khảo locator) ===",
+            String(codegenText ?? "").slice(0, 4000),
+            "",
+            "=== OUTPUT CONTRACT ===",
+            "Chỉ trả JavaScript thuần.\nKhông Markdown.\nKhông giải thích.\nPhải có:\n- import test/expect;\n- đúng một test(...);\n- page.goto dùng BASE_URL;\n- các steps;\n- ít nhất một assertion;\n- kết thúc chính xác bằng });"
         ].join("\n");
     }
 
@@ -285,7 +329,8 @@ export default class AIAutomationCodegen {
     buildSetupPrefix(mapping) {
         const lines = [];
         const entryRoute = mapping?.entryRoute?.value;
-        if (entryRoute && !/[->]/.test(entryRoute)) {
+        // Chỉ loại bỏ nếu là mô tả (chứa '->' hoặc '→'), KHÔNG loại URL path có dấu gạch (vd /danh-muc).
+        if (entryRoute && !/->|→/.test(entryRoute)) {
             lines.push(`  await page.goto(process.env.BASE_URL + ${JSON.stringify(entryRoute)});`);
         }
         // authenticationSetup steps (đã approved)
@@ -369,58 +414,102 @@ export default class AIAutomationCodegen {
         return keep.join("\n");
     }
 
-    async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
-        const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
-        const prompt = this.buildPrompt({ testCase, mapping, confirmedFacts });
-        // Ghi nhận finishReason nếu provider trả kèm (vd MAX_TOKENS -> cắt cụt).
-        let code = "";
-        this.lastFinishReason = null;
-        const raw = await this.aiProvider.generate(prompt);
-        if (typeof raw === "string") {
-            code = raw;
-        } else if (raw && typeof raw === "object") {
-            code = String(raw.text ?? raw.code ?? "");
-            this.lastFinishReason = raw.finishReason ?? raw.finish_reason ?? null;
-        } else {
-            code = String(raw ?? "");
-        }
-        const clean = extractFencedCode(code);
-
-        // Loại bỏ phần auth/nav Gemini sinh trùng (nếu mapping có authSetup/navChain)
+    /** Làm sạch code AI: bỏ fence, strip auth/nav trùng, chèn setup prefix. */
+    assembleAiCode(raw, mapping) {
+        const clean = extractFencedCode(raw);
         const stripped = this.stripDuplicateSetup(clean, mapping);
-
-        // Chèn prefix auth + navigation (nếu mapping có authSetup/navigationChain) vào trong test body.
         const setupPrefix = this.buildSetupPrefix(mapping);
         let final = stripped;
         if (setupPrefix.length > 0) {
             const prefixBlock = setupPrefix.join("\n") + "\n";
-            // chèn sau dòng `test('...', async ({ page }) => {` (body mở đầu)
             const bodyMatch = /(\basync\s*\(\{\s*page\s*\}\)\s*=>\s*\{)([\s\S]*)$/;
             if (bodyMatch.test(final)) {
                 final = final.replace(bodyMatch, (_m, open, rest) => open + "\n" + prefixBlock + rest);
             }
         }
+        return final;
+    }
+
+    /** Gọi provider lấy code (ưu tiên generateWithMeta nếu có, rồi generate). */
+    async callProvider(prompt, opts = {}) {
+        this.lastFinishReason = null;
+        if (typeof this.aiProvider.generateWithMeta === "function") {
+            const r = await this.aiProvider.generateWithMeta(prompt, opts);
+            this.lastFinishReason = r?.finishReason ?? null;
+            this.lastProviderMeta = r;
+            return String(r?.text ?? "");
+        }
+        const raw = await this.aiProvider.generate(prompt, opts);
+        if (typeof raw === "string") return raw;
+        if (raw && typeof raw === "object") {
+            this.lastFinishReason = raw.finishReason ?? raw.finish_reason ?? null;
+            return String(raw.text ?? raw.code ?? "");
+        }
+        return String(raw ?? "");
+    }
+
+    async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
+        const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
+        const testCaseId = testCase.id ?? testCase.testcaseId ?? "";
+
+        // Prompt rút gọn — chỉ gửi TC + mapping + output contract.
+        const compactPrompt = this.buildCompactPrompt({ testCase, mapping, codegenText: text });
+        console.log(`[CODEGEN_PROMPT] characterCount=${compactPrompt.length}`);
+
+        const maxTokens = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 8192) || 8192;
+
+        let final = "";
+        let guard = { ok: false, errorCode: "?", reason: "" };
+        let source = "ai";
+        let finishReasons = [];
+
+        // Lần 1: AI (prompt rút gọn, đủ token).
+        {
+            const raw = await this.callProvider(compactPrompt, { maxOutputTokens: maxTokens });
+            finishReasons.push(this.lastFinishReason ?? "?");
+            console.log(`[CODEGEN_AI_RAW] characterCount=${String(raw).length} finishReason=${this.lastFinishReason ?? "?"}`);
+            final = this.assembleAiCode(raw, mapping);
+            guard = validateGeneratedCode({ code: final, testCaseId });
+            console.log(`[CODEGEN_GUARD] attempt=1 ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
+        }
+
+        // Lần 2: retry đúng 1 lần nếu chưa hoàn chỉnh (tăng token / nhắc lại).
+        if (!guard.ok) {
+            const retryPrompt =
+                this.buildCompactPrompt({ testCase, mapping, codegenText: text }) +
+                "\n\nLẦN 2: Output trước bị cắt cụt. Phải trả code ĐẦY ĐỦ, đóng chính xác bằng `});`. KHÔNG viết giải thích.";
+            const raw2 = await this.callProvider(retryPrompt, { maxOutputTokens: Math.max(maxTokens, 8192) });
+            finishReasons.push(this.lastFinishReason ?? "?");
+            console.log(`[CODEGEN_AI_RAW] attempt=2 characterCount=${String(raw2).length} finishReason=${this.lastFinishReason ?? "?"}`);
+            final = this.assembleAiCode(raw2, mapping);
+            guard = validateGeneratedCode({ code: final, testCaseId });
+            console.log(`[CODEGEN_GUARD] attempt=2 ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
+            if (guard.ok) source = "ai-retry";
+        }
+
+        // Fallback: deterministic code builder từ mapping đã xác nhận (không gọi AI lần 3).
+        if (!guard.ok) {
+            final = buildSpecFromMapping({ testCase, mapping });
+            guard = validateGeneratedCode({ code: final, testCaseId });
+            source = "deterministic-fallback";
+            console.log(`[CODEGEN_FALLBACK] ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
+        }
+
+        console.log(
+            `[CODEGEN_EXTRACTED] characterCount=${String(final ?? "").length} source=${source} ` +
+            `startsWith=${JSON.stringify(String(final).slice(0, 30))} ` +
+            `endsWith=${JSON.stringify(String(final).slice(-40))} ` +
+            `finishReasons=${JSON.stringify(finishReasons)}`
+        );
 
         const validation = this.validateCode({
             code: final,
             mapping,
             codegenText: text,
-            testCaseId: testCase.id ?? testCase.testcaseId ?? ""
+            testCaseId
         });
 
-        // Truy vết độ dài từng tầng (không log credential).
-        console.log(`[CODEGEN_AI_RAW] characterCount=${String(code ?? "").length} finishReason=${this.lastFinishReason ?? "?"}`);
-        console.log(
-            `[CODEGEN_EXTRACTED] characterCount=${String(final ?? "").length} ` +
-            `startsWith=${JSON.stringify(String(final).slice(0, 30))} ` +
-            `endsWith=${JSON.stringify(String(final).slice(-40))} ` +
-            `hasClosingTestBlock=${validateGeneratedCode({ code: final, runSyntax: false }).ok}`
-        );
-
-        // Kiểm tra hoàn chỉnh + encoding trước khi ghi.
-        const guard = validateGeneratedCode({ code: final, testCaseId: testCase.id ?? testCase.testcaseId ?? "" });
-        console.log(`[CODEGEN_GUARD] ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
-        return { code: final, validation, guard };
+        return { code: final, validation, guard, source, finishReasons };
     }
 
     writeFile({ code, testCaseId, module = "Login" }) {

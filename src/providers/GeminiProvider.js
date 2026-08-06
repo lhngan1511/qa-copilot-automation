@@ -10,9 +10,6 @@ class GeminiProvider extends AIProvider {
 
         this.model = config.model || process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
-        // console.log("ENV:", process.env.GEMINI_MODEL);
-        //console.log("PROVIDER:", this.model);
-
         if (!this.apiKey) {
             throw new Error("GEMINI_API_KEY is required when AI_PROVIDER=gemini.");
         }
@@ -22,7 +19,78 @@ class GeminiProvider extends AIProvider {
         });
     }
 
-    async generate(prompt) {
+    /** Cấu hình generation mặc định: đủ token cho spec hoàn chỉnh, không stop sequence gây cắt. */
+    defaultGenerationConfig() {
+        const maxOutputTokens = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 8192) || 8192;
+        return {
+            maxOutputTokens,
+            temperature: 0.2,
+            stopSequences: [],
+            responseMimeType: "text/plain"
+        };
+    }
+
+    /** Ghép toàn bộ text parts của candidate đầu tiên (không chỉ part[0]). */
+    concatCandidateText(candidate) {
+        if (!candidate?.content?.parts || !Array.isArray(candidate.content.parts)) return "";
+        return candidate.content.parts
+            .filter(part => typeof part.text === "string")
+            .map(part => part.text)
+            .join("");
+    }
+
+    /**
+     * Gọi Gemini và trả metadata đầy đủ (cho CodeGen).
+     * @returns {{text:string, finishReason:string|null, usageMetadata:object|null,
+     *   candidateCount:number, partsCount:number, promptLength:number, config:object}}
+     */
+    async generateWithMeta(prompt, opts = {}) {
+        const generationConfig = {
+            ...this.defaultGenerationConfig(),
+            ...(opts.maxOutputTokens ? { maxOutputTokens: opts.maxOutputTokens } : {}),
+            ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+            ...(opts.stopSequences ? { stopSequences: opts.stopSequences } : {})
+        };
+
+        const response = await this.client.models.generateContent({
+            model: this.model,
+            contents: prompt,
+            config: { generationConfig }
+        });
+
+        const candidates = Array.isArray(response?.candidates) ? response.candidates : [];
+        const first = candidates[0] ?? null;
+        const text = first ? this.concatCandidateText(first) : "";
+        const partsCount = first?.content?.parts?.length ?? 0;
+        const finishReason = first?.finishReason ?? null;
+        const usage = response?.usageMetadata ?? null;
+
+        const meta = {
+            candidateCount: candidates.length,
+            partsCount,
+            textPartLengths: first?.content?.parts?.filter(p => typeof p.text === "string").map(p => String(p.text).length) ?? [],
+            totalTextLength: text.length,
+            finishReason,
+            promptTokenCount: usage?.promptTokenCount ?? null,
+            candidatesTokenCount: usage?.candidatesTokenCount ?? null,
+            totalTokenCount: usage?.totalTokenCount ?? null,
+            blockReason: first?.finishMessage ?? first?.safetyRatings ? (first.safetyRatings ? "has_safety_ratings" : null) : null,
+            maxOutputTokens: generationConfig.maxOutputTokens,
+            temperature: generationConfig.temperature,
+            stopSequences: generationConfig.stopSequences,
+            responseMimeType: generationConfig.responseMimeType,
+            promptLength: typeof prompt === "string" ? prompt.length : JSON.stringify(prompt ?? {}).length
+        };
+        console.log(`[CODEGEN_PROVIDER_RESPONSE] ${JSON.stringify(meta)}`);
+
+        if (typeof text !== "string" || !text.trim()) {
+            throw new Error(`Gemini returned an empty response. finishReason=${finishReason ?? "?"}`);
+        }
+
+        return { ...meta, text };
+    }
+
+    async generate(prompt, opts = {}) {
         console.log("[Gemini Diagnostic]", {
             pid: process.pid,
             cwd: process.cwd(),
@@ -44,18 +112,10 @@ class GeminiProvider extends AIProvider {
         }
 
         try {
-            const response = await this.client.models.generateContent({
-                model: this.model,
-                contents: prompt
-            });
-
-            const text = response.text;
-
-            if (typeof text !== "string" || !text.trim()) {
-                throw new Error("Gemini returned an empty response.");
-            }
-
-            return text.trim();
+            const result = await this.generateWithMeta(prompt, opts);
+            // Backward-compatible: trả về text string (mapper dùng). Metadata có thể lấy qua this.lastResponse.
+            this.lastResponse = result;
+            return result.text.trim();
         } catch (error) {
             console.error("[Gemini Error]", {
                 name: error?.name,
@@ -76,28 +136,14 @@ class GeminiProvider extends AIProvider {
             });
 
             const message = error?.message || "Unknown Gemini API error";
-
             const causeCode = error?.cause?.code || "";
-
             const causeMessage = error?.cause?.message || error?.cause?.code || "";
 
-            console.error("Gemini technical error:", {
-                message,
-                causeCode,
-                causeMessage
-            });
-
-            const technicalDetails = [
-                message,
-                causeCode ? `cause code: ${causeCode}` : "",
-                causeMessage ? `cause message: ${causeMessage}` : ""
-            ]
+            const technicalDetails = [message, causeCode ? `cause code: ${causeCode}` : "", causeMessage ? `cause message: ${causeMessage}` : ""]
                 .filter(Boolean)
                 .join("; ");
 
-            throw new Error(`GeminiProvider.generate() failed: ${technicalDetails}`, {
-                cause: error
-            });
+            throw new Error(`GeminiProvider.generate() failed: ${technicalDetails}`, { cause: error });
         }
     }
 }
