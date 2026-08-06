@@ -10,6 +10,8 @@
  * Thuần ESM, không phụ thuộc Runner/UI.
  */
 
+import { selectSegmentAssertion, traceSegment } from "./assertionSegment.js";
+
 export const TESTDATA_SOURCES = {
     EMPTY: "TESTCASE_EMPTY",
     USER_CONFIRMED: "USER_CONFIRMED",
@@ -260,8 +262,8 @@ export function extractCodegenAssertion(codegenText) {
  *   4. URL/heading/element thật từ CodeGen.
  *   5. không có -> ASSERTION_MAPPING_REQUIRED (không tự bịa).
  */
-export function resolveAssertion({ assertionMappings = [], expectedResult = "", codegenText = "" }) {
-    // 1. assertionMappings đã map từ CodeGen thật.
+export function resolveAssertion({ assertionMappings = [], expectedResult = "", codegenText = "", mapping = null, testCaseId = "" }) {
+    // 1. assertionMappings đã map từ CodeGen thật (tester xác nhận) — ưu tiên cao nhất.
     const mapped = (Array.isArray(assertionMappings) ? assertionMappings : [])
         .filter(a => isValidAssertionSource(a));
     if (mapped.length > 0) {
@@ -272,14 +274,22 @@ export function resolveAssertion({ assertionMappings = [], expectedResult = "", 
             playwrightAssertion: String(mapped[0].playwrightAssertion).replace(/^await\s+/, "").trim()
         };
     }
-    // 3. expectedResult có locator chứng minh (đoán từ expected text + codegen).
-    const fromExpected = assertionFromExpected(expectedResult, codegenText);
-    if (fromExpected) return { ok: true, assertion: { playwrightAssertion: fromExpected }, source: "EXPECTED_RESULT", playwrightAssertion: fromExpected.replace(/^await\s+/, "").trim() };
-    // 4. URL/heading/element thật từ CodeGen — trích assertion expect(...) đã record.
-    const fromCodegen = extractCodegenAssertion(codegenText);
-    if (fromCodegen) return { ok: true, assertion: { playwrightAssertion: fromCodegen }, source: "CODEGEN_ASSERT", playwrightAssertion: fromCodegen.replace(/^await\s+/, "").trim() };
-    // 5. không có nguồn đáng tin.
-    return { ok: false, assertion: null, source: "MISSING", errorCode: "ASSERTION_MAPPING_REQUIRED", reason: "Chưa có assertion thật để chứng minh kết quả mong đợi. Hãy map assertion từ CodeGen hoặc xác nhận." };
+    // 2. Chọn assertion theo ĐÚNG SEGMENT của testcase trong CodeGen
+    //    (không quét toàn file lấy expect đầu/cuối, không lấy assertion của flow khác).
+    const seg = selectSegmentAssertion({ mapping, codegenText });
+    traceSegment({
+        testCaseId,
+        segment: seg.segment,
+        mainActionLine: seg.mainActionLine,
+        candidates: seg.candidates,
+        selectedLine: seg.selectedLine,
+        selectionReason: seg.reason
+    });
+    if (seg.ok && seg.assertion) {
+        return { ok: true, assertion: { playwrightAssertion: seg.assertion }, source: "CODEGEN_SEGMENT", playwrightAssertion: seg.assertion.replace(/^await\s+/, "").trim() };
+    }
+    // 5. không có assertion đúng segment -> không tự đoán từ toàn file (ASSERTION_MAPPING_REQUIRED).
+    return { ok: false, assertion: null, source: "MISSING", errorCode: "ASSERTION_MAPPING_REQUIRED", reason: seg.reason || "Chưa có assertion thật trong segment của testcase. Hãy map assertion từ CodeGen hoặc xác nhận." };
 }
 
 /** Dựng assertion từ expectedResult + codegen (best-effort, chỉ dùng locator CÓ trong codegen). */

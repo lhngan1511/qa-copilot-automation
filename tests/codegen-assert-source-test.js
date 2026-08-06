@@ -28,7 +28,7 @@ const mapping = {
 
 // Codegen thật KHÔNG có getByText 'chào mừng/thành công' và không có toHaveURL — assertion khác.
 const CODEGEN = `const { test, expect } = require('@playwright/test');
-test('Đăng nhập', async ({ page }) => {
+test('TC001 - Đăng nhập', async ({ page }) => {
   await page.goto(process.env.BASE_URL + '/wasuco/login');
   await page.getByLabel('Tài khoản').fill('admin');
   await page.getByLabel('Mật khẩu').fill('pw');
@@ -49,11 +49,10 @@ async function main() {
     const a = extractCodegenAssertion(CODEGEN);
     assert.equal(a, "expect(page).toHaveURL(process.env.BASE_URL + '/wasuco/dashboard')", `extract: ${a}`);
 
-    // 2. resolveAssertion với assertionMappings rỗng -> dùng nguồn CODEGEN_ASSERT.
-    const r = resolveAssertion({ assertionMappings: [], expectedResult: tc.expectedResult, codegenText: CODEGEN });
+    // 2. resolveAssertion với assertionMappings rỗng -> dùng nguồn CODEGEN_SEGMENT (đúng segment testcase).
+    const r = resolveAssertion({ assertionMappings: [], expectedResult: tc.expectedResult, codegenText: CODEGEN, mapping, testCaseId: "TC001" });
     assert.equal(r.ok, true, `phải resolve được: ${JSON.stringify(r)}`);
-    // Nguồn đúng contract: EXPECTED_RESULT (#3) hoặc CODEGEN_ASSERT (#4) đều hợp lệ.
-    assert.ok(["EXPECTED_RESULT", "CODEGEN_ASSERT"].includes(r.source), `nguồn hợp lệ: ${r.source}`);
+    assert.equal(r.source, "CODEGEN_SEGMENT", `nguồn đúng segment: ${r.source}`);
     assert.match(r.playwrightAssertion, /toHaveURL/);
 
     // 3. Fallback end-to-end: AI truncated + mapping không assertion -> vẫn sinh spec có assertion thật từ CodeGen.

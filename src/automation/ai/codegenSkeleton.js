@@ -150,7 +150,9 @@ export function buildSpecFromMapping({ testCase, mapping, codegenText = "", envV
     const assertion = resolveAssertion({
         assertionMappings: mapping?.assertionMappings ?? [],
         expectedResult: testCase?.expectedResult || testCase?.expectedResults?.[0] || "",
-        codegenText
+        codegenText,
+        mapping,
+        testCaseId: testCase?.id ?? testCase?.testcaseId ?? ""
     });
     if (!assertion.ok) {
         return { code: "", ok: false, errorCode: "ASSERTION_MAPPING_REQUIRED", reason: assertion.reason };
