@@ -16,6 +16,7 @@ export const ERROR_CODES = {
     SPEC_NOT_FOUND: "SPEC_NOT_FOUND",
     TIMEOUT: "TIMEOUT",
     SPAWN_FAILED: "SPAWN_FAILED",
+    PLAYWRIGHT_PROJECT_NOT_FOUND: "PLAYWRIGHT_PROJECT_NOT_FOUND",
     UNKNOWN_ERROR: "UNKNOWN_ERROR"
 };
 
@@ -35,6 +36,8 @@ export const ERROR_MESSAGES = {
         "Thao tác quá thời gian chờ. Kiểm tra bước chậm, loading quá lâu hoặc điều kiện trước chưa đạt.",
     SPAWN_FAILED:
         "Không thể khởi chạy Playwright. Kiểm tra trình duyệt đã cài (npx playwright install chromium) và đường dẫn node_modules.",
+    PLAYWRIGHT_PROJECT_NOT_FOUND:
+        "playwright.config.js khai báo project nhưng không có project 'chromium'. Kiểm tra lại projects trong playwright.config.js.",
     UNKNOWN_ERROR:
         "Xảy ra lỗi không xác định khi chạy. Xem log bên dưới để chẩn đoán."
 };

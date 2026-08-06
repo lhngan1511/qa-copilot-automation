@@ -97,16 +97,55 @@ export default class PlaywrightRunner {
         };
     }
 
+    /** Đọc nội dung playwright.config.js (ưu tiên projectDir config, rồi rootDir). */
+    configText(projectDir = null) {
+        const p = projectDir
+            ? path.join(projectDir, "playwright.config.js")
+            : path.join(this.rootDir, "playwright.config.js");
+        if (fs.existsSync(p)) return fs.readFileSync(p, "utf8");
+        return "";
+    }
+
+    /** Trích danh sách tên project được khai báo trong config (nếu có `projects: [...]`). */
+    configProjectNames(text) {
+        const s = String(text ?? "");
+        if (!/projects\s*:\s*\[/.test(s)) return [];
+        const names = [];
+        const re = /name\s*:\s*["']([^"']+)["']/g;
+        let m;
+        while ((m = re.exec(s)) !== null) names.push(m[1]);
+        return names;
+    }
+
+    /**
+     * Xác định project mặc định (chromium) có tồn tại trong config hay không.
+     * - Không khai báo `projects:`        -> present=true, name=null (dùng --browser, không --project).
+     * - Có project 'chromium'             -> present=true, name='chromium' (dùng --project=chromium).
+     * - Khai báo projects nhưng không có  -> present=false (PLAYWRIGHT_PROJECT_NOT_FOUND).
+     */
+    resolveProject(projectDir = null) {
+        const names = this.configProjectNames(this.configText(projectDir));
+        if (names.length === 0) return { present: true, name: null, available: [] };
+        if (names.includes("chromium")) return { present: true, name: "chromium", available: names };
+        return { present: false, name: null, available: names };
+    }
+
     /**
      * Build args playwright.
      * LƯU Ý: Playwright Test CLI KHÔNG hỗ trợ `--channel`.
      * Channel được cấu hình qua playwright.config.js (`use.channel` từ PLAYWRIGHT_BROWSER_CHANNEL),
-     * nên KHÔNG truyền --channel qua CLI. Chỉ dùng --browser=chromium.
+     * nên KHÔNG truyền --channel qua CLI.
+     * Chỉ thêm `--project=chromium` khi config THỰC SỰ khai báo project 'chromium';
+     * nếu config không có `projects:` thì dùng `--browser=chromium` (không --project).
      * Headed: truyền `--headed` rõ ràng (không phụ thuộc config mặc định).
      */
-    buildArgs({ filePath = null, projectDir = null, extraArgs = [] } = {}) {
+    buildArgs({ filePath = null, projectDir = null, extraArgs = [], project = null } = {}) {
         const args = ["test"];
-        args.push("--browser=chromium");
+        const resolved = project != null
+            ? { present: true, name: project }
+            : this.resolveProject(projectDir);
+        if (resolved.present && resolved.name) args.push(`--project=${resolved.name}`);
+        else if (resolved.present) args.push("--browser=chromium");
         if (this.headed) args.push("--headed");
         if (projectDir) args.push("--config", path.join(projectDir, "playwright.config.js"));
         if (filePath) args.push(filePath);
@@ -132,7 +171,18 @@ export default class PlaywrightRunner {
             } catch {
                 /* ignore */
             }
-            const args = this.buildArgs({ projectDir, extraArgs });
+            const proj = this.resolveProject(projectDir);
+            if (!proj.present) {
+                resolve({
+                    ok: false,
+                    raw: `PLAYWRIGHT_PROJECT_NOT_FOUND: config khai báo projects ${JSON.stringify(proj.available)} nhưng không có 'chromium'.`,
+                    results: null,
+                    resultsFile: null,
+                    error: `PLAYWRIGHT_PROJECT_NOT_FOUND: ${JSON.stringify(proj.available)}`
+                });
+                return;
+            }
+            const args = this.buildArgs({ projectDir, extraArgs, project: proj.name });
             const child = spawn(bin, args, {
                 cwd: this.rootDir,
                 env: {
@@ -272,19 +322,33 @@ export default class PlaywrightRunner {
                 return;
             }
 
+            // Kiểm tra project 'chromium' có tồn tại trong config trước khi spawn.
+            const proj = this.resolveProject();
+            if (!proj.present) {
+                const msg =
+                    `playwright.config.js khai báo projects ${JSON.stringify(proj.available)} nhưng không có project 'chromium'. ` +
+                    "Sửa playwright.config.js hoặc đổi project mặc định.";
+                console.error(`[RUN_END] requestId=${requestId} status=PLAYWRIGHT_PROJECT_NOT_FOUND durationMs=0`);
+                respond(
+                    { status: "DIAGNOSTIC", durationMs: 0, log: msg, error: null, diagnostic: msg, filePath, requestedFilePath: filePath, fileExists: true },
+                    { errorCode: ERROR_CODES.PLAYWRIGHT_PROJECT_NOT_FOUND, errorMessage: msg, filePath, fileExists: true }
+                );
+                return;
+            }
+
             // Relative path từ project root, dùng forward slash (Windows path có '\\' làm hỏng regex của Playwright).
             const relRaw = path.relative(this.rootDir, abs).split(path.sep).join("/");
             const rel = this.escapeRegex(relRaw);
             const bin = this.playwrightBin();
             const started = Date.now();
-            const args = this.buildArgs({ filePath: rel });
+            const args = this.buildArgs({ filePath: rel, project: proj.name });
             diag.commandArgs = args;
             diag.command = bin;
             diag.headed = effectiveHeaded;
             diag.slowMo = effectiveSlowMo;
             const browserLabel = this.configuredChannel() ?? "chromium";
             console.log(
-                `[RUN_START] requestId=${requestId} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel}`
+                `[RUN_START] requestId=${requestId} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel} command=${bin} args=${JSON.stringify(args)}`
             );
             // spawn executable + args array riêng (không shell:true — tránh DEP0190; path có dấu cách vẫn chạy đúng).
             const child = spawn(bin, args, {
