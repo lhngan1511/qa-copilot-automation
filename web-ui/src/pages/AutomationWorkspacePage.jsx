@@ -4,7 +4,7 @@ import AutomationHeader from "../components/automation/AutomationHeader.jsx";
 import AutomationTestCaseList from "../components/automation/AutomationTestCaseList.jsx";
 import AutomationInspector from "../components/automation/AutomationInspector.jsx";
 import { analyzeAutomation, generateAutomation, runAutomation, exportAutomation, fetchServerConfig } from "../api/automationApi.js";
-import { isReady } from "../utils/automationDerived.js";
+import { isReady, testdataResolutionLog } from "../utils/automationDerived.js";
 import { extractBaseUrls, resolveBaseUrl, sourceLabel, workspaceKey, isValidUrl } from "../utils/baseUrl.js";
 
 /*
@@ -221,10 +221,13 @@ export default function AutomationWorkspacePage() {
 
     // Sinh automation cho MỘT testcase ngay trong Drawer (không phụ thuộc checkbox ngoài danh sách).
     const generateOne = async id => {
+        // Lấy testcase MỚI NHẤT từ state tại thời điểm bấm (không dùng closure/cached cũ trước Save).
         const item = testCases.find(t => t.id === id);
         if (!item) return null;
         if (!item.mapping || !Object.keys(item.mapping).length) { setNotice("Testcase này chưa có mapping — hãy chạy AI Mapping."); return null; }
         if (!codeGenFile?.content) { setNotice("Chưa có CodeGen để sinh automation."); return null; }
+        // Log resolution dữ liệu (không log giá trị) chứng minh Generate dùng state mới nhất.
+        console.log(testdataResolutionLog(item));
         setBusy(true);
         setNotice("");
         try {

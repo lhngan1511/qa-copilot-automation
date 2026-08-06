@@ -22,20 +22,90 @@ export function confidenceOf(mapping) {
     return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
-/** Sẵn sàng chạy khi đủ dữ liệu (fields đủ / executionReadiness READY / không rõ). */
-export function isReady(tc) {
-    const fields = tc?.testData?.fields;
-    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
-        const entries = Object.entries(fields);
-        if (entries.length > 0) {
-            return entries.every(([, f]) => {
-                if (!f || typeof f !== "object") return true;
-                if (f.requiresTesterInput === true) return false;
-                if (String(f.purpose ?? "").toUpperCase() === "EMPTY") return true;
-                return String(f.value ?? "").trim() !== "";
-            });
-        }
+/** Nguồn dữ liệu (khớp backend testDataBinding.js). */
+export const TESTDATA_SOURCE = {
+    EMPTY: "TESTCASE_EMPTY",
+    USER_CONFIRMED: "USER_CONFIRMED",
+    APPROVED_JSON: "APPROVED_JSON",
+    CODEGEN_RECORDED: "CODEGEN_RECORDED",
+    ENV_FALLBACK: "ENV_FALLBACK",
+    MISSING: "MISSING"
+};
+
+/**
+ * Resolve giá trị field theo thứ tự ưu tiên duy nhất (giống backend resolveTestValue):
+ * EMPTY > USER_CONFIRMED > APPROVED_JSON > CODEGEN_RECORDED > ENV_FALLBACK > MISSING.
+ * @returns {{value:string|null, source:string, present:boolean}}
+ */
+export function resolveFieldValue({ purpose, confirmed, approved, recorded, env }) {
+    if (String(purpose ?? "").toUpperCase() === "EMPTY") {
+        return { value: "", source: TESTDATA_SOURCE.EMPTY, present: true };
     }
+    if (confirmed !== undefined && confirmed !== null && String(confirmed).trim() !== "") {
+        return { value: String(confirmed), source: TESTDATA_SOURCE.USER_CONFIRMED, present: true };
+    }
+    if (approved !== undefined && approved !== null && String(approved).trim() !== "") {
+        return { value: String(approved), source: TESTDATA_SOURCE.APPROVED_JSON, present: true };
+    }
+    if (recorded !== undefined && recorded !== null && String(recorded).trim() !== "") {
+        return { value: String(recorded), source: TESTDATA_SOURCE.CODEGEN_RECORDED, present: true };
+    }
+    if (env !== undefined && env !== null && String(env).trim() !== "") {
+        return { value: String(env), source: TESTDATA_SOURCE.ENV_FALLBACK, present: true };
+    }
+    return { value: null, source: TESTDATA_SOURCE.MISSING, present: false };
+}
+
+/** Resolve một field của testcase (dùng cấu trúc testData: fields/draft/confirmed). */
+export function fieldResolution(testCase, fieldName) {
+    const td = testCase?.testData || {};
+    const fields = td.fields || {};
+    const field = fields[fieldName] || {};
+    const purpose = String(field?.purpose ?? "").toUpperCase() || "VALID";
+    const confirmed = td.confirmed?.[fieldName];
+    const approved = field?.value ?? td.inputs?.[fieldName];
+    const recorded = td.recordedValues?.[fieldName];
+    const env = td.envFallback?.[fieldName];
+    return resolveFieldValue({ purpose, confirmed, approved, recorded, env });
+}
+
+/** Danh sách field chưa có đủ dữ liệu (không tính EMPTY). */
+export function missingFields(testCase) {
+    const td = testCase?.testData;
+    const fields = td?.fields;
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) {
+        return [];
+    }
+    const missing = [];
+    for (const name of Object.keys(fields)) {
+        if (String(fields[name]?.purpose ?? "").toUpperCase() === "EMPTY") continue;
+        const r = fieldResolution(testCase, name);
+        if (!r.present) missing.push(name);
+    }
+    return missing;
+}
+
+/** Dựng chuỗi log resolution cho Generate (không log giá trị). */
+export function testdataResolutionLog(testCase) {
+    const td = testCase?.testData;
+    const fields = td?.fields;
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) {
+        return `[GENERATE_TESTDATA_RESOLUTION] testCaseId=${testCase?.id ?? "?"} noFields missingCount=0 isReady=true`;
+    }
+    const parts = [];
+    let missingCount = 0;
+    for (const name of Object.keys(fields)) {
+        const r = fieldResolution(testCase, name);
+        parts.push(`field=${name} source=${r.source} status=${r.present ? "RESOLVED" : "MISSING"}`);
+        if (!r.present) missingCount += 1;
+    }
+    return `[GENERATE_TESTDATA_RESOLUTION] testCaseId=${testCase?.id ?? "?"} ${parts.join(" ")} missingCount=${missingCount} isReady=${missingCount === 0}`;
+}
+
+/** Sẵn sàng chạy khi đủ dữ liệu theo resolution (EMPTY/confirmed/approved/recorded/env) — không chỉ fields.value. */
+export function isReady(tc) {
+    const missing = missingFields(tc);
+    if (missing.length > 0) return false;
     const r = String(tc?.executionReadiness ?? "").toUpperCase();
     if (!r) return true;
     return r === "READY";
@@ -47,14 +117,22 @@ export function dataRows(testCase) {
     if (!td || typeof td !== "object") return [];
     if (td.fields && typeof td.fields === "object" && !Array.isArray(td.fields)) {
         const draft = td.draft && typeof td.draft === "object" ? td.draft : {};
-        return Object.entries(td.fields).map(([name, field]) => ({
-            name,
-            // Draft (đang gõ) hiển thị trước; nếu chưa gõ thì dùng approved value.
-            value: draft[name] !== undefined ? String(draft[name]) : (field?.value ?? ""),
-            requiresTesterInput: field?.requiresTesterInput === true,
-            instruction: field?.instruction ?? "",
-            purpose: field?.purpose ?? "VALID"
-        }));
+        const confirmed = td.confirmed && typeof td.confirmed === "object" ? td.confirmed : {};
+        return Object.entries(td.fields).map(([name, field]) => {
+            const res = fieldResolution({ testData: td }, name);
+            // Display: draft (đang gõ) > confirmed (đã lưu) > approved.
+            const displayValue = draft[name] !== undefined ? String(draft[name]) : confirmed[name] !== undefined ? String(confirmed[name]) : (field?.value ?? "");
+            return {
+                name,
+                value: displayValue,
+                resolvedValue: res.value,
+                source: res.source,
+                present: res.present,
+                requiresTesterInput: field?.requiresTesterInput === true,
+                instruction: field?.instruction ?? "",
+                purpose: field?.purpose ?? "VALID"
+            };
+        });
     }
     if (Array.isArray(td)) {
         return td
@@ -79,18 +157,25 @@ export function dataRows(testCase) {
     return [];
 }
 
-/** Trạng thái 1 field dữ liệu: trống theo kịch bản (EMPTY) ≠ thiếu dữ liệu. */
+/** Trạng thái 1 field dữ liệu: trống theo kịch bản (EMPTY) ≠ thiếu dữ liệu; dùng resolution source. */
 export function dataRowState(row) {
-    const value = String(row?.value ?? "").trim();
     const empty = String(row?.purpose ?? "").toUpperCase() === "EMPTY";
-    const missing = !empty && (!value || row?.requiresTesterInput === true);
+    // present từ resolution (confirmed/approved/recorded/env); "0" hợp lệ; rỗng chỉ hợp lệ khi EMPTY.
+    // Nếu row chưa có present (gọi trực tiếp), fallback theo value (không empty).
+    const present = row?.present !== undefined
+        ? (empty || row.present === true)
+        : (empty || String(row?.value ?? "").trim() !== "");
+    const missing = !empty && !present;
+    const displayValue = row?.value != null ? String(row.value) : "";
     return {
         empty,
         missing,
-        value: String(row?.value ?? ""),
+        value: displayValue,
+        source: row?.source ?? null,
+        present,
         note: empty
             ? "Để trống theo kịch bản kiểm thử — đây là dữ liệu hợp lệ."
-            : missing && row?.requiresTesterInput
+            : missing
                 ? "Cần dữ liệu"
                 : ""
     };

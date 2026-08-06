@@ -3,7 +3,10 @@ import {
     isReady,
     dataRows,
     dataRowState,
-    allMappingSteps
+    allMappingSteps,
+    missingFields,
+    fieldResolution,
+    TESTDATA_SOURCE
 } from "../../utils/automationDerived.js";
 import {
     interpretAssertion,
@@ -264,16 +267,33 @@ function DataTab({ testCase, rows, ready, firstMissingRef, updateDataField, onUp
     const [saved, setSaved] = useState(false);
     const hasAnyMissing = rows.some(row => {
         if (String(row.purpose ?? "").toUpperCase() === "EMPTY") return false;
-        return !String(row.value).trim() || row.requiresTesterInput;
+        return !row.present;
     });
     const isEmptyField = row => String(row.purpose ?? "").toUpperCase() === "EMPTY";
 
-    // "Lưu dữ liệu": commit draft (đang gõ) vào confirmed (USER_CONFIRMED). Drawer chỉ ưu tiên khi đã Lưu.
+    // "Lưu dữ liệu": merge draft vào confirmed (USER_CONFIRMED), giữ fields/JSON, clear draft,
+    // recompute readiness, log TESTDATA_SAVE. Trả updated testcase (object mới, không mutate cũ).
     const save = () => {
-        const draft = testCase?.testData?.draft ?? {};
-        onUpdate({ testData: { ...(testCase?.testData ?? {}), confirmed: { ...(testCase?.testData?.confirmed ?? {}), ...draft }, draft: {} } });
+        const td = testCase?.testData ?? {};
+        const draft = td.draft && typeof td.draft === "object" ? td.draft : {};
+        const fieldKeys = Object.keys(draft);
+        console.log(`[TESTDATA_SAVE_START] testCaseId=${testCase?.id} fieldKeys=${JSON.stringify(fieldKeys)} draftPresent=${fieldKeys.length > 0}`);
+        const newTestData = {
+            ...td,
+            confirmed: { ...(td.confirmed ?? {}), ...draft },
+            draft: {}
+        };
+        const updated = { ...testCase, testData: newTestData };
+        const missing = missingFields(updated);
+        const ready = missing.length === 0;
+        const executionReadiness = ready ? "READY" : "DATA_REQUIRED";
+        console.log(`[TESTDATA_SAVE_RESULT] confirmedFieldKeys=${JSON.stringify(Object.keys(newTestData.confirmed ?? {}))} missingFieldKeys=${JSON.stringify(missing)} isReady=${ready} executionReadiness=${executionReadiness}`);
+        // Cập nhật state bằng object mới (không mutate cũ); giữ fields/JSON nguyên vẹn.
+        // Readiness do isReady (resolution) + executionReadiness quyết định — không cần đè status.
+        onUpdate({ testData: newTestData, executionReadiness });
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
+        return updated;
     };
 
     return <div className="automation-data-editor">
