@@ -149,7 +149,7 @@ Lưu trong Automation Workspace JSON (bộ não), schema:
     {
       "testCaseId": "TC001",
       "recordingId": "...",
-      "status": "REVIEWED",
+      "status": "APPROVED",
       "automationAssertions": [
         { "id": "asrt-...", "type": "URL", "expected": "http://.../", "matcher": "toHaveURL", "source": "TESTER_INPUT", "status": "TESTER_CONFIRMED", ... }
       ]

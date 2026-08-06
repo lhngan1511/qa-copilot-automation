@@ -1,218 +1,161 @@
-# Architecture V3 — Automation Intelligence (CHỐT)
+# Architecture V3 — Automation Intelligence (CHỐT, sau 5 điểm chốt lại)
 
 > Branch: `arena/automation-record-by-testcase`
-> Trạng thái: **KIẾN TRÚC ĐÃ ĐÓNG BĂNG** — không thay đổi nữa.
-> Lượt này: cập nhật docs design cho khớp V3. **KHÔNG sửa production.**
-> Checkpoint demo: tag `demo-v1-upload-codegen` = `c640b7e`.
+> Trạng thái: **KIẾN TRÚC ĐÃ ĐÓNG BĂNG** — không thay đổi workflow nữa.
+> Lượt này: cập nhật docs cho khớp **5 điểm chốt lại** (Workspace / automationCandidate / Record hiện tại / Review editable / APPROVED state).
+> **KHÔNG sửa production.**
 
 ---
 
 ## 0. Nguyên tắc cốt lõi (đóng băng)
 
-- **approved-testcases.json KHÔNG bao giờ bị sửa** — chỉ chứa testcase (title/steps/expected/testData...). Không thêm `recording/automation/status/run/pass/fail`.
-- **Mọi trạng thái automation lưu trong Automation Workspace** ("bộ não").
-- **Mỗi testcase tự quay / tự sinh / tự chạy** — không có bài toán "recording thuộc TC nào / segment nào / assertion của flow nào / AI đoán sai".
-- **UI mỗi testcase chỉ hiển thị MỘT hành động chính** theo trạng thái hiện tại (không bao giờ 6–7 nút cùng lúc).
+- **Mỗi testcase tự quay → tự sinh → tự chạy.** Không upload 1 file CodeGen rồi AI đoán/segment/map/sửa.
+- **approved-testcases.json KHÔNG lưu trạng thái automation** — chỉ chứa testcase (title/steps/expected/testData) + `reviewStatus` nghiệp vụ.
+- **Automation Workspace = "bộ não"** lưu mọi trạng thái automation.
+- **AI chỉ hỗ trợ, tester quyết định cuối cùng.**
+- **Một thời điểm chỉ MỘT hành động chính** (UI).
 
 ---
 
-## 1. Workflow 7 giai đoạn
+## 1. [CHỐT] GĐ1 = "MỞ WORKSPACE" (không phải "Upload testcase")
 
 ```
-GĐ1 Upload testcase    Requirement.md → AI Test Design → approved-testcases.json
-                       Hệ thống đọc: tất cả testcase, chỉ hiển thị reviewStatus=APPROVED. KHÔNG có CodeGen.
-GĐ2 Chọn testcase      Tester tick (TC001, TC005) → Workspace sinh {TC001: NOT_SELECTED→SELECTED, ...}
-                       Không sinh code, không AI, không mapping.
-GĐ3 Record             [Ghi testcase] → Playwright CodeGen mở → tester chỉ quay ĐÚNG TC001 → Stop → lưu recording gắn TC001.
-                       Không cần AI đoán/segment/split/marker.
-GĐ4 Review recording   TC001: ✓ Recording (53 steps, 3 assertions) → [Review] → sửa/xóa/record lại.
-GĐ5 Generate           recording TC001 + approved TC001 + testData → Generate Playwright. (Không còn mapping nhiều testcase.)
-GĐ6 Run                [Run TC001] → browser mở → PASS/FAIL. FAIL → record lại TC001, không ảnh hưởng testcase khác.
-GĐ7 Hoàn thành         vòng đời đơn giản (state machine §3).
+Mở Workspace
+  ↓
+Đọc approved-testcases.json
+  ↓
+Sinh Automation Workspace
+  ↓
+Hiển thị danh sách testcase
 ```
 
----
+Lý do: user không chỉ upload — có thể mở Workspace cũ, tiếp tục làm dở, import, clone. Tất cả dùng chung Automation Workspace.
 
-## 2. Contract RecordingSession
-
-```ts
-interface RecordingSession {
-  id: string;               // REC-<ts>-<uuid8>
-  workspaceId: string;
-  testCaseId: string;       // "SETUP" nếu type=SETUP (setup chung), else "TC001"...
-  type: "SETUP" | "TESTCASE";
-  source: "PLAYWRIGHT_RECORD";
-  startedAt: string;
-  completedAt: string | null;
-  status: SessionStatus;
-  browser: string;
-  url: string;
-  steps: RecordingStep[];   // thứ tự thực thi từ CodeGen
-  assertions: Assertion[];  // expect(...) đã record
-  recordedValues: Record<string, string>;  // literal đã record (không lộ credential thật)
-}
-
-interface RecordingStep {
-  stepOrder: number;
-  actionType: "GOTO" | "FILL" | "CLICK" | "PRESS" | "SELECT" | "EXPECT";
-  target: string;           // accessible name / label
-  locator: string;          // page.getByRole(...) nguyên vẹn
-  valueKind: "ENV" | "LITERAL" | "URL" | "ASSERTION" | null;
-  sourceRange: [number, number];
-}
-
-interface Assertion {
-  statement: string;        // expect(...).toBeVisible()
-  sourceRange: [number, number];
-}
-```
-
----
-
-## 3. State machine (V3 — đã chốt, KHÔNG dùng bản cũ)
-
-```
-NOT_SELECTED
-   ↓ (chọn)
-SELECTED
-   ↓ (Record)
-RECORDING
-   ↓ (Stop)
-RECORDED
-   ↓ (Review)
-REVIEWED
-   ↓ (Generate)
-GENERATED
-   ↓ (Run)
-RUNNING
-   ↓
-PASS   hoặc   FAIL
-```
-
-(FAIL → có thể Record lại TC001, quay về RECORDING.)
-
----
-
-## 4. Automation Workspace — schema "bộ não"
+### Automation Workspace schema (đã chốt, tách hẳn khỏi approved-testcases)
 
 ```json
 {
   "workspaceId": "ws-...",
+  "source": "approved-testcases.json (ref) | import | clone",
   "selectedTestCases": [
     {
       "testCaseId": "TC001",
+      "selectedForAutomation": true,
       "recordingId": "REC-...",
-      "status": "RECORDED",
+      "recordingStatus": "RECORDED",
+      "reviewStatus": "APPROVED",
+      "generateStatus": "GENERATED",
+      "runStatus": "PASS",
       "generatedFile": "outputs/generated-tests/TC001.spec.js",
-      "lastRun": "PASS"
-    },
-    {
-      "testCaseId": "TC005",
-      "recordingId": null,
-      "status": "NOT_SELECTED"
+      "automationAssertions": [ /* xem DESIGN_ASSERTION_CONFIRMATION.md */ ]
     }
   ]
 }
 ```
 
-- Không lưu vào approved-testcases.json.
-- `status` dùng state machine §3.
+---
+
+## 2. [CHỐT] automationCandidate KHÔNG nằm trong approved-testcases.json
+
+- approved-testcases.json **chỉ cần** `reviewStatus: "APPROVED"` (trạng thái nghiệp vụ duy nhất để chọn hiển thị).
+- **Bỏ `automationCandidate` khỏi approved-testcases.json** — nó là trạng thái automation, thuộc Workspace.
+- Workspace tự sinh các trạng thái: `selectedForAutomation`, `recordingStatus`, `reviewStatus`, `generateStatus`, `runStatus`.
 
 ---
 
-## 5. Wireflow UI — mỗi testcase MỘT nút hành động chính
+## 3. [CHỐT] Record = "Record HIỆN TẠI" (luôn biết đang ghi TC nào)
 
 ```
-TC001  Đăng nhập thành công
-  ○ Chưa chọn            → (tick chọn) → [Ghi testcase]
-  [Ghi testcase]          → (record)    → ✓ Đã ghi [Review]
-  ✓ Đã ghi [Review]       → (review)    → ✓ Review [Generate]
-  ✓ Review [Generate]     → (generate)  → ✓ Generated [Run]
-  ✓ Generated [Run]       → (run)       → 🟢 PASS  |  🔴 FAIL (→ [Ghi lại])
+TC001 → Record → [Recording đang hoạt động] → Stop → Review → Generate
 ```
 
-Người dùng **chỉ thấy 1 hành động cần làm tiếp theo**, không bao giờ 6–7 nút.
-
----
-
-## 6. Review code hiện tại — GIỮ / TÁI SỬ DỤNG / THAY / LOẠI
-
-| Phần | File | Quyết định | Lý do |
-|------|------|-----------|-------|
-| Recording store | `src/codegen/CodeGenRecordingStore.js` | **TÁI SỬ DỤNG** | Metadata persistent có sẵn; extend `testCaseId`, `type`, `steps`, `assertions`, `recordedValues`. |
-| Session manager | `src/codegen/CodeGenSessionManager.js` | **THAY (đơn giản hóa)** | Chỉ cần start/stop/attach testCaseId. |
-| Playwright runner | `src/automation/PlaywrightRunner.js` | **GIỮ** | Đã đúng. |
-| Goto/URL render | `renderGotoStatement` | **GIỮ** | Đã xử lý absolute/relative. |
-| TestData binding | `testDataBinding.js` | **GIỮ** | Resolver duy nhất. |
-| Assertion segment | `assertionSegment.js` | **ĐƠN GIẢN HÓA** | Không còn heuristic đoán segment từ file dài. |
-| AI-rewrite / fallback | `codegenSkeleton.js`, `AIAutomationCodegen.js` (phần AI) | **LOẠI khỏi đường chính** | Recording theo testcase không cần AI viết lại. |
-| ApprovedTestcaseLoader | `src/codegen/ApprovedTestcaseLoader.js` | **GIỮ** | Load approved-testcases. |
-
----
-
-## 7. Render spec từ recording (giữ nguyên tắc)
+UI **luôn hiển thị đang ghi testcase nào**, không để user quên:
 
 ```
-render spec =
-  import test/expect
-  test("<TC001 - title>", async ({ page }) => {
-    [SETUP steps]        // nếu có SETUP session (goto+login+phân hệ+danh mục)
-    [TC001 steps]        // thao tác + assertion của testcase
-  });
+[● Đang ghi]  TC001 — Đăng nhập thành công
 ```
 
-- Goto: `renderGotoStatement`. Fill: `renderFillExpression` (ENV → `process.env.TESTDATA_*`). Assertion: từ recording.assertions.
-- Node `--check` + Playwright discovery đảm bảo hợp lệ.
+- Chỉ 1 testcase được record tại 1 thời điểm.
+- Global banner "Đang ghi TC001" xuất hiện bất kể màn hình nào.
 
 ---
 
-## 8. Output spike (đã chạy, `node --check PASS`)
+## 4. [CHỐT] Review Recording KHÔNG readonly — có quyền sửa
 
-`spike/record-by-testcase-spike.mjs` + `fixtures/setup-recording.json`, `fixtures/tc001-recording.json`.
-
-Kết quả: chọn TC001, ghép SETUP(8) + TC001(5) = 13 bước → spec hợp lệ:
-
-```js
-import { test, expect } from '@playwright/test';
-test("TC001 - Đăng nhập thành công với thông tin hợp lệ", async ({ page }) => {
-  await page.goto("http://172.16.1.100:9230/wasuco/login");
-  await page.getByRole('textbox', { name: 'Tài khoản' }).fill(process.env.TESTDATA_USERNAME ?? "");
-  await page.getByRole('textbox', { name: 'Mật khẩu' }).fill(process.env.TESTDATA_PASSWORD ?? "");
-  await page.getByRole('textbox', { name: 'Mã xác nhận' }).fill(process.env.TESTDATA_CAPTCHA ?? "");
-  await page.getByRole('button', { name: 'Đăng nhập' }).click();
-  await page.getByRole('link', { name: 'Quản lý hệ thống' }).click();
-  await page.getByRole('link', { name: 'Danh mục' }).click();
-  await page.getByRole('link', { name: 'Đơn vị tính' }).click();
-  await page.getByRole('textbox', { name: 'Tài khoản' }).fill(process.env.TESTDATA_USERNAME ?? "");
-  await page.getByRole('textbox', { name: 'Mật khẩu' }).fill(process.env.TESTDATA_PASSWORD ?? "");
-  await page.getByRole('textbox', { name: 'Mã xác nhận' }).fill(process.env.TESTDATA_CAPTCHA ?? "");
-  await page.getByRole('button', { name: 'Đăng nhập' }).click();
-  await expect(page.getByText('Danh mục phần mềm quản lý')).toBeVisible();
-});
-// node --check PASS
+```
+Review
+  ↓
+Sửa locator | Xóa bước | Đổi assertion | Thêm assertion | Ghi lại
 ```
 
-(Spike minh hoạ cơ chế ghép; khử trùng login nếu đã có SETUP sẽ xử lý ở production.)
+Recording editable (trong Workspace, không đụng approved-testcases):
+- Sửa locator, xóa bước, đổi/thêm assertion.
+- Ghi lại toàn bộ nếu cần.
 
 ---
 
-## 9. Ước lượng triển khai
+## 5. [CHỐT] State Machine V3 (bỏ "REVIEWED", dùng "UNDER_REVIEW" → "APPROVED")
 
-| Mục | Công việc | Ước lượng |
-|-----|-----------|-----------|
-| Store | Extend `CodeGenRecordingStore` + migration (testCaseId/type/steps/assertions/recordedValues) | 0.5 ngày |
-| Session | Đơn giản hóa start/stop attach testCaseId | 1 ngày |
-| Workspace | Module "bộ não" `AutomationWorkspace` (selectedTestCases + state machine) | 1 ngày |
-| API/Routes | create/stop/get-by-testCaseId + workspace CRUD | 0.5 ngày |
-| Renderer | Render spec từ (SETUP+TESTCASE) IR, dùng testDataBinding + renderGotoStatement | 1 ngày |
-| UI | Wireflow single-action-button theo state | 1.5 ngày |
-| Test | Fixture + test: recording→render→node --check→discovery | 0.5 ngày |
-| **Tổng** | | **≈ 6 ngày** |
+```
+NOT_SELECTED
+   ↓
+SELECTED
+   ↓
+RECORDING
+   ↓
+RECORDED
+   ↓
+UNDER_REVIEW
+   ↓
+APPROVED          ← "tôi đã xem VÀ đồng ý" (không phải chỉ xem)
+   ↓
+GENERATED
+   ↓
+RUNNING
+   ↓
+PASS  |  FAIL
+```
+
+- Không dùng `REVIEWED` (chỉ nghĩa "đã xem").
+- **Generate chỉ chạy khi Recording = APPROVED** (GĐ5 gate).
 
 ---
 
-## 10. Việc đã tạo trong lượt này (KHÔNG sửa production)
+## 6. Workflow giao diện — 5 bước (không hiển thị 7–8 step nhỏ)
 
-- `docs/DESIGN_RECORD_BY_TESTCASE.md` (bản V3 chốt này)
-- `spike/record-by-testcase-spike.mjs`
-- `fixtures/setup-recording.json`, `fixtures/tc001-recording.json`
+```
+① Workspace   ② Chọn testcase   ③ Record   ④ Review   ⑤ Generate & Run
+```
+
+- **Review (④) gộp**: dữ liệu + recording + assertion + expected — không chia thêm tab nhỏ.
+
+---
+
+## 7. Contract RecordingSession (giữ từ V3 trước)
+
+```ts
+interface RecordingSession {
+  id, workspaceId, testCaseId, type: "SETUP"|"TESTCASE", source,
+  startedAt, completedAt, status, browser, url,
+  steps: RecordingStep[], assertions: Assertion[], recordedValues: Record<string,string>
+}
+```
+
+---
+
+## 8. GĐ3–GĐ7 (giữ từ V3, chỉ đổi tên state theo §5)
+
+GĐ2 chọn testcase → GĐ3 record hiện tại → GĐ4 review editable → GĐ5 generate (gate: APPROVED + assertion TESTER_CONFIRMED) → GĐ6 run → GĐ7 hoàn thành.
+
+---
+
+## 9. Estimate triển khai (không đổi lớn)
+
+≈ 6 ngày: Store extend 0.5 · Session/record 1 · Workspace 1 · API 0.5 · Renderer 1 · UI (5 bước + banner "đang ghi" + review editable) 1.5 · Test 0.5.
+
+---
+
+## 10. Tài liệu liên quan (cùng branch)
+
+- `docs/DESIGN_ASSERTION_CONFIRMATION.md` — Expected → Tester-confirmed assertion.
+- `docs/UIUX_CONTRACT_RECORD_BY_TESTCASE.md` — wireframe + component map (cần cập nhật nhẹ theo "Mở Workspace", banner "đang ghi", review editable).

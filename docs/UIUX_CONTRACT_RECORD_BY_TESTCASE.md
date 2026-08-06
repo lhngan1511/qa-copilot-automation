@@ -21,35 +21,38 @@
 ## 2. Workflow giao diện — 5 bước chính (không hiển thị 7–8 step nhỏ)
 
 ```
-① Tải testcase  →  ② Chọn testcase automation  →  ③ Ghi testcase
-  →  ④ Review và hoàn thiện  →  ⑤ Sinh và chạy
+① Workspace   ② Chọn testcase   ③ Record   ④ Review   ⑤ Generate & Run
 ```
 
 Stepper (gọn, chỉ 5):
 ```
-[① Tải] → [② Chọn] → [③ Ghi] → [④ Review] → [⑤ Sinh & chạy]
+[① Workspace] → [② Chọn] → [③ Record] → [④ Review] → [⑤ Generate & Run]
 ```
+
+- **④ Review gộp**: dữ liệu + recording + assertion + expected (không chia thêm tab nhỏ).
+- **Banner "Đang ghi"** (global): luôn hiển thị đang record testcase nào — `[● Đang ghi] TC001 — Đăng nhập thành công`.
 
 ---
 
-## 3. BƯỚC ① — TẢI TESTCASE
+## 3. BƯỚC ① — MỞ WORKSPACE
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  Upload testcase                                    │
-│  [ Tải approved-testcases.json ]                    │
+│  Mở Workspace                                       │
+│  [ Mở approved-testcases.json ]                     │
 │                                                     │
-│  ✓ Đã đọc thành công: 6 testcase đã duyệt           │
+│  ✓ Đã đọc: 6 testcase đã duyệt                      │
 │  Module: Đăng nhập    Chức năng: Đăng nhập          │
+│  (Hoặc: Mở workspace cũ / Import / Clone)           │
 │                                                     │
 │  (KHÔNG yêu cầu upload CodeGen ở bước này)          │
 └────────────────────────────────────────────────────┘
 ```
 
 Quy tắc:
-- Chỉ load testcase có `reviewStatus = APPROVED`.
-- `automationCandidate = true` → chọn được automation.
-- `automationCandidate = false` → **hiển thị nhưng disable checkbox** + lý do.
+- **Mở Workspace** (không phải chỉ upload): mở mới / mở cũ / import / clone — tất cả dùng chung Automation Workspace.
+- Chỉ load testcase có `reviewStatus = APPROVED` (nghiệp vụ).
+- **KHÔNG có `automationCandidate` trong approved-testcases.json** — trạng thái automation (`selectedForAutomation`, `recordingStatus`, `reviewStatus`, `generateStatus`, `runStatus`) do Workspace sinh.
 - `executionReadiness = DATA_REQUIRED` → vẫn chọn được; cảnh báo "Cần bổ sung dữ liệu trước khi chạy".
 
 ---
@@ -93,14 +96,17 @@ Chỉ 1 nút chính; thao tác phụ trong menu `...`.
 | NOT_SELECTED | Chưa chọn | (không) |
 | SELECTED / NOT_RECORDED | Chưa ghi | [Ghi testcase] |
 | RECORDING | Đang ghi | [Dừng ghi] |
-| RECORDED / REVIEW_REQUIRED | Đã ghi | [Xem và duyệt] |
+| RECORDED | Đã ghi | [Review] |
+| UNDER_REVIEW | Đang duyệt | [Xác nhận / Duyệt recording] |
 | APPROVED | Đã duyệt | [Sinh automation] |
 | GENERATED | Đã sinh | [Chạy testcase] |
 | RUNNING | Đang chạy | (disabled) [Đang chạy...] |
 | PASSED | PASS | [Xem kết quả] |
 | FAILED | FAIL | [Xem lỗi] |
 
-Không hiển thị nhiều primary action cùng lúc.
+- State machine V3: `NOT_SELECTED → SELECTED → RECORDING → RECORDED → UNDER_REVIEW → APPROVED → GENERATED → RUNNING → PASS/FAIL`.
+- **Generate chỉ chạy khi Recording = APPROVED** (không dùng REVIEWED).
+- Không hiển thị nhiều primary action cùng lúc.
 
 ---
 
@@ -178,6 +184,12 @@ Số bước: 8    Assertions: 1    Thời gian: 45 giây
 
 Footer: [Đóng]  [Duyệt recording]
 ```
+
+**Review KHÔNG readonly** — có quyền sửa (trong Workspace, không đụng approved-testcases):
+```
+Sửa locator | Xóa bước | Đổi assertion | Thêm assertion | Ghi lại
+```
+Các thao tác sửa nằm trong menu `...` hoặc inline nhỏ theo từng bước.
 
 ---
 
@@ -295,13 +307,14 @@ Không hiển thị 3 nút lớn cạnh nhau.
 
 | Component | Vị trí | Props/State | Hành động |
 |-----------|--------|-------------|-----------|
-| `UploadTestcasePanel` | Bước ① | `onUpload`, `summary` | đọc file, hiển thị ✓ |
+| `WorkspacePanel` | Bước ① | `onOpen`, `mode` (new/open/import/clone), `summary` | mở workspace, hiển thị ✓ |
+| `RecordingBanner` | Global (khi RECORDING) | `testCaseId`, `title` | luôn hiển thị "Đang ghi TC001 — ..." |
 | `TestcaseCard` | Bước ② | `testCase`, `selected`, `status`, `primaryAction` | checkbox, ⋮, primary |
 | `BatchActionBar` | Bước ② | `selectedCount`, `onPrimary` | 1 nút chính + ⋮ |
 | `Drawer` | detail | `testCase`, `activeTab`, `footerAction` | header cố định, footer cố định |
 | `TabInfo` | Drawer | `testCase` | read-only |
 | `TabData` | Drawer | `fields`, `draft`, `confirmed` | Lưu dữ liệu |
-| `TabRecording` | Drawer | `recording`, `steps`, `assertions` | Duyệt recording |
+| `TabRecording` | Drawer | `recording`, `steps`, `assertions`, `editable` | Duyệt recording; sửa locator/xóa bước/đổi assertion |
 | `TabExpected` | Drawer | `expectedResult`, `automationAssertions` | [+ Bổ sung] |
 | `AssertionForm` | modal | `type` (URL/Text/...) | tạo nháp |
 | `AssertionItem` | TabExpected | `assertion`, `status` | Xác nhận/Chỉnh sửa/⋮ Xóa |
