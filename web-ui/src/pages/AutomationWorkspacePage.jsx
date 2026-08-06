@@ -70,6 +70,9 @@ export default function AutomationWorkspacePage() {
     const [codeGenBaseUrls, setCodeGenBaseUrls] = useState([]);
     const [baseUrlEdited, setBaseUrlEdited] = useState("");
     const [envFallback, setEnvFallback] = useState("");
+    // Chế độ thực thi demo: hiển thị browser thật (headed) + slow motion 500ms.
+    const [runModeHeaded, setRunModeHeaded] = useState(true);
+    const [runSlowMo, setRunSlowMo] = useState(500);
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
     const [analyzeStatus, setAnalyzeStatus] = useState("idle"); // idle | loading | success | error
@@ -257,7 +260,7 @@ export default function AutomationWorkspacePage() {
             for (const item of items) {
                 // Xóa diagnostic cũ trước mỗi lần chạy mới.
                 setTestCases(current => current.map(t => t.id === item.id ? { ...t, execution: { ...emptyExecution(), status: "RUNNING" } } : t));
-                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: item.id });
+                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: item.id, headed: runModeHeaded, slowMo: runSlowMo });
                 applyRun(item.id, result);
             }
         } catch (error) {
@@ -278,7 +281,7 @@ export default function AutomationWorkspacePage() {
         setBusy(true);
         setNotice("");
         try {
-            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: id });
+            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: id, headed: runModeHeaded, slowMo: runSlowMo });
             applyRun(id, result);
             return result;
         } catch (error) {
@@ -468,6 +471,10 @@ export default function AutomationWorkspacePage() {
                         baseUrl={baseUrl}
                         baseUrlSource={baseUrlSource}
                         environmentValid={environmentValid}
+                        runModeHeaded={runModeHeaded}
+                        runSlowMo={runSlowMo}
+                        onRunModeChange={setRunModeHeaded}
+                        onSlowMoChange={setRunSlowMo}
                         onTabChange={setActiveTab}
                         onUpdate={updateTestCase}
                         onRestore={restoreTestCase}

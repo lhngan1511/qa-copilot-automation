@@ -30,9 +30,13 @@ export default class PlaywrightRunner {
      * @param {string} [options.rootDir]
      * @param {string|null} [options.browserChannel]  mặc định đọc process.env.PLAYWRIGHT_BROWSER_CHANNEL
      */
-    constructor({ rootDir = process.cwd(), browserChannel = null } = {}) {
+    constructor({ rootDir = process.cwd(), browserChannel = null, headed = null, slowMo = null } = {}) {
         this.rootDir = rootDir;
         this.browserChannel = browserChannel ?? process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? null;
+        // Demo mặc định: HIỂN THỊ browser thật (headed) + slow motion 500ms để xem thao tác.
+        // Có thể ghi đè qua env PLAYWRIGHT_HEADLESS / PLAYWRIGHT_SLOW_MO hoặc option.
+        this.headed = headed ?? (String(process.env.PLAYWRIGHT_HEADLESS ?? "false").toLowerCase() !== "true");
+        this.slowMo = slowMo ?? (Number(process.env.PLAYWRIGHT_SLOW_MO ?? "500") || 0);
     }
 
     /** Channel đã cấu hình (chuẩn hóa lower). */
@@ -98,10 +102,12 @@ export default class PlaywrightRunner {
      * LƯU Ý: Playwright Test CLI KHÔNG hỗ trợ `--channel`.
      * Channel được cấu hình qua playwright.config.js (`use.channel` từ PLAYWRIGHT_BROWSER_CHANNEL),
      * nên KHÔNG truyền --channel qua CLI. Chỉ dùng --browser=chromium.
+     * Headed: truyền `--headed` rõ ràng (không phụ thuộc config mặc định).
      */
     buildArgs({ filePath = null, projectDir = null, extraArgs = [] } = {}) {
         const args = ["test"];
         args.push("--browser=chromium");
+        if (this.headed) args.push("--headed");
         if (projectDir) args.push("--config", path.join(projectDir, "playwright.config.js"));
         if (filePath) args.push(filePath);
         args.push("--reporter", projectDir ? "json" : "line", ...extraArgs);
@@ -128,9 +134,14 @@ export default class PlaywrightRunner {
             }
             const args = this.buildArgs({ projectDir, extraArgs });
             const child = spawn(bin, args, {
-                shell: process.platform === "win32",
                 cwd: this.rootDir,
-                env: { ...process.env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
+                env: {
+                    ...process.env,
+                    BASE_URL: process.env.BASE_URL || "",
+                    PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "",
+                    PLAYWRIGHT_HEADLESS: this.headed ? "false" : "true",
+                    PLAYWRIGHT_SLOW_MO: String(this.slowMo || 0)
+                },
                 stdio: ["ignore", "pipe", "pipe"]
             });
             let stdout = "";
@@ -200,8 +211,12 @@ export default class PlaywrightRunner {
      * @param {string} filePath
      * @returns {Promise<object>}
      */
-    runFile(filePath, { env = {}, testCaseId = "" } = {}) {
+    runFile(filePath, { env = {}, testCaseId = "", headed = null, slowMo = null } = {}) {
         return new Promise((resolve) => {
+            // Chế độ chạy hiệu lực: option > instance default (demo headed + slowMo 500).
+            const effectiveHeaded = headed ?? this.headed;
+            const effectiveSlowMo = slowMo ?? this.slowMo;
+            const requestId = `RUN-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             // Resolve về absolute để kiểm tra tồn tại, nhưng TRUYỀN relative từ project root cho Playwright
             const abs = path.resolve(this.rootDir, filePath);
             const fileExists = fs.existsSync(abs);
@@ -265,20 +280,39 @@ export default class PlaywrightRunner {
             const args = this.buildArgs({ filePath: rel });
             diag.commandArgs = args;
             diag.command = bin;
+            diag.headed = effectiveHeaded;
+            diag.slowMo = effectiveSlowMo;
+            const browserLabel = this.configuredChannel() ?? "chromium";
+            console.log(
+                `[RUN_START] requestId=${requestId} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel}`
+            );
+            // spawn executable + args array riêng (không shell:true — tránh DEP0190; path có dấu cách vẫn chạy đúng).
             const child = spawn(bin, args, {
-                shell: process.platform === "win32",
                 cwd: this.rootDir,
-                env: { ...process.env, ...env, BASE_URL: this.baseUrl(env) || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
+                env: {
+                    ...process.env,
+                    ...env,
+                    BASE_URL: this.baseUrl(env) || "",
+                    PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "",
+                    PLAYWRIGHT_HEADLESS: effectiveHeaded ? "false" : "true",
+                    PLAYWRIGHT_SLOW_MO: String(effectiveSlowMo || 0)
+                },
                 stdio: ["ignore", "pipe", "pipe"]
             });
             let stdout = "";
             let stderr = "";
             child.stdout.on("data", (d) => (stdout += d));
             child.stderr.on("data", (d) => (stderr += d));
-            child.on("error", (err) => respond(
-                { status: "ERROR", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath, requestedFilePath: filePath, fileExists: true, testCaseId: testCaseId || null },
-                { code: 1 }
-            ));
+            child.on("spawn", () => {
+                console.log(`[RUN_START] requestId=${requestId} pid=${child.pid ?? "?"}`);
+            });
+            child.on("error", (err) => {
+                console.error(`[RUN_END] requestId=${requestId} status=SPAWN_FAILED exitCode=? durationMs=${Date.now() - started}`);
+                respond(
+                    { status: "DIAGNOSTIC", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath, requestedFilePath: filePath, fileExists: true, testCaseId: testCaseId || null },
+                    { errorCode: ERROR_CODES.SPAWN_FAILED, errorMessage: ERROR_MESSAGES.SPAWN_FAILED, filePath, fileExists: true }
+                );
+            });
             child.on("close", (code) => {
                 const log = stdout + stderr;
                 const durationMs = Date.now() - started;
@@ -302,6 +336,7 @@ export default class PlaywrightRunner {
                         `NO_TESTS_FOUND: Playwright không nhận test. file=${rel} baseName=${baseName} fileExists=${fileExists} testDir=${testDir}. ` +
                         "Kiểm tra file nằm trong outputs/generated-tests và đúng tên *.spec.js.";
                 }
+                console.log(`[RUN_END] requestId=${requestId} status=${status} exitCode=${code ?? "?"} durationMs=${durationMs}`);
                 respond(
                     {
                         status,

@@ -90,7 +90,7 @@ export default class AutomationWorkspaceService {
         return { ...result, filePath, exists: fs.existsSync(filePath) };
     }
 
-    async run({ filePath, env = {}, testCaseId = "" }) {
+    async run({ filePath, env = {}, testCaseId = "", headed = null, slowMo = null }) {
         if (!filePath) throw new Error("Thiếu file kiểm thử đã sinh.");
         const fs = await import("node:fs");
         const path = await import("node:path");
@@ -99,7 +99,7 @@ export default class AutomationWorkspaceService {
         console.log(
             `[RUN_REQUEST] testCaseId=${testCaseId || "?"} filePath=${filePath} isAbsolute=${path.isAbsolute(filePath)} exists=${fs.existsSync(abs)} cwd=${this.rootDir}`
         );
-        return this.runner.runFile(filePath, { env, testCaseId });
+        return this.runner.runFile(filePath, { env, testCaseId, headed, slowMo });
     }
 
     /**

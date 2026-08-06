@@ -15,6 +15,7 @@ export const ERROR_CODES = {
     BROWSER_NOT_INSTALLED: "BROWSER_NOT_INSTALLED",
     SPEC_NOT_FOUND: "SPEC_NOT_FOUND",
     TIMEOUT: "TIMEOUT",
+    SPAWN_FAILED: "SPAWN_FAILED",
     UNKNOWN_ERROR: "UNKNOWN_ERROR"
 };
 
@@ -32,6 +33,8 @@ export const ERROR_MESSAGES = {
         "Không tìm thấy file kiểm thử đã sinh (spec.js). Hãy sinh automation ở bước ④ trước khi chạy.",
     TIMEOUT:
         "Thao tác quá thời gian chờ. Kiểm tra bước chậm, loading quá lâu hoặc điều kiện trước chưa đạt.",
+    SPAWN_FAILED:
+        "Không thể khởi chạy Playwright. Kiểm tra trình duyệt đã cài (npx playwright install chromium) và đường dẫn node_modules.",
     UNKNOWN_ERROR:
         "Xảy ra lỗi không xác định khi chạy. Xem log bên dưới để chẩn đoán."
 };

@@ -58,6 +58,10 @@ export default function AutomationInspector({
     baseUrl,
     baseUrlSource,
     environmentValid,
+    runModeHeaded,
+    runSlowMo,
+    onRunModeChange,
+    onSlowMoChange,
     onTabChange,
     onUpdate,
     onGenerateOne,
@@ -112,7 +116,7 @@ export default function AutomationInspector({
             {activeTab === "SCENARIO" && <ScenarioTab testCase={testCase} />}
             {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} />}
             {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
-            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} onRunOne={() => onRunOne(testCase.id)} />}
+            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} runModeHeaded={runModeHeaded} runSlowMo={runSlowMo} onRunModeChange={onRunModeChange} onSlowMoChange={onSlowMoChange} onRunOne={() => onRunOne(testCase.id)} />}
         </div>
         {/* Chỉnh sửa mapping — chưa làm, hiển thị Coming Soon (disable). */}
         <div className="automation-inspector__footer">
@@ -438,7 +442,7 @@ function RecommendationActions({ check, onApply }) {
 }
 
 /* ---------- Chạy thử: Generate → Run → Diagnose ---------- */
-function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, onRunOne }) {
+function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, runModeHeaded, runSlowMo, onRunModeChange, onSlowMoChange, onRunOne }) {
     const exec = testCase.execution || {};
     const display = runDisplay(exec);
     const enabled = isRunEnabled({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
@@ -446,22 +450,43 @@ function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, onRun
     const detail = failDetail(exec);
     const guidance = guidanceFor(detail.errorCode);
     const visible = visibleFailFields(detail);
+    const running = String(exec.status ?? "").toUpperCase() === "RUNNING";
 
     return <div className="automation-run-panel">
         <div className="automation-subheading"><div><h4>Chạy testcase này</h4><p>Chạy ngay trong cửa sổ.</p></div></div>
+
+        {/* Chế độ thực thi demo — không dùng thuật ngữ kỹ thuật (headless). */}
+        <div className="automation-run-config">
+            <label className="automation-run-config__mode">
+                <span>Chế độ trình duyệt</span>
+                <button className="text-button" type="button" onClick={() => onRunModeChange?.(!runModeHeaded)}>
+                    {runModeHeaded ? "● Hiển thị trình duyệt" : "○ Chạy ẩn"}
+                </button>
+            </label>
+            <label className="automation-run-config__speed">
+                <span>Tốc độ demo</span>
+                <select value={runSlowMo ?? 0} onChange={e => onSlowMoChange?.(Number(e.target.value) || 0)} aria-label="Tốc độ demo">
+                    <option value={0}>Nhanh (0 ms)</option>
+                    <option value={300}>300 ms</option>
+                    <option value={500}>500 ms</option>
+                    <option value={700}>700 ms</option>
+                </select>
+            </label>
+        </div>
 
         <div className="automation-run-grid">
             <div className="automation-run-cell"><span>Base URL</span><strong className="automation-base-url">{baseUrl || "—"}</strong></div>
             <div className="automation-run-cell"><span>Nguồn</span><strong>{baseUrlSource || "Chưa có"}</strong></div>
             <div className="automation-run-cell"><span>Spec</span><strong>{auto.filePath || "—"}</strong></div>
-            <div className="automation-run-cell"><span>Browser</span><strong>Chromium / Chrome</strong></div>
+            <div className="automation-run-cell"><span>Browser</span><strong>{auto.browser ? "Chromium / Chrome" : "Chromium / Chrome"}</strong></div>
         </div>
 
-        <button className="button button--primary" type="button" disabled={!enabled} onClick={onRunOne}>{display.passed || display.failed ? "Chạy lại" : "Run testcase"}</button>
+        <button className="button button--primary" type="button" disabled={!enabled || running} onClick={onRunOne}>{running ? "Đang chạy…" : display.passed || display.failed ? "Chạy lại" : "Run testcase"}</button>
         {blocker && <p className="automation-hint-text">🔒 {blocker}</p>}
+        {running && <p className="automation-run-opening">Đang mở trình duyệt và chạy testcase…</p>}
 
         <div className={`automation-run-result ${display.tone === "pass" ? "automation-run-result--pass" : display.tone === "fail" ? "automation-run-result--fail" : "automation-run-result--idle"}`}>
-            <span className="automation-run-result__status">{display.label === "PASS" ? "✓ PASS" : display.label === "FAIL" ? "✗ FAIL" : "Chưa chạy"}</span>
+            <span className="automation-run-result__status">{running ? "Đang chạy…" : display.label === "PASS" ? "✓ PASS" : display.label === "FAIL" ? "✗ FAIL" : "Chưa chạy"}</span>
             {exec.durationMs != null && <span className="automation-run-result__dur">{Math.round(exec.durationMs)} ms</span>}
         </div>
 

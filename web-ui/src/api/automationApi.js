@@ -52,13 +52,15 @@ export function generateAutomation({
     );
 }
 
-export function runAutomation({ filePath, env = {}, testCaseId = "", signal } = {}) {
+export function runAutomation({ filePath, env = {}, testCaseId = "", headed = null, slowMo = null, signal } = {}) {
     return post(
         "/automation-workspace/run",
         {
             filePath,
             env,
-            testCaseId
+            testCaseId,
+            headed,
+            slowMo
         },
         signal
     );
