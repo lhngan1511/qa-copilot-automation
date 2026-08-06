@@ -2,6 +2,7 @@ import AIProviderFactory from "../providers/AIProviderFactory.js";
 import AIAutomationMapper from "../automation/ai/AIAutomationMapper.js";
 import AIAutomationCodegen from "../automation/ai/AIAutomationCodegen.js";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
+import { runtimeEnvFor } from "../automation/ai/codegenSkeleton.js";
 import crypto from "node:crypto";
 
 export default class AutomationWorkspaceService {
@@ -97,8 +98,10 @@ export default class AutomationWorkspaceService {
         }
         const filePath = codegen.writeFile({ code: result.code, testCaseId: testCase.id, module: testCase.module || "Module" });
         const fs = await import("node:fs");
+        // Runtime env (TESTDATA_*) cho Runner — từ value đã resolve theo thứ tự ưu tiên, không log giá trị.
+        const runtimeEnv = runtimeEnvFor({ testCase, mapping, codegenText });
         // Trả đường dẫn tuyệt đối chuẩn + xác nhận file tồn tại ngay sau khi ghi.
-        return { ...result, filePath, exists: fs.existsSync(filePath), written: true };
+        return { ...result, filePath, exists: fs.existsSync(filePath), written: true, runtimeEnv };
     }
 
     async run({ filePath, env = {}, testCaseId = "", headed = null, slowMo = null }) {

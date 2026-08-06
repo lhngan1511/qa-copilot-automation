@@ -263,17 +263,18 @@ export default class AIAutomationCodegen {
                 errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD). Phải dùng process.env.");
             }
         }
-        // Chỉ yêu cầu env khi mapping CÓ bước fill field tương ứng
-        // (TC002 bỏ trống Tài khoản -> không cần LOGIN_USERNAME; TC003 bỏ trống Mật khẩu -> không cần LOGIN_PASSWORD).
+        // Chỉ yêu cầu env khi mapping CÓ bước fill field tương ứng.
+        // Chấp nhận cả LOGIN_* (cũ) và TESTDATA_* (runtime binding mới theo contract).
         const requiredEnv = this.requiredCredentialEnv(mapping);
-        if (requiredEnv.has("LOGIN_USERNAME") && !code.includes("process.env.LOGIN_USERNAME")) {
-            errors.push("Code không dùng process.env.LOGIN_USERNAME cho Tài khoản.");
+        const envPresent = (key) => code.includes(`process.env.${key}`);
+        if (requiredEnv.has("LOGIN_USERNAME") && !envPresent("LOGIN_USERNAME") && !envPresent("TESTDATA_USERNAME")) {
+            errors.push("Code không dùng process.env.LOGIN_USERNAME / TESTDATA_USERNAME cho Tài khoản.");
         }
-        if (requiredEnv.has("LOGIN_PASSWORD") && !code.includes("process.env.LOGIN_PASSWORD")) {
-            errors.push("Code không dùng process.env.LOGIN_PASSWORD cho Mật khẩu.");
+        if (requiredEnv.has("LOGIN_PASSWORD") && !envPresent("LOGIN_PASSWORD") && !envPresent("TESTDATA_PASSWORD")) {
+            errors.push("Code không dùng process.env.LOGIN_PASSWORD / TESTDATA_PASSWORD cho Mật khẩu.");
         }
-        if (requiredEnv.has("LOGIN_CAPTCHA") && !code.includes("process.env.LOGIN_CAPTCHA")) {
-            errors.push("Code không dùng process.env.LOGIN_CAPTCHA cho Mã xác nhận.");
+        if (requiredEnv.has("LOGIN_CAPTCHA") && !envPresent("LOGIN_CAPTCHA") && !envPresent("TESTDATA_CAPTCHA")) {
+            errors.push("Code không dùng process.env.LOGIN_CAPTCHA / TESTDATA_CAPTCHA cho Mã xác nhận.");
         }
 
         // 5. CAPTCHA — không dùng sample từ Codegen
@@ -488,10 +489,19 @@ export default class AIAutomationCodegen {
         }
 
         // Fallback: deterministic code builder từ mapping đã xác nhận (không gọi AI lần 3).
+        // Giữ action CodeGen + resolve testData theo thứ tự ưu tiên + assertion thật.
         if (!guard.ok) {
-            final = buildSpecFromMapping({ testCase, mapping });
-            guard = validateGeneratedCode({ code: final, testCaseId });
-            source = "deterministic-fallback";
+            const fallback = buildSpecFromMapping({ testCase, mapping, codegenText: text });
+            if (fallback.ok) {
+                final = fallback.code;
+                guard = validateGeneratedCode({ code: final, testCaseId });
+                source = "deterministic-fallback";
+            } else {
+                // Fallback từ chối (thiếu data / thiếu assertion thật) — báo rõ, không tự bịa.
+                final = "";
+                guard = { ok: false, errorCode: fallback.errorCode, reason: fallback.reason };
+                source = "deterministic-fallback-rejected";
+            }
             console.log(`[CODEGEN_FALLBACK] ok=${guard.ok} errorCode=${guard.errorCode ?? "?"} reason=${guard.reason || "?"}`);
         }
 

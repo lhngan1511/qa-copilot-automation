@@ -194,6 +194,8 @@ export default function AutomationWorkspacePage() {
             generatedFile: result?.filePath || "",
             generatedFileExists: result?.exists === true,
             validation: result?.validation,
+            // Runtime env (TESTDATA_*) đã resolve theo thứ tự ưu tiên, cho Run dùng.
+            runtimeEnv: result?.runtimeEnv || {},
             status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED"
         }
         : item));
@@ -260,7 +262,7 @@ export default function AutomationWorkspacePage() {
             for (const item of items) {
                 // Xóa diagnostic cũ trước mỗi lần chạy mới.
                 setTestCases(current => current.map(t => t.id === item.id ? { ...t, execution: { ...emptyExecution(), status: "RUNNING" } } : t));
-                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: item.id, headed: runModeHeaded, slowMo: runSlowMo });
+                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl, ...(item.runtimeEnv || {}) }, testCaseId: item.id, headed: runModeHeaded, slowMo: runSlowMo });
                 applyRun(item.id, result);
             }
         } catch (error) {
@@ -281,7 +283,7 @@ export default function AutomationWorkspacePage() {
         setBusy(true);
         setNotice("");
         try {
-            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl }, testCaseId: id, headed: runModeHeaded, slowMo: runSlowMo });
+            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl, ...(item.runtimeEnv || {}) }, testCaseId: id, headed: runModeHeaded, slowMo: runSlowMo });
             applyRun(id, result);
             return result;
         } catch (error) {

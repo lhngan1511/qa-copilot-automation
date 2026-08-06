@@ -77,13 +77,10 @@ export default function AutomationInspector({
     const showRunTab = isRunTabVisible(auto);
     const envValid = environmentValid !== false;
     const updateDataField = (name, value) => {
-        const fields = { ...(testCase.testData?.fields ?? {}) };
-        if (fields[name] && typeof fields[name] === "object") {
-            fields[name] = { ...fields[name], value, requiresTesterInput: false };
-        } else {
-            fields[name] = { value, purpose: "VALID", requiresTesterInput: false };
-        }
-        update({ testData: { ...(testCase.testData ?? {}), fields } });
+        // Chỉ ghi vào draft (đang gõ, chưa lưu). "Lưu dữ liệu" mới commit vào confirmed (USER_CONFIRMED).
+        const draft = { ...(testCase.testData?.draft ?? {}) };
+        draft[name] = value;
+        update({ testData: { ...(testCase.testData ?? {}), draft } });
     };
     const firstMissingRef = useRef(null);
     useEffect(() => {
@@ -114,7 +111,7 @@ export default function AutomationInspector({
         <div className="automation-inspector__body">
             {activeTab === "INFO" && <InfoTab testCase={testCase} moduleName={moduleName} update={update} />}
             {activeTab === "SCENARIO" && <ScenarioTab testCase={testCase} />}
-            {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} />}
+            {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} onUpdate={update} />}
             {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
             {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} runModeHeaded={runModeHeaded} runSlowMo={runSlowMo} onRunModeChange={onRunModeChange} onSlowMoChange={onSlowMoChange} onRunOne={() => onRunOne(testCase.id)} />}
         </div>
@@ -261,7 +258,7 @@ function ScenarioAssertionRow({ assertion }) {
 }
 
 /* ---------- Dữ liệu kiểm thử ---------- */
-function DataTab({ testCase, rows, ready, firstMissingRef, updateDataField }) {
+function DataTab({ testCase, rows, ready, firstMissingRef, updateDataField, onUpdate }) {
     const isSecret = name => /mật khẩu|password|mk\b|secret/i.test(String(name));
     const [showSecrets, setShowSecrets] = useState({});
     const [saved, setSaved] = useState(false);
@@ -271,7 +268,13 @@ function DataTab({ testCase, rows, ready, firstMissingRef, updateDataField }) {
     });
     const isEmptyField = row => String(row.purpose ?? "").toUpperCase() === "EMPTY";
 
-    const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+    // "Lưu dữ liệu": commit draft (đang gõ) vào confirmed (USER_CONFIRMED). Drawer chỉ ưu tiên khi đã Lưu.
+    const save = () => {
+        const draft = testCase?.testData?.draft ?? {};
+        onUpdate({ testData: { ...(testCase?.testData ?? {}), confirmed: { ...(testCase?.testData?.confirmed ?? {}), ...draft }, draft: {} } });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+    };
 
     return <div className="automation-data-editor">
         <div className="automation-subheading"><div><h4>Dữ liệu kiểm thử</h4><p>Đọc từ approved-testcases.json. {hasAnyMissing ? "Còn field cần bổ sung." : "Đã đủ dữ liệu."}</p></div></div>

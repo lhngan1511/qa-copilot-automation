@@ -46,9 +46,11 @@ export function dataRows(testCase) {
     const td = testCase?.testData;
     if (!td || typeof td !== "object") return [];
     if (td.fields && typeof td.fields === "object" && !Array.isArray(td.fields)) {
+        const draft = td.draft && typeof td.draft === "object" ? td.draft : {};
         return Object.entries(td.fields).map(([name, field]) => ({
             name,
-            value: field?.value ?? "",
+            // Draft (đang gõ) hiển thị trước; nếu chưa gõ thì dùng approved value.
+            value: draft[name] !== undefined ? String(draft[name]) : (field?.value ?? ""),
             requiresTesterInput: field?.requiresTesterInput === true,
             instruction: field?.instruction ?? "",
             purpose: field?.purpose ?? "VALID"
