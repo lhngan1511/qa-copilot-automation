@@ -70,6 +70,18 @@ export default class CodeGenRecordingStore {
         return this.sanitize(recorded ?? matches[0]);
     }
 
+    /** V3 — tất cả recording của testCaseId (để tính version, không overwrite). */
+    allByTestCase(testCaseId) {
+        return this.recordings
+            .filter(item => item.testCaseId === testCaseId)
+            .map(r => this.sanitize(r));
+    }
+
+    /** V3 — số recording đã có của testCaseId (cho recordingVersion). */
+    countByTestCase(testCaseId) {
+        return this.recordings.filter(item => item.testCaseId === testCaseId).length;
+    }
+
     create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE" } = {}) {
         const recording = {
             recordingId: newRecordingId(),

@@ -178,7 +178,27 @@ export function parseRecording(source) {
         }
     }
 
-    return { steps, assertions, recordedValues };
+    return { steps, assertions, recordedValues, summary: buildSummary(steps, assertions) };
+}
+
+/** Tạo summary recording (điểm 3) — UI dùng trực tiếp, không cần parse lại. */
+export function buildSummary(steps = [], assertions = []) {
+    const s = Array.isArray(steps) ? steps : [];
+    const a = Array.isArray(assertions) ? assertions : [];
+    const actionCount = s.length;
+    const assertionCount = a.length;
+    const count = type => s.filter(x => x.actionType === type).length;
+    return {
+        actionCount,
+        assertionCount,
+        fillCount: count("FILL"),
+        clickCount: count("CLICK"),
+        navigationCount: count("GOTO"),
+        selectCount: count("SELECT"),
+        checkCount: count("CHECK"),
+        assertCount: a.length,
+        duration: null // gán lúc stop (startedAt→completedAt)
+    };
 }
 
 /** Trích expected từ statement assertion (best-effort). */

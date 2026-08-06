@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { parseRecording } from "./recordingParser.js";
+import { parseRecording, buildSummary } from "./recordingParser.js";
 
 /*
  CurrentRecordingSession — quản lý "Current Recording" trong 1 workspace (Architecture V3).
@@ -7,7 +7,8 @@ import { parseRecording } from "./recordingParser.js";
  Contract:
    CurrentRecordingSession {
      id, workspaceId, testCaseId, type, status: IDLE|RECORDING|STOPPED|PARSED|FAILED,
-     startedAt, completedAt, source, steps, assertions, recordedValues
+     startedAt, completedAt, source, steps, assertions, recordedValues,
+     recordingId, recordingVersion, recordingHash, summary
    }
 
  Quy tắc:
@@ -18,6 +19,9 @@ import { parseRecording } from "./recordingParser.js";
    - Không tự map recording sang testcase khác. Không dùng AI.
    - Không sửa approved-testcases.json.
    - Không log password / dữ liệu nhạy cảm (parser redacts).
+   - Mỗi lần Record tạo recording MỚI (không overwrite) — recordingVersion tăng dần.
+   - Parser chỉ sinh GOTO/CLICK/FILL/CHECK/SELECT/ASSERT (không AUTH/LOGIN/NAVIGATION/BUSINESS —
+     phân loại để Renderer/Workflow quyết định).
 */
 
 export const SESSION_STATUS = {
@@ -30,6 +34,11 @@ export const SESSION_STATUS = {
 
 function newSessionId() {
     return `SES-${Date.now()}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
+/** Tính hash an toàn của source recording (không phải hash của password riêng). */
+export function hashRecording(source) {
+    return crypto.createHash("sha256").update(String(source ?? "")).digest("hex").slice(0, 16);
 }
 
 export default class CurrentRecordingSession {
@@ -67,7 +76,10 @@ export default class CurrentRecordingSession {
             steps: [],
             assertions: [],
             recordedValues: {},
-            recordingId: null
+            recordingId: null,
+            recordingVersion: null,
+            recordingHash: null,
+            summary: null
         };
         this.active = session;
 
@@ -81,6 +93,8 @@ export default class CurrentRecordingSession {
                 browser
             });
             session.recordingId = rec?.recordingId ?? null;
+            // recordingVersion = số recording đã có của testcase này + 1 (không overwrite).
+            session.recordingVersion = this.store.countByTestCase(session.testCaseId);
         }
         return session;
     }
@@ -99,6 +113,9 @@ export default class CurrentRecordingSession {
         session.completedAt = new Date().toISOString();
         session.source = String(source ?? "");
 
+        // Hash recording (điểm 1) — để nhận diện version.
+        session.recordingHash = hashRecording(session.source);
+
         // Parse recording nếu có source.
         if (session.source.trim()) {
             try {
@@ -106,6 +123,12 @@ export default class CurrentRecordingSession {
                 session.steps = parsed.steps;
                 session.assertions = parsed.assertions;
                 session.recordedValues = parsed.recordedValues;
+                session.summary = {
+                    ...parsed.summary,
+                    duration: session.startedAt && session.completedAt
+                        ? Math.max(0, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 1000))
+                        : null
+                };
                 session.status = SESSION_STATUS.PARSED;
             } catch (error) {
                 session.status = SESSION_STATUS.FAILED;
@@ -123,14 +146,17 @@ export default class CurrentRecordingSession {
                 scriptContent: session.source,
                 steps: session.steps,
                 assertions: session.assertions,
-                recordedValues: session.recordedValues
+                recordedValues: session.recordedValues,
+                recordingVersion: session.recordingVersion,
+                recordingHash: session.recordingHash,
+                summary: session.summary
             });
         }
-        // Cập nhật trạng thái workspace: RECORDED.
+        // Cập nhật trạng thái workspace: RECORDED → REVIEW_REQUIRED (điểm 2: Review nằm giữa Record và Generate).
         if (this.workspace && session.testCaseId && session.testCaseId !== "SETUP") {
             this.workspace.transition(session.workspaceId, session.testCaseId, {
                 recordingStatus: "RECORDED",
-                reviewStatus: "RECORDED"
+                reviewStatus: "REVIEW_REQUIRED"
             });
         }
         this.active = null;
