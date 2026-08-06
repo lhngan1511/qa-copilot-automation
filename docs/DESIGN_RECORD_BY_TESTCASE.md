@@ -1,58 +1,50 @@
-# Architecture Sprint — Record by Testcase
+# Architecture V3 — Automation Intelligence (CHỐT)
 
 > Branch: `arena/automation-record-by-testcase`
-> Trạng thái: **THIẾT KẾ + SPIKE** (KHÔNG sửa production — lượt này chỉ tạo docs/spike/fixture).
-> Checkpoint: tag `demo-v1-upload-codegen` = `c640b7e`.
+> Trạng thái: **KIẾN TRÚC ĐÃ ĐÓNG BĂNG** — không thay đổi nữa.
+> Lượt này: cập nhật docs design cho khớp V3. **KHÔNG sửa production.**
+> Checkpoint demo: tag `demo-v1-upload-codegen` = `c640b7e`.
 
 ---
 
-## 1. Mục tiêu
+## 0. Nguyên tắc cốt lõi (đóng băng)
 
-Thay đổi workflow khỏi "upload 1 file CodeGen dài" (dễ sai khi nhiều flow chung 1 recording) sang:
+- **approved-testcases.json KHÔNG bao giờ bị sửa** — chỉ chứa testcase (title/steps/expected/testData...). Không thêm `recording/automation/status/run/pass/fail`.
+- **Mọi trạng thái automation lưu trong Automation Workspace** ("bộ não").
+- **Mỗi testcase tự quay / tự sinh / tự chạy** — không có bài toán "recording thuộc TC nào / segment nào / assertion của flow nào / AI đoán sai".
+- **UI mỗi testcase chỉ hiển thị MỘT hành động chính** theo trạng thái hiện tại (không bao giờ 6–7 nút cùng lúc).
+
+---
+
+## 1. Workflow 7 giai đoạn
 
 ```
-approved-testcases.json
-  → chọn testcase cần automation
-  → bắt đầu recording trong ngữ cảnh testCaseId
-  → kết thúc recording
-  → lưu RecordingSession gắn trực tiếp testCaseId
-  → đối chiếu testcase với recording
-  → tester review
-  → generate
-  → run
+GĐ1 Upload testcase    Requirement.md → AI Test Design → approved-testcases.json
+                       Hệ thống đọc: tất cả testcase, chỉ hiển thị reviewStatus=APPROVED. KHÔNG có CodeGen.
+GĐ2 Chọn testcase      Tester tick (TC001, TC005) → Workspace sinh {TC001: NOT_SELECTED→SELECTED, ...}
+                       Không sinh code, không AI, không mapping.
+GĐ3 Record             [Ghi testcase] → Playwright CodeGen mở → tester chỉ quay ĐÚNG TC001 → Stop → lưu recording gắn TC001.
+                       Không cần AI đoán/segment/split/marker.
+GĐ4 Review recording   TC001: ✓ Recording (53 steps, 3 assertions) → [Review] → sửa/xóa/record lại.
+GĐ5 Generate           recording TC001 + approved TC001 + testData → Generate Playwright. (Không còn mapping nhiều testcase.)
+GĐ6 Run                [Run TC001] → browser mở → PASS/FAIL. FAIL → record lại TC001, không ảnh hưởng testcase khác.
+GĐ7 Hoàn thành         vòng đời đơn giản (state machine §3).
 ```
 
-Mỗi testcase có **recording riêng**, không phải đoán segment từ 1 file dài.
-
 ---
 
-## 2. Review code hiện tại — GIỮ / TÁI SỬ DỤNG / THAY / LOẠI
-
-| Phần | File | Quyết định | Lý do |
-|------|------|-----------|-------|
-| **Recording store** | `src/codegen/CodeGenRecordingStore.js` | **TÁI SỬ DỤNG** | Đã có metadata persistent `data/codegen-recordings.json` + script dir. Mở rộng thêm trường `testCaseId`, `type` (SETUP/TESTCASE). |
-| **Session manager** | `src/codegen/CodeGenSessionManager.js` (827 dòng) | **THAY THẾ (đơn giản hóa)** | Đang phức tạp (full recording lifecycle). Trong sprint này chỉ cần: start/stop/attach testCaseId. |
-| **Playwright runner** | `src/automation/PlaywrightRunner.js` | **GIỮ** | Đã đúng (process.execPath + cli.js, headed, env). |
-| **Goto/URL render** | `renderGotoStatement` (testDataBinding.js) | **GIỮ** | Đã xử lý URL tuyệt đối vs tương đối. |
-| **TestData binding** | `testDataBinding.js` (resolveTestValue/renderFillExpression) | **GIỮ** | Resolver duy nhất. |
-| **Assertion segment** | `assertionSegment.js` | **ĐƠN GIẢN HÓA** | Không còn cần heuristic "đoán segment từ file dài" — recording theo testcase đã có segment rõ ràng. Giữ khái niệm chọn assertion theo loại (success/error). |
-| **codegenSkeleton / AI-rewrite / deterministic fallback** | `codegenSkeleton.js`, `AIAutomationCodegen.js` (phần AI/fallback) | **LOẠI** khỏi đường chính | Recording theo testcase không cần AI viết lại spec; chỉ render từ IR. (Giữ tạm để fallback nhưng không phải đường chính.) |
-| **ApprovedTestcaseLoader** | `src/codegen/ApprovedTestcaseLoader.js` | **GIỮ** | Load approved-testcases. |
-
----
-
-## 3. Contract RecordingSession
+## 2. Contract RecordingSession
 
 ```ts
 interface RecordingSession {
   id: string;               // REC-<ts>-<uuid8>
   workspaceId: string;
-  testCaseId: string;       // "SETUP" nếu type=SETUP, else "TC001"...
+  testCaseId: string;       // "SETUP" nếu type=SETUP (setup chung), else "TC001"...
   type: "SETUP" | "TESTCASE";
   source: "PLAYWRIGHT_RECORD";
   startedAt: string;
   completedAt: string | null;
-  status: SessionStatus;    // xem §4
+  status: SessionStatus;
   browser: string;
   url: string;
   steps: RecordingStep[];   // thứ tự thực thi từ CodeGen
@@ -63,84 +55,122 @@ interface RecordingSession {
 interface RecordingStep {
   stepOrder: number;
   actionType: "GOTO" | "FILL" | "CLICK" | "PRESS" | "SELECT" | "EXPECT";
-  target: string;          // accessible name / label (vd "Tài khoản")
-  locator: string;         // page.getByRole(...) nguyên vẹn
+  target: string;           // accessible name / label
+  locator: string;          // page.getByRole(...) nguyên vẹn
   valueKind: "ENV" | "LITERAL" | "URL" | "ASSERTION" | null;
-  sourceRange: [number, number];  // line start/end trong recording (đối chiếu)
+  sourceRange: [number, number];
 }
 
 interface Assertion {
-  statement: string;       // expect(...).toBeVisible()
+  statement: string;        // expect(...).toBeVisible()
   sourceRange: [number, number];
 }
 ```
 
-**Lưu:** extend `CodeGenRecordingStore` (persistent `data/codegen-recordings.json`) — mỗi session 1 record, `testCaseId` là key ghép testcase→recording.
+---
+
+## 3. State machine (V3 — đã chốt, KHÔNG dùng bản cũ)
+
+```
+NOT_SELECTED
+   ↓ (chọn)
+SELECTED
+   ↓ (Record)
+RECORDING
+   ↓ (Stop)
+RECORDED
+   ↓ (Review)
+REVIEWED
+   ↓ (Generate)
+GENERATED
+   ↓ (Run)
+RUNNING
+   ↓
+PASS   hoặc   FAIL
+```
+
+(FAIL → có thể Record lại TC001, quay về RECORDING.)
 
 ---
 
-## 4. Trạng thái (status)
+## 4. Automation Workspace — schema "bộ não"
 
-```
-NOT_RECORDED → RECORDING → RECORDED → REVIEW_REQUIRED → APPROVED → GENERATED → PASSED
-                                                              ↘             → FAILED
+```json
+{
+  "workspaceId": "ws-...",
+  "selectedTestCases": [
+    {
+      "testCaseId": "TC001",
+      "recordingId": "REC-...",
+      "status": "RECORDED",
+      "generatedFile": "outputs/generated-tests/TC001.spec.js",
+      "lastRun": "PASS"
+    },
+    {
+      "testCaseId": "TC005",
+      "recordingId": null,
+      "status": "NOT_SELECTED"
+    }
+  ]
+}
 ```
 
-- `NOT_RECORDED`: testcase chưa có recording.
-- `RECORDING`: đang ghi.
-- `RECORDED`: ghi xong, chưa review.
-- `REVIEW_REQUIRED`: cần tester đối chiếu/điều chỉnh.
-- `APPROVED`: tester xác nhận mapping + assertion.
-- `GENERATED`: spec đã sinh.
-- `PASSED` / `FAILED`: kết quả run.
+- Không lưu vào approved-testcases.json.
+- `status` dùng state machine §3.
 
 ---
 
-## 5. Wireflow UI
+## 5. Wireflow UI — mỗi testcase MỘT nút hành động chính
 
 ```
-[Upload approved-testcases.json]  → danh sách testcase (mỗi testcase có status recording)
-        │
-[Chọn testcase]  (vd TC001)
-        │
-[Ghi SETUP chung nếu cần]   → RecordingSession type=SETUP (login + phân hệ + danh mục)
-        │
-[Ghi testcase đang chọn]    → RecordingSession type=TESTCASE gắn testCaseId=TC001
-        │
-[Review recording]          → xem steps/assertion/recordedValues; bổ sung/điều chỉnh
-        │
-[Generate]                  → ghép SETUP + TC001 → render spec (theo §6)
-        │
-[Run]                       → PASS/FAIL
+TC001  Đăng nhập thành công
+  ○ Chưa chọn            → (tick chọn) → [Ghi testcase]
+  [Ghi testcase]          → (record)    → ✓ Đã ghi [Review]
+  ✓ Đã ghi [Review]       → (review)    → ✓ Review [Generate]
+  ✓ Review [Generate]     → (generate)  → ✓ Generated [Run]
+  ✓ Generated [Run]       → (run)       → 🟢 PASS  |  🔴 FAIL (→ [Ghi lại])
 ```
 
-**Màn hình mới** (thay cho luồng "upload 1 CodeGen dài"): tương tự CodeGenPage nhưng gắn testCaseId.
+Người dùng **chỉ thấy 1 hành động cần làm tiếp theo**, không bao giờ 6–7 nút.
 
 ---
 
-## 6. Render spec từ recording (giữ nguyên tắc)
+## 6. Review code hiện tại — GIỮ / TÁI SỬ DỤNG / THAY / LOẠI
+
+| Phần | File | Quyết định | Lý do |
+|------|------|-----------|-------|
+| Recording store | `src/codegen/CodeGenRecordingStore.js` | **TÁI SỬ DỤNG** | Metadata persistent có sẵn; extend `testCaseId`, `type`, `steps`, `assertions`, `recordedValues`. |
+| Session manager | `src/codegen/CodeGenSessionManager.js` | **THAY (đơn giản hóa)** | Chỉ cần start/stop/attach testCaseId. |
+| Playwright runner | `src/automation/PlaywrightRunner.js` | **GIỮ** | Đã đúng. |
+| Goto/URL render | `renderGotoStatement` | **GIỮ** | Đã xử lý absolute/relative. |
+| TestData binding | `testDataBinding.js` | **GIỮ** | Resolver duy nhất. |
+| Assertion segment | `assertionSegment.js` | **ĐƠN GIẢN HÓA** | Không còn heuristic đoán segment từ file dài. |
+| AI-rewrite / fallback | `codegenSkeleton.js`, `AIAutomationCodegen.js` (phần AI) | **LOẠI khỏi đường chính** | Recording theo testcase không cần AI viết lại. |
+| ApprovedTestcaseLoader | `src/codegen/ApprovedTestcaseLoader.js` | **GIỮ** | Load approved-testcases. |
+
+---
+
+## 7. Render spec từ recording (giữ nguyên tắc)
 
 ```
 render spec =
   import test/expect
   test("<TC001 - title>", async ({ page }) => {
-    [SETUP steps]        // goto + login + phân hệ + danh mục  (nếu có SETUP session)
+    [SETUP steps]        // nếu có SETUP session (goto+login+phân hệ+danh mục)
     [TC001 steps]        // thao tác + assertion của testcase
   });
 ```
 
-- Goto: `renderGotoStatement` (URL tuyệt đối/tương đối).
-- Fill: `renderFillExpression` (ENV → `process.env.TESTDATA_*`; LITERAL → giữ literal).
-- Assertion: lấy từ recording.assertions (đúng testcase, không đoán).
+- Goto: `renderGotoStatement`. Fill: `renderFillExpression` (ENV → `process.env.TESTDATA_*`). Assertion: từ recording.assertions.
 - Node `--check` + Playwright discovery đảm bảo hợp lệ.
 
 ---
 
-## 7. Output spike (đã chạy, `node --check PASS`)
+## 8. Output spike (đã chạy, `node --check PASS`)
 
-Xem `spike/record-by-testcase-spike.mjs` + `fixtures/`.
+`spike/record-by-testcase-spike.mjs` + `fixtures/setup-recording.json`, `fixtures/tc001-recording.json`.
 
-Kết quả: chọn TC001, ghép **SETUP (8 bước: goto+login+phân hệ+danh mục)** + **TC001 (5 bước)** = 13 bước → spec hợp lệ:
+Kết quả: chọn TC001, ghép SETUP(8) + TC001(5) = 13 bước → spec hợp lệ:
 
 ```js
 import { test, expect } from '@playwright/test';
@@ -162,26 +192,27 @@ test("TC001 - Đăng nhập thành công với thông tin hợp lệ", async ({ 
 // node --check PASS
 ```
 
-Lưu ý spike: ghi lại SETUP có login rồi TC001 lại login — trong thực tế TC001 recording nên **không lặp login** nếu đã có SETUP; spike minh hoạ cơ chế ghép, việc khử trùng login sẽ xử lý ở production.
+(Spike minh hoạ cơ chế ghép; khử trùng login nếu đã có SETUP sẽ xử lý ở production.)
 
 ---
 
-## 8. Ước lượng chi tiết
+## 9. Ước lượng triển khai
 
 | Mục | Công việc | Ước lượng |
 |-----|-----------|-----------|
-| Store | Extend `CodeGenRecordingStore`: thêm `testCaseId`, `type`, `steps`, `assertions`, `recordedValues` + migration v1 | 0.5 ngày |
-| Session | Đơn giản hóa `CodeGenSessionManager` start/stop attach testCaseId | 1 ngày |
-| API/Routes | `codeGenRoutes` + controller: create/stop/get by testCaseId | 0.5 ngày |
-| Renderer | Module render spec từ (SETUP+TESTCASE) IR, dùng lại testDataBinding + renderGotoStatement | 1 ngày |
-| UI | Wireflow: chọn testcase → ghi SETUP/TC → review → generate → run | 1.5 ngày |
+| Store | Extend `CodeGenRecordingStore` + migration (testCaseId/type/steps/assertions/recordedValues) | 0.5 ngày |
+| Session | Đơn giản hóa start/stop attach testCaseId | 1 ngày |
+| Workspace | Module "bộ não" `AutomationWorkspace` (selectedTestCases + state machine) | 1 ngày |
+| API/Routes | create/stop/get-by-testCaseId + workspace CRUD | 0.5 ngày |
+| Renderer | Render spec từ (SETUP+TESTCASE) IR, dùng testDataBinding + renderGotoStatement | 1 ngày |
+| UI | Wireflow single-action-button theo state | 1.5 ngày |
 | Test | Fixture + test: recording→render→node --check→discovery | 0.5 ngày |
-| **Tổng** | | **≈ 5 ngày** |
+| **Tổng** | | **≈ 6 ngày** |
 
 ---
 
-## 9. Việc đã tạo trong lượt này (KHÔNG sửa production)
+## 10. Việc đã tạo trong lượt này (KHÔNG sửa production)
 
-- `docs/DESIGN_RECORD_BY_TESTCASE.md` (file này)
-- `spike/record-by-testcase-spike.mjs` — spike render (đã chạy PASS)
-- `fixtures/setup-recording.json`, `fixtures/tc001-recording.json` — fixture recording giả lập
+- `docs/DESIGN_RECORD_BY_TESTCASE.md` (bản V3 chốt này)
+- `spike/record-by-testcase-spike.mjs`
+- `fixtures/setup-recording.json`, `fixtures/tc001-recording.json`
