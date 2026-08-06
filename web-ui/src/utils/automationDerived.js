@@ -77,6 +77,23 @@ export function dataRows(testCase) {
     return [];
 }
 
+/** Trạng thái 1 field dữ liệu: trống theo kịch bản (EMPTY) ≠ thiếu dữ liệu. */
+export function dataRowState(row) {
+    const value = String(row?.value ?? "").trim();
+    const empty = String(row?.purpose ?? "").toUpperCase() === "EMPTY";
+    const missing = !empty && (!value || row?.requiresTesterInput === true);
+    return {
+        empty,
+        missing,
+        value: String(row?.value ?? ""),
+        note: empty
+            ? "Để trống theo kịch bản kiểm thử — đây là dữ liệu hợp lệ."
+            : missing && row?.requiresTesterInput
+                ? "Cần dữ liệu"
+                : ""
+    };
+}
+
 /** Có dữ liệu dùng được (cho badge JSON trên card). */
 export function hasUsableData(testCase) {
     const rows = dataRows(testCase);

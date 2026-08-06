@@ -4,6 +4,7 @@ import {
     confidenceOf,
     isReady,
     dataRows,
+    dataRowState,
     hasUsableData,
     hasCodegenMapping,
     runLabel,
@@ -91,3 +92,26 @@ assert.equal(steps[0].locator, "L1");
 assert.equal(steps[2].confidence, 100);
 
 console.log("Automation Derived (Sprint 2) test: PASS");
+
+/* ---------- P0 Drawer: dataRowState (EMPTY ≠ thiếu) ---------- */
+// Field trống theo kịch bản (EMPTY) -> KHÔNG báo thiếu
+const emptyRow = dataRowState({ value: "", purpose: "EMPTY" });
+assert.equal(emptyRow.empty, true);
+assert.equal(emptyRow.missing, false, "EMPTY không phải thiếu dữ liệu");
+assert.match(emptyRow.note, /Để trống theo kịch bản/);
+
+// Field thực sự thiếu
+const missingRow = dataRowState({ value: "", purpose: "VALID", requiresTesterInput: true });
+assert.equal(missingRow.empty, false);
+assert.equal(missingRow.missing, true, "rỗng + cần nhập -> thiếu");
+
+// Field có giá trị
+const filledRow = dataRowState({ value: "admin", purpose: "VALID" });
+assert.equal(filledRow.empty, false);
+assert.equal(filledRow.missing, false);
+
+// EMPTY nhưng có giá trị vẫn là "để trống theo kịch bản"
+const emptyWithValue = dataRowState({ value: "", purpose: "EMPTY", requiresTesterInput: true });
+assert.equal(emptyWithValue.missing, false, "EMPTY luôn không phải thiếu");
+
+console.log("Automation Derived (P0 Drawer dataRowState) test: PASS");

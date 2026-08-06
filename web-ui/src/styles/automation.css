@@ -606,3 +606,165 @@
 .automation-run-log pre { margin-top: 6px; font-size: 12px; background: #111827; color: #e5e7eb; border-radius: 8px; padding: 10px; overflow: auto; max-height: 220px; }
 .automation-run-assets { display: flex; gap: 16px; font-size: 13px; color: #374151; }
 .automation-asset { display: inline-flex; gap: 4px; }
+
+/* ===== P0 — Drawer "Chi tiết testcase" redesign (review hub) ===== */
+.automation-inspector__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 2px 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+}
+.automation-inspector__id {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--primary-dark);
+    background: var(--primary-soft);
+    border-radius: 8px;
+    padding: 3px 8px;
+    letter-spacing: .02em;
+}
+.automation-inspector__title {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 750;
+    color: var(--text);
+}
+.automation-inspector__close {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background .15s, color .15s;
+}
+.automation-inspector__close:hover { background: var(--danger-soft); color: var(--danger); }
+
+/* Tabs — pill, active xanh */
+.automation-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+}
+.automation-tab {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 650;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    min-width: max-content;
+}
+.automation-tab:hover { color: var(--primary-dark); background: var(--primary-soft); }
+.automation-tab--active { color: var(--primary-dark); background: var(--primary-soft); box-shadow: inset 0 0 0 1.5px var(--primary); }
+
+.automation-inspector__body { font-size: 15px; color: var(--text); }
+.automation-inspector__body h4 { font-size: 15px; margin: 0 0 6px; color: var(--text); }
+.automation-subheading { margin-bottom: 10px; }
+.automation-subheading p { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+
+.automation-inspector__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.automation-inspector__footer .button[disabled] { opacity: .55; cursor: not-allowed; }
+
+/* CodeGen vs Automation status */
+.automation-cg-auto { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.automation-cg-auto__block { background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.automation-cg-auto__label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.automation-cg-auto__block ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.automation-cg-auto__block li { font-size: 13px; color: var(--text); }
+.automation-cg-auto__block li.ok { color: var(--success); }
+.automation-cg-auto__block li.warn { color: var(--warning); }
+
+/* Đối chiếu kịch bản */
+.automation-scenario { display: flex; flex-direction: column; gap: 12px; }
+.automation-scenario-step { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: #fff; }
+.automation-scenario-step__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.automation-scenario-step__head strong { font-size: 15px; color: var(--text); }
+.automation-scenario-step__flow { display: flex; flex-direction: column; gap: 8px; }
+.automation-scenario-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+}
+.automation-scenario-node.ok { border-left-color: var(--success); }
+.automation-scenario-node.warn { border-left-color: var(--warning); }
+.automation-scenario-node__tag { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; }
+.automation-scenario-node code { font-size: 12px; color: var(--text); background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 6px; word-break: break-all; flex: 1; }
+.automation-scenario-warn { font-size: 13px; color: var(--warning); margin: 8px 0 0; }
+.automation-scenario-assertions { margin-top: 4px; }
+.automation-scenario-assertion { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; background: #fff; }
+.automation-scenario-assertion__arrow { color: var(--muted); font-weight: 800; }
+.automation-scenario-assertion__code code { font-size: 12px; color: #111827; background: #111827; color: #e5e7eb; border-radius: 6px; padding: 4px 8px; display: inline-block; }
+.automation-scenario-assertion__meaning { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--success); }
+
+/* Data — empty theo kịch bản + lưu */
+.automation-data-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.automation-data-row--empty { opacity: .9; }
+.automation-data-row input { flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; color: var(--text); }
+.automation-data-row--empty input { background: var(--warning-soft); border-style: dashed; }
+.automation-data-empty-badge { margin-left: 6px; font-size: 11px; color: var(--warning); background: var(--warning-soft); border-radius: 6px; padding: 1px 6px; }
+.automation-data-warn-badge { margin-left: 6px; font-size: 11px; color: var(--danger); background: var(--danger-soft); border-radius: 6px; padding: 1px 6px; }
+.automation-data-input-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+.automation-data-input-row input { flex: 1; }
+.automation-data-hint { font-size: 13px; color: var(--muted); }
+.automation-data-actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.automation-data-saved { color: var(--success); font-weight: 700; font-size: 14px; }
+
+/* Kết quả mong đợi — AI diễn giải + độ bao phủ */
+.automation-expected { display: flex; flex-direction: column; gap: 14px; }
+.automation-expected__block { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: #fff; }
+.automation-expected__block h4 { font-size: 15px; margin: 0 0 8px; color: var(--text); }
+.automation-ai-assertion { border-left: 3px solid var(--primary); background: var(--surface-subtle); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+.automation-ai-assertion__row { display: flex; gap: 8px; font-size: 14px; padding: 2px 0; }
+.automation-ai-assertion__label { min-width: 96px; color: var(--muted); font-weight: 650; }
+.automation-coverage { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.automation-coverage__bar { flex: 1; height: 12px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+.automation-coverage__fill { display: block; height: 100%; border-radius: 999px; }
+.coverage--ok { background: var(--success); }
+.coverage--mid { background: var(--warning); }
+.coverage--low { background: var(--danger); }
+.automation-coverage__value { font-size: 14px; color: var(--text); white-space: nowrap; }
+.automation-verdict { font-size: 14px; font-weight: 650; color: var(--warning); margin: 0 0 6px; }
+.automation-recommend { background: var(--surface-subtle); border: 1px dashed var(--border); border-radius: 10px; padding: 10px; }
+.automation-recommend strong { font-size: 13px; color: var(--text); }
+.automation-recommend ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.automation-recommend code { font-size: 12px; color: var(--primary-dark); background: var(--primary-soft); border-radius: 6px; padding: 2px 6px; word-break: break-all; }
+
+/* Chạy thử — grid + blocked */
+.automation-run-blocked { background: var(--danger-soft); color: var(--danger); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.automation-run-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.automation-run-cell { background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.automation-run-cell span { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.automation-run-cell strong { font-size: 14px; color: var(--text); word-break: break-all; }
+.automation-run-assets { display: flex; gap: 16px; font-size: 14px; color: var(--text); flex-wrap: wrap; }
+.automation-asset { display: inline-flex; gap: 4px; }
+.automation-asset.ok { color: var(--success); }
