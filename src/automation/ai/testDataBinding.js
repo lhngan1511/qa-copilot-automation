@@ -262,7 +262,7 @@ export function extractCodegenAssertion(codegenText) {
  *   4. URL/heading/element thật từ CodeGen.
  *   5. không có -> ASSERTION_MAPPING_REQUIRED (không tự bịa).
  */
-export function resolveAssertion({ assertionMappings = [], expectedResult = "", codegenText = "", mapping = null, testCaseId = "" }) {
+export function resolveAssertion({ assertionMappings = [], expectedResult = "", codegenText = "", mapping = null, testCaseId = "", testCaseType = "" }) {
     // 1. assertionMappings đã map từ CodeGen thật (tester xác nhận) — ưu tiên cao nhất.
     const mapped = (Array.isArray(assertionMappings) ? assertionMappings : [])
         .filter(a => isValidAssertionSource(a));
@@ -275,8 +275,9 @@ export function resolveAssertion({ assertionMappings = [], expectedResult = "", 
         };
     }
     // 2. Chọn assertion theo ĐÚNG SEGMENT của testcase trong CodeGen
-    //    (không quét toàn file lấy expect đầu/cuối, không lấy assertion của flow khác).
-    const seg = selectSegmentAssertion({ mapping, codegenText });
+    //    (không quét toàn file lấy expect đầu/cuối, không lấy assertion của flow khác;
+    //     với testcase thành công KHÔNG chọn assertion lỗi/validation).
+    const seg = selectSegmentAssertion({ mapping, codegenText, testCaseType, expectedResult });
     traceSegment({
         testCaseId,
         segment: seg.segment,

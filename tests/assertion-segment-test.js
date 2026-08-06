@@ -107,6 +107,21 @@ function main() {
     assert.match(built.code, /page\.getByRole\('button', \{ name: 'Đăng nhập' \}\)\.click\(\)/);
     assert.ok(built.code.trimEnd().endsWith("});"));
 
+    // 7. Success testcase, segment CHỈ có assertion lỗi -> KHÔNG tự chọn assertion lỗi (ASSERTION_MAPPING_REQUIRED).
+    const errCodegen = `test('TC001 - Đăng nhập thành công', async ({ page }) => {
+  await page.goto(process.env.BASE_URL + '/wasuco/login');
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await expect(page.getByText('Vui lòng nhập Mã xác nhận')).toBeVisible();
+});`;
+    const rErr = resolveAssertion({ assertionMappings: [], expectedResult: "Đăng nhập thành công", codegenText: errCodegen, mapping: MAPPING_TC001, testCaseId: "TC001", testCaseType: "POSITIVE" });
+    assert.equal(rErr.ok, false, "success + error-only assertion -> không tự chọn assertion lỗi");
+    assert.equal(rErr.errorCode, "ASSERTION_MAPPING_REQUIRED");
+
+    // 8. NEGATIVE testcase, assertion lỗi trong segment là hợp lệ -> OK.
+    const rNeg = resolveAssertion({ assertionMappings: [], expectedResult: "Hiển thị thông báo lỗi", codegenText: errCodegen, mapping: MAPPING_TC001, testCaseId: "TC001", testCaseType: "NEGATIVE" });
+    assert.equal(rNeg.ok, true, "negative + error assertion -> dùng được");
+    assert.match(rNeg.playwrightAssertion, /Vui lòng nhập Mã xác nhận/);
+
     console.log("Assertion Segment test: PASS");
 }
 

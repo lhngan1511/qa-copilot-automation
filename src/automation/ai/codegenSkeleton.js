@@ -152,7 +152,8 @@ export function buildSpecFromMapping({ testCase, mapping, codegenText = "", envV
         expectedResult: testCase?.expectedResult || testCase?.expectedResults?.[0] || "",
         codegenText,
         mapping,
-        testCaseId: testCase?.id ?? testCase?.testcaseId ?? ""
+        testCaseId: testCase?.id ?? testCase?.testcaseId ?? "",
+        testCaseType: testCase?.type || ""
     });
     if (!assertion.ok) {
         return { code: "", ok: false, errorCode: "ASSERTION_MAPPING_REQUIRED", reason: assertion.reason };

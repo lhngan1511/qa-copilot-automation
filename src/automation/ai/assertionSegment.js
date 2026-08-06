@@ -244,7 +244,7 @@ export function findTestcaseBlock(stmts, blocks, mapping) {
  * Chọn assertion theo segment của testcase.
  * @returns {{ok:boolean, assertion:string|null, candidates:Array, segment:{block,start,end,line}, mainActionLine:number|null, selectedLine:number|null, reason:string}}
  */
-export function selectSegmentAssertion({ mapping, codegenText }) {
+export function selectSegmentAssertion({ mapping, codegenText, testCaseType = "", expectedResult = "" }) {
     const s = String(codegenText ?? "");
     const stmts = parseStatements(s);
     const blocks = segmentIntoBlocks(stmts, s);
@@ -279,24 +279,58 @@ export function selectSegmentAssertion({ mapping, codegenText }) {
         return result;
     }
 
-    // Chọn tốt nhất: ưu tiên assertion "thành công" (URL/heading/success text) nếu có.
-    const scored = candidates.map(c => ({
-        c,
-        score: assertionScore(c)
-    }));
+    // Lọc: với testcase THÀNH CÔNG, KHÔNG dùng assertion lỗi/validation (vd 'Vui lòng nhập Mã xác nhận').
+    const success = isSuccessTestCase({ testCaseType, expectedResult });
+    let pool = candidates;
+    if (success) {
+        const nonError = candidates.filter(c => !isErrorAssertion(c));
+        if (nonError.length > 0) pool = nonError;
+        else {
+            // Toàn bộ assertion trong segment đều là lỗi — KHÔNG tự chọn assertion lỗi cho luồng thành công.
+            result.reason = "Assertion trong segment của testcase là thông báo lỗi/validation, không chứng minh kết quả thành công — yêu cầu tester chọn assertion.";
+            return result;
+        }
+    }
+
+    // Chọn tốt nhất trong pool (ưu tiên URL/heading/success text).
+    const scored = pool.map(c => ({ c, score: assertionScore(c) }));
     scored.sort((a, b) => b.score - a.score);
     const selected = scored[0].c;
     result.ok = true;
     result.assertion = selected.stmt;
     result.selectedLine = selected.line;
-    result.reason = scored[0].score > 0 ? "chọn assertion thành công trong segment" : "chọn assertion đầu tiên sau main action trong segment";
+    result.reason = scored[0].score > 0 ? "chọn assertion thành công trong segment" : "chọn assertion trong segment";
     return result;
+}
+
+/** Assertion mô tả THÔNG BÁO LỖI / VALIDATION (thất bại) — không chứng minh thành công. */
+export function isErrorAssertion(st) {
+    const txt = String(st?.stmt ?? st ?? "").toLowerCase();
+    const name = String(st?.name ?? "").toLowerCase();
+    const combined = txt + " " + name;
+    return /vui lòng|không hợp lệ|không hợp lệ|bắt buộc|không được|không thành công|thất bại|lỗi|error|required|invalid|mời bạn|nhập (đúng|sai)|đã tồn tại|trùng|không thể|chưa nhập|thiếu/.test(combined);
+}
+
+/** Testcase có phải loại "thành công" (cần assertion chứng minh kết quả dương)? */
+export function isSuccessTestCase({ testCaseType = "", expectedResult = "" }) {
+    const t = String(testCaseType ?? "").toUpperCase();
+    // Type rõ ràng là thất bại/validation -> KHÔNG phải success (cho phép assertion lỗi).
+    if (t && ["NEGATIVE", "ERROR", "FAILURE", "VALIDATION", "DATA_INTEGRITY", "REQUIRED_VALIDATION", "EXCEPTION", "BOUNDARY", "PERMISSION", "RISK"].includes(t)) return false;
+    // Type rõ ràng là thành công.
+    if (t && ["POSITIVE", "AUTHENTICATED", "CREATE_SUCCESS", "VALID", "SUCCESS"].includes(t)) return true;
+    // Không có type: dựa vào expectedResult.
+    const e = String(expectedResult ?? "").toLowerCase();
+    if (/thất bại|lỗi|không hợp lệ|bắt buộc|không được|invalid|required|trùng|không thể/.test(e)) return false;
+    if (/thành công|đăng nhập|vào hệ thống|tạo mới|được tạo|chuyển|hiển thị/.test(e)) return true;
+    // Không rõ: mặc định KHÔNG phải success (không chặn assertion có trong segment — tránh over-block).
+    return false;
 }
 
 /** Điểm cho assertion: ưu tiên toHaveURL / toHaveTitle / heading / text thành công. */
 function assertionScore(st) {
     const txt = String(st.stmt ?? "");
     let score = 0;
+    if (isErrorAssertion(st)) score -= 100; // error-assertion: hạ điểm mạnh
     if (/toHaveURL/.test(txt)) score += 5;
     if (/toHaveTitle/.test(txt)) score += 4;
     if (/getByRole\(\s*['"]heading['"]/.test(txt)) score += 3;
