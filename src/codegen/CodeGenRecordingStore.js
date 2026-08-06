@@ -62,10 +62,20 @@ export default class CodeGenRecordingStore {
         return rec ? this.sanitize(rec) : null;
     }
 
-    create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null } = {}) {
+    /** V3 — tìm recording theo testCaseId (mỗi testcase 1 recording). */
+    getByTestCase(testCaseId) {
+        const rec = this.recordings.find(item => item.testCaseId === testCaseId) ?? null;
+        return rec ? this.sanitize(rec) : null;
+    }
+
+    create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE" } = {}) {
         const recording = {
             recordingId: newRecordingId(),
             mode: MODES.has(mode) ? mode : "FULL_FLOW",
+            // V3 — gắn recording trực tiếp testCaseId (không đoán segment).
+            workspaceId: workspaceId ?? null,
+            testCaseId: testCaseId ?? null,
+            type: String(type ?? "TESTCASE").toUpperCase() === "SETUP" ? "SETUP" : "TESTCASE",
             url,
             browser,
             context: context && typeof context === "object" ? { ...context } : null,
@@ -74,7 +84,13 @@ export default class CodeGenRecordingStore {
             storageMode: "TEMP",
             serverFilePath: null,
             downloadFileName: this.suggestFileName(url),
-            testcaseIds: [],
+            testcaseIds: testCaseId ? [testCaseId] : [],
+            // V3 — steps/assertions/recordedValues (điền khi stop recording / parse script).
+            steps: [],
+            assertions: [],
+            recordedValues: {},
+            startedAt: new Date().toISOString(),
+            completedAt: null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             lastRunResult: null,
