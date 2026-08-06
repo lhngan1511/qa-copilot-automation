@@ -3,6 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { chromium } from "@playwright/test";
 import ExecutionResult from "./ExecutionResult.js";
+import { buildRunResponse, ERROR_CODES, ERROR_MESSAGES } from "./diagnose.js";
 
 /**
  * PlaywrightRunner
@@ -156,6 +157,46 @@ export default class PlaywrightRunner {
      * @param {string} filePath
      * @returns {Promise<object>}
      */
+    enrichRun({ status, durationMs = 0, errorCode = null, errorMessage = null, log = "", browserDiagnostic = null, code = 0, filePath = null }) {
+        const d = buildRunResponse({
+            status,
+            durationMs,
+            log,
+            baseUrlPresent: Boolean(this.baseUrl()),
+            browserDiagnostic,
+            code,
+            filePath
+        });
+        return {
+            status,
+            passed: status === "PASSED",
+            durationMs,
+            errorCode: errorCode ?? d.errorCode,
+            errorMessage: errorMessage ?? d.errorMessage,
+            failedStep: d.failedStep,
+            failedLocator: d.failedLocator,
+            filePath: d.filePath,
+            line: d.line,
+            output: d.output,
+            screenshotPath: d.screenshotPath,
+            tracePath: d.tracePath,
+            reportPath: d.reportPath,
+            expectedValue: d.expectedValue,
+            actualValue: d.actualValue
+        };
+    }
+
+    /** BASE_URL hiệu lực: env param hoặc server .env; rỗng = chưa cấu hình. */
+    baseUrl(env = {}) {
+        const v = String(env.BASE_URL || process.env.BASE_URL || "").trim();
+        return v || null;
+    }
+
+    /**
+     * Chạy một file .spec.js đơn lẻ.
+     * @param {string} filePath
+     * @returns {Promise<object>}
+     */
     runFile(filePath, { env = {} } = {}) {
         return new Promise((resolve) => {
             // Resolve về absolute để kiểm tra tồn tại, nhưng TRUYỀN relative từ project root cho Playwright
@@ -172,24 +213,42 @@ export default class PlaywrightRunner {
                 fileExists,
                 baseName
             };
+            const respond = (base, overrides = {}) => resolve({ ...base, ...this.enrichRun({ ...base, ...overrides }), diag });
 
             if (!fileExists) {
-                resolve({ status: "ERROR", diagnostic: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})`, durationMs: 0, error: null, log: "", diag });
+                respond(
+                    { status: "ERROR", durationMs: 0, log: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})`, error: null, diagnostic: `GENERATED_TEST_FILE_NOT_FOUND: ${filePath} (cwd=${this.rootDir})` },
+                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: ERROR_MESSAGES.SPEC_NOT_FOUND, filePath: baseName }
+                );
                 return;
             }
             if (!TEST_FILE_RE.test(baseName)) {
-                resolve({ status: "ERROR", diagnostic: `INVALID_TEST_FILE_NAME: "${baseName}" — phải kết thúc bằng .spec.js/.test.js/.spec.ts...`, durationMs: 0, error: null, log: "", diag });
+                respond(
+                    { status: "ERROR", durationMs: 0, log: `INVALID_TEST_FILE_NAME: "${baseName}"`, error: null, diagnostic: `INVALID_TEST_FILE_NAME: "${baseName}"` },
+                    { errorCode: ERROR_CODES.SPEC_NOT_FOUND, errorMessage: ERROR_MESSAGES.SPEC_NOT_FOUND, filePath: baseName }
+                );
+                return;
+            }
+
+            // Thiếu BASE_URL -> lỗi cấu hình, không spawn browser.
+            if (!this.baseUrl(env)) {
+                respond(
+                    { status: "DIAGNOSTIC", durationMs: 0, log: "BASE_URL_MISSING: Chưa cấu hình BASE_URL trong .env", error: null, diagnostic: "BASE_URL_MISSING" },
+                    { errorCode: ERROR_CODES.BASE_URL_MISSING, errorMessage: ERROR_MESSAGES.BASE_URL_MISSING, filePath: baseName }
+                );
                 return;
             }
 
             const browser = this.resolveBrowser();
             if (!browser.ok) {
-                resolve({ status: "DIAGNOSTIC", diagnostic: browser.diagnostic, durationMs: 0, error: null, log: "", diag });
+                respond(
+                    { status: "DIAGNOSTIC", durationMs: 0, log: browser.diagnostic, error: null, diagnostic: browser.diagnostic },
+                    { errorCode: ERROR_CODES.BROWSER_NOT_INSTALLED, errorMessage: ERROR_MESSAGES.BROWSER_NOT_INSTALLED, filePath: baseName, browserDiagnostic: browser.diagnostic }
+                );
                 return;
             }
 
-            // Relative path từ project root, dùng forward slash (Windows path có '\' làm hỏng regex của Playwright).
-            // Playwright nhận argument dạng regex khớp với đường dẫn test (dùng '/').
+            // Relative path từ project root, dùng forward slash (Windows path có '\\' làm hỏng regex của Playwright).
             const relRaw = path.relative(this.rootDir, abs).split(path.sep).join("/");
             const rel = this.escapeRegex(relRaw);
             const bin = this.playwrightBin();
@@ -200,19 +259,21 @@ export default class PlaywrightRunner {
             const child = spawn(bin, args, {
                 shell: process.platform === "win32",
                 cwd: this.rootDir,
-                env: { ...process.env, ...env, BASE_URL: process.env.BASE_URL || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
+                env: { ...process.env, ...env, BASE_URL: this.baseUrl(env) || "", PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "" },
                 stdio: ["ignore", "pipe", "pipe"]
             });
             let stdout = "";
             let stderr = "";
             child.stdout.on("data", (d) => (stdout += d));
             child.stderr.on("data", (d) => (stderr += d));
-            child.on("error", (err) => resolve({ status: "ERROR", diagnostic: String(err), durationMs: Date.now() - started, error: null, log: stdout + stderr }));
+            child.on("error", (err) => respond(
+                { status: "ERROR", durationMs: Date.now() - started, log: String(err), error: String(err), diagnostic: String(err), filePath: baseName },
+                { code: 1 }
+            ));
             child.on("close", (code) => {
                 const log = stdout + stderr;
                 const durationMs = Date.now() - started;
                 let status = code === 0 ? "PASSED" : "FAILED";
-                // Phân biệt diagnostic theo browser
                 if (code !== 0) {
                     const ch = this.configuredChannel();
                     if (ch === "chrome" && /executable doesn't exist|chrome.*not found|Executable doesn't exist/i.test(log)) {
@@ -226,21 +287,23 @@ export default class PlaywrightRunner {
                 if (log.includes("net::ERR_CONNECTION_REFUSED") || log.includes("connect ECONNREFUSED") || log.includes("net::ERR")) {
                     status = "FAILED_APP_UNREACHABLE";
                 }
-                // Phát hiện "No tests found"
                 if (/No tests found/i.test(log)) {
                     status = "FAILED";
                     browser.diagnostic =
                         `NO_TESTS_FOUND: Playwright không nhận test. file=${rel} baseName=${baseName} fileExists=${fileExists} testDir=${testDir}. ` +
                         "Kiểm tra file nằm trong outputs/generated-tests và đúng tên *.spec.js.";
                 }
-                resolve({
-                    status,
-                    diagnostic: status === "PASSED" ? null : browser.diagnostic ?? log.slice(0, 500),
-                    durationMs,
-                    error: code === 0 ? null : log.slice(0, 1000),
-                    log,
-                    diag
-                });
+                respond(
+                    {
+                        status,
+                        durationMs,
+                        log,
+                        diagnostic: status === "PASSED" ? null : browser.diagnostic ?? log.slice(0, 500),
+                        error: code === 0 ? null : log.slice(0, 1000),
+                        filePath: baseName
+                    },
+                    { browserDiagnostic: status === "DIAGNOSTIC" ? browser.diagnostic : null, code }
+                );
             });
         });
     }

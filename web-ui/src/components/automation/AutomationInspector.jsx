@@ -11,6 +11,15 @@ import {
     codegenStatus,
     automationStatus
 } from "../../utils/assertionIntelligence.js";
+import {
+    isRunTabVisible,
+    isRunEnabled,
+    runDisplay,
+    runBlocker,
+    failDetail,
+    guidanceFor,
+    recommendationCode
+} from "../../utils/runDiagnose.js";
 
 /*
  P0 — Drawer "Chi tiết testcase" là TRUNG TÂM REVIEW KỸ THUẬT, không phải nơi
@@ -46,6 +55,7 @@ export default function AutomationInspector({
     moduleName,
     activeTab,
     environment,
+    environmentValid,
     onTabChange,
     onUpdate,
     onRunOne,
@@ -57,6 +67,8 @@ export default function AutomationInspector({
     const ready = isReady(testCase);
     const cg = codegenStatus(testCase.mapping);
     const auto = automationStatus(testCase);
+    const showRunTab = isRunTabVisible(auto);
+    const envValid = environmentValid !== false;
     const updateDataField = (name, value) => {
         const fields = { ...(testCase.testData?.fields ?? {}) };
         if (fields[name] && typeof fields[name] === "object") {
@@ -80,14 +92,14 @@ export default function AutomationInspector({
             <button className="automation-inspector__close" type="button" onClick={onClose} aria-label="Đóng cửa sổ" title="Đóng">✕</button>
         </div>
         <div className="automation-tabs" role="tablist">
-            {TABS.map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}
+            {TABS.filter(([id]) => id !== "RUN" || showRunTab).map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}
         </div>
         <div className="automation-inspector__body">
             {activeTab === "INFO" && <InfoTab testCase={testCase} moduleName={moduleName} update={update} />}
             {activeTab === "SCENARIO" && <ScenarioTab testCase={testCase} />}
             {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} />}
-            {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} />}
-            {activeTab === "RUN" && <RunTab testCase={testCase} environment={environment} auto={auto} onRunOne={() => onRunOne(testCase.id)} />}
+            {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
+            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} environment={environment} auto={auto} ready={ready} envValid={envValid} onRunOne={() => onRunOne(testCase.id)} />}
         </div>
         {/* Chỉnh sửa mapping — chưa làm, hiển thị Coming Soon (disable). */}
         <div className="automation-inspector__footer">
@@ -234,8 +246,8 @@ function DataTab({ testCase, rows, ready, firstMissingRef, updateDataField }) {
     </div>;
 }
 
-/* ---------- Kết quả mong đợi: AI diễn giải assertion + độ bao phủ ---------- */
-function ExpectedTab({ testCase }) {
+/* ---------- Kết quả mong đợi: AI diễn giải assertion + độ bao phủ + khuyến nghị ---------- */
+function ExpectedTab({ testCase, onUpdate }) {
     const m = testCase.mapping;
     const assertions = Array.isArray(m?.assertionMappings) ? m.assertionMappings : [];
     const expected = testCase.expectedResult || (Array.isArray(testCase.expectedResults) && testCase.expectedResults[0]) || (Array.isArray(testCase.assertions) && testCase.assertions.map(a => a.expected).filter(Boolean)[0]) || "";
@@ -281,28 +293,85 @@ function ExpectedTab({ testCase }) {
                 <p className="automation-verdict">{analysis.verdict}</p>
                 <div className="automation-recommend">
                     <strong>Khuyến nghị bổ sung:</strong>
-                    <ul>{analysis.missingChecks.map((c, i) => <li key={i}><code>{c.recommendation}</code></li>)}</ul>
+                    <ul>{analysis.missingChecks.map((c, i) => (
+                        <li key={i}>
+                            <code>{c.recommendation}</code>
+                            <RecommendationActions check={c} onApply={code => applyDraftAssertion(onUpdate, testCase, c, code)} />
+                        </li>
+                    ))}</ul>
                 </div>
             </div>
         )}
     </div>;
 }
 
-/* ---------- Chạy thử ---------- */
-function RunTab({ testCase, environment, auto, onRunOne }) {
-    const exec = testCase.execution || {};
-    const hasFile = auto.generated;
-    const pass = String(exec.status ?? "").toUpperCase() === "PASSED";
-    const fail = String(exec.status ?? "").toUpperCase() === "FAILED";
-    return <div className="automation-run-panel">
-        <div className="automation-subheading"><div><h4>Chạy testcase này</h4><p>Chạy ngay trong cửa sổ.</p></div></div>
+/** Tạo bản nháp assertion vào mapping (chưa sửa file thật khi chưa xác nhận). */
+function applyDraftAssertion(onUpdate, testCase, check, code) {
+    if (!onUpdate || !code) return;
+    const m = testCase.mapping || {};
+    const existing = Array.isArray(m.assertionMappings) ? m.assertionMappings : [];
+    const draft = {
+        businessExpectation: check.label || check.dimension,
+        playwrightAssertion: code,
+        confidence: 0.7,
+        status: "DRAFT",
+        draft: true,
+        source: "RECOMMENDED"
+    };
+    onUpdate({ mapping: { ...m, assertionMappings: [...existing, draft] }, mappingStatus: "EDITED" });
+}
 
-        {!hasFile && (
-            <div className="automation-run-blocked">
-                <strong>Không thể chạy.</strong>
-                <span>Lý do: Chưa có spec.js — hãy 'Sinh automation' ở bước ④ trước.</span>
+/** Nút Sao chép + Áp dụng khuyến nghị (luồng nháp → xem → xác nhận). */
+function RecommendationActions({ check, onApply }) {
+    const [copied, setCopied] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [code, setCode] = useState(recommendationCode(check) || "");
+    const [applied, setApplied] = useState(false);
+    const copy = async () => {
+        const text = recommendationCode(check);
+        if (!text) return;
+        try {
+            if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        } catch { /* clipboard có thể bị chặn — fallback */ }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+    };
+    const confirm = () => {
+        onApply(code);
+        setApplied(true);
+        setOpen(false);
+        setTimeout(() => setApplied(false), 1800);
+    };
+    return <span className="automation-recommend-actions">
+        <button className="button button--secondary" type="button" onClick={copy}>{copied ? "✓ Đã sao chép" : "Sao chép đoạn mã"}</button>
+        {applied
+            ? <span className="automation-recommend-applied">✓ Đã áp dụng</span>
+            : <button className="button button--secondary" type="button" onClick={() => setOpen(o => !o)}>Áp dụng khuyến nghị</button>}
+        {open && (
+            <div className="automation-recommend-draft">
+                <label>Bản nháp assertion</label>
+                <textarea value={code} onChange={e => setCode(e.target.value)} rows="3" />
+                <div className="automation-recommend-draft__actions">
+                    <button className="button button--primary" type="button" onClick={confirm}>Xác nhận</button>
+                    <button className="button button--secondary" type="button" onClick={() => setOpen(false)}>Hủy</button>
+                </div>
+                <span className="automation-hint-text">Bản nháp chỉ cập nhật mapping, chưa sửa file spec thật.</span>
             </div>
         )}
+    </span>;
+}
+
+/* ---------- Chạy thử: Generate → Run → Diagnose ---------- */
+function RunTab({ testCase, environment, auto, ready, envValid, onRunOne }) {
+    const exec = testCase.execution || {};
+    const display = runDisplay(exec);
+    const enabled = isRunEnabled({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
+    const blocker = runBlocker({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
+    const detail = failDetail(exec);
+    const guidance = guidanceFor(detail.errorCode);
+
+    return <div className="automation-run-panel">
+        <div className="automation-subheading"><div><h4>Chạy testcase này</h4><p>Chạy ngay trong cửa sổ.</p></div></div>
 
         <div className="automation-run-grid">
             <div className="automation-run-cell"><span>Environment</span><strong>{environment || "Tự nhận diện"}</strong></div>
@@ -311,19 +380,37 @@ function RunTab({ testCase, environment, auto, onRunOne }) {
             <div className="automation-run-cell"><span>Browser</span><strong>Chromium / Chrome</strong></div>
         </div>
 
-        <button className="button button--primary" type="button" disabled={!hasFile} onClick={onRunOne}>{fail || pass ? "Chạy lại" : "Run testcase"}</button>
+        <button className="button button--primary" type="button" disabled={!enabled} onClick={onRunOne}>{display.passed || display.failed ? "Chạy lại" : "Run testcase"}</button>
+        {blocker && <p className="automation-hint-text">🔒 {blocker}</p>}
 
-        <div className={`automation-run-result ${pass ? "automation-run-result--pass" : fail ? "automation-run-result--fail" : "automation-run-result--idle"}`}>
-            <span className="automation-run-result__status">{pass ? "✓ PASS" : fail ? "✗ FAIL" : "Chưa chạy"}</span>
+        <div className={`automation-run-result ${display.tone === "pass" ? "automation-run-result--pass" : display.tone === "fail" ? "automation-run-result--fail" : "automation-run-result--idle"}`}>
+            <span className="automation-run-result__status">{display.label === "PASS" ? "✓ PASS" : display.label === "FAIL" ? "✗ FAIL" : "Chưa chạy"}</span>
             {exec.durationMs != null && <span className="automation-run-result__dur">{Math.round(exec.durationMs)} ms</span>}
-            {exec.errorMessage && <p className="automation-run-result__error">{exec.errorMessage}</p>}
         </div>
+
+        {/* Kết quả FAIL — chẩn đoán chi tiết */}
+        {display.failed && (
+            <div className="automation-fail-detail">
+                <div className="automation-fail-detail__code">{detail.errorCode || "UNKNOWN_ERROR"}</div>
+                <p className="automation-fail-detail__message">{detail.errorMessage}</p>
+                <dl className="automation-fail-detail__rows">
+                    {detail.failedStep && <><dt>Bước lỗi</dt><dd>{detail.failedStep}</dd></>}
+                    {detail.failedLocator && <><dt>Locator</dt><dd><code>{detail.failedLocator}</code></dd></>}
+                    {detail.filePath && <><dt>File</dt><dd><code>{detail.filePath}{detail.line ? `:${detail.line}` : ""}</code></dd></>}
+                    {detail.expectedValue != null && <><dt>Expected</dt><dd>{detail.expectedValue}</dd></>}
+                    {detail.actualValue != null && <><dt>Received</dt><dd>{detail.actualValue}</dd></>}
+                </dl>
+                <p className="automation-fail-detail__guidance">💡 {guidance}</p>
+                {detail.output && <details className="automation-run-log"><summary>stdout / stderr (rút gọn)</summary><pre>{detail.output.slice(0, 2000)}</pre></details>}
+            </div>
+        )}
 
         <div className="automation-run-assets">
-            <span className={`automation-asset ${exec.technicalLog ? "ok" : ""}`}><strong>Log</strong> {exec.technicalLog ? "✓" : "—"}</span>
-            <span className={`automation-asset ${exec.screenshotPath ? "ok" : ""}`}><strong>Screenshot</strong> {exec.screenshotPath ? "✓" : "—"}</span>
-            <span className={`automation-asset ${exec.videoPath ? "ok" : ""}`}><strong>Video</strong> {exec.videoPath ? "✓" : "—"}</span>
+            <span className={`automation-asset ${exec.output ? "ok" : ""}`}><strong>Log</strong> {exec.output || detail.output ? "✓" : "—"}</span>
+            <span className={`automation-asset ${detail.screenshotPath ? "ok" : ""}`}><strong>Screenshot</strong> {detail.screenshotPath ? "✓" : "—"}</span>
+            <span className={`automation-asset ${detail.tracePath ? "ok" : ""}`}><strong>Trace</strong> {detail.tracePath ? "✓" : "—"}</span>
+            <span className={`automation-asset ${detail.reportPath ? "ok" : ""}`}><strong>Report</strong> {detail.reportPath ? "✓" : "—"}</span>
         </div>
-        {exec.technicalLog && <details className="automation-run-log"><summary>Log kỹ thuật</summary><pre>{exec.technicalLog}</pre></details>}
+        {exec.output && <details className="automation-run-log"><summary>Log kỹ thuật</summary><pre>{String(exec.output).slice(0, 4000)}</pre></details>}
     </div>;
 }

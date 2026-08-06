@@ -768,3 +768,25 @@
 .automation-run-assets { display: flex; gap: 16px; font-size: 14px; color: var(--text); flex-wrap: wrap; }
 .automation-asset { display: inline-flex; gap: 4px; }
 .automation-asset.ok { color: var(--success); }
+
+/* ===== P0 — Generate → Run → Diagnose ===== */
+/* Khuyến nghị assertion: Sao chép / Áp dụng */
+.automation-recommend-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.automation-recommend-applied { color: var(--success); font-weight: 700; font-size: 13px; }
+.automation-recommend-draft { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 10px; border: 1px dashed var(--primary); border-radius: 10px; background: var(--primary-soft); }
+.automation-recommend-draft label { font-size: 12px; font-weight: 700; color: var(--primary-dark); }
+.automation-recommend-draft textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: var(--text); }
+.automation-recommend-draft__actions { display: flex; gap: 8px; }
+.automation-recommend li { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+
+/* Kết quả FAIL — chẩn đoán chi tiết */
+.automation-fail-detail { border: 1px solid #fecaca; background: var(--danger-soft); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.automation-fail-detail__code { font-size: 12px; font-weight: 800; color: var(--danger); background: #fff; border: 1px solid #fecaca; border-radius: 6px; padding: 2px 8px; width: max-content; letter-spacing: .03em; }
+.automation-fail-detail__message { margin: 0; font-size: 15px; font-weight: 650; color: var(--text); }
+.automation-fail-detail__rows { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.automation-fail-detail__rows dt { font-size: 12px; color: var(--muted); }
+.automation-fail-detail__rows dd { margin: 0; font-size: 14px; color: var(--text); word-break: break-all; }
+.automation-fail-detail__rows dd code { font-size: 12px; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; }
+.automation-fail-detail__guidance { margin: 0; font-size: 14px; color: var(--danger); }
+.automation-run-assets { display: flex; gap: 16px; font-size: 14px; color: var(--text); flex-wrap: wrap; }
+.automation-asset.ok { color: var(--success); }

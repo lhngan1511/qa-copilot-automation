@@ -62,6 +62,8 @@ export default function AutomationWorkspacePage() {
     const selectedCount = useMemo(() => selectedTestCaseIds.length, [selectedTestCaseIds]);
     const moduleName = useMemo(() => testCases.find(tc => tc.module && String(tc.module).trim())?.module ?? "", [testCases]);
     const bothUploaded = Boolean(sourceFileName && codeGenFile?.content);
+    // Môi trường chạy hợp lệ khi đã chọn một môi trường (UAT/TEST/DEV).
+    const environmentValid = Boolean(environment);
 
     const handleApprovedTestCases = (items, fileName) => {
         setTestCases(items.map(normalizeTestCase));
@@ -151,15 +153,18 @@ export default function AutomationWorkspacePage() {
     };
 
     const runRequest = async ids => {
-        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item));
-        if (!items.length) { setNotice("Không có testcase nào sẵn dữ liệu và đã sinh mã để chạy."); return; }
+        const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item) && environmentValid);
+        if (!items.length) {
+            if (!environmentValid) { setNotice("Hãy chọn môi trường chạy ở bước ① trước khi Run."); return; }
+            setNotice("Không có testcase nào sẵn dữ liệu và đã sinh mã để chạy."); return;
+        }
         setBusy(true);
         setNotice("");
         try {
             for (const item of items) {
                 const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
                 setTestCases(current => current.map(currentItem => currentItem.id === item.id
-                    ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" }
+                    ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
                     : currentItem));
             }
         } catch (error) {
@@ -174,12 +179,13 @@ export default function AutomationWorkspacePage() {
         const item = testCases.find(t => t.id === id);
         if (!item?.generatedFile) { setNotice("Testcase này chưa sinh mã — hãy sinh automation trước."); return; }
         if (!isReady(item)) { setNotice("Testcase này còn thiếu dữ liệu — hãy bổ sung ở tab 'Dữ liệu kiểm thử'."); return; }
+        if (!environmentValid) { setNotice("Hãy chọn môi trường chạy ở bước ① trước khi Run."); return; }
         setBusy(true);
         setNotice("");
         try {
             const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
             setTestCases(current => current.map(currentItem => currentItem.id === id
-                ? { ...currentItem, execution: result, status: result?.status === "PASSED" ? "PASSED" : "FAILED" }
+                ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
                 : currentItem));
         } catch (error) {
             setNotice(`Chạy thất bại: ${error.message || ""}`);
@@ -205,7 +211,8 @@ export default function AutomationWorkspacePage() {
     };
 
     const generateableCount = testCases.filter(item => selectedTestCaseIds.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0).length;
-    const runnableCount = testCases.filter(item => selectedTestCaseIds.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item)).length;
+    // Step ⑤ chỉ enable khi có mapping + spec + đủ dữ liệu + môi trường hợp lệ.
+    const runnableCount = testCases.filter(item => selectedTestCaseIds.includes(item.id) && item.includedInSession && item.mapping && Object.keys(item.mapping).length > 0 && item.generatedFile && isReady(item) && environmentValid).length;
 
     return <section className="page automation-page">
         <Link className="back-link" to="/">← Về Dashboard</Link>
@@ -327,7 +334,7 @@ export default function AutomationWorkspacePage() {
                         <button className="button button--secondary" type="button" disabled={selectedCount === 0 || runnableCount === 0 || busy} onClick={() => runRequest([...selectedTestCaseIds])}>
                             Chạy testcase đã chọn ({runnableCount})
                         </button>
-                        <span className="automation-hint-text">{selectedCount === 0 ? "Chưa chọn testcase nào." : `${runnableCount} testcase sẵn dữ liệu và đã sinh mã.`}</span>
+                        <span className="automation-hint-text">{!environmentValid ? "Chọn môi trường chạy ở bước ① để mở khóa Run." : selectedCount === 0 ? "Chưa chọn testcase nào." : `${runnableCount} testcase có mapping + spec + đủ dữ liệu.`}</span>
                     </div>
                 </div>
             </div>
@@ -360,6 +367,7 @@ export default function AutomationWorkspacePage() {
                         moduleName={moduleName}
                         activeTab={activeTab}
                         environment={environment}
+                        environmentValid={environmentValid}
                         onTabChange={setActiveTab}
                         onUpdate={updateTestCase}
                         onRestore={restoreTestCase}
