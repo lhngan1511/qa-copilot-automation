@@ -1,14 +1,44 @@
 /*
- V3TestCaseCard — Card testcase (bước 5A).
+ V3TestCaseCard — Card testcase (Bước 5B).
 
- Mỗi card chỉ có MỘT hành động chính: checkbox chọn/bỏ chọn.
- Nội dung tối đa: checkbox + testCaseId + title + type + 1 trạng thái automation
- + 1 dòng dữ liệu. Không nút phụ / Review / Generate / Run / Export.
+ Mỗi card MỘT primary action đổi theo trạng thái testcase:
+   SELECTED       → [Ghi testcase]
+   RECORDING      → [Dừng ghi]
+   REVIEW_REQUIRED→ [Xem và duyệt] + menu "…"
+   APPROVED       → badge "Đã duyệt" + menu "…"
+   NOT_SELECTED   → không action
+
+ Menu "…" chỉ xuất hiện khi card ĐÃ CÓ recording (REVIEW_REQUIRED / APPROVED).
+ Không menu ở SELECTED / RECORDING.
 */
 
-export default function V3TestCaseCard({ testCase, selected = false, onToggle, disabled = false }) {
-    const selectable = testCase.automationCandidate !== false && !disabled;
+const STATUS_BADGE = {
+    SELECTED: ["v3-badge--sel", "Đã chọn"],
+    RECORDING: ["v3-badge--rec", "Đang ghi"],
+    REVIEW_REQUIRED: ["v3-badge--review", "Cần duyệt"],
+    APPROVED: ["v3-badge--ok", "Đã duyệt"]
+};
+
+export default function V3TestCaseCard({
+    testCase,
+    selected = false,
+    recordingActive = false,
+    onToggle,
+    onPrimaryAction,
+    onMenuAction,
+    menuOpen = false
+}) {
+    const selectable = testCase.automationCandidate !== false;
     const isSelected = selected && selectable;
+    const status = testCase.automationStatus;
+
+    let primary = null;
+    if (status === "SELECTED") primary = { key: "record", label: "Ghi testcase", danger: false, disabled: recordingActive };
+    else if (status === "RECORDING") primary = { key: "stop", label: "Dừng ghi", danger: true };
+    else if (status === "REVIEW_REQUIRED") primary = { key: "review", label: "Xem và duyệt", danger: false };
+
+    const showMenu = status === "REVIEW_REQUIRED" || status === "APPROVED";
+    const badge = STATUS_BADGE[status] ?? ["v3-badge--nosel", "Chưa chọn"];
 
     return (
         <div
@@ -39,24 +69,47 @@ export default function V3TestCaseCard({ testCase, selected = false, onToggle, d
                     <h5 className="v3-card__title">{testCase.title}</h5>
                     <div className="v3-card__row">
                         <span className="v3-badge v3-badge--type">{testCase.type}</span>
-                        {isSelected ? (
-                            <span className="v3-badge v3-badge--sel">Đã chọn</span>
-                        ) : (
-                            <span className="v3-badge v3-badge--nosel">Chưa chọn</span>
-                        )}
+                        <span className={`v3-badge ${badge[0]}`}>{badge[1]}</span>
                     </div>
-                    <div className="v3-card__data">
-                        {!selectable ? (
-                            <span className="v3-note v3-note--warn">
-                                {testCase.automationDisabledReason ?? "Không thể chọn"}
-                            </span>
-                        ) : testCase.executionReadiness === "DATA_REQUIRED" ? (
-                            <span className="v3-note v3-note--warn">Cần bổ sung dữ liệu trước khi chạy</span>
-                        ) : (
-                            <span className="v3-note">{testCase.dataNote}</span>
-                        )}
-                    </div>
+                    {primary ? (
+                        <div className="v3-card__action">
+                            <button
+                                type="button"
+                                className={`v3-btn ${primary.danger ? "v3-btn--danger" : "v3-btn--primary"}${primary.disabled ? " v3-btn--disabled" : ""}`}
+                                disabled={primary.disabled}
+                                onClick={() => onPrimaryAction?.(primary.key, testCase)}
+                            >
+                                {primary.label}
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
+                {showMenu ? (
+                    <div className="v3-menu">
+                        <button
+                            type="button"
+                            className="v3-menu__btn"
+                            onClick={() => onMenuAction?.("__toggle", testCase)}
+                            aria-label={`Thao tác recording ${testCase.testCaseId}`}
+                            aria-expanded={menuOpen}
+                        >
+                            ⋯
+                        </button>
+                        {menuOpen ? (
+                            <div className="v3-menu__pop">
+                                <div role="button" tabIndex={0} onClick={() => onMenuAction?.("record_again", testCase)}>
+                                    Ghi lại
+                                </div>
+                                <div role="button" tabIndex={0} onClick={() => onMenuAction?.("delete", testCase)}>
+                                    Xóa recording
+                                </div>
+                                <div className="danger" role="button" tabIndex={0} onClick={() => onMenuAction?.("reject", testCase)}>
+                                    Từ chối recording
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                ) : null}
             </div>
         </div>
     );

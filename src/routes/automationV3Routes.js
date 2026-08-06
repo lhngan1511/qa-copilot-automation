@@ -94,6 +94,24 @@ export default function createAutomationV3Routes({ applicationService = null } =
             reason: req.body?.reason
         })));
 
+    router.get("/workspaces/:workspaceId/recordings/:recordingId/source", handle(applicationService, (svc, req) =>
+        svc.getRecordingSource({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId
+        })));
+
+    router.get("/workspaces/:workspaceId/recordings/:recordingId", handle(applicationService, (svc, req) =>
+        svc.getRecordingDetail({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId
+        })));
+
+    router.delete("/workspaces/:workspaceId/recordings/:recordingId", handle(applicationService, (svc, req) =>
+        svc.deleteRecording({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId
+        })));
+
     router.get("/workspaces/:workspaceId/testcases/:testCaseId/recordings", handle(applicationService, (svc, req) =>
         svc.listRecordings({ workspaceId: req.params.workspaceId, testCaseId: req.params.testCaseId })));
 

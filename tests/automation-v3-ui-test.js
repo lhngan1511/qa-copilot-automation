@@ -95,21 +95,27 @@ const pageSource = read("pages/AutomationV3Page.jsx");
 assert.ok(pageSource.includes("selectTestCase") && pageSource.includes("unselectTestCase"), "page gọi select/unselect API");
 assert.ok(pageSource.includes("createWorkspace"), "page gọi createWorkspace");
 
-// ---- 8. Card chỉ một trạng thái chính + một hành động chính (checkbox, không nút phụ) ----
-const cardSource = read("components/automationV3/V3TestCaseCard.jsx");
-assert.equal((cardSource.match(/v3-badge--sel/g) ?? []).length, 1, "1 nhánh badge 'Đã chọn'");
-assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 1, "1 nhánh badge 'Chưa chọn'");
-assert.ok(!cardSource.includes("v3-card__action"), "card không có nút primary action riêng");
-
 // Loại bỏ comment JS để tránh false-positive khi check nội dung cấm.
 function stripComments(code) {
     return code
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
+
+// ---- 8. Card: một trạng thái chính + một primary action; menu chỉ ở REVIEW_REQUIRED/APPROVED ----
+const cardSource = read("components/automationV3/V3TestCaseCard.jsx");
+assert.equal((cardSource.match(/v3-badge--sel/g) ?? []).length, 1, "1 nhánh badge 'Đã chọn'");
+assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 1, "1 nhánh badge 'Chưa chọn'");
+assert.equal((cardSource.match(/v3-card__action/g) ?? []).length, 1, "card chỉ 1 slot primary action");
+assert.ok(
+    /showMenu = status === "REVIEW_REQUIRED" \|\| status === "APPROVED"/.test(cardSource),
+    "menu '…' chỉ ở REVIEW_REQUIRED/APPROVED"
+);
 const cardClean = stripComments(cardSource);
 assert.ok(!cardClean.includes("Xem chi tiết"), "không có Xem chi tiết");
-assert.ok(!cardClean.includes("Review") && !cardClean.includes("Generate") && !cardClean.includes("Export"), "không Review/Generate/Export");
+assert.ok(!cardClean.includes("Generate") && !cardClean.includes("Export"), "card không Generate/Export");
+// Card có đủ 4 trạng thái primary: Ghi testcase / Dừng ghi / Xem và duyệt
+assert.ok(cardClean.includes("Ghi testcase") && cardClean.includes("Dừng ghi") && cardClean.includes("Xem và duyệt"), "đủ primary action theo trạng thái");
 
 // ---- 9/10/11. Không Generate/Run, không upload CodeGen, không AI Mapping ----
 const allSources = [
@@ -117,7 +123,10 @@ const allSources = [
     cardSource,
     read("components/automationV3/V3TestCaseList.jsx"),
     read("components/automationV3/V3UploadPanel.jsx"),
-    read("components/automationV3/V3ActionBar.jsx")
+    read("components/automationV3/V3RecordingPanel.jsx"),
+    read("components/automationV3/V3ReviewDrawer.jsx"),
+    read("components/automationV3/V3RecordingTab.jsx"),
+    read("components/automationV3/V3ConfirmDialog.jsx")
 ].join("\n");
 const allClean = stripComments(allSources);
 
@@ -130,9 +139,9 @@ for (const forbidden of [
 // Không có nút Export (chỉ chấp nhận keyword JS `export`, không chấp nhận nhãn Export).
 assert.ok(!/Export|Xuất/.test(allClean), "không có nút Export");
 
-// ---- 12. Không có HTML button mặc định (mọi <button> đều có className v3-btn) ----
-const btnPattern = /<button(?![^>]*className="[^"]*v3-btn)/g;
-assert.ok(!btnPattern.test(allClean), "mọi <button> đều dùng v3-btn (không mặc định)");
+// ---- 12. Không có HTML button mặc định (mọi <button> đều có className) ----
+const btnPattern = /<button(?![^>]*className=)/g;
+assert.ok(!btnPattern.test(allClean), "mọi <button> đều có className styling (không mặc định)");
 
 // ---- 13. Responsive không vỡ: media query + overflow-wrap ----
 const css = fs.readFileSync(path.join(uiRoot, "styles", "automationV3.css"), "utf8");
@@ -157,5 +166,30 @@ assert.ok(pageClean.includes("localStorage") && pageClean.includes("getWorkspace
 
 // ---- Không hiển thị khái niệm 5A/5B/5C / 'bước sau' ----
 assert.ok(!/5A|5B|5C|bước sau|Bước sau/.test(allClean), "không lộ 5A/5B/5C hay 'bước sau'");
+
+// ---- Bước 5B: page gọi recording API ----
+const pageClean2 = stripComments(pageSource);
+assert.ok(
+    pageClean2.includes("startRecording") &&
+        pageClean2.includes("stopRecording") &&
+        pageClean2.includes("approveRecording") &&
+        pageClean2.includes("rejectRecording") &&
+        pageClean2.includes("deleteRecording"),
+    "page gọi start/stop/approve/reject/delete recording"
+);
+assert.ok(pageClean2.includes("V3RecordingPanel"), "có banner ghi");
+assert.ok(stripComments(read("components/automationV3/V3RecordingPanel.jsx")).includes("Đang ghi"), "banner có chuỗi 'Đang ghi'");
+assert.ok(!pageClean2.includes("getRecordingSource"), "page không tải source mặc định (lazy ở 'Xem mã')");
+
+// ---- Bước 5B: Drawer 2 tab (Thông tin, Recording), không tab Dữ liệu ----
+const drawer = read("components/automationV3/V3ReviewDrawer.jsx");
+const drawerClean = stripComments(drawer);
+assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Recording"), "2 tab Thông tin/Recording");
+assert.ok(!drawerClean.includes("Dữ liệu"), "không có tab Dữ liệu ở 5B");
+assert.ok(!/generate|run/i.test(drawerClean), "Drawer không Generate/Run");
+
+// ---- Bước 5B: source chỉ tải khi "Xem mã" (V3RecordingTab) ----
+const recTab = stripComments(read("components/automationV3/V3RecordingTab.jsx"));
+assert.ok(recTab.includes("getRecordingSource") && recTab.includes("Xem mã"), "source lazy qua 'Xem mã'");
 
 console.log("Automation V3 UI test: PASS");

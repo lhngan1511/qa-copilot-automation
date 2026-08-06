@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireframe — Bước 5B: Ghi testcase + Review Recording</title>
+<style>
+  :root {
+    --background:#f6f8fb; --surface:#ffffff; --surface-subtle:#f8fafc;
+    --text:#172033; --muted:#667085; --border:#dfe4ec;
+    --primary:#155eef; --primary-dark:#1849a9; --primary-soft:#eff4ff;
+    --danger:#b42318; --danger-soft:#fef3f2;
+    --warning:#b54708; --warning-soft:#fffaeb;
+    --success:#067647; --success-soft:#ecfdf3;
+    --shadow:0 8px 24px rgba(16,24,40,.06);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text); background:#eef1f6; font-size:14px; line-height:1.55; }
+  .wb-toolbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:12px;
+    height:56px; padding:0 24px; background:#1a2440; color:#fff; }
+  .wb-toolbar strong { font-size:14px; }
+  .wb-toolbar .tag { margin-left:auto; font-size:12px; background:rgba(255,255,255,.16); padding:4px 10px; border-radius:999px; }
+  .wb-canvas { max-width:1080px; margin:0 auto; padding:28px 24px 80px; }
+  .wb-title { margin:0 0 4px; font-size:22px; letter-spacing:-.01em; }
+  .wb-sub { margin:0 0 24px; color:var(--muted); font-size:13px; }
+  .wb-section { margin:36px 0 12px; font-size:15px; font-weight:700; color:#2a3350; }
+  .wb-frame { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow); overflow:hidden; margin-bottom:28px; }
+  .wb-frame-head { display:flex; align-items:center; gap:10px; padding:10px 16px;
+    border-bottom:1px solid var(--border); background:var(--surface-subtle); font-size:12px; color:var(--muted); }
+  .wb-frame-body { padding:20px; }
+  .wb-note { background:#f1f5ff; border:1px dashed #a9c2f5; color:#35539c; border-radius:10px;
+    padding:10px 14px; font-size:12px; margin-top:14px; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    min-height:40px; padding:0 16px; border:1px solid transparent; border-radius:8px;
+    font-size:14px; font-weight:600; cursor:pointer; }
+  .btn--primary { background:var(--primary); color:#fff; }
+  .btn--primary:hover { background:var(--primary-dark); }
+  .btn--secondary { background:#fff; color:var(--primary-dark); border-color:#b8c7ea; }
+  .btn--ghost { background:#fff; color:var(--muted); border-color:var(--border); }
+  .btn--disabled { background:#eef1f6; color:#9aa3b5; cursor:not-allowed; }
+  .btn--danger { background:#fff; color:var(--danger); border-color:#f0c0ba; }
+
+  /* recording banner */
+  .rec-banner { position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:10px;
+    background:#1a2440; color:#fff; padding:12px 16px; border-radius:12px; margin-bottom:16px; }
+  .rec-banner .dot { width:10px; height:10px; border-radius:50%; background:#f97066; box-shadow:0 0 0 4px rgba(249,112,102,.25); }
+  .rec-banner b { color:#fff; }
+  .rec-banner .btn { margin-left:auto; }
+
+  .tc-list { display:grid; gap:12px; }
+  .tc-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 16px; }
+  .tc-card--selected { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+  .tc-top { display:flex; align-items:flex-start; gap:12px; }
+  .chk { width:20px; height:20px; border:1.5px solid #9aa6bd; border-radius:5px; flex:0 0 auto;
+    margin-top:2px; display:grid; place-items:center; font-size:13px; color:#fff; background:#fff; }
+  .chk--on { background:var(--primary); border-color:var(--primary); }
+  .tc-id { font-weight:700; font-size:14px; color:var(--primary-dark); min-width:52px; }
+  .tc-body { flex:1; min-width:0; }
+  .tc-title { font-size:15px; font-weight:600; overflow-wrap:anywhere; }
+  .tc-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .badge { display:inline-flex; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge--type { background:#eef2f9; color:#3d4867; }
+  .badge--sel { background:var(--primary-soft); color:var(--primary-dark); }
+  .badge--nosel { background:#eef1f6; color:#6b768c; }
+  .badge--rec { background:var(--danger-soft); color:var(--danger); }
+  .badge--review { background:var(--warning-soft); color:var(--warning); }
+  .badge--ok { background:var(--success-soft); color:var(--success); }
+  .card-action { margin-top:10px; display:flex; align-items:center; gap:8px; }
+  .card-action .btn { min-height:36px; font-size:13px; }
+  .menu { margin-left:auto; position:relative; width:32px; height:32px; display:grid; place-items:center;
+    border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--muted); }
+  .menu-pop { position:absolute; right:0; top:34px; background:#fff; border:1px solid var(--border);
+    border-radius:10px; box-shadow:var(--shadow); min-width:170px; overflow:hidden; z-index:5; }
+  .menu-pop div { padding:10px 14px; font-size:13px; cursor:pointer; }
+  .menu-pop div:hover { background:var(--surface-subtle); }
+  .menu-pop div.danger { color:var(--danger); }
+
+  /* Drawer */
+  .drawer { position:fixed; inset:0 0 0 auto; width:min(460px,100vw); background:#fff; z-index:50;
+    box-shadow:-12px 0 40px rgba(16,24,40,.14); display:flex; flex-direction:column; }
+  .d-head { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+  .d-head b { font-size:15px; }
+  .d-head .close { margin-left:auto; width:32px; height:32px; display:grid; place-items:center;
+    border:1px solid var(--border); border-radius:8px; background:#fff; }
+  .d-tabs { display:flex; gap:4px; padding:8px 16px 0; border-bottom:1px solid var(--border); }
+  .d-tab { padding:9px 14px; font-size:13px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; }
+  .d-tab--on { color:var(--primary-dark); border-bottom-color:var(--primary); }
+  .d-body { flex:1; overflow:auto; padding:16px; display:grid; gap:14px; }
+  .d-footer { display:flex; justify-content:flex-end; gap:10px; padding:12px 16px; border-top:1px solid var(--border); background:var(--surface-subtle); }
+
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+  .stat { background:var(--surface-subtle); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .stat small { display:block; color:var(--muted); font-size:11px; }
+  .stat b { font-size:15px; }
+
+  .steps { display:grid; gap:6px; }
+  .step { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+  .step .n { width:22px; height:22px; border-radius:50%; background:#eef2f9; color:#3d4867; font-size:11px; display:grid; place-items:center; font-weight:700; flex:0 0 auto; }
+  .step .act { font-weight:600; font-size:13px; color:var(--primary-dark); min-width:64px; }
+  .step .loc { font-size:13px; color:var(--text); overflow-wrap:anywhere; flex:1; }
+  .step .val { font-size:12px; color:var(--muted); }
+
+  .collapse { border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .collapse-sum { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--surface-subtle); font-size:13px; font-weight:600; cursor:pointer; }
+  .collapse-body { padding:12px 14px; background:#0f172a; color:#e2e8f0; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; line-height:1.6; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<div class="wb-toolbar">
+  <strong>Wireframe — Bước 5B: Ghi testcase + Review Recording</strong>
+  <span class="tag">Chờ duyệt trước khi code</span>
+</div>
+<div class="wb-canvas">
+  <h1 class="wb-title">Automation Workspace — Ghi testcase &amp; Review Recording</h1>
+  <p class="wb-sub">Mỗi card một primary action theo trạng thái · Banner ghi cố định · Review mở theo Drawer khi tester chủ động · Chưa Generate/Run.</p>
+
+  <!-- 1. Card states -->
+  <h2 class="wb-section">Màn hình 1 — Trạng thái card &amp; primary action</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-head"><span class="wb-dot"></span> Primary action đổi theo trạng thái testcase</div>
+    <div class="wb-frame-body">
+      <div class="tc-list">
+        <!-- SELECTED -->
+        <div class="tc-card tc-card--selected">
+          <div class="tc-top">
+            <span class="chk chk--on">✓</span>
+            <span class="tc-id">TC001</span>
+            <div class="tc-body">
+              <div class="tc-title">Đăng nhập thành công với thông tin hợp lệ</div>
+              <div class="tc-row"><span class="badge badge--type">POSITIVE</span><span class="badge badge--sel">Đã chọn</span></div>
+              <div class="card-action">
+                <button class="btn btn--primary" type="button">Ghi testcase</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- RECORDING -->
+        <div class="tc-card tc-card--selected">
+          <div class="tc-top">
+            <span class="chk chk--on">✓</span>
+            <span class="tc-id">TC002</span>
+            <div class="tc-body">
+              <div class="tc-title">Đổi mật khẩu thành công</div>
+              <div class="tc-row"><span class="badge badge--type">POSITIVE</span><span class="badge badge--rec">Đang ghi</span></div>
+              <div class="card-action">
+                <button class="btn btn--danger" type="button">■ Dừng ghi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- REVIEW_REQUIRED -->
+        <div class="tc-card">
+          <div class="tc-top">
+            <span class="chk chk--on">✓</span>
+            <span class="tc-id">TC003</span>
+            <div class="tc-body">
+              <div class="tc-title">Đăng nhập sai mật khẩu</div>
+              <div class="tc-row"><span class="badge badge--type">NEGATIVE</span><span class="badge badge--review">Cần duyệt</span></div>
+              <div class="card-action">
+                <button class="btn btn--secondary" type="button">Xem và duyệt</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- APPROVED -->
+        <div class="tc-card tc-card--selected">
+          <div class="tc-top">
+            <span class="chk chk--on">✓</span>
+            <span class="tc-id">TC004</span>
+            <div class="tc-body">
+              <div class="tc-title">Quên mật khẩu</div>
+              <div class="tc-row"><span class="badge badge--type">NEGATIVE</span><span class="badge badge--ok">Đã duyệt</span></div>
+            </div>
+            <div class="menu">⋯
+              <div class="menu-pop">
+                <div>Ghi lại</div>
+                <div>Xóa recording</div>
+                <div class="danger">Từ chối recording</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wb-note">APPROVED → không hiển thị Generate trong lượt 5B (để trống hoặc vô hiệu).</div>
+    </div>
+  </div>
+
+  <!-- 2. Recording banner -->
+  <h2 class="wb-section">Màn hình 2 — Banner ghi cố định</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-head"><span class="wb-dot"></span> Khi đang ghi, banner dính trên cùng, không cho ghi testcase khác</div>
+    <div class="wb-frame-body">
+      <div class="rec-banner">
+        <span class="dot"></span>
+        <span><b>Đang ghi TC002 — Đổi mật khẩu thành công</b></span>
+        <button class="btn btn--secondary" type="button" style="background:transparent;border-color:rgba(255,255,255,.35);color:#fff;">■ Dừng ghi</button>
+      </div>
+      <div class="wb-note">Banner cố định (sticky). Card khác khi chưa active ghi: nút "Ghi testcase" bị vô hiệu.</div>
+    </div>
+  </div>
+
+  <!-- 3. Drawer header + tabs -->
+  <h2 class="wb-section">Màn hình 3 — Drawer Review (header + tabs)</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-head"><span class="wb-dot"></span> Mở khi tester chủ động bấm "Xem và duyệt"</div>
+    <div class="wb-frame-body">
+      <div class="drawer" style="position:relative;inset:auto;width:100%;box-shadow:none;height:560px;">
+        <div class="d-head">
+          <b>TC003 · Đăng nhập sai mật khẩu</b>
+          <span class="close">✕</span>
+        </div>
+        <div class="d-tabs">
+          <span class="d-tab">Thông tin</span>
+          <span class="d-tab d-tab--on">Recording</span>
+        </div>
+        <div class="d-body">
+          <div class="stat-grid">
+            <div class="stat"><small>Trạng thái</small><b>Đang duyệt</b></div>
+            <div class="stat"><small>Phiên bản</small><b>v2</b></div>
+            <div class="stat"><small>Số bước</small><b>6</b></div>
+            <div class="stat"><small>Assertion</small><b>1</b></div>
+            <div class="stat"><small>Thời gian</small><b>24s</b></div>
+          </div>
+          <div class="steps">
+            <div class="step"><span class="n">1</span><span class="act">GOTO</span><span class="loc">page.goto('/wasuco/login')</span></div>
+            <div class="step"><span class="n">2</span><span class="act">FILL</span><span class="loc">getByRole textbox 'Tài khoản'</span><span class="val">admin</span></div>
+            <div class="step"><span class="n">3</span><span class="act">FILL</span><span class="loc">getByRole textbox 'Mật khẩu'</span><span class="val">••••••</span></div>
+            <div class="step"><span class="n">4</span><span class="act">CLICK</span><span class="loc">getByRole button 'Đăng nhập'</span></div>
+            <div class="step"><span class="n">5</span><span class="act">ASSERT</span><span class="loc">expect getByText 'Danh mục' toBeVisible</span></div>
+          </div>
+          <div class="collapse">
+            <div class="collapse-sum"><span>Xem mã</span><span>▾</span></div>
+          </div>
+        </div>
+        <div class="d-footer">
+          <button class="btn btn--ghost" type="button">Đóng</button>
+          <button class="btn btn--primary" type="button">Duyệt recording</button>
+        </div>
+      </div>
+      <div class="wb-note">Không có Generate/Run trong Drawer. Không đặt action ở đầu Drawer — action nằm ở footer.</div>
+    </div>
+  </div>
+
+  <!-- 4. "..." menu -->
+  <h2 class="wb-section">Màn hình 4 — Menu thao tác phụ "…"</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-head"><span class="wb-dot"></span> Thao tác phụ của 1 recording</div>
+    <div class="wb-frame-body" style="max-width:520px;">
+      <div class="tc-card tc-card--selected">
+        <div class="tc-top">
+          <span class="chk chk--on">✓</span>
+          <span class="tc-id">TC003</span>
+          <div class="tc-body">
+            <div class="tc-title">Đăng nhập sai mật khẩu</div>
+            <div class="tc-row"><span class="badge badge--type">NEGATIVE</span><span class="badge badge--review">Cần duyệt</span></div>
+          </div>
+          <div class="menu">⋯
+            <div class="menu-pop">
+              <div>Ghi lại</div>
+              <div>Xóa recording</div>
+              <div class="danger">Từ chối recording</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wb-note">Menu "…" mở theo từng card (không mở Drawer). Ghi lại → chuyển về trạng thái ghi. Xóa → xóa bản ghi. Từ chối → reject recording.</div>
+    </div>
+  </div>
+
+  <!-- 5. Mobile -->
+  <h2 class="wb-section">Màn hình 5 — Mobile layout</h2>
+  <div class="wb-frame">
+    <div class="wb-frame-body" style="max-width:400px;margin:0 auto;">
+      <div class="rec-banner" style="border-radius:12px;">
+        <span class="dot"></span>
+        <span><b>Đang ghi TC002</b></span>
+      </div>
+      <div class="tc-card tc-card--selected">
+        <div class="tc-top">
+          <span class="chk chk--on">✓</span>
+          <span class="tc-id">TC001</span>
+          <div class="tc-body">
+            <div class="tc-title">Đăng nhập thành công với thông tin hợp lệ và dài</div>
+            <div class="tc-row"><span class="badge badge--type">POSITIVE</span><span class="badge badge--sel">Đã chọn</span></div>
+            <div class="card-action">
+              <button class="btn btn--primary" style="width:100%;" type="button">Ghi testcase</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wb-note">Card gọn, không scroll ngang, nút full-width trên mobile. Drawer chiếm 100vw trên mobile.</div>
+  </div>
+
+  <div class="wb-note" style="background:#eefbf3;border-color:#a7e3c8;color:#067647;">
+    Không hiển thị: RecordingSession · hash kỹ thuật · sourceRange · IR · parser · guard · fallback. Chỉ hiển thị dữ liệu nghiệp vụ (bước/assertion/version/thời gian/mã nguồn khi mở "Xem mã").
+  </div>
+</div>
+</body>
+</html>

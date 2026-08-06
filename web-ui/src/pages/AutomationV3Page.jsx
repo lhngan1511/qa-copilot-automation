@@ -1,24 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import V3UploadPanel from "../components/automationV3/V3UploadPanel.jsx";
 import V3TestCaseList from "../components/automationV3/V3TestCaseList.jsx";
-import V3ActionBar from "../components/automationV3/V3ActionBar.jsx";
+import V3RecordingPanel from "../components/automationV3/V3RecordingPanel.jsx";
+import V3ReviewDrawer from "../components/automationV3/V3ReviewDrawer.jsx";
+import V3ConfirmDialog from "../components/automationV3/V3ConfirmDialog.jsx";
 import {
     createWorkspace,
     getWorkspace,
     selectTestCase,
-    unselectTestCase
+    unselectTestCase,
+    startRecording,
+    stopRecording,
+    approveRecording,
+    rejectRecording,
+    deleteRecording
 } from "../api/automationV3Api.js";
 
 /*
- AutomationV3Page — Automation Workspace (bước 5A).
+ AutomationV3Page — Automation Workspace (bước 5A + 5B).
 
- Tư duy: Workspace là MÀN HÌNH GỐC, không phải Upload.
-   - Upload approved-testcases.json chỉ xuất hiện khi TẠO Workspace mới.
-   - Khi đã có Workspace → không hiển thị Upload Panel, chỉ hiển thị workspace.
-   - Nút trên card thay đổi theo trạng thái testcase (chọn/bỏ chọn).
-   - Mỗi card chỉ có một hành động chính (checkbox).
-   - Không hiển thị khái niệm 5A/5B/5C cho người dùng.
- Workspace hiện tại được ghi nhớ (localStorage) để mở lại sau khi tải lại trang.
+ Bước 5B:
+   - Ghi testcase (banner đang ghi) / Dừng ghi / cập nhật card.
+   - Review Recording mở theo Drawer khi tester chủ động.
+   - Approve / Reject / Ghi lại / Xóa recording (xác nhận).
+ Chưa Generate / Run / AI assertion.
 */
 
 const STORAGE_KEY = "qa-copilot.automation.workspaceId";
@@ -33,12 +38,19 @@ function readDisplayMap() {
 }
 
 export default function AutomationV3Page() {
-    const [workspace, setWorkspace] = useState(null); // { workspaceId, items }
+    const [workspace, setWorkspace] = useState(null);
     const [displayMap, setDisplayMap] = useState(() => readDisplayMap());
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
+
+    // Bước 5B
+    const [activeRecording, setActiveRecording] = useState(null); // {testCaseId, recordingId, sessionId, title}
+    const [recordingSource, setRecordingSource] = useState("");
+    const [drawerTestcase, setDrawerTestcase] = useState(null);
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
 
     useEffect(() => {
         let cancelled = false;
@@ -57,9 +69,7 @@ export default function AutomationV3Page() {
                 window.localStorage.removeItem(STORAGE_KEY);
                 setCreating(true);
             });
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, []);
 
     const selectedIds = useMemo(() => {
@@ -69,21 +79,32 @@ export default function AutomationV3Page() {
 
     const meta = useMemo(() => {
         const items = workspace?.items ?? [];
-        return {
-            count: items.length,
-            module: items[0]?.module ?? ""
-        };
+        return { count: items.length, module: items[0]?.module ?? "" };
     }, [workspace]);
 
     const enrichedItems = useMemo(() => {
         if (!workspace?.items) return [];
-        return workspace.items.map(item => ({
-            ...item,
-            ...(displayMap[item.testCaseId] ?? {})
-        }));
+        return workspace.items.map(item => ({ ...item, ...(displayMap[item.testCaseId] ?? {}) }));
     }, [workspace, displayMap]);
 
-    const handleCreated = async ({ result, fileName }) => {
+    const recordingActive = Boolean(activeRecording);
+    const activeTestcase = activeRecording
+        ? enrichedItems.find(i => i.testCaseId === activeRecording.testCaseId) ?? null
+        : null;
+
+    const applyItem = patch => {
+        setWorkspace(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                items: (prev.items ?? []).map(it => (it.testCaseId === patch.testCaseId ? { ...it, ...patch } : it))
+            };
+        });
+    };
+
+    /* ---------------- Workspace (5A) ---------------- */
+
+    const handleCreated = async ({ result }) => {
         setError("");
         setNotice("");
         setBusy(true);
@@ -96,18 +117,9 @@ export default function AutomationV3Page() {
                 testData: tc?.testData ?? null,
                 reviewStatus: "APPROVED"
             }));
-            const created = await createWorkspace({
-                approvedTestCases: payload,
-                module: result.meta.module,
-                source: "NEW"
-            });
-            const next = {
-                workspaceId: created.workspaceId,
-                items: Array.isArray(created.items) ? created.items : []
-            };
-            setWorkspace(next);
+            const created = await createWorkspace({ approvedTestCases: payload, module: result.meta.module, source: "NEW" });
+            setWorkspace({ workspaceId: created.workspaceId, items: created.items ?? [] });
             window.localStorage.setItem(STORAGE_KEY, created.workspaceId);
-            // Lưu metadata hiển thị (automationCandidate/executionReadiness/dataNote) để mở lại.
             const map = {};
             for (const tc of result.approved ?? []) {
                 map[tc.testCaseId] = {
@@ -120,53 +132,160 @@ export default function AutomationV3Page() {
             setDisplayMap(map);
             window.localStorage.setItem(DISPLAY_KEY, JSON.stringify(map));
             setCreating(false);
-            setNotice(`Đã tạo Workspace — ${created.approvedCount ?? result.meta.count} testcase`);
-        } catch (caught) {
-            setError(caught?.message ?? "Không tạo được workspace.");
+        } catch (e) {
+            setError(e?.message ?? "Không tạo được workspace.");
         } finally {
             setBusy(false);
         }
-    };
-
-    const handleCreateStart = () => {
-        setError("");
-        setCreating(true);
-    };
-
-    const handleCreateCancel = () => {
-        setCreating(false);
-    };
-
-    const handleError = message => setError(message);
-
-    const applyItem = item => {
-        setWorkspace(prev => {
-            if (!prev) return prev;
-            return {
-                ...prev,
-                items: (prev.items ?? []).map(it => (it.testCaseId === item.testCaseId ? item : it))
-            };
-        });
     };
 
     const handleToggle = async (testCaseId, nextSelected) => {
-        if (!workspace?.workspaceId) return;
+        if (!workspace?.workspaceId || recordingActive) return;
         setError("");
         setBusy(true);
         try {
-            if (nextSelected) {
-                const item = await selectTestCase(workspace.workspaceId, testCaseId);
-                applyItem(item);
-            } else {
-                const item = await unselectTestCase(workspace.workspaceId, testCaseId);
-                applyItem(item);
-            }
-        } catch (caught) {
-            setError(caught?.message ?? "Không cập nhật được lựa chọn.");
+            const item = nextSelected
+                ? await selectTestCase(workspace.workspaceId, testCaseId)
+                : await unselectTestCase(workspace.workspaceId, testCaseId);
+            applyItem(item);
+        } catch (e) {
+            setError(e?.message ?? "Không cập nhật được lựa chọn.");
         } finally {
             setBusy(false);
         }
     };
+
+    /* ---------------- Recording (5B) ---------------- */
+
+    const handlePrimaryAction = async (key, testCase) => {
+        setOpenMenuId(null);
+        if (key === "record") await handleStart(testCase);
+        else if (key === "stop") await handleStop();
+        else if (key === "review") setDrawerTestcase(testCase);
+    };
+
+    const handleStart = async testCase => {
+        if (recordingActive) return;
+        setError("");
+        setBusy(true);
+        try {
+            const start = await startRecording(workspace.workspaceId, {
+                testCaseId: testCase.testCaseId,
+                type: "TESTCASE"
+            });
+            setActiveRecording({
+                testCaseId: testCase.testCaseId,
+                recordingId: start.recordingId,
+                sessionId: start.sessionId,
+                title: testCase.title
+            });
+            setRecordingSource("");
+            applyItem({ testCaseId: testCase.testCaseId, automationStatus: "RECORDING", reviewStatus: "RECORDING" });
+        } catch (e) {
+            setError(e?.message ?? "Không ghi được testcase.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleStop = async () => {
+        if (!activeRecording) return;
+        setError("");
+        setBusy(true);
+        const testCaseId = activeRecording.testCaseId;
+        const recordingId = activeRecording.recordingId;
+        try {
+            const stop = await stopRecording(workspace.workspaceId, { recordingId, source: recordingSource });
+            setActiveRecording(null);
+            setRecordingSource("");
+            applyItem({
+                testCaseId,
+                automationStatus: "REVIEW_REQUIRED",
+                reviewStatus: "REVIEW_REQUIRED",
+                recordingStatus: "RECORDED",
+                recordingId: stop.recordingId ?? recordingId
+            });
+        } catch (e) {
+            setError(e?.message ?? "Không dừng được recording.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleApprove = async detail => {
+        if (!detail) return;
+        setError("");
+        setBusy(true);
+        try {
+            await approveRecording(workspace.workspaceId, detail.recordingId);
+            applyItem({
+                testCaseId: detail.testCaseId,
+                automationStatus: "APPROVED",
+                reviewStatus: "APPROVED",
+                recordingId: detail.recordingId,
+                recordingVersion: detail.version
+            });
+            setDrawerTestcase(null);
+            setNotice("Recording đã được duyệt.");
+        } catch (e) {
+            setError(e?.message ?? "Không duyệt được recording.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleMenuAction = (action, testCase) => {
+        setOpenMenuId(prev => (action === "__toggle" ? (prev === testCase.testCaseId ? null : testCase.testCaseId) : null));
+        if (action === "delete") {
+            setConfirm({
+                kind: "delete",
+                title: `Xóa recording ${testCase.testCaseId}?`,
+                message: "Recording đã duyệt hoặc file đã sinh sẽ không còn dùng được.",
+                testCase
+            });
+        } else if (action === "reject") {
+            setConfirm({
+                kind: "reject",
+                title: `Từ chối recording ${testCase.testCaseId}?`,
+                message: "Recording này sẽ bị đánh dấu từ chối và cần ghi lại.",
+                testCase
+            });
+        } else if (action === "record_again") {
+            handleStart(testCase);
+        }
+    };
+
+    const handleConfirm = async () => {
+        if (!confirm) return;
+        setBusy(true);
+        try {
+            if (confirm.kind === "delete") {
+                await deleteRecording(workspace.workspaceId, confirm.testCase.recordingId);
+                applyItem({
+                    testCaseId: confirm.testCase.testCaseId,
+                    automationStatus: "SELECTED",
+                    reviewStatus: "SELECTED",
+                    recordingId: null
+                });
+                setNotice("Đã xóa recording.");
+            } else if (confirm.kind === "reject") {
+                await rejectRecording(workspace.workspaceId, confirm.testCase.recordingId, "Tester từ chối.");
+                applyItem({
+                    testCaseId: confirm.testCase.testCaseId,
+                    automationStatus: "REVIEW_REQUIRED",
+                    reviewStatus: "REVIEW_REQUIRED"
+                });
+                setNotice("Đã từ chối recording.");
+            }
+            setConfirm(null);
+        } catch (e) {
+            setError(e?.message ?? "Không thực hiện được.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /* ---------------- Render ---------------- */
 
     return (
         <div className="v3-page">
@@ -174,24 +293,28 @@ export default function AutomationV3Page() {
                 <div>
                     <h1 className="v3-page__title">Automation Workspace</h1>
                     <p className="v3-page__sub">
-                        {workspace
-                            ? `${meta.count} testcase đã duyệt · module ${meta.module || "—"}`
-                            : "Chọn testcase cần tự động hóa"}
+                        {workspace ? `${meta.count} testcase đã duyệt · module ${meta.module || "—"}` : "Chọn testcase cần tự động hóa"}
                     </p>
                 </div>
                 {workspace ? (
-                    <button type="button" className="v3-btn v3-btn--secondary" onClick={handleCreateStart}>
+                    <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setCreating(true)} disabled={recordingActive}>
                         Tạo workspace mới
                     </button>
                 ) : null}
             </div>
 
-            {error ? (
-                <div className="v3-banner v3-banner--error" role="alert">
-                    {error}
-                </div>
-            ) : null}
+            {error ? <div className="v3-banner v3-banner--error" role="alert">{error}</div> : null}
             {notice ? <div className="v3-banner v3-banner--ok">{notice}</div> : null}
+
+            {recordingActive ? (
+                <V3RecordingPanel
+                    active={activeTestcase ?? activeRecording}
+                    source={recordingSource}
+                    onSourceChange={setRecordingSource}
+                    busy={busy}
+                    onStop={handleStop}
+                />
+            ) : null}
 
             {creating ? (
                 <section className="v3-section" aria-label="Tạo workspace mới">
@@ -199,9 +322,9 @@ export default function AutomationV3Page() {
                         <h2>Tạo Workspace mới</h2>
                         <span className="v3-section__hint">Tải approved-testcases.json</span>
                     </div>
-                    <V3UploadPanel onApproved={handleCreated} onError={handleError} busy={busy} />
+                    <V3UploadPanel onApproved={handleCreated} onError={setError} busy={busy} />
                     {workspace ? (
-                        <button type="button" className="v3-btn v3-btn--ghost" onClick={handleCreateCancel}>
+                        <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setCreating(false)}>
                             Quay lại workspace
                         </button>
                     ) : null}
@@ -212,7 +335,7 @@ export default function AutomationV3Page() {
                 <div className="v3-empty v3-empty--action">
                     <strong>Chưa có Automation Workspace</strong>
                     <span>Tạo workspace để chọn testcase cần ghi.</span>
-                    <button type="button" className="v3-btn v3-btn--primary" onClick={handleCreateStart}>
+                    <button type="button" className="v3-btn v3-btn--primary" onClick={() => setCreating(true)}>
                         Tạo workspace mới
                     </button>
                 </div>
@@ -224,13 +347,37 @@ export default function AutomationV3Page() {
                         <h2>Testcase đã duyệt</h2>
                         <span className="v3-section__hint">Chỉ hiển thị reviewStatus = APPROVED</span>
                     </div>
-                    <V3TestCaseList testCases={enrichedItems} selectedIds={selectedIds} onToggle={handleToggle} />
+                    <V3TestCaseList
+                        testCases={enrichedItems}
+                        selectedIds={selectedIds}
+                        onToggle={handleToggle}
+                        recordingActive={recordingActive}
+                        onPrimaryAction={handlePrimaryAction}
+                        onMenuAction={handleMenuAction}
+                        openMenuId={openMenuId}
+                    />
                 </section>
             ) : null}
 
-            {workspace && selectedIds.length > 0 && !creating ? (
-                <V3ActionBar selectedCount={selectedIds.length} busy={busy} />
+            {drawerTestcase ? (
+                <V3ReviewDrawer
+                    workspaceId={workspace.workspaceId}
+                    testCase={drawerTestcase}
+                    onClose={() => setDrawerTestcase(null)}
+                    onApprove={handleApprove}
+                />
             ) : null}
+
+            <V3ConfirmDialog
+                open={Boolean(confirm)}
+                title={confirm?.title ?? ""}
+                message={confirm?.message ?? ""}
+                confirmLabel={confirm?.kind === "delete" ? "Xóa recording" : "Từ chối recording"}
+                danger={confirm?.kind === "delete"}
+                busy={busy}
+                onCancel={() => setConfirm(null)}
+                onConfirm={handleConfirm}
+            />
         </div>
     );
 }

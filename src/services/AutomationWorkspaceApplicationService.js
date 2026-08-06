@@ -28,6 +28,7 @@ export const V3_ERRORS = {
     RECORDING_ALREADY_ACTIVE: "RECORDING_ALREADY_ACTIVE",
     RECORDING_NOT_FOUND: "RECORDING_NOT_FOUND",
     RECORDING_APPROVAL_REQUIRED: "RECORDING_APPROVAL_REQUIRED",
+    RECORDING_DELETE_FORBIDDEN: "RECORDING_DELETE_FORBIDDEN",
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
@@ -43,6 +44,7 @@ const STATUS_BY_CODE = {
     RECORDING_ALREADY_ACTIVE: 409,
     RECORDING_NOT_FOUND: 404,
     RECORDING_APPROVAL_REQUIRED: 409,
+    RECORDING_DELETE_FORBIDDEN: 409,
     RECORDING_CHANGED_AFTER_APPROVAL: 409,
     ASSERTION_CONFIRMATION_REQUIRED: 409,
     TESTDATA_BINDING_REQUIRED: 422,
@@ -273,6 +275,7 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** List recording versions của testcase (không kèm scriptContent — an toàn). */
+    /** List recording versions — chỉ metadata/summary, KHÔNG trả steps/source (Bước 5B). */
     listRecordings({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
         return (this.store?.allByTestCase(testCaseId) ?? [])
@@ -281,14 +284,78 @@ export default class AutomationWorkspaceApplicationService {
                 testCaseId: r.testCaseId,
                 type: r.type,
                 status: r.status,
-                recordingVersion: r.recordingVersion,
-                recordingHash: r.recordingHash,
+                version: r.recordingVersion ?? null,
                 approvedBy: r.approvedBy ?? null,
                 approvedAt: r.approvedAt ?? null,
                 createdAt: r.createdAt,
-                stepCount: (r.steps ?? []).length
+                summary: {
+                    actionCount: (r.steps ?? []).length,
+                    assertionCount: (r.assertions ?? []).length,
+                    duration: r.summary?.duration ?? null
+                }
             }))
-            .sort((a, b) => (b.recordingVersion || 0) - (a.recordingVersion || 0));
+            .sort((a, b) => (b.version || 0) - (a.version || 0));
+    }
+
+    /** Chi tiết recording cho Review — trả steps/assertions (đã sanitize), KHÔNG trả source. */
+    getRecordingDetail({ workspaceId, recordingId }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        return {
+            recordingId: rec.recordingId,
+            testCaseId: rec.testCaseId,
+            type: rec.type,
+            status: rec.status,
+            version: rec.recordingVersion ?? null,
+            approvedBy: rec.approvedBy ?? null,
+            approvedAt: rec.approvedAt ?? null,
+            createdAt: rec.createdAt,
+            summary: {
+                actionCount: (rec.steps ?? []).length,
+                assertionCount: (rec.assertions ?? []).length,
+                duration: rec.summary?.duration ?? null
+            },
+            steps: (rec.steps ?? []).map(step => this.sanitizeStep(step)),
+            assertions: (rec.assertions ?? []).map(a => this.sanitizeAssertion(a))
+        };
+    }
+
+    /** Source code — CHỈ tải khi tester chủ động bấm "Xem mã". */
+    getRecordingSource({ workspaceId, recordingId }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        return {
+            recordingId: rec.recordingId,
+            testCaseId: rec.testCaseId,
+            version: rec.recordingVersion ?? null,
+            source: rec.scriptContent ?? ""
+        };
+    }
+
+    /** Xóa recording — từ chối khi APPROVED / đã sinh file (tránh workspace sai trạng thái). */
+    deleteRecording({ workspaceId, recordingId }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        if (rec.status === "APPROVED") {
+            fail(V3_ERRORS.RECORDING_DELETE_FORBIDDEN, "Không thể xóa recording đã duyệt.");
+        }
+        const entry = rec.testCaseId ? this.workspace.getTestCase(workspaceId, rec.testCaseId) : null;
+        if (entry && entry.generateStatus === "GENERATED") {
+            fail(V3_ERRORS.RECORDING_DELETE_FORBIDDEN, "Không thể xóa recording đã sinh file.");
+        }
+        this.store.remove(recordingId);
+        // Nếu xóa recording đang được workspace tham chiếu → reset trạng thái recording.
+        if (entry && entry.recordingId === recordingId) {
+            this.workspace.transition(workspaceId, rec.testCaseId, {
+                recordingId: null,
+                recordingStatus: "NOT_RECORDED",
+                reviewStatus: entry.generateStatus === "GENERATED" ? entry.reviewStatus : "SELECTED"
+            });
+        }
+        return { recordingId, testCaseId: rec.testCaseId ?? null, deleted: true };
     }
 
     /* ============================== C. Assertions ============================== */
@@ -420,6 +487,29 @@ export default class AutomationWorkspaceApplicationService {
         const found = (entry.automationAssertions ?? []).find(a => a.id === assertionId);
         if (!found) fail(V3_ERRORS.INVALID_REQUEST, `Không tìm thấy assertion ${assertionId}.`);
         return entry;
+    }
+
+    /** Sanitize step — bỏ sourceRange, mask giá trị nhạy cảm. */
+    sanitizeStep(step) {
+        return {
+            order: step.order,
+            actionType: step.actionType,
+            locator: step.locator,
+            target: step.target,
+            valueKind: step.valueKind,
+            recordedValue: step.sensitive ? "••••" : (step.recordedValue ?? "")
+        };
+    }
+
+    /** Sanitize assertion — bỏ sourceRange. */
+    sanitizeAssertion(a) {
+        return {
+            order: a.order,
+            statement: a.statement ?? "",
+            locator: a.locator,
+            matcher: a.matcher,
+            expected: a.expected
+        };
     }
 
     /** DTO gọn cho 1 item testcase trong workspace. */
