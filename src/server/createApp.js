@@ -10,6 +10,11 @@ import createAutomationWorkspaceRoutes from "../routes/automationWorkspaceRoutes
 import createCodeGenRoutes from "../routes/codeGenRoutes.js";
 import CodeGenSessionManager from "../codegen/CodeGenSessionManager.js";
 import CodeGenRecordingStore from "../codegen/CodeGenRecordingStore.js";
+import AutomationWorkspace from "../codegen/AutomationWorkspace.js";
+import CurrentRecordingSession from "../codegen/CurrentRecordingSession.js";
+import GenerateService from "../codegen/GenerateService.js";
+import AutomationWorkspaceApplicationService from "../services/AutomationWorkspaceApplicationService.js";
+import createAutomationV3Routes from "../routes/automationV3Routes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
 import fs from "node:fs";
@@ -26,7 +31,8 @@ export default function createApp({
     controller = null,
     publicDir = defaultPublicDirectory,
     outputDir = "./outputs",
-    uploadDir
+    uploadDir,
+    v3OutputDir = null
 } = {}) {
     const repositories = RepositoryFactory.create({
         type: repositoryType,
@@ -107,6 +113,28 @@ export default function createApp({
         })
     });
     app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager }));
+
+    // ---- Architecture V3 (Record by Testcase) — Route → Application Service → Domain/Store/GenerateService → Renderer ----
+    const v3Workspace = new AutomationWorkspace({
+        metadataFile: path.join(codeGenDataDir, "automation-workspaces.json")
+    });
+    const v3Store = new CodeGenRecordingStore({
+        metadataFile: path.join(codeGenDataDir, "codegen-recordings.json"),
+        scriptsDir: path.join(projectDirectory, "outputs", "codegen")
+    });
+    const v3Session = new CurrentRecordingSession({ store: v3Store, workspace: v3Workspace });
+    const v3GenerateService = new GenerateService({
+        workspace: v3Workspace,
+        store: v3Store,
+        outputDir: v3OutputDir ?? path.join(projectDirectory, "outputs", "generated-tests")
+    });
+    const v3ApplicationService = new AutomationWorkspaceApplicationService({
+        workspace: v3Workspace,
+        store: v3Store,
+        session: v3Session,
+        generateService: v3GenerateService
+    });
+    app.use("/api/automation-v3", createAutomationV3Routes({ applicationService: v3ApplicationService }));
 
     app.use(express.static(resolvedPublicDirectory, { index: false }));
 

@@ -89,6 +89,11 @@ export default class AutomationWorkspace {
             title: String(tc?.title ?? tc?.scenario ?? "").trim(),
             module: String(tc?.module ?? "").trim(),
             type: String(tc?.type ?? "").trim(),
+            // Snapshot testData từ approved (chỉ ĐỌC, không sửa approved-testcases.json) —
+            // dùng cho Generate. Lưu trong workspace để restart vẫn load được.
+            approvedTestData: tc?.testData && typeof tc?.testData === "object"
+                ? tc.testData
+                : (tc?.approvedTestData && typeof tc.approvedTestData === "object" ? tc.approvedTestData : null),
             // Trạng thái automation — tách hẳn khỏi approved-testcases.json
             selectedForAutomation: false,
             recordingStatus: "NOT_RECORDED",
@@ -161,6 +166,20 @@ export default class AutomationWorkspace {
         const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
         if (!entry) return null;
         entry.automationAssertions = Array.isArray(assertions) ? assertions : [];
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Lưu confirmedTestData của tester (dữ liệu đã xác nhận) — lưu workspace, không sửa approved. */
+    saveTestData(workspaceId, testCaseId, confirmedTestData) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        entry.confirmedTestData = confirmedTestData && typeof confirmedTestData === "object"
+            ? confirmedTestData
+            : (entry.confirmedTestData ?? null);
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return entry;

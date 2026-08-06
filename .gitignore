@@ -5,3 +5,4 @@ test-results/
 outputs/
 *.log
 data/codegen-recordings.json
+data/automation-workspaces.json
