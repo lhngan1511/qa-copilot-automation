@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { analyzeCodegen } from "../../utils/codegenStats.js";
+import { isValidUrl } from "../../utils/baseUrl.js";
 
 function readFile(file) {
     return new Promise((resolve, reject) => {
@@ -9,8 +10,6 @@ function readFile(file) {
         reader.readAsText(file);
     });
 }
-
-const ENVS = ["UAT", "TEST", "DEV"];
 
 /*
  Sprint 1 (polish) — Header chỉ là bước Upload.
@@ -22,17 +21,23 @@ export default function AutomationHeader({
     codeGenFile,
     moduleName,
     functionName,
-    environment,
+    baseUrl,
+    baseUrlSource,
+    baseUrlMultiple,
+    baseUrlOptions,
+    environmentValid,
     onApprovedTestCases,
     onCodeGenFile,
     onCodeGenStats,
-    onEnvironmentChange
+    onBaseUrlChange
 }) {
     const approvedInput = useRef(null);
     const codeGenInput = useRef(null);
     const [approvedError, setApprovedError] = useState("");
     const [codeGenError, setCodeGenError] = useState("");
     const [editingEnv, setEditingEnv] = useState(false);
+    const [draftUrl, setDraftUrl] = useState(baseUrl || "");
+    const [urlError, setUrlError] = useState("");
 
     const handleApprovedFile = async event => {
         const file = event.target.files?.[0];
@@ -77,6 +82,27 @@ export default function AutomationHeader({
         }
     };
 
+    const startEdit = () => {
+        setDraftUrl(baseUrl || "");
+        setUrlError("");
+        setEditingEnv(true);
+    };
+    const cancelEdit = () => {
+        setEditingEnv(false);
+        setUrlError("");
+        setDraftUrl(baseUrl || "");
+    };
+    const saveUrl = () => {
+        const value = draftUrl.trim();
+        if (value && !isValidUrl(value)) {
+            setUrlError("URL không hợp lệ. Phải có dạng http://host hoặc https://host[:port].");
+            return;
+        }
+        onBaseUrlChange(value);
+        setEditingEnv(false);
+        setUrlError("");
+    };
+
     return (
         <div className="automation-header">
             <div className="automation-header__grid">
@@ -105,19 +131,36 @@ export default function AutomationHeader({
                     {codeGenError && <p className="automation-field-error" role="alert">{codeGenError}</p>}
                 </div>
                 <div className="automation-field">
-                    <label>Môi trường chạy</label>
+                    <label>Môi trường kiểm thử</label>
                     {editingEnv ? (
                         <div className="automation-env-edit">
-                            <select value={environment || ""} onChange={event => onEnvironmentChange(event.target.value)} aria-label="Môi trường chạy">
-                                <option value="">Tự nhận diện</option>
-                                {ENVS.map(env => <option key={env} value={env}>{env}</option>)}
+                            <input
+                                className="automation-env-input"
+                                value={draftUrl}
+                                onChange={e => setDraftUrl(e.target.value)}
+                                placeholder="http://host:port"
+                                aria-label="Base URL"
+                            />
+                            <button className="text-button" type="button" onClick={saveUrl}>Lưu</button>
+                            <button className="text-button" type="button" onClick={cancelEdit}>Hủy</button>
+                            {urlError && <p className="automation-field-error" role="alert">{urlError}</p>}
+                        </div>
+                    ) : baseUrlMultiple ? (
+                        <div className="automation-env-display automation-env-display--column">
+                            <span className="automation-env-warn">⚠ Phát hiện nhiều địa chỉ — chọn URL:</span>
+                            <select className="automation-env-select" value="" onChange={e => { if (e.target.value) onBaseUrlChange(e.target.value); }} aria-label="Chọn Base URL">
+                                <option value="">-- Chọn địa chỉ --</option>
+                                {(baseUrlOptions || []).map(url => <option key={url} value={url}>{url}</option>)}
                             </select>
-                            <button className="text-button" type="button" onClick={() => setEditingEnv(false)}>Xong</button>
+                            <button className="text-button" type="button" onClick={startEdit}>Nhập khác</button>
                         </div>
                     ) : (
                         <div className="automation-env-display">
-                            <strong className={environment ? "" : "automation-env--auto"}>{environment || "Tự nhận diện"}</strong>
-                            <button className="text-button" type="button" onClick={() => setEditingEnv(true)}>Chỉnh sửa</button>
+                            <div className="automation-env-display__value">
+                                <strong className={baseUrl ? "" : "automation-env--auto"}>{baseUrl || "Chưa có Base URL"}</strong>
+                                {baseUrl && baseUrlSource && <span className="automation-env-source">Nguồn: {baseUrlSource}</span>}
+                            </div>
+                            <button className="text-button" type="button" onClick={startEdit}>Chỉnh sửa</button>
                         </div>
                     )}
                 </div>

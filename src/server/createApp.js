@@ -82,7 +82,7 @@ export default function createApp({
     app.get("/health", (_req, res) => {
         res.status(200).json({
             success: true,
-            data: { status: "ok" },
+            data: { status: "ok", baseUrl: process.env.BASE_URL || "" },
             error: null
         });
     });

@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AutomationHeader from "../components/automation/AutomationHeader.jsx";
 import AutomationTestCaseList from "../components/automation/AutomationTestCaseList.jsx";
 import AutomationInspector from "../components/automation/AutomationInspector.jsx";
-import { analyzeAutomation, generateAutomation, runAutomation, exportAutomation } from "../api/automationApi.js";
+import { analyzeAutomation, generateAutomation, runAutomation, exportAutomation, fetchServerConfig } from "../api/automationApi.js";
 import { isReady } from "../utils/automationDerived.js";
+import { extractBaseUrls, resolveBaseUrl, sourceLabel, workspaceKey, isValidUrl } from "../utils/baseUrl.js";
 
 /*
  Giai đoạn 2 (Sprint 2) — Automation Intelligence là "màn hình xử lý".
@@ -50,7 +51,9 @@ export default function AutomationWorkspacePage() {
     const [activeTab, setActiveTab] = useState("REVIEW");
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
-    const [environment, setEnvironment] = useState(import.meta.env.VITE_ENV || "");
+    const [codeGenBaseUrls, setCodeGenBaseUrls] = useState([]);
+    const [baseUrlEdited, setBaseUrlEdited] = useState("");
+    const [envFallback, setEnvFallback] = useState("");
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
     const [analyzeStatus, setAnalyzeStatus] = useState("idle"); // idle | loading | success | error
@@ -62,8 +65,39 @@ export default function AutomationWorkspacePage() {
     const selectedCount = useMemo(() => selectedTestCaseIds.length, [selectedTestCaseIds]);
     const moduleName = useMemo(() => testCases.find(tc => tc.module && String(tc.module).trim())?.module ?? "", [testCases]);
     const bothUploaded = Boolean(sourceFileName && codeGenFile?.content);
-    // Môi trường chạy hợp lệ khi đã chọn một môi trường (UAT/TEST/DEV).
-    const environmentValid = Boolean(environment);
+
+    // Giải quyết BASE_URL theo thứ tự nguồn: user edit > CodeGen > .env fallback.
+    const baseUrlResolved = useMemo(
+        () => resolveBaseUrl({ edited: baseUrlEdited, detected: codeGenBaseUrls, envFallback }),
+        [baseUrlEdited, codeGenBaseUrls, envFallback]
+    );
+    const baseUrl = baseUrlResolved.baseUrl;
+    const baseUrlSource = sourceLabel(baseUrlResolved.source);
+    // environmentValid chỉ true khi có URL hợp lệ thật (không dựa vào nhãn UAT/TEST/DEV).
+    const environmentValid = Boolean(baseUrl) && isValidUrl(baseUrl);
+
+    // Lấy BASE_URL fallback từ server (.env) qua /health khi mở trang.
+    useEffect(() => {
+        let alive = true;
+        fetchServerConfig().then(cfg => { if (alive) setEnvFallback(cfg.baseUrl || ""); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
+
+    // Nạp BASE_URL đã lưu theo workspace (module) khi có module.
+    useEffect(() => {
+        if (!moduleName) return;
+        try {
+            const saved = localStorage.getItem(workspaceKey(moduleName));
+            if (saved) setBaseUrlEdited(saved);
+        } catch { /* localStorage có thể bị chặn */ }
+    }, [moduleName]);
+
+    const handleBaseUrlChange = url => {
+        setBaseUrlEdited(url || "");
+        if (moduleName) {
+            try { localStorage.setItem(workspaceKey(moduleName), url || ""); } catch { /* ignore */ }
+        }
+    };
 
     const handleApprovedTestCases = (items, fileName) => {
         setTestCases(items.map(normalizeTestCase));
@@ -76,6 +110,8 @@ export default function AutomationWorkspacePage() {
     };
     const handleCodeGenFile = file => {
         setCodeGenFile(file);
+        // Tự nhận diện Base URL từ page.goto(...) trong CodeGen.
+        setCodeGenBaseUrls(extractBaseUrls(file?.content));
         setNotice("");
     };
     const handleCodeGenStats = stats => {
@@ -139,7 +175,7 @@ export default function AutomationWorkspacePage() {
         setNotice("");
         try {
             for (const item of items) {
-                const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content });
+                const result = await generateAutomation({ testCase: item, mapping: item.mapping, codegenText: codeGenFile.content, baseUrl });
                 setTestCases(current => current.map(currentItem => currentItem.id === item.id
                     ? { ...currentItem, generatedCode: result?.code || "", generatedFile: result?.filePath || "", validation: result?.validation, status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED" }
                     : currentItem));
@@ -155,14 +191,14 @@ export default function AutomationWorkspacePage() {
     const runRequest = async ids => {
         const items = testCases.filter(item => ids.includes(item.id) && item.includedInSession && item.generatedFile && isReady(item) && environmentValid);
         if (!items.length) {
-            if (!environmentValid) { setNotice("Hãy chọn môi trường chạy ở bước ① trước khi Run."); return; }
+            if (!environmentValid) { setNotice("Chưa có Base URL hợp lệ — hãy chọn/nhập ở bước ① trước khi Run."); return; }
             setNotice("Không có testcase nào sẵn dữ liệu và đã sinh mã để chạy."); return;
         }
         setBusy(true);
         setNotice("");
         try {
             for (const item of items) {
-                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
+                const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl } });
                 setTestCases(current => current.map(currentItem => currentItem.id === item.id
                     ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
                     : currentItem));
@@ -179,11 +215,11 @@ export default function AutomationWorkspacePage() {
         const item = testCases.find(t => t.id === id);
         if (!item?.generatedFile) { setNotice("Testcase này chưa sinh mã — hãy sinh automation trước."); return; }
         if (!isReady(item)) { setNotice("Testcase này còn thiếu dữ liệu — hãy bổ sung ở tab 'Dữ liệu kiểm thử'."); return; }
-        if (!environmentValid) { setNotice("Hãy chọn môi trường chạy ở bước ① trước khi Run."); return; }
+        if (!environmentValid) { setNotice("Chưa có Base URL hợp lệ — hãy chọn/nhập ở bước ① trước khi Run."); return; }
         setBusy(true);
         setNotice("");
         try {
-            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: environment } });
+            const result = await runAutomation({ filePath: item.generatedFile, env: { BASE_URL: baseUrl } });
             setTestCases(current => current.map(currentItem => currentItem.id === id
                 ? { ...currentItem, execution: result, status: result?.passed === true || result?.status === "PASSED" ? "PASSED" : "FAILED" }
                 : currentItem));
@@ -243,11 +279,15 @@ export default function AutomationWorkspacePage() {
                     codeGenFile={codeGenFile}
                     moduleName={moduleName}
                     functionName={testCases.find(tc => (tc.feature || tc.function))?.feature || ""}
-                    environment={environment}
+                    baseUrl={baseUrl}
+                    baseUrlSource={baseUrlSource}
+                    baseUrlMultiple={baseUrlResolved.multiple}
+                    baseUrlOptions={baseUrlResolved.options}
+                    environmentValid={environmentValid}
                     onApprovedTestCases={handleApprovedTestCases}
                     onCodeGenFile={handleCodeGenFile}
                     onCodeGenStats={handleCodeGenStats}
-                    onEnvironmentChange={setEnvironment}
+                    onBaseUrlChange={handleBaseUrlChange}
                 />
                 {bothUploaded && (
                     <div className="automation-upload-success">
@@ -334,7 +374,7 @@ export default function AutomationWorkspacePage() {
                         <button className="button button--secondary" type="button" disabled={selectedCount === 0 || runnableCount === 0 || busy} onClick={() => runRequest([...selectedTestCaseIds])}>
                             Chạy testcase đã chọn ({runnableCount})
                         </button>
-                        <span className="automation-hint-text">{!environmentValid ? "Chọn môi trường chạy ở bước ① để mở khóa Run." : selectedCount === 0 ? "Chưa chọn testcase nào." : `${runnableCount} testcase có mapping + spec + đủ dữ liệu.`}</span>
+                        <span className="automation-hint-text">{!environmentValid ? "Chưa có Base URL hợp lệ — chọn/nhập ở bước ① để mở khóa Run." : selectedCount === 0 ? "Chưa chọn testcase nào." : `${runnableCount} testcase có mapping + spec + đủ dữ liệu.`}</span>
                     </div>
                 </div>
             </div>
@@ -366,7 +406,8 @@ export default function AutomationWorkspacePage() {
                         testCase={activeTestCase}
                         moduleName={moduleName}
                         activeTab={activeTab}
-                        environment={environment}
+                        baseUrl={baseUrl}
+                        baseUrlSource={baseUrlSource}
                         environmentValid={environmentValid}
                         onTabChange={setActiveTab}
                         onUpdate={updateTestCase}

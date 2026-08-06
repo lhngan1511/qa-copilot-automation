@@ -36,6 +36,7 @@ export function generateAutomation({
     mapping,
     codegenText,
     confirmedFacts = [],
+    baseUrl = "",
     signal
 } = {}) {
     return post(
@@ -44,7 +45,8 @@ export function generateAutomation({
             testCase,
             mapping,
             codegenText,
-            confirmedFacts
+            confirmedFacts,
+            baseUrl
         },
         signal
     );
@@ -71,4 +73,16 @@ export function exportAutomation({ module = "", testCases, filePath, signal } = 
         },
         signal
     );
+}
+
+/** Đọc cấu hình server (BASE_URL fallback từ .env) qua /health. */
+export async function fetchServerConfig(signal) {
+    try {
+        const response = await fetch("/health", { signal });
+        if (!response.ok) return { baseUrl: "" };
+        const json = await response.json();
+        return { baseUrl: String(json?.data?.baseUrl ?? "") || "" };
+    } catch {
+        return { baseUrl: "" };
+    }
 }

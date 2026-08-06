@@ -54,7 +54,8 @@ export default function AutomationInspector({
     testCase,
     moduleName,
     activeTab,
-    environment,
+    baseUrl,
+    baseUrlSource,
     environmentValid,
     onTabChange,
     onUpdate,
@@ -99,7 +100,7 @@ export default function AutomationInspector({
             {activeTab === "SCENARIO" && <ScenarioTab testCase={testCase} />}
             {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} />}
             {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
-            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} environment={environment} auto={auto} ready={ready} envValid={envValid} onRunOne={() => onRunOne(testCase.id)} />}
+            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} onRunOne={() => onRunOne(testCase.id)} />}
         </div>
         {/* Chỉnh sửa mapping — chưa làm, hiển thị Coming Soon (disable). */}
         <div className="automation-inspector__footer">
@@ -362,7 +363,7 @@ function RecommendationActions({ check, onApply }) {
 }
 
 /* ---------- Chạy thử: Generate → Run → Diagnose ---------- */
-function RunTab({ testCase, environment, auto, ready, envValid, onRunOne }) {
+function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, onRunOne }) {
     const exec = testCase.execution || {};
     const display = runDisplay(exec);
     const enabled = isRunEnabled({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
@@ -374,8 +375,8 @@ function RunTab({ testCase, environment, auto, ready, envValid, onRunOne }) {
         <div className="automation-subheading"><div><h4>Chạy testcase này</h4><p>Chạy ngay trong cửa sổ.</p></div></div>
 
         <div className="automation-run-grid">
-            <div className="automation-run-cell"><span>Environment</span><strong>{environment || "Tự nhận diện"}</strong></div>
-            <div className="automation-run-cell"><span>Base URL</span><strong>từ cấu hình server (.env)</strong></div>
+            <div className="automation-run-cell"><span>Base URL</span><strong className="automation-base-url">{baseUrl || "—"}</strong></div>
+            <div className="automation-run-cell"><span>Nguồn</span><strong>{baseUrlSource || "Chưa có"}</strong></div>
             <div className="automation-run-cell"><span>Spec</span><strong>{auto.filePath || "—"}</strong></div>
             <div className="automation-run-cell"><span>Browser</span><strong>Chromium / Chrome</strong></div>
         </div>
