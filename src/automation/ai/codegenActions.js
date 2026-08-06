@@ -126,19 +126,37 @@ export function matchCodegenAction(codegenActions, step) {
     const stepLocator = String(step?.locator ?? "");
     const targetNorm = target.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     if (!codegenActions || codegenActions.length === 0) return null;
-    // Ưu tiên: locator khớp.
+
+    // Chuẩn hóa locator: bỏ tiền tố page., bỏ dấu chấm đuôi, bỏ khoảng trắng.
+    const normLoc = s => String(s ?? "")
+        .replace(/^page\d*\s*\.\s*/, "")
+        .replace(/\.\s*$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    // Ưu tiên: locator khớp (chỉ so action có locator thật).
     if (stepLocator) {
-        const hit = codegenActions.find(a => {
-            const aLoc = String(a.locator ?? "").replace(/^page\d*\s*\.\s*/, "");
-            const stepLoc = stepLocator.replace(/^page\d*\s*\.\s*/, "");
+        const stepLoc = normLoc(stepLocator);
+        const stepAction = String(step?.actionType ?? "").toUpperCase();
+        const candidates = codegenActions.filter(a => {
+            const aLoc = normLoc(a.locator ?? "");
+            if (!aLoc || aLoc === "goto") return false;
             return aLoc === stepLoc;
         });
-        if (hit) return hit;
+        if (candidates.length > 0) {
+            // Ưu tiên action cùng loại với step (FILL step -> FILL codegen action), rồi mới cái đầu tiên.
+            if (stepAction) {
+                const same = candidates.find(a => String(a.sourceAction).toUpperCase() === stepAction);
+                if (same) return same;
+            }
+            return candidates[0];
+        }
     }
-    // Fallback: target name khớp sourceLocator.
+    // Fallback: target name khớp sourceLocator (bỏ action không có sourceLocator, vd goto).
     if (targetNorm) {
         const hit = codegenActions.find(a => {
             const n = String(a.sourceLocator ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            if (!n) return false; // action không có sourceLocator (vd goto) -> không match.
             return n.includes(targetNorm) || targetNorm.includes(n);
         });
         if (hit) return hit;

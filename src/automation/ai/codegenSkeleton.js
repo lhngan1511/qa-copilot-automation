@@ -171,7 +171,7 @@ export function buildSpecFromMapping({ testCase, mapping, codegenText = "", envV
     }
 
     // Assertion thật.
-    lines.push(`  await ${assertion.playwrightAssertion};`);
+    lines.push(`  await ${String(assertion.playwrightAssertion).replace(/;\s*$/, "")};`);
 
     lines.push(`});`);
     return { code: lines.join("\n"), ok: true, errorCode: null, reason: "" };
