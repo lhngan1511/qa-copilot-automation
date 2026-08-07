@@ -524,7 +524,7 @@ export default class AIAutomationCodegen {
         console.log(
             `[CODEGEN_RULE_VALIDATION_START] testCaseId=${testCaseId || "?"} source=${source} characterCount=${String(final ?? "").length}`
         );
-        const validation = this.validateCode({
+        let validation = this.validateCode({
             code: final,
             mapping,
             codegenText: text,
@@ -534,6 +534,28 @@ export default class AIAutomationCodegen {
         console.log(
             `[CODEGEN_RULE_VALIDATION_RESULT] ok=${validation.ok} errors=${JSON.stringify(validation.errors ?? [])} warnings=${JSON.stringify(validation.warnings ?? [])} rejectedRule=${validation.ok ? "?" : "CODEGEN_RULE_VALIDATION_FAILED"}`
         );
+
+        // [P0 FIX] Nếu AI sinh code hoàn chỉnh (cú pháp ok) nhưng FAIL rule validation
+        // (vd hardcode goto / locator ngoài allowlist) → chuyển sang deterministic fallback
+        // (build từ mapping APPROVED, code sạch, đã qua guard) để luôn sinh được automation.
+        if (!validation.ok && source.startsWith("ai")) {
+            const fb = buildSpecFromMapping({ testCase, mapping, codegenText: text });
+            if (fb.ok) {
+                final = fb.code;
+                guard = validateGeneratedCode({ code: final, testCaseId });
+                source = "deterministic-fallback";
+                validation = this.validateCode({
+                    code: final,
+                    mapping,
+                    codegenText: text,
+                    testCaseId,
+                    allowCodegenLocators: true
+                });
+                console.log(
+                    `[CODEGEN_VALIDATION_FALLBACK] source=deterministic-fallback ok=${validation.ok} errors=${JSON.stringify(validation.errors ?? [])}`
+                );
+            }
+        }
 
         return { code: final, validation, guard, source, finishReasons };
     }
