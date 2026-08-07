@@ -196,6 +196,7 @@ export default function AutomationWorkspacePage() {
             validation: result?.validation,
             // Runtime env (TESTDATA_*) đã resolve theo thứ tự ưu tiên, cho Run dùng.
             runtimeEnv: result?.runtimeEnv || {},
+            generationError: null,
             status: result?.filePath ? "GENERATED" : "REGENERATE_REQUIRED"
         }
         : item));
@@ -236,6 +237,10 @@ export default function AutomationWorkspacePage() {
             if (result?.filePath) setNotice(`✓ Đã sinh ${result.filePath}`);
             return result;
         } catch (error) {
+            // Lưu lý do thất bại (vd Rule Validation từ chối) để Drawer hiển thị thay vì chỉ "Chưa sinh spec.js".
+            setTestCases(current => current.map(tc => tc.id === id
+                ? { ...tc, generationError: { code: error?.code || "AI_CODEGEN_FAILED", message: error?.message || "Sinh mã kiểm thử không thành công.", details: error?.details || [] } }
+                : tc));
             setNotice(error.message || "Sinh mã kiểm thử không thành công.");
             return null;
         } finally {

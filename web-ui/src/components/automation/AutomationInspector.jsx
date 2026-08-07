@@ -11,7 +11,6 @@ import {
 import {
     interpretAssertion,
     analyzeExpectedCoverage,
-    codegenStatus,
     automationStatus
 } from "../../utils/assertionIntelligence.js";
 import {
@@ -73,7 +72,6 @@ export default function AutomationInspector({
     const update = patch => onUpdate(testCase.id, patch);
     const rows = dataRows(testCase);
     const ready = isReady(testCase);
-    const cg = codegenStatus(testCase.mapping);
     const auto = automationStatus(testCase);
     const showRunTab = isRunTabVisible(auto);
     const envValid = environmentValid !== false;
@@ -106,13 +104,13 @@ export default function AutomationInspector({
             {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
             {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} runModeHeaded={runModeHeaded} runSlowMo={runSlowMo} onRunModeChange={onRunModeChange} onSlowMoChange={onSlowMoChange} />}
         </div>
-        {/* Footer sticky: [Đóng] [Primary action]. Primary = Sinh automation / Chạy testcase theo trạng thái. */}
-        <div className="automation-inspector__footer">
-            <div className="automation-inspector__footer-actions">
-                <button className="button button--secondary" type="button" onClick={onClose}>Đóng</button>
+        {/* Footer sticky — chỉ Primary Action, phụ thuộc tab hiện tại. Ẩn khi không có action. */}
+        {activeTab === "EXPECTED" || activeTab === "RUN" || testCase.generationError ? (
+            <div className="automation-inspector__footer">
                 <DrawerPrimaryAction
                     testCase={testCase}
                     auto={auto}
+                    activeTab={activeTab}
                     hasMapping={Boolean(testCase.mapping && Object.keys(testCase.mapping).length)}
                     ready={ready}
                     envValid={envValid}
@@ -120,20 +118,21 @@ export default function AutomationInspector({
                     onRunOne={onRunOne}
                 />
             </div>
-            <CodeGenAutomationStatus cg={cg} auto={auto} />
-        </div>
+        ) : null}
     </section>;
 }
 
-/* ---------- Primary action (footer sticky) — Generate/Run theo trạng thái ---------- */
-function DrawerPrimaryAction({ testCase, auto, hasMapping, ready, envValid, onGenerateOne, onRunOne }) {
+/* ---------- Primary action (footer sticky) — phụ thuộc tab hiện tại ---------- */
+function DrawerPrimaryAction({ testCase, auto, activeTab, hasMapping, ready, envValid, onGenerateOne, onRunOne }) {
     const [busy, setBusy] = useState(false);
+    const [showErrorDetail, setShowErrorDetail] = useState(false);
     const reviewed = testCase.mappingStatus === "ACCEPTED" || testCase.reviewed === true;
     const missingFile = Boolean(auto.filePath) && !auto.fileExists;
     const execRunning = String(testCase.execution?.status ?? "").toUpperCase() === "RUNNING";
     const display = runDisplay(testCase.execution);
     const ran = display.passed || display.failed;
     const running = busy || execRunning;
+    const failure = testCase.generationError || null;
 
     const handleGenerate = async () => {
         setBusy(true);
@@ -144,61 +143,66 @@ function DrawerPrimaryAction({ testCase, auto, hasMapping, ready, envValid, onGe
         try { await onRunOne?.(testCase.id); } finally { setBusy(false); }
     };
 
-    let label;
-    let disabled;
-    let onClick;
-    let note = null;
+    const generateNote = (!missingFile && !reviewed)
+        ? <span className="automation-hint-text">Xác nhận kết quả mong đợi ở tab "Kết quả mong đợi" trước khi sinh.</span>
+        : null;
+    const generateDisabled = busy || (!missingFile && !reviewed);
 
-    if (auto.generated) {
-        // đã sinh → Chạy testcase / đang chạy → Đang chạy... / đã chạy → Chạy lại
-        label = running ? "Đang chạy..." : (ran ? "Chạy lại" : "Chạy testcase");
-        disabled = running || !ready || !envValid;
-        onClick = handleRun;
-        if (!running && (!ready || !envValid)) {
-            note = <span className="automation-hint-text">🔒 {!ready ? "Còn thiếu dữ liệu." : "Chưa có Base URL hợp lệ."}</span>;
-        }
-    } else {
-        // chưa sinh → Sinh automation
-        label = busy ? "Đang sinh..." : "Sinh automation";
-        if (missingFile || hasMapping) {
-            disabled = busy || (!missingFile && !reviewed);
-            onClick = handleGenerate;
-            if (!missingFile && !reviewed) {
-                note = <span className="automation-hint-text">Xác nhận kết quả mong đợi ở tab "Kết quả mong đợi" trước khi sinh.</span>;
-            }
-        } else {
-            disabled = true;
-            note = <span className="automation-hint-text">Testcase chưa có mapping — hãy chạy AI Mapping ở bước ②.</span>;
-        }
+    // Lỗi Generate (Rule Validation chặn) — hiển thị lý do thay vì chỉ "Chưa sinh spec.js".
+    if (failure) {
+        const details = Array.isArray(failure.details) ? failure.details : [];
+        return <div className="automation-footer-primary">
+            <div className="automation-failure">
+                <strong className="automation-failure__title">❌ Sinh automation thất bại</strong>
+                {failure.message ? <p className="automation-failure__reason">Lý do: {failure.message}</p> : null}
+                {details.length > 0 ? (
+                    <>
+                        <button type="button" className="text-button" onClick={() => setShowErrorDetail(s => !s)}>
+                            {showErrorDetail ? "Ẩn chi tiết lỗi" : "Xem chi tiết lỗi"}
+                        </button>
+                        {showErrorDetail && (
+                            <ul className="automation-failure__detail">
+                                {details.map((d, i) => <li key={i}>{d}</li>)}
+                            </ul>
+                        )}
+                    </>
+                ) : null}
+            </div>
+            <button className="button button--primary" type="button" disabled={busy || !hasMapping} onClick={handleGenerate}>
+                {busy ? "Đang sinh..." : "Sinh lại"}
+            </button>
+        </div>;
     }
 
+    // Tab "Kết quả mong đợi" → luôn là hành động Sinh automation.
+    if (activeTab === "EXPECTED") {
+        const label = busy ? "Đang sinh..." : (auto.generated ? "Sinh lại" : "Sinh automation");
+        return <div className="automation-footer-primary">
+            <button className="button button--primary" type="button" disabled={generateDisabled} onClick={handleGenerate}>{label}</button>
+            {generateNote}
+        </div>;
+    }
+
+    // Tab "Chạy thử": chưa sinh → Sinh automation; đã sinh → Chạy (lại).
+    if (!auto.generated) {
+        return <div className="automation-footer-primary">
+            <button className="button button--primary" type="button" disabled={generateDisabled} onClick={handleGenerate}>
+                {busy ? "Đang sinh..." : "Sinh automation"}
+            </button>
+            {generateNote}
+        </div>;
+    }
+    const runLabel = running ? "Đang chạy..." : (ran ? "Chạy lại" : "Chạy testcase");
+    const runDisabled = running || !ready || !envValid;
     return <div className="automation-footer-primary">
-        <button className="button button--primary" type="button" disabled={disabled} onClick={onClick}>{label}</button>
-        {note}
+        <button className="button button--primary" type="button" disabled={runDisabled} onClick={handleRun}>{runLabel}</button>
+        {!running && (!ready || !envValid) ? <span className="automation-hint-text">🔒 {!ready ? "Còn thiếu dữ liệu." : "Chưa có Base URL hợp lệ."}</span> : null}
     </div>;
 }
 
-/* ---------- Thanh trạng thái CodeGen vs Automation (tách rõ 2 khái niệm) ---------- */
+/* ---------- Tên file (basename) cho hiển thị spec ---------- */
 function basename(p) {
     return String(p ?? "").split(/[\\/]/).pop() || "";
-}
-function CodeGenAutomationStatus({ cg, auto }) {
-    return <div className="automation-cg-auto">
-        <div className="automation-cg-auto__block">
-            <span className="automation-cg-auto__label">CodeGen</span>
-            <ul>
-                <li className={cg.mapped ? "ok" : "warn"}>{cg.mapped ? "✓ Đã Mapping" : "Chưa Mapping"}</li>
-                <li className={cg.locatorFound ? "ok" : "warn"}>{cg.locatorFound ? "✓ Đã tìm thấy Locator" : "Chưa tìm thấy Locator"}</li>
-                <li className={cg.assertionFound ? "ok" : "warn"}>{cg.assertionFound ? "✓ Đã tìm thấy Assertion" : "Chưa tìm thấy Assertion"}</li>
-            </ul>
-        </div>
-        <div className="automation-cg-auto__block">
-            <span className="automation-cg-auto__label">Automation</span>
-            <ul>
-                <li className={auto.generated ? "ok" : "warn"}>{auto.generated ? `✓ Đã sinh ${basename(auto.filePath) || "spec.js"}` : "Chưa sinh spec.js"}</li>
-            </ul>
-        </div>
-    </div>;
 }
 
 /* ---------- Thông tin (summary read-only — không input/select/textarea) ---------- */

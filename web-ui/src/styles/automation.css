@@ -690,13 +690,6 @@
     border-top: 1px solid var(--border);
     background: #fff;
 }
-.automation-inspector__footer-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
-}
 .automation-inspector__footer .button[disabled] { opacity: .55; cursor: not-allowed; }
 
 /* Footer primary action (Sinh automation / Chạy testcase) */
@@ -707,6 +700,31 @@
     gap: 6px;
 }
 .automation-footer-primary .button--primary { min-width: 200px; }
+
+/* Generate thất bại (Rule Validation từ chối) — hiển thị lý do thay vì "Chưa sinh spec.js" */
+.automation-failure {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fff7f7;
+}
+.automation-failure__title { color: #991b1b; font-size: 14px; }
+.automation-failure__reason { margin: 0; font-size: 13px; color: #7a1a1a; overflow-wrap: anywhere; }
+.automation-failure .text-button { align-self: flex-start; font-size: 13px; color: #2563eb; background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
+.automation-failure__detail {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: #991b1b;
+    display: grid;
+    gap: 4px;
+}
+.automation-failure__detail li { overflow-wrap: anywhere; }
 
 /* Thông tin — summary read-only (không input/select/textarea) */
 .automation-info-summary {
@@ -853,16 +871,6 @@
 .automation-env-warn { font-size: 13px; color: var(--warning); font-weight: 600; }
 .automation-env-select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text); min-width: 260px; }
 .automation-base-url { word-break: break-all; }
-
-/* ===== P0 — Drawer workflow một testcase ===== */
-.automation-drawer-workflow { margin: 4px 0 12px; padding: 12px; border: 1px solid var(--primary); border-radius: 12px; background: var(--primary-soft); }
-.automation-drawer-workflow__done, .automation-drawer-workflow__generate, .automation-drawer-workflow__missing { display: flex; flex-direction: column; gap: 8px; }
-.automation-drawer-workflow__ok { margin: 0; color: var(--success); font-weight: 700; font-size: 15px; }
-.automation-drawer-workflow__path { font-size: 12px; color: var(--primary-dark); background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; word-break: break-all; }
-.automation-drawer-workflow__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.automation-drawer-workflow__missing p { margin: 0; color: var(--warning); font-weight: 650; font-size: 14px; }
-.automation-drawer-workflow__generate .button[disabled] { opacity: .55; cursor: not-allowed; }
-.automation-drawer-workflow .button--primary { min-width: 220px; }
 
 /* ===== P0 — Chế độ thực thi demo (headed + slowMo) ===== */
 .automation-run-config { display: flex; gap: 16px; flex-wrap: wrap; background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
