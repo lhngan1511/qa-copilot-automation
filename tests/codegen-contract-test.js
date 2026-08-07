@@ -177,10 +177,11 @@ main().catch(e => { console.error(e); process.exit(1); });
 {
     const m = (await import("../src/automation/ai/testDataBinding.js")).default || (await import("../src/automation/ai/testDataBinding.js"));
     const { renderGotoStatement } = await import("../src/automation/ai/testDataBinding.js");
-    // URL tuyệt đối -> không nối BASE_URL.
+    // URL tuyệt đối -> bỏ origin/host, nối process.env.BASE_URL + path+query (không hardcode host).
     const abs = renderGotoStatement("http://172.16.1.100:9230/wasuco/login?returnUrl=http%3A%2F%2F172.16.1.100%3A9230%2F");
-    assert.match(abs, /page\.goto\("http:\/\/172\.16\.1\.100:9230\/wasuco\/login/, "giữ nguyên URL tuyệt đối");
-    assert.ok(!abs.includes("process.env.BASE_URL +"), "KHÔNG nối BASE_URL với URL tuyệt đối");
+    assert.ok(abs.includes("process.env.BASE_URL +"), "goto dùng process.env.BASE_URL");
+    assert.ok(abs.includes("/wasuco/login?returnUrl="), "giữ path+query, bỏ origin");
+    assert.ok(!/page\.goto\(\s*["']http/i.test(abs), "KHÔNG hardcode host/host:port làm origin goto");
     // Path tương đối -> vẫn nối BASE_URL.
     const rel = renderGotoStatement("/wasuco/login");
     assert.match(rel, /process\.env\.BASE_URL \+ "\/wasuco\/login"/);
