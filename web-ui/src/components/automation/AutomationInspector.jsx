@@ -16,9 +16,7 @@ import {
 } from "../../utils/assertionIntelligence.js";
 import {
     isRunTabVisible,
-    isRunEnabled,
     runDisplay,
-    runBlocker,
     failDetail,
     guidanceFor,
     recommendationCode,
@@ -98,84 +96,92 @@ export default function AutomationInspector({
             <h3 className="automation-inspector__title">Chi tiết testcase</h3>
             <button className="automation-inspector__close" type="button" onClick={onClose} aria-label="Đóng cửa sổ" title="Đóng">✕</button>
         </div>
-        {/* Workflow một testcase: Review → Xác nhận → Sinh automation → Chạy thử → PASS/FAIL, ngay trong Drawer. */}
-        <DrawerWorkflow
-            testCase={testCase}
-            hasMapping={Boolean(testCase.mapping && Object.keys(testCase.mapping).length)}
-            auto={auto}
-            ready={ready}
-            envValid={envValid}
-            onGenerateOne={onGenerateOne}
-            onRunOne={onRunOne}
-        />
         <div className="automation-tabs" role="tablist">
             {TABS.filter(([id]) => id !== "RUN" || showRunTab).map(([id, label]) => <button type="button" role="tab" aria-selected={activeTab === id} className={activeTab === id ? "automation-tab automation-tab--active" : "automation-tab"} onClick={() => onTabChange(id)} key={id}>{label}</button>)}
         </div>
         <div className="automation-inspector__body">
-            {activeTab === "INFO" && <InfoTab testCase={testCase} moduleName={moduleName} update={update} />}
+            {activeTab === "INFO" && <InfoTab testCase={testCase} moduleName={moduleName} />}
             {activeTab === "SCENARIO" && <ScenarioTab testCase={testCase} />}
             {activeTab === "DATA" && <DataTab testCase={testCase} rows={rows} ready={ready} firstMissingRef={firstMissingRef} updateDataField={updateDataField} onUpdate={update} />}
             {activeTab === "EXPECTED" && <ExpectedTab testCase={testCase} onUpdate={update} />}
-            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} runModeHeaded={runModeHeaded} runSlowMo={runSlowMo} onRunModeChange={onRunModeChange} onSlowMoChange={onSlowMoChange} onRunOne={() => onRunOne(testCase.id)} />}
+            {activeTab === "RUN" && showRunTab && <RunTab testCase={testCase} baseUrl={baseUrl} baseUrlSource={baseUrlSource} auto={auto} ready={ready} envValid={envValid} runModeHeaded={runModeHeaded} runSlowMo={runSlowMo} onRunModeChange={onRunModeChange} onSlowMoChange={onSlowMoChange} />}
         </div>
-        {/* Chỉnh sửa mapping — chưa làm, hiển thị Coming Soon (disable). */}
+        {/* Footer sticky: [Đóng] [Primary action]. Primary = Sinh automation / Chạy testcase theo trạng thái. */}
         <div className="automation-inspector__footer">
-            <button className="button button--secondary" type="button" disabled title="Sắp ra mắt">Chỉnh sửa kịch bản (Coming soon)</button>
+            <div className="automation-inspector__footer-actions">
+                <button className="button button--secondary" type="button" onClick={onClose}>Đóng</button>
+                <DrawerPrimaryAction
+                    testCase={testCase}
+                    auto={auto}
+                    hasMapping={Boolean(testCase.mapping && Object.keys(testCase.mapping).length)}
+                    ready={ready}
+                    envValid={envValid}
+                    onGenerateOne={onGenerateOne}
+                    onRunOne={onRunOne}
+                />
+            </div>
             <CodeGenAutomationStatus cg={cg} auto={auto} />
         </div>
     </section>;
 }
 
-/* ---------- Workflow một testcase ngay trong Drawer ---------- */
-function DrawerWorkflow({ testCase, hasMapping, auto, ready, envValid, onGenerateOne, onRunOne }) {
-    const [generating, setGenerating] = useState(false);
-    const [running, setRunning] = useState(false);
+/* ---------- Primary action (footer sticky) — Generate/Run theo trạng thái ---------- */
+function DrawerPrimaryAction({ testCase, auto, hasMapping, ready, envValid, onGenerateOne, onRunOne }) {
+    const [busy, setBusy] = useState(false);
     const reviewed = testCase.mappingStatus === "ACCEPTED" || testCase.reviewed === true;
+    const missingFile = Boolean(auto.filePath) && !auto.fileExists;
+    const execRunning = String(testCase.execution?.status ?? "").toUpperCase() === "RUNNING";
+    const display = runDisplay(testCase.execution);
+    const ran = display.passed || display.failed;
+    const running = busy || execRunning;
 
     const handleGenerate = async () => {
-        setGenerating(true);
-        try { await onGenerateOne?.(testCase.id); } finally { setGenerating(false); }
+        setBusy(true);
+        try { await onGenerateOne?.(testCase.id); } finally { setBusy(false); }
     };
     const handleRun = async () => {
-        setRunning(true);
-        try { await onRunOne?.(testCase.id); } finally { setRunning(false); }
+        setBusy(true);
+        try { await onRunOne?.(testCase.id); } finally { setBusy(false); }
     };
 
-    return <div className="automation-drawer-workflow">
-        <div className="automation-subheading"><div><h4>Luồng testcase này</h4><p>Review → Xác nhận → Sinh automation → Chạy thử ngay trong cửa sổ.</p></div></div>
+    let label;
+    let disabled;
+    let onClick;
+    let note = null;
 
-        {auto.generated ? (
-            <div className="automation-drawer-workflow__done">
-                <p className="automation-drawer-workflow__ok">✓ Đã sinh {auto.filePath || "spec.js"}</p>
-                {auto.filePath && <code className="automation-drawer-workflow__path">{auto.filePath}</code>}
-                <div className="automation-drawer-workflow__actions">
-                    <button className="button button--primary" type="button" disabled={running || !ready || !envValid} onClick={handleRun}>
-                        {running ? "Đang chạy…" : "Chạy testcase này"}
-                    </button>
-                    {(!ready || !envValid) && <span className="automation-hint-text">🔒 {!ready ? "Còn thiếu dữ liệu." : "Chưa có Base URL hợp lệ."}</span>}
-                </div>
-            </div>
-        ) : auto.filePath && !auto.fileExists ? (
-            <div className="automation-drawer-workflow__missing">
-                <p>⚠ File {auto.filePath} không còn tồn tại trên đĩa.</p>
-                <button className="button button--primary" type="button" disabled={generating} onClick={handleGenerate}>
-                    {generating ? "Đang sinh…" : `Sinh lại automation cho ${testCase.id}`}
-                </button>
-            </div>
-        ) : hasMapping ? (
-            <div className="automation-drawer-workflow__generate">
-                {!reviewed && <p className="automation-hint-text">Xác nhận kết quả mong đợi ở tab "Kết quả mong đợi" trước khi sinh.</p>}
-                <button className="button button--primary" type="button" disabled={generating || !reviewed} onClick={handleGenerate}>
-                    {generating ? "Đang sinh…" : `Sinh automation cho ${testCase.id}`}
-                </button>
-            </div>
-        ) : (
-            <p className="automation-hint-text">Testcase chưa có mapping — hãy chạy AI Mapping ở bước ②.</p>
-        )}
+    if (auto.generated) {
+        // đã sinh → Chạy testcase / đang chạy → Đang chạy... / đã chạy → Chạy lại
+        label = running ? "Đang chạy..." : (ran ? "Chạy lại" : "Chạy testcase");
+        disabled = running || !ready || !envValid;
+        onClick = handleRun;
+        if (!running && (!ready || !envValid)) {
+            note = <span className="automation-hint-text">🔒 {!ready ? "Còn thiếu dữ liệu." : "Chưa có Base URL hợp lệ."}</span>;
+        }
+    } else {
+        // chưa sinh → Sinh automation
+        label = busy ? "Đang sinh..." : "Sinh automation";
+        if (missingFile || hasMapping) {
+            disabled = busy || (!missingFile && !reviewed);
+            onClick = handleGenerate;
+            if (!missingFile && !reviewed) {
+                note = <span className="automation-hint-text">Xác nhận kết quả mong đợi ở tab "Kết quả mong đợi" trước khi sinh.</span>;
+            }
+        } else {
+            disabled = true;
+            note = <span className="automation-hint-text">Testcase chưa có mapping — hãy chạy AI Mapping ở bước ②.</span>;
+        }
+    }
+
+    return <div className="automation-footer-primary">
+        <button className="button button--primary" type="button" disabled={disabled} onClick={onClick}>{label}</button>
+        {note}
     </div>;
 }
 
 /* ---------- Thanh trạng thái CodeGen vs Automation (tách rõ 2 khái niệm) ---------- */
+function basename(p) {
+    return String(p ?? "").split(/[\\/]/).pop() || "";
+}
 function CodeGenAutomationStatus({ cg, auto }) {
     return <div className="automation-cg-auto">
         <div className="automation-cg-auto__block">
@@ -189,21 +195,21 @@ function CodeGenAutomationStatus({ cg, auto }) {
         <div className="automation-cg-auto__block">
             <span className="automation-cg-auto__label">Automation</span>
             <ul>
-                <li className={auto.generated ? "ok" : "warn"}>{auto.generated ? `✓ Đã sinh ${auto.filePath || "spec.js"}` : "Chưa sinh spec.js"}</li>
+                <li className={auto.generated ? "ok" : "warn"}>{auto.generated ? `✓ Đã sinh ${basename(auto.filePath) || "spec.js"}` : "Chưa sinh spec.js"}</li>
             </ul>
         </div>
     </div>;
 }
 
-/* ---------- Thông tin ---------- */
-function InfoTab({ testCase, moduleName, update }) {
-    return <div className="automation-form-grid">
-        <label>ID<input value={testCase.id} readOnly /></label>
-        <label>Loại testcase<input value={testCase.type || "Chưa xác định"} readOnly /></label>
-        <label className="automation-form-grid__wide">Tiêu đề<input value={testCase.title || ""} onChange={event => update({ title: event.target.value })} /></label>
-        <div className="automation-form-grid__wide"><h4>Module</h4><p className="automation-readonly-value">{testCase.module || moduleName || "—"}</p></div>
-        <div className="automation-form-grid__wide"><h4>Feature</h4><p className="automation-readonly-value">{testCase.feature || testCase.function || "—"}</p></div>
-        <label className="automation-form-grid__wide">Mục tiêu / nội dung<textarea value={testCase.objective || testCase.description || ""} onChange={event => update({ objective: event.target.value, description: event.target.value })} rows="4" /></label>
+/* ---------- Thông tin (summary read-only — không input/select/textarea) ---------- */
+function InfoTab({ testCase, moduleName }) {
+    return <div className="automation-info-summary">
+        <div className="automation-info-row"><span>ID</span><strong>{testCase.id}</strong></div>
+        <div className="automation-info-row"><span>Loại testcase</span><strong>{testCase.type || "Chưa xác định"}</strong></div>
+        <div className="automation-info-row"><span>Tiêu đề</span><strong>{testCase.title || ""}</strong></div>
+        <div className="automation-info-row"><span>Module</span><strong>{testCase.module || moduleName || "—"}</strong></div>
+        <div className="automation-info-row"><span>Feature</span><strong>{testCase.feature || testCase.function || "—"}</strong></div>
+        <div className="automation-info-row automation-info-row--wide"><span>Mục tiêu / nội dung</span><p>{testCase.objective || testCase.description || "—"}</p></div>
     </div>;
 }
 
@@ -465,11 +471,9 @@ function RecommendationActions({ check, onApply }) {
 }
 
 /* ---------- Chạy thử: Generate → Run → Diagnose ---------- */
-function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, runModeHeaded, runSlowMo, onRunModeChange, onSlowMoChange, onRunOne }) {
+function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, runModeHeaded, runSlowMo, onRunModeChange, onSlowMoChange }) {
     const exec = testCase.execution || {};
     const display = runDisplay(exec);
-    const enabled = isRunEnabled({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
-    const blocker = runBlocker({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
     const detail = failDetail(exec);
     const guidance = guidanceFor(detail.errorCode);
     const visible = visibleFailFields(detail);
@@ -500,13 +504,9 @@ function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, runMo
         <div className="automation-run-grid">
             <div className="automation-run-cell"><span>Base URL</span><strong className="automation-base-url">{baseUrl || "—"}</strong></div>
             <div className="automation-run-cell"><span>Nguồn</span><strong>{baseUrlSource || "Chưa có"}</strong></div>
-            <div className="automation-run-cell"><span>Spec</span><strong>{auto.filePath || "—"}</strong></div>
+            <div className="automation-run-cell"><span>Spec</span><strong>{basename(auto.filePath) || "—"}</strong></div>
             <div className="automation-run-cell"><span>Browser</span><strong>{auto.browser ? "Chromium / Chrome" : "Chromium / Chrome"}</strong></div>
         </div>
-
-        <button className="button button--primary" type="button" disabled={!enabled || running} onClick={onRunOne}>{running ? "Đang chạy…" : display.passed || display.failed ? "Chạy lại" : "Run testcase"}</button>
-        {blocker && <p className="automation-hint-text">🔒 {blocker}</p>}
-        {running && <p className="automation-run-opening">Đang mở trình duyệt và chạy testcase…</p>}
 
         <div className={`automation-run-result ${display.tone === "pass" ? "automation-run-result--pass" : display.tone === "fail" ? "automation-run-result--fail" : "automation-run-result--idle"}`}>
             <span className="automation-run-result__status">{running ? "Đang chạy…" : display.label === "PASS" ? "✓ PASS" : display.label === "FAIL" ? "✗ FAIL" : "Chưa chạy"}</span>
