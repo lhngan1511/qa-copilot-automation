@@ -188,6 +188,52 @@ async function main() {
         fs.rmSync(tempRoot13, { recursive: true, force: true });
     }
 
+    // 14. [P0 DEMO] Testcase purpose=EMPTY — validator không đòi env cho field bỏ trống,
+    //     fallback không sinh fill field EMPTY, vẫn có assertion đúng, node --check PASS.
+    {
+        const approved = [
+            { id: "TC001", testcaseId: "TC001", title: "Đăng nhập thành công", module: "Đăng nhập", type: "POSITIVE", reviewStatus: "APPROVED", expectedResult: "Đăng nhập thành công", testData: { fields: { "Tài khoản": { value: "admin", purpose: "VALID" }, "Mật khẩu": { value: "123456@Aa", purpose: "VALID" }, "Mã xác nhận": { value: "1234567", purpose: "VALID" } } } },
+            { id: "TC002", testcaseId: "TC002", title: "Bỏ trống Tài khoản", module: "Đăng nhập", type: "VALIDATION", reviewStatus: "APPROVED", expectedResult: "Vui lòng nhập Tên tài khoản", testData: { fields: { "Tài khoản": { value: "", purpose: "EMPTY" }, "Mật khẩu": { value: "123456@Aa", purpose: "VALID" }, "Mã xác nhận": { value: "1234567", purpose: "VALID" } } } },
+            { id: "TC003", testcaseId: "TC003", title: "Bỏ trống Mật khẩu", module: "Đăng nhập", type: "VALIDATION", reviewStatus: "APPROVED", expectedResult: "Vui lòng nhập Mật khẩu", testData: { fields: { "Tài khoản": { value: "admin", purpose: "VALID" }, "Mật khẩu": { value: "", purpose: "EMPTY" }, "Mã xác nhận": { value: "1234567", purpose: "VALID" } } } },
+            { id: "TC004", testcaseId: "TC004", title: "Bỏ trống Mã xác nhận", module: "Đăng nhập", type: "VALIDATION", reviewStatus: "APPROVED", expectedResult: "Mã xác nhận bắt buộc", testData: { fields: { "Tài khoản": { value: "admin", purpose: "VALID" }, "Mật khẩu": { value: "123456@Aa", purpose: "VALID" }, "Mã xác nhận": { value: "", purpose: "EMPTY" } } } },
+            { id: "TC005", testcaseId: "TC005", title: "Sai mật khẩu", module: "Đăng nhập", type: "NEGATIVE", reviewStatus: "APPROVED", expectedResult: "Tài khoản hoặc mật khẩu không chính xác", testData: { fields: { "Tài khoản": { value: "admin", purpose: "VALID" }, "Mật khẩu": { value: "123456@Aa11", purpose: "VALID" }, "Mã xác nhận": { value: "1234567", purpose: "VALID" } } } }
+        ];
+        const cases = [
+            ["TC001", null], ["TC002", "Tài khoản"], ["TC003", "Mật khẩu"], ["TC004", "Mã xác nhận"], ["TC005", null]
+        ];
+        const emptyMapping = {
+            testCaseId: "TC001",
+            entryRoute: { type: "URL_PATH", value: "/wasuco/login", status: "APPROVED" },
+            authenticationSetup: { status: "APPROVED", steps: [
+                { stepOrder: 1, actionType: "FILL", target: "Tài khoản", locator: "page.getByRole('textbox', { name: 'Tài khoản' })" },
+                { stepOrder: 2, actionType: "FILL", target: "Mật khẩu", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })" },
+                { stepOrder: 3, actionType: "FILL", target: "Mã xác nhận", locator: "page.getByRole('textbox', { name: 'Mã xác nhận' })" },
+                { stepOrder: 4, actionType: "CLICK", target: "Đăng nhập", locator: "page.getByRole('button', { name: 'Đăng nhập' })" }
+            ] },
+            navigationChain: { steps: [], status: "APPROVED" },
+            route: { source: "PLAYWRIGHT_CODEGEN", value: "/wasuco/login", status: "MAPPED" },
+            stepMappings: [], missingData: [], warnings: [],
+            assertionMappings: [{ businessExpectation: "Đăng nhập", playwrightAssertion: "await expect(page.getByText('Chào mừng')).toBeVisible()", confidence: 0.9, status: "MAPPED" }]
+        };
+        for (const [tid, emptyField] of cases) {
+            const tc = approved.find(t => t.testcaseId === tid);
+            const root = fs.mkdtempSync(path.join(os.tmpdir(), `ct14-${tid}-`));
+            const svc14 = new AutomationWorkspaceService({ rootDir: root, aiProvider: { async generate() { return "import { test } from '@playwright/test';"; } } });
+            const g14 = await svc14.generate({ testCase: tc, mapping: emptyMapping, codegenText: "", confirmedFacts: [] });
+            assert.equal(g14.written, true, `${tid} generate written`);
+            const code = fs.readFileSync(g14.filePath, "utf8");
+            assert.equal(syntaxCheck(code).ok, true, `${tid} node --check PASS`);
+            if (emptyField) {
+                // field EMPTY không được fill
+                assert.ok(!code.includes(`name: '${emptyField}'`), `${tid} không fill ${emptyField}`);
+            } else {
+                // TC001/TC005 có đủ 3 field fill
+                assert.ok(code.includes("TESTDATA_USERNAME") && code.includes("TESTDATA_PASSWORD") && code.includes("TESTDATA_CAPTCHA"), `${tid} đủ 3 env fill`);
+            }
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    }
+
     console.log("Codegen Contract (P0 FINAL) test: PASS");
 }
 
