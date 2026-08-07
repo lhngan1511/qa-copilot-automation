@@ -189,8 +189,17 @@ export default class AIAutomationCodegen {
      * Validation testcase bỏ trống field sẽ không yêu cầu env đó.
      * @returns {Set<string>}
      */
-    requiredCredentialEnv(mapping) {
+    requiredCredentialEnv(mapping, emptyFields = []) {
         const set = new Set();
+        // Field bỏ trống (purpose=EMPTY) — không cần env credential.
+        const emptySet = new Set(emptyFields.map(f => String(f ?? "").toLowerCase()));
+        const fieldCredKey = fieldName => {
+            const t = String(fieldName ?? "").toLowerCase();
+            if (/tài khoản|username|account/.test(t)) return "LOGIN_USERNAME";
+            if (/mật khẩu|password/.test(t)) return "LOGIN_PASSWORD";
+            if (/mã xác nhận|captcha/.test(t)) return "LOGIN_CAPTCHA";
+            return null;
+        };
         const allSteps = [
             ...(mapping?.authenticationSetup?.steps ?? []),
             ...(mapping?.stepMappings ?? [])
@@ -207,6 +216,11 @@ export default class AIAutomationCodegen {
             if (/mật khẩu|password/.test(text)) set.add("LOGIN_PASSWORD");
             if (/mã xác nhận|captcha/.test(text)) set.add("LOGIN_CAPTCHA");
         }
+        // Bỏ qua field purpose=EMPTY: không đòi env cho field không được điền.
+        for (const field of emptySet) {
+            const key = fieldCredKey(field);
+            if (key) set.delete(key);
+        }
         return set;
     }
 
@@ -214,7 +228,7 @@ export default class AIAutomationCodegen {
      * Validate code sau khi sinh.
      * Trả về errors (rỗng = OK).
      */
-    validateCode({ code, mapping, codegenText, testCaseId, allowCodegenLocators = false }) {
+    validateCode({ code, mapping, codegenText, testCaseId, allowCodegenLocators = false, emptyFields = [] }) {
         const errors = [];
         const id = testCaseId || "";
 
@@ -265,9 +279,9 @@ export default class AIAutomationCodegen {
                 errors.push("Code hardcode giá trị credential (lộ LOGIN_USERNAME/LOGIN_PASSWORD). Phải dùng process.env.");
             }
         }
-        // Chỉ yêu cầu env khi mapping CÓ bước fill field tương ứng.
+        // Chỉ yêu cầu env khi mapping CÓ bước fill field tương ứng (bỏ qua field purpose=EMPTY).
         // Chấp nhận cả LOGIN_* (cũ) và TESTDATA_* (runtime binding mới theo contract).
-        const requiredEnv = this.requiredCredentialEnv(mapping);
+        const requiredEnv = this.requiredCredentialEnv(mapping, emptyFields);
         const envPresent = (key) => code.includes(`process.env.${key}`);
         if (requiredEnv.has("LOGIN_USERNAME") && !envPresent("LOGIN_USERNAME") && !envPresent("TESTDATA_USERNAME")) {
             errors.push("Code không dùng process.env.LOGIN_USERNAME / TESTDATA_USERNAME cho Tài khoản.");
@@ -460,6 +474,10 @@ export default class AIAutomationCodegen {
     async generate({ testCase, mapping, codegenFile = null, codegenText = null, confirmedFacts = [] }) {
         const text = codegenText ?? (codegenFile ? fs.readFileSync(codegenFile, "utf8") : "");
         const testCaseId = testCase.id ?? testCase.testcaseId ?? "";
+        // Field có purpose=EMPTY — validator không đòi env credential cho các field này (không điền).
+        const emptyFields = Object.entries(testCase?.testData?.fields ?? {})
+            .filter(([, f]) => String(f?.purpose ?? "").toUpperCase() === "EMPTY")
+            .map(([name]) => name);
 
         // Prompt rút gọn — chỉ gửi TC + mapping + output contract.
         const compactPrompt = this.buildCompactPrompt({ testCase, mapping, codegenText: text });
@@ -529,7 +547,8 @@ export default class AIAutomationCodegen {
             mapping,
             codegenText: text,
             testCaseId,
-            allowCodegenLocators: source.startsWith("deterministic-fallback")
+            allowCodegenLocators: source.startsWith("deterministic-fallback"),
+            emptyFields
         });
         console.log(
             `[CODEGEN_RULE_VALIDATION_RESULT] ok=${validation.ok} errors=${JSON.stringify(validation.errors ?? [])} warnings=${JSON.stringify(validation.warnings ?? [])} rejectedRule=${validation.ok ? "?" : "CODEGEN_RULE_VALIDATION_FAILED"}`
@@ -549,7 +568,8 @@ export default class AIAutomationCodegen {
                     mapping,
                     codegenText: text,
                     testCaseId,
-                    allowCodegenLocators: true
+                    allowCodegenLocators: true,
+                    emptyFields
                 });
                 console.log(
                     `[CODEGEN_VALIDATION_FALLBACK] source=deterministic-fallback ok=${validation.ok} errors=${JSON.stringify(validation.errors ?? [])}`
