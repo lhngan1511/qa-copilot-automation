@@ -28,7 +28,8 @@ export function isAbsoluteUrl(route) {
 
 /**
  * Render statement `page.goto(...)` cho entryRoute.
- * - URL tuyệt đối (http://...) -> page.goto('url') (KHÔNG nối BASE_URL).
+ * - URL tuyệt đối (http://...) -> page.goto(process.env.BASE_URL + '/path') — bỏ origin/host,
+ *   để LUÔN dùng process.env.BASE_URL (BASE_URL = origin/host). Tránh hardcode URL/host.
  * - Path tương đối (/wasuco/login) -> page.goto(process.env.BASE_URL + '/path').
  * @returns {string|null}
  */
@@ -36,10 +37,24 @@ export function renderGotoStatement(entryRoute) {
     const route = String(entryRoute ?? "").trim();
     if (!route || /->|→/.test(route)) return null;
     if (isAbsoluteUrl(route)) {
-        // Không nối BASE_URL — tránh URL đúp (vd BASE_URL + 'http://...').
-        return `  await page.goto(${JSON.stringify(route)});`;
+        // URL tuyệt đối -> bỏ origin/host, giữ path+query+hash; nối process.env.BASE_URL (origin).
+        // Đáp ứng Rule Validation "không hardcode URL/host, phải dùng process.env.BASE_URL".
+        const parsed = parseAbsoluteUrl(route);
+        const target = parsed ? (parsed.path + parsed.search + parsed.hash || "/") : route;
+        return `  await page.goto(process.env.BASE_URL + ${JSON.stringify(target)});`;
     }
     return `  await page.goto(process.env.BASE_URL + ${JSON.stringify(route)});`;
+}
+
+/** Parse http/https URL → { path, search, hash }. Trả null nếu không parse được. */
+export function parseAbsoluteUrl(value) {
+    try {
+        const u = new URL(String(value));
+        if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+        return { path: u.pathname, search: u.search, hash: u.hash };
+    } catch {
+        return null;
+    }
 }
 
 /**
