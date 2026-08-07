@@ -168,6 +168,26 @@ async function main() {
     const gen3 = await svc3.generate({ testCase: tcConfirmed, mapping: MAPPING_LOGIN, codegenText: CODEGEN_LOGIN, confirmedFacts: [] });
     assert.equal(gen3.runtimeEnv.TESTDATA_CAPTCHA, "999999", "Drawer confirmed thắng JSON cho runtime env");
 
+    // 13. [P0 FIX] AI sinh code hoàn chỉnh (guard ok) nhưng fail rule validation
+    //     (locator ngoài allowlist) -> tự fallback deterministic + ghi file.
+    {
+        const tempRoot13 = fs.mkdtempSync(path.join(os.tmpdir(), "ct13-"));
+        const badProvider = {
+            async generate() {
+                return "import { test, expect } from '@playwright/test';\ntest('TC001 - x', async ({ page }) => {\n  await expect(page.getByRole('button', { name: 'adminButton' })).toBeVisible();\n});";
+            }
+        };
+        const svc13 = new AutomationWorkspaceService({ rootDir: tempRoot13, aiProvider: badProvider });
+        const gen13 = await svc13.generate({ testCase: TCDATA, mapping: MAPPING_LOGIN, codegenText: CODEGEN_LOGIN, confirmedFacts: [] });
+        assert.equal(gen13.written, true, "AI fail rule -> fallback viết file");
+        assert.equal(gen13.source, "deterministic-fallback", "fallback về deterministic");
+        const file13 = fs.readFileSync(gen13.filePath, "utf8");
+        assertLoginSpec(file13);
+        assert.ok(file13.includes("process.env.BASE_URL +"), "code fallback dùng BASE_URL, không hardcode");
+        assert.ok(!file13.includes("adminButton"), "fallback không dùng locator bịa");
+        fs.rmSync(tempRoot13, { recursive: true, force: true });
+    }
+
     console.log("Codegen Contract (P0 FINAL) test: PASS");
 }
 
