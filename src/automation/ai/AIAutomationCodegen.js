@@ -538,6 +538,13 @@ export default class AIAutomationCodegen {
             `finishReasons=${JSON.stringify(finishReasons)}`
         );
 
+        // [P0 DEMO] Preserve ASSERTION_MAPPING_REQUIRED — fallback từ chối (thiếu assertion/data thật,
+        // vd recording chỉ có thông báo lỗi/validation cho TC POSITIVE). STOP ngay,
+        // KHÔNG đưa validateCode("") (tránh sinh lỗi giả thiếu TC ID/import/BASE_URL/env).
+        if (source === "deterministic-fallback-rejected" && !guard.ok) {
+            return { code: final, validation: null, guard, source, finishReasons };
+        }
+
         // Truy vết khoảng đứt: EXTRACTED -> rule validation -> WRITE.
         console.log(
             `[CODEGEN_RULE_VALIDATION_START] testCaseId=${testCaseId || "?"} source=${source} characterCount=${String(final ?? "").length}`

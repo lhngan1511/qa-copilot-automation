@@ -84,6 +84,22 @@ export default class AutomationWorkspaceService {
         if (!mapping) throw new Error("Thiếu mapping đã phân tích.");
         const codegen = new AIAutomationCodegen(this.provider(), { rootDir: this.rootDir });
         const result = await codegen.generate({ testCase, mapping, codegenText, confirmedFacts });
+        // Ưu tiên guard error (vd ASSERTION_MAPPING_REQUIRED khi fallback từ chối) trước,
+        // để không bị lẫn với lỗi rule validation giả (validateCode("")).
+        if (result.guard && !result.guard.ok) {
+            console.log(
+                `[CODEGEN_SERVICE_GENERATE_RESULT] written=false filePath=null exists=false errorCode=${result.guard.errorCode ?? "?"} errorMessage=${JSON.stringify(result.guard.reason ?? "")}`
+            );
+            return {
+                ...result,
+                filePath: null,
+                exists: false,
+                written: false,
+                guardError: result.guard.errorCode,
+                guardReason: result.guard.reason,
+                errorCode: result.guard.errorCode
+            };
+        }
         // Không ghi file nếu code chưa hoàn chỉnh / hỏng encoding / syntax lỗi.
         if (!result.validation?.ok) {
             console.log(
@@ -98,19 +114,6 @@ export default class AutomationWorkspaceService {
                 errorCode: "CODEGEN_RULE_VALIDATION_FAILED",
                 errors: result.validation?.errors ?? [],
                 source: result.source
-            };
-        }
-        if (result.guard && !result.guard.ok) {
-            console.log(
-                `[CODEGEN_SERVICE_GENERATE_RESULT] written=false filePath=null exists=false errorCode=${result.guard.errorCode ?? "?"} errorMessage=${JSON.stringify(result.guard.reason ?? "")}`
-            );
-            return {
-                ...result,
-                filePath: null,
-                exists: false,
-                written: false,
-                guardError: result.guard.errorCode,
-                guardReason: result.guard.reason
             };
         }
         const filePath = codegen.writeFile({ code: result.code, testCaseId: testCase.id, module: testCase.module || "Module" });

@@ -234,6 +234,40 @@ async function main() {
         }
     }
 
+    // 15. [P0 DEMO] Preserve ASSERTION_MAPPING_REQUIRED — TC POSITIVE + recording chỉ có
+    //     thông báo lỗi/validation -> fallback từ chối, service trả ASSERTION_MAPPING_REQUIRED,
+    //     KHÔNG chạy rule validation với code rỗng (không sinh lỗi giả thiếu TC/import/BASE_URL).
+    {
+        const root15 = fs.mkdtempSync(path.join(os.tmpdir(), "ct15-"));
+        const codegenOnlyValidation = `test('Đăng nhập', async ({ page }) => {
+  await page.getByRole('textbox', { name: 'Mật khẩu' }).fill('x');
+  await expect(page.getByText('Vui lòng nhập Tên tài khoản')).toBeVisible();
+  await expect(page.getByText('Vui lòng nhập Mật khẩu')).toBeVisible();
+  await expect(page.getByText('Vui lòng nhập Mã xác nhận')).toBeVisible();
+});`;
+        // mapping KHÔNG có assertionMappings -> resolveAssertion không tìm được assertion thành công.
+        const noAssertMapping = {
+            testCaseId: "TC001",
+            entryRoute: { type: "URL_PATH", value: "/wasuco/login", status: "APPROVED" },
+            authenticationSetup: { status: "APPROVED", steps: [
+                { stepOrder: 1, actionType: "FILL", target: "Tài khoản", locator: "page.getByRole('textbox', { name: 'Tài khoản' })" },
+                { stepOrder: 2, actionType: "FILL", target: "Mật khẩu", locator: "page.getByRole('textbox', { name: 'Mật khẩu' })" }
+            ] },
+            navigationChain: { steps: [], status: "APPROVED" },
+            route: { source: "PLAYWRIGHT_CODEGEN", value: "/wasuco/login", status: "MAPPED" },
+            stepMappings: [], missingData: [], warnings: [],
+            assertionMappings: []
+        };
+        // Provider trả code cụt -> guard fail -> rơi vào deterministic fallback.
+        const svc15 = new AutomationWorkspaceService({ rootDir: root15, aiProvider: { async generate() { return "import { test } from '@playwright/test';"; } } });
+        const g15 = await svc15.generate({ testCase: TCDATA, mapping: noAssertMapping, codegenText: codegenOnlyValidation, confirmedFacts: [] });
+        assert.equal(g15.written, false, "không ghi file khi thiếu assertion thành công");
+        assert.equal(g15.guardError, "ASSERTION_MAPPING_REQUIRED", "trả nguyên errorCode ASSERTION_MAPPING_REQUIRED");
+        assert.equal(g15.errorCode, "ASSERTION_MAPPING_REQUIRED", "service.errorCode = ASSERTION_MAPPING_REQUIRED");
+        assert.ok(!g15.errors || g15.errors.length === 0, "không sinh 6 lỗi giả rule validation");
+        fs.rmSync(root15, { recursive: true, force: true });
+    }
+
     console.log("Codegen Contract (P0 FINAL) test: PASS");
 }
 
