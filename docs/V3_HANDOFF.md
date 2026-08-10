@@ -94,6 +94,8 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Docs** | Wireframe **5C** (Expected Result → Điều kiện xác nhận → Generate; warning "chưa đủ thông tin", đề xuất deterministic, cắm AI sau không phá workflow) | (xem git log mới nhất) |
 | **Bước 5C** | **Expected Result → Tester-confirmed Assertion → Generate: triển khai** — tab "Kết quả mong đợi", assertionSuggester deterministic, Áp dụng→Nháp→Xác nhận, gate ≥1 TESTER_CONFIRMED, Sinh automation chỉ drawer, renderer toBeHidden | (xem git log mới nhất) |
 | **Docs** | **Architecture Correction** — mô hình Recording → Action Block → TestCase Binding; root cause BUG 1+2; CASE A/B/C; migration GIỮ/REFACTOR/BỎ/THÊM + wireframe UX mới | (xem git log mới nhất) |
+| **6A** | Fix BUG 1 (drawer qua refs) + BUG 2 (expectedResult payload) | `904c7fa` |
+| **6B** | **Data Model:** ActionBlock (snapshot, workspace-level) + TestCaseAutomationBinding (sequence) + reverse dependency + migrate legacy Segment→Block + Generate đọc binding; API blocks/binding; test A–G | (xem git log mới nhất) |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -172,10 +174,20 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
 - Phạm vi hẹp đã chốt: Generate spec → Runner → PASS/FAIL thật → log/trace. **Chưa thêm AI failure analysis.**
 
-### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — Checkpoint 6A)
+### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — Checkpoint 6B DONE, chờ duyệt 6C)
 - Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
-- **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs → 6B data model (quan trọng nhất: ActionBlock/Binding/snapshot/version/reverse dep/compatibility) → 6C UX → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
-- **6A (đang làm):** chỉ fix BUG 1 (drawer đọc recording qua mapping hiện hành) + BUG 2 (page truyền expectedResult). Không refactor Segment→Block, không Test Data/Slot/Runner/AI. Regression + build + commit/push + STOP chờ duyệt.
+- **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs ✅ → 6B data model ✅ (hiện tại) → 6C UX → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
+
+**6B — Data Model (DONE):**
+- **Canonical:** `RecordingSession (raw/evidence) → ActionBlock (SNAPSHOT steps, workspace-level) → TestCaseAutomationBinding (entry.binding.sequence [{blockId, order}])`.
+- ActionBlock: `blockId, workspaceId, sourceRecordingId, label, scope PRIVATE|REUSABLE, kind SETUP|ACTION, steps (SNAPSHOT copy), sourceRange, status DRAFT|CONFIRMED, version, hash, timestamps`. REUSABLE bắt buộc label. Sửa block → DRAFT + version++.
+- Binding: sequence do tester sắp (KHÔNG tự reorder; SETUP chỉ metadata). Block lưu ở **workspace** (`workspace.actionBlocks[]`) — xóa raw recording không ảnh hưởng snapshot.
+- **Reverse dependency:** `getBlockUsage(blockId)` derive từ bindings → `testCaseIds[]` (deterministic, test được).
+- **Compatibility:** Segment 5C là **legacy input** — `migrateLegacySegments()` (idempotent per-entry) chuyển segment → PRIVATE block + binding khi đọc. Legacy 5B (recording gắn testCaseId) vẫn chạy qua fallback. KHÔNG còn hai nguồn sự thật cho Generate — Generate đọc binding → block snapshot.
+- **Generate contract:** binding.sequence → block snapshot steps → confirmed assertion → Renderer (flat spec như cũ, chưa function compiler).
+- **API mới:** POST/PATCH/DELETE /blocks, POST /blocks/:id/confirm, GET /blocks/:id/usage, GET/POST /binding, POST /binding/blocks, DELETE /binding/blocks/:blockId, POST /binding/reorder.
+- **Test mới:** `tests/automation-v3-action-block-test.js` (A private · B snapshot khi xóa recording · C reuse + reverse dep + không tự bind · D assertion khác nhau cùng block · E order B→A · F legacy segment migrate · G nested 5 block). Regression 10/10 PASS + build OK.
+- **Đã cập nhật:** record-mapping-test + assertion-test sang canonical block/binding (compatibility segment giữ ở action-block-test F).
 
 ### Bước 7 — Test tích hợp end-to-end
 - Nối toàn bộ workspace → record → approve → assertion → generate → run.

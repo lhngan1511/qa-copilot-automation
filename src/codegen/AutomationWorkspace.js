@@ -74,7 +74,9 @@ export default class AutomationWorkspace {
             module: String(module ?? ""),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            selectedTestCases: (Array.isArray(testCases) ? testCases : []).map(tc => this.initTestCase(tc))
+            selectedTestCases: (Array.isArray(testCases) ? testCases : []).map(tc => this.initTestCase(tc)),
+            // 6B — ActionBlock library (canonical reusable automation artifact, snapshot steps).
+            actionBlocks: []
         };
         this.workspaces.push(workspace);
         this.persist();
@@ -104,9 +106,11 @@ export default class AutomationWorkspace {
             generatedFile: null,
             lastRun: null,
             automationAssertions: [],
-            // 5C-0 — Record Mapping: trạng thái tự động hóa do tester quyết định + mapping segment → testcase.
+            // 5C-0 — Record Mapping (legacy compatibility): mapping segment → testcase (sẽ migrate sang binding ở 6B).
             automationDecision: "UNDECIDED", // UNDECIDED | MANUAL_ONLY | AUTOMATED
-            segments: [], // [{ segmentId, recordingId, orderInTestCase }] — thứ tự tester sắp xếp (KHÔNG theo index/thứ tự JSON)
+            segments: [], // [{ segmentId, recordingId, orderInTestCase }] — legacy 5C-0
+            // 6B — TestCaseAutomationBinding (CANONICAL): sequence các ActionBlock theo THỨ TỰ tester xác nhận.
+            binding: { sequence: [] }, // [{ blockId, order }]
             // 5C — Expected Result: bản gốc từ approved (chỉ đọc) + bản làm việc do tester sửa (workspace).
             expectedResult: String(tc?.expectedResult ?? "").trim(),
             expectedResultEdited: null
@@ -297,5 +301,181 @@ export default class AutomationWorkspace {
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!entry) return "";
         return (entry.expectedResultEdited ?? entry.expectedResult ?? "").trim();
+    }
+
+    /* ================= 6B — ActionBlock (canonical reusable automation artifact, SNAPSHOT steps) ================= */
+
+    newBlockId() {
+        return `BLK-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    }
+
+    blockHash(block) {
+        return crypto.createHash("sha256")
+            .update(JSON.stringify({ steps: block.steps, sourceRange: block.sourceRange, label: block.label, kind: block.kind }))
+            .digest("hex").slice(0, 12);
+    }
+
+    getActionBlocks(workspaceId) {
+        const ws = this.get(workspaceId);
+        return ws ? (Array.isArray(ws.actionBlocks) ? ws.actionBlocks : []) : [];
+    }
+
+    getActionBlock(workspaceId, blockId) {
+        return this.getActionBlocks(workspaceId).find(b => b.blockId === blockId) ?? null;
+    }
+
+    /** Tạo ActionBlock — steps là SNAPSHOT (không phải live view recording). */
+    addActionBlock(workspaceId, { sourceRecordingId = null, label = null, scope = "PRIVATE", kind = "ACTION", steps = [], sourceRange = null, status = "DRAFT", confirmedAt = null, confirmedBy = null } = {}) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const block = {
+            blockId: this.newBlockId(),
+            workspaceId,
+            sourceRecordingId: sourceRecordingId ?? null,
+            label: label ? String(label).trim() : null,
+            scope: scope === "REUSABLE" ? "REUSABLE" : "PRIVATE",
+            kind: kind === "SETUP" ? "SETUP" : "ACTION",
+            steps: Array.isArray(steps) ? steps.map(s => ({ ...s })) : [], // SNAPSHOT — copy
+            sourceRange: sourceRange && Number.isInteger(sourceRange.startStep) ? { startStep: sourceRange.startStep, endStep: sourceRange.endStep } : null,
+            status: status === "CONFIRMED" ? "CONFIRMED" : "DRAFT",
+            version: 1,
+            hash: null,
+            confirmedAt: confirmedAt ?? null,
+            confirmedBy: confirmedBy ?? null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        block.hash = this.blockHash(block);
+        ws.actionBlocks = Array.isArray(ws.actionBlocks) ? ws.actionBlocks : [];
+        ws.actionBlocks.push(block);
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...block };
+    }
+
+    /** Sửa ActionBlock — đổi range/label/scope/kind → status DRAFT + version++ (snapshot chốt lại). */
+    updateActionBlock(workspaceId, blockId, { label = undefined, scope = undefined, kind = undefined, steps = undefined, sourceRange = undefined } = {}) {
+        const ws = this.get(workspaceId);
+        const block = this.getActionBlock(workspaceId, blockId);
+        if (!ws || !block) return null;
+        if (label !== undefined) block.label = String(label).trim() || null;
+        if (scope !== undefined) block.scope = scope === "REUSABLE" ? "REUSABLE" : "PRIVATE";
+        if (kind !== undefined) block.kind = kind === "SETUP" ? "SETUP" : "ACTION";
+        if (steps !== undefined) { block.steps = Array.isArray(steps) ? steps.map(s => ({ ...s })) : []; }
+        if (sourceRange !== undefined) {
+            block.sourceRange = sourceRange && Number.isInteger(sourceRange.startStep) ? { startStep: sourceRange.startStep, endStep: sourceRange.endStep } : null;
+        }
+        // Mọi thay đổi → quay về DRAFT + bump version (block phải được tester xác nhận lại).
+        block.status = "DRAFT";
+        block.confirmedAt = null;
+        block.confirmedBy = null;
+        block.version = (block.version || 1) + 1;
+        block.hash = this.blockHash(block);
+        block.updatedAt = new Date().toISOString();
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...block };
+    }
+
+    confirmActionBlock(workspaceId, blockId) {
+        const ws = this.get(workspaceId);
+        const block = this.getActionBlock(workspaceId, blockId);
+        if (!ws || !block) return null;
+        block.status = "CONFIRMED";
+        block.confirmedAt = new Date().toISOString();
+        block.confirmedBy = "tester";
+        block.updatedAt = new Date().toISOString();
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...block };
+    }
+
+    /** Xóa ActionBlock + gỡ khỏi mọi binding. */
+    removeActionBlock(workspaceId, blockId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        ws.actionBlocks = (ws.actionBlocks ?? []).filter(b => b.blockId !== blockId);
+        for (const entry of ws.selectedTestCases ?? []) {
+            const seq = (entry.binding?.sequence ?? []).filter(ref => ref.blockId !== blockId);
+            if (seq.length !== (entry.binding?.sequence ?? []).length) {
+                entry.binding = { sequence: seq };
+            }
+        }
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return blockId;
+    }
+
+    /* ================= 6B — TestCaseAutomationBinding (sequence) ================= */
+
+    getBinding(workspaceId, testCaseId) {
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!entry) return null;
+        return entry.binding ?? { sequence: [] };
+    }
+
+    /** Set nguyên sequence binding (dùng cho migrate / khởi tạo). */
+    setBinding(workspaceId, testCaseId, sequence) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry) return null;
+        entry.binding = { sequence: (Array.isArray(sequence) ? sequence : []).map((r, i) => ({ blockId: r.blockId, order: r.order ?? i + 1 })) };
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...entry.binding };
+    }
+
+    /** Gán block vào binding (append cuối — tester-owned order; không tự sắp xếp). */
+    bindBlockToTestCase(workspaceId, testCaseId, blockId) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry) return null;
+        const seq = (entry.binding?.sequence ?? []).slice();
+        if (!seq.some(ref => ref.blockId === blockId)) {
+            const maxOrder = seq.reduce((m, r) => Math.max(m, r.order || 0), 0);
+            seq.push({ blockId, order: maxOrder + 1 });
+            entry.binding = { sequence: seq };
+            ws.updatedAt = new Date().toISOString();
+            this.persist();
+        }
+        return { ...entry.binding };
+    }
+
+    /** Gỡ block khỏi binding. */
+    unbindBlockFromTestCase(workspaceId, testCaseId, blockId) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry) return null;
+        entry.binding = { sequence: (entry.binding?.sequence ?? []).filter(ref => ref.blockId !== blockId) };
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...entry.binding };
+    }
+
+    /** Sắp xếp lại sequence — đúng thứ tự tester xác nhận (Generate dùng thứ tự này). */
+    reorderBinding(workspaceId, testCaseId, blockIds) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry) return null;
+        const current = entry.binding?.sequence ?? [];
+        if (!Array.isArray(blockIds) || blockIds.length !== current.length) return null;
+        const idSet = new Set(blockIds);
+        if (current.some(ref => !idSet.has(ref.blockId))) return null;
+        const byId = new Map(current.map(ref => [ref.blockId, ref]));
+        entry.binding = { sequence: blockIds.map((id, i) => ({ ...byId.get(id), blockId: id, order: i + 1 })) };
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...entry.binding };
+    }
+
+    /** Reverse dependency: blockId → testCaseIds[] (derive deterministic từ bindings). */
+    getBlockUsage(workspaceId, blockId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return [];
+        const ids = [];
+        for (const entry of ws.selectedTestCases ?? []) {
+            if ((entry.binding?.sequence ?? []).some(ref => ref.blockId === blockId)) ids.push(entry.testCaseId);
+        }
+        return ids;
     }
 }

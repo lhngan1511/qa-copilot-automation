@@ -63,8 +63,25 @@ export default class GenerateService {
         };
 
         let rendered;
-        if (Array.isArray(segments) && segments.length > 0) {
-            // ===== 5C-0 — Segment flow: steps ghép theo thứ tự tester xác nhận, SETUP ghép trước =====
+        if (Array.isArray(segments) && segments.length > 0 && segments[0]?.blockId) {
+            // ===== 6B — ActionBlock flow (CANONICAL): snapshot steps từ workspace blocks, theo thứ tự binding =====
+            const resolved = this.resolveBlockFlow({ workspaceId, testCaseId, segments });
+            if (!resolved.ok) return resolved;
+            rendered = renderV3Spec({
+                testCase,
+                testcaseRecording: resolved.mainRecording,
+                setupRecording: null, // block SETUP nằm trong sequence như tester sắp (không tự reorder)
+                confirmedTestData,
+                confirmedAssertions,
+                approvedTestData,
+                approvedBy: resolved.mainRecording.approvedBy ?? null,
+                approvedAt: resolved.mainRecording.approvedAt ?? null
+            });
+            if (rendered.ok) {
+                rendered.metadata = { ...rendered.metadata, segments: resolved.traceSegments };
+            }
+        } else if (Array.isArray(segments) && segments.length > 0) {
+            // ===== 5C-0 — Segment flow (legacy compatibility): steps ghép theo thứ tự tester xác nhận =====
             const resolved = this.resolveSegmentFlow({ testCaseId, segments, setupRecordingId });
             if (!resolved.ok) return resolved;
             rendered = renderV3Spec({
@@ -129,6 +146,46 @@ export default class GenerateService {
             ...rendered,
             outputPath
         };
+    }
+
+    /**
+     * 6B — Ghép steps từ ActionBlock SNAPSHOT (workspace), theo đúng thứ tự binding (order).
+     * KHÔNG đọc live recording — block giữ snapshot; sourceRecordingId chỉ để traceability.
+     */
+    resolveBlockFlow({ workspaceId, testCaseId, segments }) {
+        const refs = segments.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const steps = [];
+        const traceSegments = [];
+        let baseBlock = null;
+        for (const ref of refs) {
+            const block = this.workspace?.getActionBlock(workspaceId, ref.blockId) ?? null;
+            if (!block) {
+                return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
+            }
+            if (block.status !== "CONFIRMED") {
+                return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_NOT_CONFIRMED, reason: "Bản ghi thao tác chưa được xác nhận." };
+            }
+            steps.push(...(block.steps ?? []).map(s => ({ ...s }))); // snapshot — copy
+            traceSegments.push({
+                segmentId: block.blockId,
+                recordingId: block.sourceRecordingId ?? null,
+                startStep: block.sourceRange?.startStep ?? null,
+                endStep: block.sourceRange?.endStep ?? null,
+                type: block.kind,
+                testCaseId
+            });
+            if (!baseBlock) baseBlock = block;
+        }
+        if (!baseBlock) {
+            return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
+        }
+        // Pseudo recording APPROVED: renderer chỉ render theo steps; snapshot không cần hash recording.
+        const mainRecording = {
+            status: "APPROVED",
+            recordingId: baseBlock.sourceRecordingId ?? "BLOCK",
+            steps
+        };
+        return { ok: true, mainRecording, traceSegments };
     }
 
     /**

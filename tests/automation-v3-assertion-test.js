@@ -70,14 +70,16 @@ async function main() {
 
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/select`);
 
-    // Recording + segments (5C-0)
+    // Recording + ActionBlocks (6B canonical) — setup kind SETUP + block testcase, bind vào TC001
     const start = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/start`, { type: "TESTCASE" });
     const recId = start.body.recordingId;
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/stop`, { recordingId: recId, source: SRC });
-    const segSetup = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/${recId}/segments`, { startStep: 1, endStep: 4, type: "SETUP" });
-    const segTc = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/${recId}/segments`, { startStep: 5, endStep: 5, type: "TESTCASE", testCaseId: "TC001" });
-    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/${recId}/segments/${segSetup.body.segmentId}/confirm`);
-    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/${recId}/segments/${segTc.body.segmentId}/confirm`);
+    const blkSetup = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/blocks`, { recordingId: recId, startStep: 1, endStep: 4, kind: "SETUP" });
+    const blkTc = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/blocks`, { recordingId: recId, startStep: 5, endStep: 5 });
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/blocks/${blkSetup.body.blockId}/confirm`);
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/blocks/${blkTc.body.blockId}/confirm`);
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/binding/blocks`, { blockId: blkSetup.body.blockId });
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/binding/blocks`, { blockId: blkTc.body.blockId });
 
     // ===== 2. Đề xuất KHÔNG bịa: expected quá chung → [] =====
     const sug1 = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/assertions/suggest`);

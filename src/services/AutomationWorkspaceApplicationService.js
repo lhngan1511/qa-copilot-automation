@@ -43,7 +43,11 @@ export const V3_ERRORS = {
     SEGMENT_INVALID: "SEGMENT_INVALID",
     SEGMENT_OVERLAP: "SEGMENT_OVERLAP",
     SEGMENT_TYPE_REQUIRES_TESTCASE: "SEGMENT_TYPE_REQUIRES_TESTCASE",
-    SEGMENT_NOT_FOUND: "SEGMENT_NOT_FOUND"
+    SEGMENT_NOT_FOUND: "SEGMENT_NOT_FOUND",
+    // 6B — ActionBlock
+    BLOCK_NOT_FOUND: "BLOCK_NOT_FOUND",
+    BLOCK_LABEL_REQUIRED: "BLOCK_LABEL_REQUIRED",
+    BLOCK_NOT_CONFIRMED: "BLOCK_NOT_CONFIRMED"
 };
 
 const STATUS_BY_CODE = {
@@ -66,7 +70,10 @@ const STATUS_BY_CODE = {
     SEGMENT_INVALID: 400,
     SEGMENT_OVERLAP: 409,
     SEGMENT_TYPE_REQUIRES_TESTCASE: 400,
-    SEGMENT_NOT_FOUND: 404
+    SEGMENT_NOT_FOUND: 404,
+    BLOCK_NOT_FOUND: 404,
+    BLOCK_LABEL_REQUIRED: 400,
+    BLOCK_NOT_CONFIRMED: 409
 };
 
 /** Ném lỗi V3 thống nhất (errorCode + statusCode + message + details). */
@@ -98,6 +105,10 @@ function newSegmentId() {
 }
 
 const AUTOMATION_DECISIONS = new Set(["UNDECIDED", "MANUAL_ONLY", "AUTOMATED"]);
+
+function newBlockId() {
+    return `BLK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export default class AutomationWorkspaceApplicationService {
     constructor({ workspace = null, store = null, session = null, generateService = null } = {}) {
@@ -304,22 +315,35 @@ export default class AutomationWorkspaceApplicationService {
     /** List recording versions của testcase — chỉ metadata/summary, KHÔNG trả steps/source (Bước 5B). */
     listRecordings({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
-        // 6A — fix BUG 1: đọc recording qua MAPPING HIỆN HÀNH của testcase (segment refs trong workspace),
-        // không quay lại gán testCaseId vào recording để chữa UI. Legacy fallback (allByTestCase) giữ
-        // compatibility cho dữ liệu 5B cũ (recording gắn thẳng testCaseId).
-        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
+        // 6B — đọc recording qua binding (block.sourceRecordingId) — canonical; legacy fallback
+        // (segments refs / allByTestCase) giữ compatibility cho dữ liệu 5C-0/5B cũ.
+        this.migrateLegacySegments(workspaceId);
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        const seq = (entry.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         let recordings;
-        if (refs.length > 0) {
-            recordings = [];
-            const seen = new Set();
-            for (const ref of refs) {
+        const seen = new Set();
+        recordings = [];
+        for (const ref of seq) {
+            const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            if (!block?.sourceRecordingId) continue;
+            const rec = this.store?.getRaw(block.sourceRecordingId);
+            if (rec && !seen.has(rec.recordingId)) {
+                seen.add(rec.recordingId);
+                recordings.push(rec);
+            }
+        }
+        // Legacy 5C-0: segments refs chưa migrate (nếu binding rỗng).
+        if (recordings.length === 0) {
+            for (const ref of this.workspace.getSegmentRefs(workspaceId, testCaseId)) {
                 const rec = this.store?.getRaw(ref.recordingId);
-                if (rec && !seen.has(ref.recordingId)) {
-                    seen.add(ref.recordingId);
+                if (rec && !seen.has(rec.recordingId)) {
+                    seen.add(rec.recordingId);
                     recordings.push(rec);
                 }
             }
-        } else {
+        }
+        // Legacy 5B: recording gắn thẳng testCaseId.
+        if (recordings.length === 0) {
             recordings = this.store?.allByTestCase(testCaseId) ?? [];
         }
         return recordings
@@ -580,6 +604,198 @@ export default class AutomationWorkspaceApplicationService {
         };
     }
 
+    /* ============================== B3. ActionBlock + Binding (6B — CANONICAL) ============================== */
+
+    /**
+     * 6B — Migration deterministic: Segment 5C legacy → ActionBlock + Binding.
+     * Mỗi segment ref (entry.segments) → 1 ActionBlock PRIVATE (snapshot steps từ recording)
+     * + binding.sequence theo đúng thứ tự cũ. Idempotent (chạy 1 lần / workspace trong session).
+     * Segment chỉ còn là legacy compatibility INPUT — canonical sau 6B là ActionBlock + Binding.
+     */
+    migrateLegacySegments(workspaceId) {
+        const ws = this.workspace?.get(workspaceId);
+        if (!ws) return;
+        // Idempotent theo từng entry: chỉ migrate khi entry CÓ segments legacy và CHƯA có binding.
+        for (const entry of ws.selectedTestCases ?? []) {
+            const refs = (entry.segments ?? []).slice().sort((a, b) => (a.orderInTestCase || 0) - (b.orderInTestCase || 0));
+            if (refs.length === 0) continue;
+            if ((entry.binding?.sequence ?? []).length > 0) continue;
+            const seq = [];
+            for (const ref of refs) {
+                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
+                if (!seg) continue;
+                const raw = this.store?.getRaw(ref.recordingId) ?? null;
+                const steps = this.sliceSteps(raw?.steps ?? [], seg.startStep, seg.endStep);
+                if (steps.length === 0) continue;
+                const block = this.workspace.addActionBlock(workspaceId, {
+                    sourceRecordingId: ref.recordingId,
+                    label: null,
+                    scope: "PRIVATE",
+                    kind: seg.type === "SETUP" ? "SETUP" : "ACTION",
+                    steps,
+                    sourceRange: { startStep: seg.startStep, endStep: seg.endStep },
+                    status: seg.status === "CONFIRMED" ? "CONFIRMED" : "DRAFT",
+                    confirmedAt: seg.confirmedAt ?? null,
+                    confirmedBy: seg.confirmedBy ?? null
+                });
+                if (block) seq.push({ blockId: block.blockId, order: ref.orderInTestCase ?? seq.length + 1 });
+            }
+            if (seq.length > 0) this.workspace.setBinding(workspaceId, entry.testCaseId, seq);
+        }
+    }
+
+    /** Tạo ActionBlock (SNAPSHOT steps) — scope PRIVATE mặc định; REUSABLE bắt buộc label. KHÔNG tự gán testcase. */
+    createBlock({ workspaceId, recordingId, startStep, endStep, label = null, scope = "PRIVATE", kind = "ACTION" }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec || rec.workspaceId !== workspaceId) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy bản ghi.");
+        const blockScope = String(scope ?? "PRIVATE").toUpperCase() === "REUSABLE" ? "REUSABLE" : "PRIVATE";
+        const blockKind = String(kind ?? "ACTION").toUpperCase() === "SETUP" ? "SETUP" : "ACTION";
+        if (blockScope === "REUSABLE" && !String(label ?? "").trim()) {
+            fail(V3_ERRORS.INVALID_REQUEST, "Thao tác dùng lại bắt buộc đặt tên.");
+        }
+        this.assertRangeValid(rec.steps, startStep, endStep);
+        const steps = this.sliceSteps(rec.steps, startStep, endStep);
+        if (steps.length === 0) fail(V3_ERRORS.SEGMENT_INVALID, "Khoảng bước không hợp lệ.");
+        const block = this.workspace.addActionBlock(workspaceId, {
+            sourceRecordingId: recordingId,
+            label: String(label ?? "").trim() || null,
+            scope: blockScope,
+            kind: blockKind,
+            steps,
+            sourceRange: { startStep, endStep }
+        });
+        return this.blockDto(block);
+    }
+
+    /** Sửa ActionBlock — đổi range → re-snapshot; mọi thay đổi → DRAFT + version++ (tester xác nhận lại). */
+    updateBlock({ workspaceId, blockId, label, scope, kind, startStep, endStep }) {
+        this.ensureWorkspace(workspaceId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        const nextScope = scope !== undefined ? (String(scope).toUpperCase() === "REUSABLE" ? "REUSABLE" : "PRIVATE") : block.scope;
+        const nextKind = kind !== undefined ? (String(kind).toUpperCase() === "SETUP" ? "SETUP" : "ACTION") : block.kind;
+        const nextLabel = label !== undefined ? String(label).trim() : block.label;
+        if (nextScope === "REUSABLE" && !nextLabel) fail(V3_ERRORS.INVALID_REQUEST, "Thao tác dùng lại bắt buộc đặt tên.");
+
+        let steps = block.steps;
+        let sourceRange = block.sourceRange;
+        if (Number.isInteger(startStep) && Number.isInteger(endStep)) {
+            const rec = block.sourceRecordingId ? this.store?.getRaw(block.sourceRecordingId) : null;
+            if (!rec) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy bản ghi nguồn để cập nhật phạm vi.");
+            this.assertRangeValid(rec.steps, startStep, endStep);
+            steps = this.sliceSteps(rec.steps, startStep, endStep);
+            sourceRange = { startStep, endStep };
+        }
+        const updated = this.workspace.updateActionBlock(workspaceId, blockId, { label: nextLabel, scope: nextScope, kind: nextKind, steps, sourceRange });
+        return this.blockDto(updated);
+    }
+
+    /** Xác nhận ActionBlock (DRAFT → CONFIRMED) — tester là người quyết định. */
+    confirmBlock({ workspaceId, blockId }) {
+        this.ensureWorkspace(workspaceId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        const updated = this.workspace.confirmActionBlock(workspaceId, blockId);
+        return this.blockDto(updated);
+    }
+
+    /** Xóa ActionBlock + gỡ khỏi mọi binding. */
+    deleteBlock({ workspaceId, blockId }) {
+        this.ensureWorkspace(workspaceId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        this.workspace.removeActionBlock(workspaceId, blockId);
+        return { blockId, deleted: true };
+    }
+
+    /** Bind block vào binding của testcase (append — tester-owned order). */
+    bindBlock({ workspaceId, testCaseId, blockId }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        if (block.workspaceId !== workspaceId) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Thao tác không thuộc workspace này.");
+        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
+        // Có block CONFIRMED trong binding → testcase tự chuyển "Có automation" (giữ hành vi 5C-0).
+        if (block.status === "CONFIRMED") {
+            this.workspace.setAutomationDecision(workspaceId, testCaseId, "AUTOMATED");
+        }
+        return this.bindingDto(workspaceId, testCaseId, binding);
+    }
+
+    /** Gỡ block khỏi binding. */
+    unbindBlock({ workspaceId, testCaseId, blockId }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const binding = this.workspace.unbindBlockFromTestCase(workspaceId, testCaseId, blockId);
+        return this.bindingDto(workspaceId, testCaseId, binding);
+    }
+
+    /** Sắp xếp lại sequence (↑/↓) — Generate dùng đúng thứ tự này. */
+    reorderBinding({ workspaceId, testCaseId, blockIds }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const current = this.workspace.getBinding(workspaceId, testCaseId);
+        if (!Array.isArray(blockIds) || blockIds.length !== (current?.sequence ?? []).length || blockIds.length === 0) {
+            fail(V3_ERRORS.INVALID_REQUEST, "Danh sách thứ tự thao tác không hợp lệ.");
+        }
+        const binding = this.workspace.reorderBinding(workspaceId, testCaseId, blockIds);
+        if (!binding) fail(V3_ERRORS.INVALID_REQUEST, "Không sắp xếp được thao tác.");
+        return this.bindingDto(workspaceId, testCaseId, binding);
+    }
+
+    /** Lấy binding hiện tại (sequence + thông tin block). */
+    getBinding({ workspaceId, testCaseId }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        this.migrateLegacySegments(workspaceId);
+        return this.bindingDto(workspaceId, testCaseId, this.workspace.getBinding(workspaceId, testCaseId));
+    }
+
+    /** Reverse dependency: blockId → testCaseIds[] (deterministic, derive từ bindings). */
+    getBlockUsage({ workspaceId, blockId }) {
+        this.ensureWorkspace(workspaceId);
+        this.migrateLegacySegments(workspaceId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        return { blockId, testCaseIds: this.workspace.getBlockUsage(workspaceId, blockId) };
+    }
+
+    /** DTO block (không lộ field nội bộ). */
+    blockDto(b) {
+        return {
+            blockId: b.blockId,
+            workspaceId: b.workspaceId,
+            sourceRecordingId: b.sourceRecordingId,
+            label: b.label ?? null,
+            scope: b.scope,
+            kind: b.kind,
+            startStep: b.sourceRange?.startStep ?? null,
+            endStep: b.sourceRange?.endStep ?? null,
+            stepCount: (b.steps ?? []).length,
+            status: b.status,
+            version: b.version,
+            hash: b.hash ?? null,
+            confirmedAt: b.confirmedAt ?? null,
+            confirmedBy: b.confirmedBy ?? null,
+            createdAt: b.createdAt,
+            updatedAt: b.updatedAt
+        };
+    }
+
+    /** DTO binding: sequence + block chi tiết theo đúng thứ tự. */
+    bindingDto(workspaceId, testCaseId, binding) {
+        const seq = (binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const items = seq.map(ref => {
+            const b = this.workspace.getActionBlock(workspaceId, ref.blockId);
+            return b ? { ...this.blockDto(b), order: ref.order } : null;
+        }).filter(Boolean);
+        return { testCaseId, sequence: items };
+    }
+
+    /** Steps thuộc khoảng order [startStep..endStep] của recording. */
+    sliceSteps(steps, startStep, endStep) {
+        return (Array.isArray(steps) ? steps : [])
+            .filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
+    }
+
     /* ============================== C. Assertions ============================== */
 
     saveDraftAssertion({ workspaceId, testCaseId, assertion = {} }) {
@@ -709,25 +925,26 @@ export default class AutomationWorkspaceApplicationService {
 
     generate({ workspaceId, testCaseId, confirmedTestData = {} }) {
         this.ensureTestCase(workspaceId, testCaseId);
+        this.migrateLegacySegments(workspaceId);
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         if (!entry.selectedForAutomation) {
             fail(V3_ERRORS.TESTCASE_NOT_SELECTED, "Testcase chưa được chọn để automation.");
         }
-        // ===== 5C-0 — Pre-check Record Mapping (chỉ kiểm tra testcase đang Generate; không yêu cầu toàn bộ recording được mapping) =====
-        // Mapping testcase ↔ segment do tester xác nhận (bằng testCaseId, KHÔNG theo thứ tự/index).
-        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
-        let segmentsPayload = null;
-        if (refs.length > 0) {
-            for (const ref of refs) {
-                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
-                if (!seg || seg.type !== "TESTCASE" || seg.testCaseId !== testCaseId) {
+        // ===== 6B — Pre-check TestCaseAutomationBinding (CANONICAL) =====
+        // Sequence do tester xác nhận (blockId + order) — không theo thứ tự/index/recording.
+        const seq = (entry.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        let blocksPayload = null;
+        if (seq.length > 0) {
+            for (const ref of seq) {
+                const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+                if (!block) {
                     fail(V3_ERRORS.SEGMENT_MAPPING_INVALID, "Chưa xác định đầy đủ đoạn thao tác cho testcase.");
                 }
-                if (seg.status !== "CONFIRMED") {
+                if (block.status !== "CONFIRMED") {
                     fail(V3_ERRORS.SEGMENT_NOT_CONFIRMED, "Bản ghi thao tác chưa được xác nhận.");
                 }
             }
-            segmentsPayload = refs;
+            blocksPayload = seq;
         } else {
             // Legacy 5B (tương thích dữ liệu cũ): recording APPROVED gắn thẳng testCaseId.
             const approved = (this.store?.allByTestCase(testCaseId) ?? []).filter(r => r.status === "APPROVED");
@@ -755,7 +972,7 @@ export default class AutomationWorkspaceApplicationService {
                 approvedTestData,
                 confirmedTestData: confirmedData,
                 confirmedAssertions,
-                segments: segmentsPayload
+                segments: blocksPayload
             });
         } catch (error) {
             fail(V3_ERRORS.GENERATE_FAILED, "Generate thất bại.", { reason: error?.message ?? "Lỗi nội bộ." });
@@ -824,30 +1041,30 @@ export default class AutomationWorkspaceApplicationService {
 
     /** DTO gọn cho 1 item testcase trong workspace. */
     toItem(entry, workspaceId) {
+        // 6B — migrate legacy segments → binding (canonical) trước khi đọc.
+        this.migrateLegacySegments(workspaceId);
         const recs = (this.store?.allByTestCase(entry.testCaseId) ?? [])
             .filter(r => r.status === "APPROVED")
             .sort((a, b) => (b.recordingVersion || 0) - (a.recordingVersion || 0));
         const rec = recs[0] ?? null;
         const assertions = entry.automationAssertions ?? [];
-        // 5C-0 — mapping segment (theo thứ tự tester sắp xếp).
-        const segments = this.workspace
-            .getSegmentRefs(workspaceId, entry.testCaseId)
-            .map(ref => {
-                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
-                if (!seg) return null;
-                return {
-                    segmentId: seg.segmentId,
-                    recordingId: seg.recordingId,
-                    orderInTestCase: ref.orderInTestCase,
-                    startStep: seg.startStep,
-                    endStep: seg.endStep,
-                    stepCount: seg.endStep - seg.startStep + 1,
-                    type: seg.type,
-                    testCaseId: seg.testCaseId ?? null,
-                    status: seg.status
-                };
-            })
-            .filter(Boolean);
+        // 6B — mapping qua TestCaseAutomationBinding (sequence blocks theo thứ tự tester).
+        const seq = (entry.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const segments = seq.map(ref => {
+            const b = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            if (!b) return null;
+            return {
+                segmentId: b.blockId,
+                recordingId: b.sourceRecordingId,
+                orderInTestCase: ref.order,
+                startStep: b.sourceRange?.startStep ?? null,
+                endStep: b.sourceRange?.endStep ?? null,
+                stepCount: (b.steps ?? []).length,
+                type: b.kind,
+                testCaseId: entry.testCaseId,
+                status: b.status
+            };
+        }).filter(Boolean);
         return {
             testCaseId: entry.testCaseId,
             title: entry.title,

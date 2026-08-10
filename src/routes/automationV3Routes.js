@@ -173,6 +173,74 @@ export default function createAutomationV3Routes({ applicationService = null } =
             expectedResult: req.body?.expectedResult
         })));
 
+    // ---------- B4. ActionBlock + Binding (6B — CANONICAL) ----------
+    router.post("/workspaces/:workspaceId/blocks", handle(applicationService, (svc, req) =>
+        svc.createBlock({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.body?.recordingId,
+            startStep: req.body?.startStep,
+            endStep: req.body?.endStep,
+            label: req.body?.label,
+            scope: req.body?.scope,
+            kind: req.body?.kind
+        })));
+
+    router.patch("/workspaces/:workspaceId/blocks/:blockId", handle(applicationService, (svc, req) =>
+        svc.updateBlock({
+            workspaceId: req.params.workspaceId,
+            blockId: req.params.blockId,
+            label: req.body?.label,
+            scope: req.body?.scope,
+            kind: req.body?.kind,
+            startStep: req.body?.startStep,
+            endStep: req.body?.endStep
+        })));
+
+    router.post("/workspaces/:workspaceId/blocks/:blockId/confirm", handle(applicationService, (svc, req) =>
+        svc.confirmBlock({
+            workspaceId: req.params.workspaceId,
+            blockId: req.params.blockId
+        })));
+
+    router.delete("/workspaces/:workspaceId/blocks/:blockId", handle(applicationService, (svc, req) =>
+        svc.deleteBlock({
+            workspaceId: req.params.workspaceId,
+            blockId: req.params.blockId
+        })));
+
+    router.get("/workspaces/:workspaceId/blocks/:blockId/usage", handle(applicationService, (svc, req) =>
+        svc.getBlockUsage({
+            workspaceId: req.params.workspaceId,
+            blockId: req.params.blockId
+        })));
+
+    router.get("/workspaces/:workspaceId/testcases/:testCaseId/binding", handle(applicationService, (svc, req) =>
+        svc.getBinding({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/binding/blocks", handle(applicationService, (svc, req) =>
+        svc.bindBlock({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockId: req.body?.blockId
+        })));
+
+    router.delete("/workspaces/:workspaceId/testcases/:testCaseId/binding/blocks/:blockId", handle(applicationService, (svc, req) =>
+        svc.unbindBlock({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockId: req.params.blockId
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/binding/reorder", handle(applicationService, (svc, req) =>
+        svc.reorderBinding({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockIds: req.body?.blockIds
+        })));
+
     // ---------- C. Assertions (5B + 5C) ----------
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/assertions", handle(applicationService, (svc, req) =>
         svc.saveDraftAssertion({
