@@ -91,6 +91,7 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Handoff** | Đồng bộ hash remote sau xác minh `git ls-remote` (2026-08-10) | (xem git log mới nhất) |
 | **Docs** | Chốt thiết kế **Record Mapping** (Session ≠ TestCase, Segment, tester-owned, không AI/không theo thứ tự) + wireframe | (xem git log mới nhất) |
 | **Bước 5C-0** | **Record Mapping: triển khai** — Segment model (store/workspace), session không gắn testcase, UI Timeline + gán đoạn + Review Mapping (↑/↓), validation gating Generate, automationDecision 3 nhãn, legacy fallback | (xem git log mới nhất) |
+| **Docs** | Wireframe **5C** (Expected Result → Điều kiện xác nhận → Generate; warning "chưa đủ thông tin", đề xuất deterministic, cắm AI sau không phá workflow) | (xem git log mới nhất) |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -143,12 +144,12 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Thiết kế + wireframe đã duyệt; code đã triển khai (Segment model, UI Timeline + gán đoạn, validation gating, automationDecision). Xem mục 3.6 + `DESIGN_RECORD_MAPPING.md`.
 - KHÔNG còn việc chưa làm ở 5C-0 (trừ khi người dùng yêu cầu điều chỉnh sau khi dùng thử).
 
-### Bước 5C — Expected Result → Tester-confirmed Assertion → Generate (SAU 5C-0)
+### Bước 5C — Expected Result → Tester-confirmed Assertion → Generate (KẾ TIẾP — chờ duyệt wireframe)
 Phạm vi (người dùng đã chốt định hướng):
 - Chuyển **Expected Result → tester-confirmed assertion** (assertion confirmation) trong UI V3.
 - Nối **Generate** (qua GenerateService V3 đã có) vào UI — card APPROVED chuyển sang Generate.
 - Mỗi card một primary action; không AI assertion confirmation thật trong bước này.
-- Cần **wireframe 5C** trước khi code (theo thông lệ).
+- **Wireframe 5C đã soạn:** `docs/v3-ui-5c-wireframe.md` — **chờ người dùng duyệt** (6 câu hỏi ở mục 8: vị trí tab, warning heuristic, đề xuất tự động/thủ công, áp dụng 2 bước, gate assertion bắt buộc, nút Sinh automation). Chưa code.
 
 ### Bước 6 — Run (browser thật)
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
@@ -210,5 +211,5 @@ Output `RendererResult`:
 1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` — HEAD sẽ là commit mới nhất của nhánh (xác minh bằng `git log -1`; đừng so hash cố định vì mỗi lần cập nhật docs HEAD lại đổi).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md` + `docs/DESIGN_RECORD_MAPPING.md` (+ `docs/DESIGN_ASSERTION_CONFIRMATION.md` khi làm assertion).
-4. **Bước 5C — Expected Result → Tester-confirmed Assertion → Generate:** soạn wireframe 5C (theo `docs/DESIGN_ASSERTION_CONFIRMATION.md`) → gửi người dùng **duyệt trước khi code** (thông lệ wireframe).
+4. **Bước 5C — Expected Result → Tester-confirmed Assertion → Generate:** wireframe đã soạn tại `docs/v3-ui-5c-wireframe.md` → gửi người dùng **duyệt trước khi code** (6 câu hỏi mục 8 của wireframe).
 5. Sau khi duyệt: code 5C (assertion confirmation UI + nối Generate), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
