@@ -85,7 +85,7 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Bước 5B** | Ghi testcase + Review Recording (banner, drawer 2 tab, approve/reject/delete, source lazy) | `be3bbdd` |
 | **Bước 5B+** | Chỉnh nhãn: "Gắn bản ghi testcase" (dán source), ghi nhận chưa spawn Recorder thật + backlog | `71eb11c` |
 | **Handoff** | Tổng kết tiến trình V3 (file này) | `89f40aa` |
-| **Handoff** | Bổ sung bài học phiên demo → nền tảng Bước 5C | `cc2b8cb` |
+| **Handoff** | Bổ sung bài học phiên demo → nền tảng Bước 5C | `98b52f3` |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
