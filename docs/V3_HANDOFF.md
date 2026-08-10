@@ -13,7 +13,7 @@ Có **nhiều nhánh / kiến trúc khác nhau**, đừng nhầm. Trạng thái 
 
 | Nhánh | Commit | Nội dung |
 |---|---|---|
-| **`arena/automation-record-by-testcase`** | **`71eb11c`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
+| **`arena/automation-record-by-testcase`** | **`89f40aa`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
 | `arena/019fcae2-codegen-mvp` | `5d34543` | Demo cũ "Automation Intelligence 6-bước" (CodeGen upload → AI Mapping → Review → Generate → Run → Export). **KHÔNG phải V3. Đừng nhầm.** |
 | `demo/ui-polish-20260807` | `0d56b4d` | Nhánh **chỉ UI demo** (bắt nguồn từ codegen-mvp). Đã cherry-pick fix Generate. Không liên quan V3. |
 | `arena/019fcc7b-qa-copilot-automation` | `790dc8d` | Branch mặc định của session hiện tại. **KHÔNG dùng cho V3.** |
@@ -84,6 +84,8 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Bước 5A+** | Chỉnh tư duy UI: Workspace là màn hình gốc, bỏ stepper/version, sidebar chỉ "Automation" | `d74147f` |
 | **Bước 5B** | Ghi testcase + Review Recording (banner, drawer 2 tab, approve/reject/delete, source lazy) | `be3bbdd` |
 | **Bước 5B+** | Chỉnh nhãn: "Gắn bản ghi testcase" (dán source), ghi nhận chưa spawn Recorder thật + backlog | `71eb11c` |
+| **Handoff** | Tổng kết tiến trình V3 (file này) | `89f40aa` |
+| **Handoff** | Bổ sung bài học phiên demo → nền tảng Bước 5C | `cc2b8cb` |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -92,6 +94,28 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 - `tests/renderer-v3-test.js`, `tests/recording-session-parse-test.js`, `tests/recording-session-v2-supplement-test.js`, `tests/automation-workspace-test.js`.
 
 ---
+
+## 3.5. BÀI HỌC TỪ PHIÊN DEMO (2026-08-07) — ÁP DỤNG CHO V3 ⭐
+
+Phiên demo trên `arena/019fcae2-codegen-mvp` đã phơi bày **lỗi gốc** của toàn bộ luồng "số hóa testcase → assertion → generate". Đây là lý do **V3 có luồng Expected Result → tester-confirmed assertion (Bước 5C)**. Đọc kỹ trước khi làm 5C.
+
+### Lỗi gốc: ASSERTION_MAPPING_REQUIRED (không phải BASE_URL / EMPTY / Runner)
+- TC001 là testcase **POSITIVE** ("Đăng nhập thành công"), nhưng recording (Playwright CodeGen dài) **chỉ có assertion là thông báo lỗi/validation**:
+  `"Vui lòng nhập Tên tài khoản"`, `"Vui lòng nhập Mật khẩu"`, `"Vui lòng nhập Mã xác nhận"`.
+- Hệ thống **đúng khi từ chối** lấy mấy câu đó làm bằng chứng đăng nhập thành công → `resolveAssertion` trả `ASSERTION_MAPPING_REQUIRED` (không tự bịa).
+- Kết luận: **không thể tự động suy assertion thành công từ recording nếu recording chỉ có assertion lỗi.** Cần **tester cung cấp/xác nhận assertion thành công** (VD `await expect(page.getByText('Danh mục phần mềm quản lý')).toBeVisible();` hoặc URL/heading thật sau đăng nhập).
+
+### Bug phụ đã fix (P0 Preserve ASSERTION_MAPPING_REQUIRED)
+- Khi deterministic fallback trả `ok=false errorCode=ASSERTION_MAPPING_REQUIRED`, pipeline **phải STOP ngay** — KHÔNG được tiếp tục `validateCode("")` (sinh 6 lỗi giả thiếu TC ID/import/BASE_URL/env) và KHÔNG được hiện `CODEGEN_RULE_VALIDATION_FAILED`.
+- Service phải trả **nguyên `errorCode=ASSERTION_MAPPING_REQUIRED`**; UI hiển thị đúng: **"Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi."**
+- Cách làm (đã áp trên demo): codegen `generate()` return sớm khi fallback-rejected; service ưu tiên guard error; controller map guardError sang message rõ. **KHÔNG bịa assertion.**
+
+### Các fix Generate khác trên demo (tham khảo, KHÔNG copy nguyên vào V3 trừ khi cần)
+- **goto BASE_URL:** `renderGotoStatement` với URL tuyệt đối → `process.env.BASE_URL + "/path"` (bỏ hardcode host) để qua Rule Validation.
+- **purpose=EMPTY:** validator `requiredCredentialEnv` bỏ qua field `purpose=EMPTY` (TC VALIDATION bỏ trống field vẫn sinh được).
+- **AI code fail rule validation → tự fallback deterministic** (code sạch từ mapping) để luôn sinh được.
+
+> V3 đã có sẵn renderer/generate theo hướng "tester-confirmed assertion" — không cần import mấy fix demo. Nhưng **bài học cốt lõi** (assertion phải do tester xác nhận, không suy từ recording lỗi) **là nền tảng cho Bước 5C.**
 
 ## 4. VIỆC CHƯA LÀM (THEO THỨ TỰ — LÀM TIẾP TỪ ĐÂY)
 
@@ -159,7 +183,7 @@ Output `RendererResult`:
 ---
 
 ## 7. VẬY BƯỚC ĐẦU TIÊN CỦA CHAT MỚI LÀ GÌ?
-1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `71eb11c`).
+1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `89f40aa`).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md`.
 4. **Soạn wireframe Bước 5C** (Expected Result → Tester-confirmed Assertion → Generate) → gửi người dùng **duyệt trước khi code**.
