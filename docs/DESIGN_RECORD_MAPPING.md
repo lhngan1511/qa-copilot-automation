@@ -1,9 +1,8 @@
 # DESIGN — Record Mapping V3 (Recording Session → Segment → Tester Mapping)
 
 > Branch: `arena/automation-record-by-testcase`
-> Trạng thái: **THIẾT KẾ ĐÓNG BĂNG — chưa code.** Chờ người dùng duyệt wireframe (`docs/v3-record-mapping-wireframe.md`) trước khi implementation.
+> Trạng thái: **ĐÃ DUYỆT 2026-08-10 — đã triển khai Bước 5C-0.** Wireframe `docs/v3-record-mapping-wireframe.md` đã được người dùng duyệt kèm các quyết định bổ sung (mục 0.1).
 > Ngày: 2026-08-10 · Bổ sung/chỉnh cho `DESIGN_RECORD_BY_TESTCASE.md`, `DESIGN_ASSERTION_CONFIRMATION.md`, `UIUX_CONTRACT_RECORD_BY_TESTCASE.md`.
-> KHÔNG sửa production trong bước này.
 
 ---
 
@@ -21,6 +20,16 @@ Lỗi thiết kế gốc: hệ thống ngầm giả định **"recording đầu 
 **Quyết định đóng băng:** thứ tự trong JSON (thứ tự duyệt của người duyệt) và thứ tự trong recording (thứ tự thao tác của tester) là **hai thứ độc lập**. Cấm mọi suy diễn mapping dựa trên vị trí/thứ tự. Mapping chỉ do **tester gán trực tiếp theo nội dung**.
 
 ---
+
+## 0.1. Các quyết định người dùng ĐÃ DUYỆT (2026-08-10)
+
+1. **Gộp "Gắn bản ghi" + "Gán đoạn" trong cùng một màn hình** (wireframe mục A+B gộp).
+2. **Segment đã CONFIRMED mà đổi range/loại/testcase → tự quay về DRAFT** chờ xác nhận lại.
+3. **Sắp xếp nhiều segment dùng nút ↑/↓ cho MVP** (không cần kéo-thả).
+4. **Trạng thái testcase gồm 3 nhãn:** `Chưa quyết định` (UNDECIDED, mặc định) · `Có automation` (AUTOMATED, tự đặt khi có segment TESTCASE đã xác nhận) · `Chỉ kiểm thử thủ công` (MANUAL_ONLY, tester đặt chủ động).
+5. **Recording được phép có step không sử dụng** — step chưa thuộc đoạn nào KHÔNG phải lỗi, chỉ hiển thị thông tin và không xuất hiện trong spec sinh ra.
+6. **Generate chỉ kiểm tra testcase đang Generate** — không yêu cầu toàn bộ recording phải được mapping.
+7. **Hai nguyên tắc cứng giữ nguyên:** mapping bằng `testCaseId` do tester xác nhận, tuyệt đối không theo thứ tự/index; **AI không tham gia testcase ↔ recording mapping**.
 
 ## 1. Nguyên tắc đóng băng (7 điểm)
 
@@ -70,16 +79,16 @@ Lỗi thiết kế gốc: hệ thống ngầm giả định **"recording đầu 
 - `type=TESTCASE` bắt buộc `testCaseId`; `type=SETUP` có `testCaseId=null`.
 - `status`: chỉ tester xác nhận mới thành `CONFIRMED`. Hệ thống/AI không được tự đặt `CONFIRMED`.
 
-### 2.3 Workspace ("bộ não") — bổ sung
+### 2.3 Workspace ("bộ não") — bổ sung (đã triển khai)
 
-Mỗi entry `selectedTestCases[i]` bổ sung:
+Mỗi entry `selectedTestCases[i]` bổ sung (tên field theo code thật):
 
 ```json
 {
-  "automationStatus": "MANUAL_ONLY" | "UNDECIDED" | "CANDIDATE" | "AUTOMATED",
+  "automationDecision": "UNDECIDED" | "MANUAL_ONLY" | "AUTOMATED",
   "segments": [
-    { "segmentId": "SEG-...", "recordingSessionId": "SES-...", "orderInTestCase": 1 },
-    { "segmentId": "SEG-...", "recordingSessionId": "SES-...", "orderInTestCase": 2 }
+    { "segmentId": "SEG-...", "recordingId": "REC-...", "orderInTestCase": 1 },
+    { "segmentId": "SEG-...", "recordingId": "REC-...", "orderInTestCase": 2 }
   ]
 }
 ```
@@ -117,41 +126,43 @@ Record (1 take dài)
 
 ---
 
-## 4. Validation trước Generate (message chuẩn — không fallback)
+## 4. Validation trước Generate (message chuẩn — không fallback, đã triển khai)
 
-| Tình huống | Message |
+| Tình huống | errorCode | HTTP | Message |
+|---|---|---|---|
+| Testcase chưa có segment nào (và không có recording legacy) | `RECORDING_MAPPING_REQUIRED` | 409 | `Không có bản ghi thao tác cho testcase này.` |
+| Có segment nhưng còn `DRAFT` | `SEGMENT_NOT_CONFIRMED` | 409 | `Bản ghi thao tác chưa được xác nhận.` |
+| Mapping không hợp lệ (thiếu segment, sai testcase, segment đã bị xóa) | `SEGMENT_MAPPING_INVALID` | 422 | `Chưa xác định đầy đủ đoạn thao tác cho testcase.` |
+
+- **Generate chỉ kiểm tra testcase đang Generate** — recording còn step chưa gán KHÔNG chặn Generate (quyết định #6).
+- **Cấm fallback:** không tự đoán, không tìm testcase gần nhất, không tự lấy segment đầu tiên, không tự gán.
+- Tương thích ngược: testcase KHÔNG có segment nhưng có recording APPROVED kiểu cũ (gắn thẳng `testCaseId`) vẫn generate theo luồng 5B (legacy).
+
+---
+
+## 5. Generate với nhiều segment (đã triển khai)
+
+- GenerateService nhận `segments` (danh sách ref `{segmentId, recordingId, orderInTestCase}` từ Workspace), ghép steps theo `orderInTestCase` do tester xác nhận; metadata giữ từng segment (id/recording/start/end) để truy vết.
+- SETUP segments ghép **trước** TESTCASE segments (setup = segment `type=SETUP` CONFIRMED trong chính các recording mà testcase đang dùng; hoặc theo `setupRecordingId` nếu truyền).
+- Renderer vẫn **thuần, deterministic, không AI** — nhận một recording view đã ghép steps, không đổi logic render.
+
+---
+
+## 6. Đối chiếu với code (đã triển khai 5C-0) — delta
+
+| Hạng mục | Trạng thái 5C-0 |
 |---|---|
-| Testcase chưa có segment nào | `Không có bản ghi thao tác cho testcase này.` |
-| Có segment nhưng còn `DRAFT` | `Bản ghi thao tác chưa được xác nhận.` |
-| Mapping không hợp lệ (range lỗi, chồng lấn, thiếu đoạn so với yêu cầu) | `Chưa xác định đầy đủ đoạn thao tác cho testcase.` |
-
-**Cấm fallback:** không tự đoán, không tìm testcase gần nhất, không tự lấy segment đầu tiên, không tự gán.
-
----
-
-## 5. Generate với nhiều segment
-
-- Renderer nhận **merged recording view**: steps của từng segment ghép theo `orderInTestCase` do tester xác nhận; metadata giữ từng segment (id/session/type) để truy vết.
-- SETUP segments ghép **trước** TESTCASE segments (thứ tự setup do tester sắp).
-- Renderer vẫn **thuần, deterministic, không AI** — chỉ thay đổi nguồn steps đầu vào.
-- Đây là delta ở tầng application/generate — **chưa implement trong bước này.**
-
----
-
-## 6. Đối chiếu với code hiện tại (đã đọc `be1585b`) — delta, CHƯA implement
-
-| Hạng mục | Hiện tại | Cần thay đổi |
-|---|---|---|
-| Parser steps có `order/sourceStart/sourceEnd/sourceLine` | ✅ có | — |
-| Store: `testCaseId` nullable, `testcaseIds`, `type SETUP/TESTCASE`, version/hash, không overwrite | ✅ có | — |
-| `GenerateService.setupRecordingId` (SETUP dùng chung) | ✅ có | mở rộng: ghép nhiều segment |
-| Workspace là "bộ não" lưu trạng thái automation | ✅ có | bổ sung `segments[]` + `automationStatus` |
-| Session TESTCASE **bắt buộc** `testCaseId` khi start (`CurrentRecordingSession`) | ❌ | cho phép session chưa gán testcase (mapping ở mức segment) |
-| `GenerateService` lấy **1 recording/testcase** (`allByTestCase` + `pickLatestApproved`) | ❌ | đọc segments của testcase từ Workspace + steps từ session(s) theo thứ tự |
-| Segment model + lưu ở session/workspace | ❌ | thêm mới |
-| UI Timeline + gán đoạn + Review Mapping | ❌ | thêm mới (wireframe chờ duyệt) |
-| Validation gating Generate theo segment (mục 4) | ❌ | thêm mới |
-| `automationStatus` cho testcase | ❌ | thêm mới |
+| Parser steps có `order/sourceStart/sourceEnd/sourceLine` | ✅ có sẵn (dùng để cắt segment) |
+| Store: `testCaseId` nullable, `testcaseIds`, `type SETUP/TESTCASE`, version/hash, không overwrite | ✅ có sẵn |
+| Store: `segments[]` trong recording + CRUD segment (metadata, không cắt source) | ✅ thêm mới |
+| `CurrentRecordingSession.start` cho phép TESTCASE **chưa gán testCaseId** | ✅ thay đổi |
+| Workspace: `segments[]` ref + `automationDecision` + add/remove/reorder | ✅ thêm mới |
+| Service: create/update/confirm/delete segment, reorder, automation-decision | ✅ thêm mới |
+| `GenerateService` ghép nhiều segment theo thứ tự tester + SETUP chung + legacy fallback | ✅ thay đổi |
+| Renderer | ✅ không đổi (nhận recording view đã ghép) |
+| UI: Timeline + gán đoạn + Review Mapping (một màn hình, ↑/↓, step chưa dùng hiển thị thông tin) | ✅ thêm mới |
+| Validation gating Generate theo segment (mục 4) | ✅ thêm mới |
+| Test: `tests/automation-v3-record-mapping-test.js` | ✅ thêm mới |
 
 **KHÔNG đổi:** contract `approved-testcases.json` (chỉ đọc), nguyên tắc Renderer thuần, error contract V3 (`{ success, errorCode, message, details }`), kiến trúc Route → AppService → Domain/Store/GenerateService → Renderer.
 
@@ -177,7 +188,7 @@ Record (1 take dài)
 ## 9. Tài liệu liên quan
 
 - `DESIGN_RECORD_BY_TESTCASE.md` — kiến trúc V3 (đóng băng).
-- `DESIGN_ASSERTION_CONFIRMATION.md` — Expected Result → assertion (Bước 5C, làm **sau** khi Record Mapping được duyệt).
+- `DESIGN_ASSERTION_CONFIRMATION.md` — Expected Result → assertion (Bước 5C, làm **sau** Record Mapping).
 - `UIUX_CONTRACT_RECORD_BY_TESTCASE.md` — contract UI chung.
-- `v3-record-mapping-wireframe.md` — wireframe text chờ duyệt.
+- `v3-record-mapping-wireframe.md` — wireframe text **đã duyệt** (kèm quyết định mục F).
 - `V3_HANDOFF.md`, `backlog.md`.

@@ -1,7 +1,8 @@
 # WIREFRAME (TEXT) — Recording Timeline + Segment Mapping (V3)
 
 > Branch: `arena/automation-record-by-testcase` · Ngày: 2026-08-10
-> Chờ **người dùng duyệt** trước khi code. Thiết kế theo `docs/DESIGN_RECORD_MAPPING.md`.
+> Trạng thái: **ĐÃ DUYỆT 2026-08-10** — các quyết định bổ sung tại mục F. Đã triển khai trong Bước 5C-0.
+> Thiết kế theo `docs/DESIGN_RECORD_MAPPING.md` (mục 0.1 ghi quyết định đã duyệt).
 > Ngôn ngữ UI dùng cho tester (theo `UIUX_CONTRACT_RECORD_BY_TESTCASE.md` — không hiển thị thuật ngữ kỹ thuật):
 > "Bản ghi" = Recording Session · "Đoạn thao tác" = Segment · "Dùng chung" = SETUP · "Gán cho testcase" = Mapping.
 
@@ -92,20 +93,20 @@ Thay cho panel "Dán mã Playwright đã ghi cho TCxxx" hiện tại (giữ kh�
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ TC025 — Thêm trang thiết bị     · Trang thiết bị              │
-│ Thao tác: Đã gán 1 đoạn (Bản ghi #01)                        │
-│ Trạng thái: Sẽ tự động hóa                                    │
-│ [ Xem bản ghi ]   [ Sinh automation ]                        │
+│ Thao tác: Đã gán 1 đoạn (Bản ghi #01) · 1 đoạn đã xác nhận     │
+│ Tự động hóa: Có automation                                    │
+│ [ Xem và gán đoạn ]   [ Sinh automation ]                     │
 ├──────────────────────────────────────────────────────────────┤
 │ TC099 — Xóa trang thiết bị      · Trang thiết bị              │
 │ Thao tác: Chưa gán đoạn nào                                   │
-│ Trạng thái: Chưa quyết định                                   │
-│ [ Ghi testcase ]                                             │
+│ Tự động hóa: Chưa quyết định                                  │
+│ [ Ghi testcase ]                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- Trạng thái automation hiển thị trên card: `Chỉ thao tác tay` (Manual only) / `Chưa quyết định` / `Sẽ tự động hóa` (Automation candidate) / `Đã tự động hóa` (Automated).
-- Testcase chưa gán đoạn → KHÔNG phải lỗi, chỉ hiển thị trạng thái "Chưa quyết định" / "Chỉ thao tác tay"; nút chính là `[Ghi testcase]`.
-- `[Sinh automation]` chỉ bật khi mapping hợp lệ (đã gán + xác nhận + đủ dữ liệu).
+- Trạng thái tự động hóa (3 nhãn — quyết định đã duyệt): `Chưa quyết định` (mặc định) · `Có automation` · `Chỉ kiểm thử thủ công` (tester đặt chủ động, ví dụ qua menu card).
+- Testcase chưa gán đoạn → KHÔNG phải lỗi, chỉ hiển thị trạng thái; nút chính là `[Ghi testcase]`.
+- `[Sinh automation]` chỉ bật khi mapping của **testcase này** hợp lệ (đã gán + xác nhận + đủ dữ liệu) — recording còn bước chưa gán KHÔNG chặn (quyết định đã duyệt).
 
 ---
 
@@ -138,9 +139,12 @@ Chỉ 1 trong 3 thông báo hiển thị tùy tình huống. **Không có** lự
 
 ---
 
-## F. Câu hỏi chờ người dùng quyết định khi review
+## F. QUYẾT ĐỊNH ĐÃ DUYỆT (2026-08-10 — thay cho "câu hỏi chờ duyệt")
 
-1. Gán đoạn ngay trong màn hình "Gắn bản ghi" (như A+B gộp) hay tách thành 2 bước riêng (Gắn source → Gán đoạn)?
-2. Khi **sửa** range của đoạn đã CONFIRMED: tự quay về DRAFT chờ xác nhận lại — đồng ý?
-3. Sắp xếp nhiều đoạn: cần kéo-thả chuột hay nút ↑/↓ là đủ cho lần đầu?
-4. Trạng thái "Chưa quyết định" có cần nút "Đánh dấu chỉ thao tác tay" để tester chủ động loại testcase khỏi automation không?
+1. **Gộp "Gắn bản ghi" + "Gán đoạn" trong cùng màn hình** — triển khai đúng wireframe A+B gộp (một panel duy nhất: timeline + gán đoạn + review đoạn đã gán).
+2. **Segment đã xác nhận mà sửa range/loại/testcase → tự quay về Nháp (DRAFT)** chờ xác nhận lại.
+3. **Sắp xếp nhiều đoạn dùng nút ↑/↓ cho MVP** (không kéo-thả).
+4. **Trạng thái testcase 3 nhãn:** `Chưa quyết định` / `Có automation` / `Chỉ kiểm thử thủ công` (thay cho 4 nhãn cũ ở mục C).
+5. **Recording được phép có bước không dùng** — dòng "⚠ n bước chưa thuộc đoạn nào" là **thông tin, không chặn**; các bước đó không xuất hiện trong test sinh ra.
+6. **Generate chỉ kiểm tra testcase đang Generate** — không yêu cầu toàn bộ recording được mapping.
+7. **Nguyên tắc cứng:** mapping bằng `testCaseId` do tester xác nhận, không theo thứ tự/index; **AI không tham gia mapping**.
