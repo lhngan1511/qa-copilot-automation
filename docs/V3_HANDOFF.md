@@ -174,11 +174,18 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
 - Phạm vi hẹp đã chốt: Generate spec → Runner → PASS/FAIL thật → log/trace. **Chưa thêm AI failure analysis.**
 
-### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — Checkpoint 6B DONE, chờ duyệt 6C)
+### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — Checkpoint 6C: wireframe chờ duyệt)
 - Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
-- **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs ✅ → 6B data model ✅ (hiện tại) → 6C UX → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
+- **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs ✅ → 6B data model ✅ → **6C UX (wireframe chờ duyệt — CHƯA code)** → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
 
-**6B — Data Model (DONE):**
+**6C — UX CORRECTION (wireframe đã soạn tại `docs/v3-automation-composition-wireframe.md`, CHỜ DUYỆT — chưa code):**
+- Testcase luôn là context chính (header TC001 ở mọi tab; không panel global; không hỏi lại testcase).
+- Simple Path rất ngắn (ẩn block/private/reusable/binding/segment); Composition Path chỉ khi cần (+ Thêm thao tác / + Dùng lại · ↑↓).
+- Chọn thao tác bằng **Start/End dropdown** (`6 — Click nút Thêm ▼`) + highlight khối + "✓ Đã chọn bước 6 → 10 (5 thao tác)" + [Xác nhận thao tác].
+- **Reuse là tùy chọn:** `☐ Lưu thao tác này để dùng lại` mặc định KHÔNG chọn; chọn mới yêu cầu tên. Library reuse hiện "Đang được dùng bởi N testcase" (reverse dependency 6B).
+- Primary action theo trạng thái: `[Thiết lập Automation] / [Hoàn tất Automation] / [Xem Automation]`; Generate chỉ ở drawer footer khi đủ gate.
+- Tab "Test Data" giữ chỗ (placeholder — chưa implement); Expected Result + Assertion giữ flow 5C.
+- 3 case A/B/C đã được wireframe chứng minh (mục 8).
 - **Canonical:** `RecordingSession (raw/evidence) → ActionBlock (SNAPSHOT steps, workspace-level) → TestCaseAutomationBinding (entry.binding.sequence [{blockId, order}])`.
 - ActionBlock: `blockId, workspaceId, sourceRecordingId, label, scope PRIVATE|REUSABLE, kind SETUP|ACTION, steps (SNAPSHOT copy), sourceRange, status DRAFT|CONFIRMED, version, hash, timestamps`. REUSABLE bắt buộc label. Sửa block → DRAFT + version++.
 - Binding: sequence do tester sắp (KHÔNG tự reorder; SETUP chỉ metadata). Block lưu ở **workspace** (`workspace.actionBlocks[]`) — xóa raw recording không ảnh hưởng snapshot.

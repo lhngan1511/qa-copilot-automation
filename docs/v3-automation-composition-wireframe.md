@@ -1,203 +1,301 @@
-# WIREFRAME (TEXT) — UX mới: Testcase Context → Gắn bản ghi → Thao tác (Action Block) → Binding → Data → Expected → Assertion → Generate
+# WIREFRAME (TEXT) — CHECKPOINT 6C: UX CORRECTION — Testcase Context → Gắn thao tác → Xác nhận → Expected → Assertion → Sinh automation
 
 > Branch: `arena/automation-record-by-testcase` · Ngày: 2026-08-10
-> Trạng thái: **6 QUYẾT ĐỊNH ĐÃ CHỐT (mục 8) — đang Checkpoint 6A (fix data bugs).** Kèm theo `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C + checkpoint 6A→6D).
-> Nguyên tắc: **TESTER LUÔN GIỮ CONTEXT TESTCASE** · Thao tác (Action Block) ≠ TestCase · reuse do tester quyết định · không AI · không theo thứ tự/index.
+> Trạng thái: **WIREFRAME — CHỜ NGƯỜI DÙNG DUYỆT. CHƯA CODE (không sửa React/backend).**
+> Nền: data model 6B đã duyệt (`1750a17`): RecordingSession → ActionBlock (snapshot) → TestCaseAutomationBinding.
+> Mục tiêu: tester KHÔNG cần hiểu ActionBlock / Binding / Snapshot / Segment / sourceRange — chỉ hiểu **Testcase → Gắn thao tác đã record → Xác nhận → Kết quả mong đợi → Điều kiện xác nhận → Sinh automation**.
 
 ---
 
-## 0. Luồng tổng thể (KHÔNG đảo — chỉ sửa cách hiển thị)
+## 1. TESTCASE LUÔN LÀ CONTEXT CHÍNH
+
+### 1.1 Card testcase — một primary action theo trạng thái
 
 ```
-Card TC001 → [Gắn bản ghi] → Drawer TC001 (context giữ nguyên)
-  → tab "Thao tác": chọn bản ghi → chọn Start/End → [Xác nhận thao tác] (tùy chọn "Lưu để dùng lại")
-  → (tùy chọn) [Dùng lại thao tác] từ toàn workspace
-  → danh sách "Các thao tác sẽ chạy" (binding, ↑↓ sắp xếp — KHÔNG tự reorder)
-  → tab "Test Data" (giữ chỗ — chưa implement, design only)
-  → tab "Kết quả mong đợi" → tab "Điều kiện xác nhận" → [Sinh automation] (drawer footer)
+┌──────────────────────────────────────────────────────────────────┐
+│ TC001 · Thêm đơn vị tính hợp lệ          [ POSITIVE ] [Đã chọn]  │
+│ Kết quả mong đợi: Thêm đơn vị tính thành công                   │
+│ Tự động hóa: Chưa hoàn tất                                      │
+│                                    [ Thiết lập Automation ]     │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### 0.1 PROGRESSIVE COMPLEXITY — Simple Path / Composition Path
+Primary action đổi theo trạng thái (chỉ MỘT nút — không đầy nút):
 
-- **SIMPLE PATH (mặc định):** testcase đơn giản (VD Login) — UI gần như cũ: TC001 → [Gắn bản ghi] → hiển thị thao tác trong context TC001 → xác nhận → Expected → Assertion → Generate. Backend vẫn tạo private thao tác + binding nhưng tester **không thấy** thuật ngữ ActionBlock/Slot/Binding/Composition. Nếu toàn recording chỉ phục vụ testcase hiện tại → UI có nút **"Chọn toàn bộ bản ghi"** (vẫn cần xác nhận).
-- **COMPOSITION PATH (chỉ khi cần):** reuse / nhiều đoạn / nested flow → UI mở thêm "Dùng lại thao tác", "Thao tác đã lưu", sắp xếp sequence.
-- **COMPLEXITY CHỈ XUẤT HIỆN KHI TESTER CẦN.**
+| Trạng thái automation | Primary action |
+|---|---|
+| Chưa có thao tác nào | `[ Thiết lập Automation ]` |
+| Đã có thao tác nhưng thiếu điều kiện xác nhận | `[ Hoàn tất Automation ]` |
+| Đã đủ (thao tác + assertion TESTER_CONFIRMED) | `[ Xem Automation ]` |
 
----
+### 1.2 Drawer — header testcase luôn hiện
 
-## 1. CARD TESTCASE (context + trạng thái tóm tắt)
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│ ☑ TC001 · Đăng nhập thành công          [ POSITIVE ] [Đã chọn]│
-│ Tự động hóa: Có automation                                   │
-│ Thao tác: 2 đoạn đã xác nhận                                 │
-│ Điều kiện xác nhận: 1 đã xác nhận                            │
-│ [ Gắn bản ghi ]  ···                                         │
-└──────────────────────────────────────────────────────────────┘
-```
-
-- `[Gắn bản ghi]` (chưa có block) / `[Xem thao tác]` (đã có block) → mở **Drawer TC001**.
-- Không có nút Generate trên card (giữ quyết định 5C #6).
-
----
-
-## 2. DRAWER TC001 — mở từ card, KHÔNG mất context
+Mở từ card → Drawer của đúng TC, header cố định ở mọi tab:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ TC001 · Đăng nhập thành công                                [ ✕ ]    │
-│ Tabs: [Thao tác] [Test Data] [Kết quả mong đợi] [Điều kiện xác nhận] │
-│ ───────────────────────────────────────────────────────────────────── │
-│ (Nội dung tab — xem bên dưới)                                        │
-│ ───────────────────────────────────────────────────────────────────── │
-│ [ Đóng ]                                    [ Hành động chính ]      │
+│ TC001 — Thêm đơn vị tính hợp lệ                             [ ✕ ]   │
+│ Kết quả mong đợi: Thêm đơn vị tính thành công                       │
+│ Tự động hóa: Chưa hoàn tất                                          │
+│ ──────────────────────────────────────────────────────────────────── │
+│ Tabs: [ Thao tác ]  [ Test Data ]  [ Kết quả mong đợi ]             │
+│ ──────────────────────────────────────────────────────────────────── │
+│ (nội dung tab — bên dưới)                                           │
+│ ──────────────────────────────────────────────────────────────────── │
+│ [ Đóng ]                                        [ Hành động chính ] │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Không có panel ghi global đầu trang.** Bản ghi được quản lý ngay trong drawer của TC đang mở.
-- Nếu tester mở từ TC001 → mọi thao tác đều gắn TC001 mặc định (không hỏi lại testcase).
+- Tester luôn thấy **"Tôi đang làm automation cho TC001"** — không bao giờ bị đẩy sang màn hình global mất context.
+- Không bao giờ hỏi lại "chọn testcase nào" khi mở từ TC001.
 
 ---
 
-## 3. TAB "THAO TÁC" — chọn Action Block từ bản ghi
+## 2. SIMPLE PATH — RẤT NGẮN (mặc định)
+
+Testcase đơn giản (VD Login / TC độc lập):
+
+```
+TC001 → [Thiết lập Automation]
+  → Drawer tab "Thao tác": [ Gắn bản ghi ] → dán source (hoặc chọn bản ghi có sẵn)
+  → chọn phần cần dùng (Start/End — mục 3)
+  → [ Xác nhận thao tác ]
+  → tab "Kết quả mong đợi" → Đề xuất → Áp dụng → Xác nhận
+  → [ Sinh automation ]
+```
+
+- Tester **không cần biết**: đặt tên block, PRIVATE/REUSABLE, binding, segment, snapshot.
+- Hệ thống âm thầm tạo "thao tác private" phía sau (ActionBlock scope=PRIVATE) và gắn vào TC đang mở.
+- Nếu toàn bộ bản ghi chỉ phục vụ testcase này → nút phụ `[ Chọn toàn bộ bản ghi ]` (vẫn phải xác nhận).
+
+---
+
+## 3. CHỌN THAO TÁC — Start/End DROPDOWN + HIGHLIGHT KHỐI
+
+Bỏ UX "click step đầu → click step cuối". Điều khiển chính là dropdown:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Bản ghi:  [ Bản ghi #01 · 16 bước · 2 đoạn đã cắt      ▼ ]          │
-│           [ + Dán bản ghi mới ]  [ Ghi mới ] (Recorder sau này)      │
+│ Bản ghi:  [ Bản ghi #01 · 12 bước · (nguồn: dán mã) ▼ ]              │
+│           [ + Dán bản ghi mới ]   [ Ghi mới (Recorder sau này) ]     │
 │                                                                      │
-│ Timeline (theo thứ tự thao tác — click = shortcut chọn nhanh):       │
-│  [1] Mở /login                        [9] Mở Thêm ĐVT (popup)        │
-│  [2] Nhập Tài khoản                   [10] Nhập Mã ĐVT               │
-│  [3] Nhập Mật khẩu                    [11] Nhập Tên ĐVT              │
-│  [4] Bấm Đăng nhập                    [12] Bấm Lưu (popup)           │
-│  [5] Bấm Danh mục ĐVT                 [13] Nhập tiếp (Nhập kho)      │
-│  [6] Bấm Thêm ĐVT                     [14] ...                       │
-│  [7] Nhập Mã ĐVT                      [15] ...                       │
-│  [8] Nhập Tên ĐVT                     [16] ...                       │
+│ Timeline (theo thứ tự thao tác):                                     │
+│  [1] Mở /login                          [7] Nhập Mã                  │
+│  [2] Nhập Tài khoản                     [8] Nhập Tên                 │
+│  [3] Nhập Mật khẩu                      [9] Click Trạng thái         │
+│  [4] Click Đăng nhập                    [10] Click Lưu               │
+│  [5] Mở Danh mục ĐVT                    [11] ...                     │
+│  [6] Click nút Thêm                     [12] ...                     │
 │                                                                      │
-│ Đoạn thao tác mới:                                                   │
-│   Bắt đầu:  [ 6 ▼ ]   Kết thúc:  [ 8 ▼ ]                            │
-│   ▓▓▓▓▓▓▓▓▓▓ (highlight khối bước 6 → 8 trên timeline)               │
-│   Đã chọn bước 6 → 8 (3 thao tác)                                    │
-│   Tên thao tác: [ Thêm đơn vị tính                  ]  (tùy chọn)     │
-│   ☐ Lưu để dùng lại (bắt buộc đặt tên khi chọn)                      │
-│   Loại: (•) Thao tác   ( ) Bước chuẩn bị (đăng nhập/di chuyển)       │
-│   [ Đổi phạm vi ]                          [ Xác nhận thao tác ]     │
+│ Bắt đầu:   [ 6 — Click nút Thêm ▼ ]                                  │
+│ Kết thúc:  [ 10 — Click Lưu ▼ ]                                      │
 │                                                                      │
-│ Dùng lại thao tác đã có:                                             │
-│   [ + Dùng lại thao tác ]  → ưu tiên thao tác của bản ghi hiện tại,  │
-│      rồi "Thao tác đã lưu" trong toàn workspace (không tự chọn)      │
+│ ✓ Đã chọn bước 6 → 10 · 5 thao tác                                   │
+│  6  Click "Thêm"                                                     │
+│  7  Fill "Mã"                                                        │
+│  8  Fill "Tên"                                                       │
+│  9  Click "Trạng thái"                                               │
+│  10 Click "Lưu"                                                      │
+│                                                                      │
+│   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ (highlight khối 6→10 trên timeline)           │
+│                                                                      │
+│ ☐ Lưu thao tác này để dùng lại cho testcase khác                    │
+│   (nếu chọn → hiện ô: Tên thao tác: [ Thêm đơn vị tính        ] )    │
+│                                                                      │
+│                        [ Đổi phạm vi ]   [ Xác nhận thao tác ]       │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Các thao tác sẽ chạy (binding của TC001 — thứ tự tester sắp xếp):**
+- Dropdown hiển thị `số — mô tả` (VD `6 — Click nút Thêm`) để tester chọn đúng.
+- Highlight toàn bộ vùng chọn trên timeline + danh sách steps đã chọn hiện rõ.
+- `[ Đổi phạm vi ]` quay lại chỉnh dropdown. `[ Xác nhận thao tác ]` là primary.
+- Click timeline vẫn là shortcut chọn nhanh, nhưng không phải cách duy nhất.
+- **Reuse là TÙY CHỌN:** `☐ Lưu thao tác này để dùng lại` **mặc định KHÔNG chọn**. Chỉ khi chọn mới yêu cầu đặt tên (tên bắt buộc). Không tự phát hiện, không AI, không tự reuse theo tên testcase.
+
+---
+
+## 4. SAU KHI XÁC NHẬN — "Các thao tác sẽ chạy" (Composition Path)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Các thao tác sẽ chạy (theo thứ tự):                                  │
-│  1. Đăng nhập                        (Bước chuẩn bị · Bản ghi #01)   │
-│     ↕ [Thay thế] [Xóa]                                               │
-│  2. Thêm đơn vị tính                 (Thao tác · Dùng lại · Bản ghi #01) │
-│     ↕ [Thay thế] [Xóa]                                               │
-│  3. Nhập kho — hoàn tất              (Thao tác · Bản ghi #01)        │
-│     ↕ [Thay thế] [Xóa]                                               │
-│  [ + Thêm thao tác từ bản ghi khác ]                                 │
-│  ⚠ 3 bước trong bản ghi #01 chưa thuộc thao tác nào (không dùng)     │
+│                                                                      │
+│ 1. Đăng nhập                          (Bước chuẩn bị · Bản ghi #01) │
+│    ↕ [ Thay thế ] [ Xóa ]                                            │
+│ 2. Thêm đơn vị tính                   (Bản ghi #01 · Dùng lại)      │
+│    ↕ [ Thay thế ] [ Xóa ]                                            │
+│ 3. Nhập thông tin thiết bị            (Bản ghi #01)                  │
+│    ↕ [ Thay thế ] [ Xóa ]                                            │
+│ 4. Thêm khách hàng                    (Bản ghi #01 · Dùng lại)      │
+│    ↕ [ Thay thế ] [ Xóa ]                                            │
+│ 5. Hoàn tất nhập kho                  (Bản ghi #01)                  │
+│    ↕ [ Thay thế ] [ Xóa ]                                            │
+│                                                                      │
+│ [ + Thêm thao tác từ bản ghi ]    [ + Dùng lại thao tác đã lưu ]     │
+│                                                                      │
+│ ⚠ 2 bước trong bản ghi #01 chưa thuộc thao tác nào (không dùng)      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-- ↑/↓ để đổi thứ tự (MVP) — thứ tự này = thứ tự Generate.
-- **KHÔNG tự reorder** "Bước chuẩn bị" lên đầu (quyết định #5): SETUP chỉ là metadata; tester quyết định sequence (nested flow cần Main → Sub → Main → Sub).
-- "Dùng lại" chỉ thêm **tham chiếu blockId** vào binding — không copy steps; tester xác nhận reuse từng lần (guardrail — tên giống nhau không phải bằng chứng mapping).
-- Bước chưa dùng: thông tin, không chặn (giữ quyết định đã chốt).
+- ↑ / ↓ để tester tự sắp thứ tự — **KHÔNG tự đẩy "Bước chuẩn bị" lên đầu** (SETUP chỉ là nhãn, thứ tự do tester).
+- Mỗi thao tác hiển thị nguồn bản ghi + đánh dấu "Dùng lại" nếu là block REUSABLE.
 
----
-
-## 4. TAB "TEST DATA" — SAU khi binding (design only — chưa code)
+### 4.1 "Dùng lại thao tác đã lưu" — library đơn giản
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Test Data cho TC001 (chỉ hiển thị khi đã có thao tác được xác nhận)  │
+│ Dùng lại thao tác đã lưu (toàn workspace):                           │
 │                                                                      │
-│ Các giá trị thay thế trong thao tác (input slot — thiết kế, chưa code)│
-│   {{unitCode}}  → [ Kg                    ]  (nút: từ testcase / nhập tay)│
-│   {{unitName}}  → [ Kilôgam               ]                           │
-│   Mật khẩu      → (dùng env TESTDATA_PASSWORD)                       │
+│  Thêm đơn vị tính                                                    │
+│  Nguồn: Bản ghi #01     Đang được dùng bởi: 4 testcase     [ Chọn ] │
 │                                                                      │
-│ [ Lưu Test Data ]   · Ghi chú: bước triển khai sau — UI này chưa code│
+│  Thêm khách hàng                                                     │
+│  Nguồn: Bản ghi #02     Đang được dùng bởi: 2 testcase     [ Chọn ] │
+│                                                                      │
+│  Đăng nhập                                                           │
+│  Nguồn: Bản ghi #01     Đang được dùng bởi: 10 testcase    [ Chọn ] │
+│                                                                      │
+│  (số "đang được dùng bởi" lấy từ reverse dependency 6B — hiển thị   │
+│   để tester biết impact trước khi chọn; không tự chọn sẵn)           │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-> Ở giai đoạn design: tab này chỉ xác nhận **vị trí** (sau binding, trước Expected) — không nhập data lúc chọn step.
+- Ưu tiên hiển thị thao tác của bản ghi đang mở trước, rồi đến "Thao tác đã lưu" trong workspace.
+- **Tester quyết định** — không AI matching, không tự chọn.
 
 ---
 
-## 5. TAB "KẾT QUẢ MONG ĐỢI" + "ĐIỀU KIỆN XÁC NHẬN" (giữ UX 5C đã duyệt)
+## 5. TAB "TEST DATA" — GIỮ CHỖ (chưa implement)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Test Data cho TC001                                                  │
+│                                                                      │
+│   Test Data sẽ được cấu hình ở bước tiếp theo.                      │
+│                                                                      │
+│   (Không lấy giá trị đã record làm Test Data chính thức.            │
+│    Bước này chỉ dành vị trí — chưa implement.)                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. TAB "KẾT QUẢ MONG ĐỢI" — GIỮ FLOW 5C ĐÃ DUYỆT
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Kết quả mong đợi (nghiệp vụ)                                         │
 │ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ Đăng nhập thành công và hiển thị "Danh mục phần mềm quản lý"      │ │
+│ │ Thêm đơn vị tính thành công                                      │ │
 │ └──────────────────────────────────────────────────────────────────┘ │
-│ [ Chỉnh sửa kết quả mong đợi ]                                       │
+│ [ Chỉnh sửa kết quả mong đợi ]   (working copy — không đổi approved)│
 │                                                                      │
 │ Đề xuất điều kiện kiểm tra:  [ Đề xuất điều kiện xác nhận ] (chủ động)│
-│   (deterministic — giữ nguyên từ 5C)                                 │
+│   (deterministic — không AI; không bịa khi chưa đủ thông tin)        │
 │                                                                      │
 │ Điều kiện xác nhận:                                                  │
-│  1. Hiển thị nội dung "Danh mục phần mềm quản lý"  [Đã xác nhận ✓]   │
-│     [Chỉnh sửa] [Xóa]                                                │
-│  2. ...                                                              │
+│  1. Hiển thị nội dung "Đã lưu thành công"   [ Đã xác nhận ✓ ]        │
+│     [ Chỉnh sửa ] [ Xóa ]                                            │
 │   [ + Bổ sung điều kiện kiểm tra ]                                   │
 │ ✓ Điều kiện xác nhận đã được tester xác nhận (1)                     │
 └──────────────────────────────────────────────────────────────────────┘
 
 Footer drawer: [ Đóng ]  [ Sinh automation ]  ← chỉ bật khi đủ gate:
-   chọn Automation + ≥1 block CONFIRMED + ≥1 assertion TESTER_CONFIRMED
+   chọn Automation + ≥1 thao tác CONFIRMED + ≥1 assertion TESTER_CONFIRMED
 ```
 
 ---
 
-## 6. Sơ đồ binding cho 3 CASE (minh họa wireframe)
+## 7. PRIMARY ACTION + VỊ TRÍ GENERATE
 
-### CASE A — Đăng nhập
+- **Generate chỉ xuất hiện ở nơi hoàn tất flow** (drawer footer khi đủ gate) — không đặt nhiều nút Generate rải rác.
+- Card chỉ có 1 primary theo trạng thái (mục 1.1).
+- Các thao tác phụ (Xóa/Thay thế/Đổi phạm vi) dạng link/menu nhỏ — không hàng loạt nút lớn.
+
+---
+
+## 8. CHỨNG MINH 3 CASE
+
+### CASE A — Login đơn giản (SIMPLE PATH)
+
 ```
-TC001: [1 Đăng nhập] [2 Vào màn hình chính] → assertion "Danh mục..." toBeVisible
+TC001 "Đăng nhập thành công" → [Thiết lập Automation]
+  → tab Thao tác → [Gắn bản ghi] → dán source (4 bước)
+  → Bắt đầu [1 — Mở /login ▼] · Kết thúc [4 — Click Đăng nhập ▼]
+  → ✓ Đã chọn bước 1 → 4 (4 thao tác) → [Xác nhận thao tác]
+  → "Các thao tác sẽ chạy: 1. Đăng nhập"   (không hỏi tên/private/reusable)
+  → tab Kết quả mong đợi → Đề xuất → Áp dụng → Nháp → Xác nhận
+  → [Sinh automation] → GENERATED
 ```
 
-### CASE B — CRUD ĐVT (1 bản ghi, 5 block, 10 TC — không record 10 lần)
+### CASE B — Thêm ĐVT có 4 testcase (REUSE do tester chủ động)
+
 ```
-BLK-B1 Đăng nhập · BLK-B2 Mở Danh mục ĐVT · BLK-B3 Thêm ĐVT ({{unitCode}},{{unitName}})
-BLK-B4 Sửa ĐVT · BLK-B5 Xóa ĐVT
-TC Thêm-01: [B1,B2,B3] data {Kg, Kilôgam}  → expected/assertion riêng
-TC Thêm-02: [B1,B2,B3] data {Tấn, Tấn}     → expected/assertion riêng
-TC Sửa-01:  [B1,B2,B4] ...
-TC Xóa-01:  [B1,B2,B5] ...
+Lần đầu (TC "Thêm ĐVT - hợp lệ"):
+  → cắt bước 6→10, tích ☑ "Lưu thao tác này để dùng lại" → Tên: "Thêm đơn vị tính"
+  → [Xác nhận thao tác] → thao tác xuất hiện trong library (đang dùng bởi: 1)
+
+3 testcase còn lại (khác expected/assertion):
+  → [Thiết lập Automation] → tab Thao tác → [+ Dùng lại thao tác đã lưu]
+  → library: "Thêm đơn vị tính · Đang được dùng bởi: 1 testcase · [Chọn]"
+  → [Chọn] → thao tác xuất hiện trong "Các thao tác sẽ chạy"
+  → Expected/Assertion riêng → [Sinh automation]
+
+→ KHÔNG record 4 lần. KHÔNG tự gợi ý reuse — tester chủ động [Chọn].
+→ LƯU Ý 6C: chưa giải Test Data khác nhau của 4 TC (để checkpoint Test Data sau).
 ```
 
-### CASE C — Nhập kho lồng nhau
+### CASE C — Nhập kho nested flow (COMPOSITION PATH)
+
 ```
-TC Nhập kho: [C1 Đăng nhập][C2 Mở Nhập kho][C3 Nhập chính][C4 Thêm ĐVT (DÙNG LẠI)]
-             [C5 Nhập tiếp][C6 Thêm KH (DÙNG LẠI)][C7 Hoàn tất]
-TC Thêm ĐVT (độc lập): [C1][Mở Danh mục ĐVT][C4]   ← C4 dùng lại
-TC Cấp phát: [C1][C2][C8]
+TC "Nhập kho thiết bị (hợp lệ)" → [Thiết lập Automation]
+  → tab Thao tác: gắn bản ghi dài → cắt lần lượt 7 thao tác:
+      1. Đăng nhập (Bước chuẩn bị)
+      2. Vào màn hình Nhập kho
+      3. Nhập thông tin thiết bị
+      4. Thêm đơn vị tính        ← dùng lại (hoặc cắt mới + ☑ lưu)
+      5. Tiếp tục nhập kho
+      6. Thêm khách hàng         ← dùng lại
+      7. Hoàn tất nhập kho
+  → sắp xếp ↑↓ (nếu cần) — KHÔNG tự đẩy SETUP lên đầu
+  → Expected Result: "Nhập kho thành công" + Assertion riêng
+  → [Sinh automation]
+
+→ Header vẫn là "TC Nhập kho thiết bị" — nested function (Thêm ĐVT/Thêm KH)
+  chỉ là thao tác 4 và 6 trong list, KHÔNG biến thành testcase chính.
+→ Tester nhìn rõ: đây vẫn là automation của TC Nhập kho.
 ```
 
 ---
 
-## 7. Điều CHƯA làm / phạm vi
+## 9. THUẬT NGỮ UI (tester) ↔ Backend (6B)
 
-- Chưa code Test Data/Slot/function compiler/Runner/AI (checkpoint 6A→6D — xem design doc mục 9).
-- Thuật ngữ UI: **"Thao tác"** / **"Nhóm thao tác"** / **"Bước chuẩn bị"** / **"Dùng lại thao tác"** — KHÔNG hiển thị ActionBlock/Segment/Binding/Composition cho tester thông thường (quyết định #1).
+| UI | Backend |
+|---|---|
+| Bản ghi | RecordingSession |
+| Thao tác | ActionBlock |
+| Bước chuẩn bị | ActionBlock kind=SETUP |
+| Lưu thao tác để dùng lại | scope=REUSABLE (label bắt buộc) |
+| Các thao tác sẽ chạy | TestCaseAutomationBinding.sequence |
+| Đang được dùng bởi N testcase | reverse dependency (getBlockUsage) |
+| Dán bản ghi / Ghi mới | tạo RecordingSession |
 
-## 8. 6 QUYẾT ĐỊNH ĐÃ CHỐT (người dùng — dùng làm nguồn thiết kế chính thức)
+**KHÔNG hiển thị cho tester:** ActionBlock · Binding · Snapshot · Segment · sourceRange · PRIVATE/REUSABLE (chỉ hiện "Dùng lại" khi đã lưu).
 
-1. **Thuật ngữ UI:** dùng **"Thao tác"**; nhóm = **"Nhóm thao tác"**. Không hiển thị ActionBlock / Segment / Binding / Composition cho tester thông thường.
-2. **Tab Test Data:** đặt sau "Thao tác", trước "Kết quả mong đợi" (thứ tự dài hạn: Thao tác → Test Data → Kết quả mong đợi → Điều kiện xác nhận → Generate). **CHƯA implementation ở checkpoint này** — chỉ giữ chỗ/data model/design.
-3. **"Dùng lại thao tác" lấy từ:** có thể reuse **trong TOÀN WORKSPACE**; UI ưu tiên A) thao tác của recording hiện tại, B) "Thao tác đã lưu" trong workspace. **Không tự chọn** — tester quyết định reuse; không AI matching; có thể thêm search/filter sau.
-4. **Đặt tên:** KHÔNG bắt buộc nếu thao tác chỉ dùng cho testcase hiện tại. Nếu tester chọn **"Lưu để dùng lại" → TÊN BẮT BUỘC** (VD "Thêm đơn vị tính", "Đăng nhập"). Private/single-use block không ép đặt tên.
-5. **SETUP:** **KHÔNG tự reorder** — tester quyết định sequence. SETUP chỉ là metadata/meaning (nested workflow cần Main → Sub → Main → Sub; auto reorder có thể phá workflow).
-6. **Thứ tự implementation:** đồng ý fix BUG 1 + BUG 2 trước, chia checkpoint: **6A** (chỉ fix 2 bug → regression → commit/push → STOP) → **6B** (refactor Segment → ActionBlock + Binding, giữ compatibility → STOP) → **6C** (UX testcase-context + chọn range + reuse → STOP) → **6D** (verify 3 workflow A/B/C trên UI thật → chỉ khi PASS mới coi hoàn tất). CHƯA Step 6 Runner.
+---
+
+## 10. ĐIỀU CHƯA LÀM Ở 6C (giới hạn checkpoint)
+
+- CHƯA code (không sửa React/backend).
+- CHƯA Test Data thật (tab chỉ giữ chỗ).
+- CHƯA slot/parameterization/function compiler.
+- CHƯA Runner / AI / Step 6.
+
+## 11. CÂU HỎI CHỜ NGƯỜI DÙNG DUYỆT
+
+1. Primary action theo trạng thái `[Thiết lập Automation] / [Hoàn tất Automation] / [Xem Automation]` — đồng ý?
+2. "Lưu thao tác này để dùng lại" đặt ngay trong form xác nhận thao tác (như mục 3) — đồng ý?
+3. Library reuse hiển thị "Đang được dùng bởi N testcase" (từ reverse dependency 6B) — đồng ý?
+4. Tab "Test Data" đặt giữa "Thao tác" và "Kết quả mong đợi" với placeholder — đồng ý?
+5. Simple Path: nút phụ `[ Chọn toàn bộ bản ghi ]` khi bản ghi chỉ phục vụ 1 TC — có cần không?
+6. Sau duyệt, 6C implementation sẽ: UI card/drawer context + Start/End dropdown + binding UI (gọi API 6B) — đồng ý phạm vi này?
