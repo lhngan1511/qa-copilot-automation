@@ -129,19 +129,22 @@ const allSources = [
     read("components/automationV3/V3SegmentMappingPanel.jsx"),
     read("components/automationV3/V3ReviewDrawer.jsx"),
     read("components/automationV3/V3RecordingTab.jsx"),
-    read("components/automationV3/V3ConfirmDialog.jsx"),
-    read("utils/automationV3.js")
+    read("components/automationV3/V3ConfirmDialog.jsx")
 ].join("\n");
 const allClean = stripComments(allSources);
 
+// 5C: Generate chính thức chỉ ở Drawer (không ở card/panel cũ). Vòng cấm áp cho các component
+// ngoài Drawer — không cấm keyword `generate` (page/drawer dùng hàm generateTestcase hợp lệ).
 for (const forbidden of [
-    /generate/i, /run ?testcase|"RUN"|runStatus/i, /Ghi thao tác và sinh/i,
+    /Ghi thao tác và sinh/i,
     /AI Mapping|aiMapping/i, /codeGenFile|CodeGen/i
 ]) {
     assert.ok(!forbidden.test(allClean), `không chứa: ${forbidden}`);
 }
 // Không có nút Export (chỉ chấp nhận keyword JS `export`, không chấp nhận nhãn Export).
 assert.ok(!/Export|Xuất/.test(allClean), "không có nút Export");
+// Chỉ Drawer mới có nút "Sinh automation" (card/panel cũ không có).
+assert.ok(!cardClean.includes("Sinh automation"), "card không có nút Sinh automation");
 
 // ---- 12. Không có HTML button mặc định (mọi <button> đều có className) ----
 const btnPattern = /<button(?![^>]*className=)/g;
@@ -193,7 +196,7 @@ const drawer = read("components/automationV3/V3ReviewDrawer.jsx");
 const drawerClean = stripComments(drawer);
 assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Recording"), "2 tab Thông tin/Recording");
 assert.ok(!drawerClean.includes("Dữ liệu"), "không có tab Dữ liệu ở 5B");
-assert.ok(!/generate|run/i.test(drawerClean), "Drawer không Generate/Run");
+assert.ok(!/run ?testcase|"RUN"|runStatus/i.test(drawerClean), "Drawer không Run (Bước 6)");
 
 // ---- Bước 5B: source chỉ tải khi "Xem mã" (V3RecordingTab) ----
 const recTab = stripComments(read("components/automationV3/V3RecordingTab.jsx"));
@@ -258,5 +261,53 @@ assert.equal(decisionLabel("AUTOMATED"), "Có automation", "nhãn quyết địn
 assert.equal(decisionLabel("UNDECIDED"), "Chưa quyết định", "nhãn mặc định");
 assert.equal(segmentStatusLabel("CONFIRMED"), "Đã xác nhận", "nhãn segment");
 assert.equal(SEGMENT_ERROR_MESSAGES.RECORDING_MAPPING_REQUIRED, "Không có bản ghi thao tác cho testcase này.", "message chuẩn");
+
+// ================= 5C — Expected Result → Điều kiện xác nhận → Generate =================
+
+// ---- 20. Drawer có tab "Kết quả mong đợi" (chỉ khi selectedForAutomation) ----
+const drawerClean2 = stripComments(read("components/automationV3/V3ReviewDrawer.jsx"));
+assert.ok(drawerClean2.includes("Kết quả mong đợi"), "drawer có tab Kết quả mong đợi");
+assert.ok(drawerClean2.includes("Sinh automation"), "footer drawer có Sinh automation");
+assert.ok(drawerClean2.includes("canGenerateForTestcase"), "drawer dùng gate Generate");
+
+// ---- 21. Tab expected: đúng flow chốt (xem/sửa → đề xuất chủ động → áp dụng → xác nhận) ----
+const expTab = stripComments(read("components/automationV3/V3ExpectedResultTab.jsx"));
+assert.ok(expTab.includes("Chỉnh sửa kết quả mong đợi"), "sửa Expected Result");
+assert.ok(expTab.includes("Đề xuất điều kiện xác nhận"), "nút đề xuất chủ động (không tự bung)");
+assert.ok(expTab.includes("Áp dụng"), "Áp dụng đề xuất");
+assert.ok(expTab.includes("Xác nhận"), "Xác nhận điều kiện");
+assert.ok(expTab.includes("+ Bổ sung điều kiện kiểm tra"), "bổ sung tay");
+assert.ok(expTab.includes("Chưa có gì để đề xuất"), "gợi ý nhẹ khi không tạo được candidate (không heuristic mạnh)");
+assert.ok(expTab.includes("Cần ít nhất 1 điều kiện được xác nhận"), "nhắc gate assertion");
+assert.ok(expTab.includes("quay về Nháp"), "sửa điều kiện → Nháp");
+assert.ok(!/\bAI\b|aiSuggest/i.test(expTab), "tab không dùng AI ở 5C");
+assert.ok(!expTab.includes("Xóa trống → quay về bản gốc đã duyệt + hiện warning"), "không còn warning heuristic cũ");
+
+// ---- 22. Card: primary "Điều kiện xác nhận" khi có segment CONFIRMED; không Generate trên card ----
+assert.ok(cardClean.includes("Điều kiện xác nhận"), "card có primary 'Điều kiện xác nhận'");
+assert.ok(!cardClean.includes("Sinh automation"), "card KHÔNG có nút Sinh automation (chỉ drawer)");
+
+// ---- 23. API client có đủ endpoint 5C ----
+assert.ok(apiSource.includes("updateExpectedResult") && apiSource.includes("suggestAssertions"), "api expected-result + suggest");
+assert.ok(apiSource.includes("listAssertions") && apiSource.includes("createAssertion"), "api list/create assertion");
+assert.ok(apiSource.includes("confirmAssertion") && apiSource.includes("updateAssertion") && apiSource.includes("removeAssertion"), "api confirm/update/remove");
+assert.ok(apiSource.includes("generateTestcase"), "api generate");
+
+// ---- 24. Pure helpers 5C ----
+assert.equal(decisionLabel("AUTOMATED"), "Có automation", "nhãn quyết định (giữ)");
+const canGen = utils.canGenerateForTestcase;
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 1 } }), true, "đủ gate");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 0 }, assertionStatus: { confirmed: 1 } }), false, "thiếu segment confirmed");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 0 } }), false, "thiếu assertion confirmed");
+assert.equal(canGen({ selectedForAutomation: false, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 1 } }), false, "chưa chọn automation");
+assert.equal(utils.assertionTypeLabel("TEXT_VISIBLE"), "Hiển thị nội dung", "nhãn loại");
+assert.equal(utils.assertionStatusLabel("TESTER_CONFIRMED"), "Đã xác nhận", "nhãn trạng thái");
+assert.equal(utils.matcherLabel("toBeHidden"), "Không hiển thị", "nhãn matcher");
+assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 0 } }), "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "lý do gate");
+
+// ---- 25. Page: nối Generate từ drawer ----
+assert.ok(pageClean2.includes("generateTestcase"), "page gọi generateTestcase");
+assert.ok(pageClean2.includes("handleGenerate"), "page có handler Generate");
+assert.ok(pageClean2.includes("drawerTab"), "page mở drawer tab theo ngữ cảnh");
 
 console.log("Automation V3 UI test: PASS");

@@ -15,7 +15,8 @@ import {
     approveRecording,
     rejectRecording,
     deleteRecording,
-    setAutomationDecision
+    setAutomationDecision,
+    generateTestcase
 } from "../api/automationV3Api.js";
 
 /*
@@ -51,6 +52,7 @@ export default function AutomationV3Page() {
     const [activeRecording, setActiveRecording] = useState(null); // {testCaseId, recordingId, sessionId, title}
     const [recordingSource, setRecordingSource] = useState("");
     const [drawerTestcase, setDrawerTestcase] = useState(null);
+    const [drawerTab, setDrawerTab] = useState("recording");
     const [openMenuId, setOpenMenuId] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
     // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
@@ -166,8 +168,9 @@ export default function AutomationV3Page() {
         setOpenMenuId(null);
         if (key === "record") await handleStart(testCase);
         else if (key === "stop") await handleStop();
-        else if (key === "review") setDrawerTestcase(testCase);
+        else if (key === "review") { setDrawerTestcase(testCase); setDrawerTab("recording"); }
         else if (key === "segments") openMappingFor(testCase);
+        else if (key === "conditions") { setDrawerTestcase(testCase); setDrawerTab("expected"); }
     };
 
     const openMappingFor = testCase => {
@@ -217,6 +220,23 @@ export default function AutomationV3Page() {
             await refreshWorkspace();
         } catch (e) {
             setError(e?.message ?? "Không dừng được recording.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** 5C — Sinh automation (chỉ từ drawer, khi đủ gate). */
+    const handleGenerate = async testCase => {
+        if (!testCase || busy) return;
+        setError("");
+        setBusy(true);
+        try {
+            await generateTestcase(workspace.workspaceId, testCase.testCaseId, {});
+            await refreshWorkspace();
+            setNotice(`Đã sinh automation cho ${testCase.testCaseId}.`);
+            setDrawerTestcase(null);
+        } catch (e) {
+            setError(e?.message ?? "Không sinh được automation.");
         } finally {
             setBusy(false);
         }
@@ -417,8 +437,11 @@ export default function AutomationV3Page() {
                 <V3ReviewDrawer
                     workspaceId={workspace.workspaceId}
                     testCase={drawerTestcase}
+                    initialTab={drawerTab}
                     onClose={() => setDrawerTestcase(null)}
                     onApprove={handleApprove}
+                    onGenerate={handleGenerate}
+                    onChanged={refreshWorkspace}
                 />
             ) : null}
 

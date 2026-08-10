@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { WORKSPACE_MODES } from "../codegen/AutomationWorkspace.js";
+import { suggestAssertions } from "../codegen/assertionSuggester.js";
 
 /*
  AutomationWorkspaceApplicationService — Application Service (Architecture V3, Bước 4).
@@ -130,7 +131,8 @@ export default class AutomationWorkspaceApplicationService {
             title: String(tc?.title ?? tc?.scenario ?? "").trim(),
             module: String(tc?.module ?? "").trim(),
             type: String(tc?.type ?? "").trim(),
-            testData: tc?.testData ?? null
+            testData: tc?.testData ?? null,
+            expectedResult: String(tc?.expectedResult ?? tc?.expected ?? "").trim()
         }));
         const ws = this.workspace.create({ mode, module: module || testCases[0]?.module || "", testCases });
         return {
@@ -615,6 +617,77 @@ export default class AutomationWorkspaceApplicationService {
         return this.workspace.getTestCase(workspaceId, testCaseId).automationAssertions ?? [];
     }
 
+    /* ============================== C2. Expected Result + Đề xuất (5C) ============================== */
+
+    /** Tester sửa Expected Result (working copy trong workspace — KHÔNG sửa approved). Rỗng → về bản gốc. */
+    updateExpectedResult({ workspaceId, testCaseId, expectedResult }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const entry = this.workspace.saveExpectedResult(workspaceId, testCaseId, expectedResult);
+        if (!entry) fail(V3_ERRORS.TESTCASE_NOT_FOUND, "Không tìm thấy testcase.");
+        return this.toItem(entry, workspaceId);
+    }
+
+    /** Đề xuất điều kiện xác nhận (deterministic, KHÔNG AI) — Expected Result do tester sở hữu. */
+    suggestAssertionsForTestcase({ workspaceId, testCaseId }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const expectedResult = this.workspace.effectiveExpectedResult(workspaceId, testCaseId);
+        const steps = this.collectTestCaseSteps(workspaceId, testCaseId);
+        return {
+            testCaseId,
+            expectedResult,
+            suggestions: suggestAssertions({ expectedResult, steps })
+        };
+    }
+
+    /** Sửa assertion — tự quay về DRAFT chờ xác nhận lại (giống quyết định segment). */
+    updateAssertion({ workspaceId, testCaseId, assertionId, assertion = {} }) {
+        const entry = this.ensureAssertion(workspaceId, testCaseId, assertionId);
+        const list = (entry.automationAssertions ?? []).map(a => {
+            if (a.id !== assertionId) return a;
+            return {
+                ...a,
+                type: String(assertion.type ?? a.type ?? "").trim(),
+                target: String(assertion.target ?? a.target ?? "").trim(),
+                locator: String(assertion.locator ?? a.locator ?? "").trim(),
+                expected: assertion.expected !== undefined ? assertion.expected : a.expected,
+                matcher: String(assertion.matcher ?? a.matcher ?? "").trim(),
+                source: String(assertion.source ?? a.source ?? "TESTER_INPUT").trim(),
+                status: "DRAFT",
+                confirmedAt: null,
+                updatedAt: new Date().toISOString()
+            };
+        });
+        this.workspace.saveAssertions(workspaceId, testCaseId, list);
+        return list.find(a => a.id === assertionId);
+    }
+
+    /** Steps thực tế của testcase (từ segment TESTCASE CONFIRMED; legacy: recording APPROVED gắn testCaseId). */
+    collectTestCaseSteps(workspaceId, testCaseId) {
+        const steps = [];
+        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
+        if (refs.length > 0) {
+            for (const ref of refs) {
+                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
+                if (!seg || seg.type !== "TESTCASE" || seg.testCaseId !== testCaseId || seg.status !== "CONFIRMED") continue;
+                const raw = this.store?.getRaw(ref.recordingId) ?? null;
+                if (!raw) continue;
+                for (const s of raw.steps ?? []) {
+                    if (Number.isInteger(s?.order) && s.order >= seg.startStep && s.order <= seg.endStep) steps.push(s);
+                }
+            }
+        } else {
+            const recs = (this.store?.allByTestCase(testCaseId) ?? [])
+                .filter(r => r.status === "APPROVED")
+                .sort((a, b) => (b.recordingVersion || 0) - (a.recordingVersion || 0));
+            const latest = recs[0] ?? null;
+            if (latest) {
+                const raw = this.store?.getRaw(latest.recordingId) ?? latest;
+                steps.push(...(raw.steps ?? []));
+            }
+        }
+        return steps;
+    }
+
     /* ============================== D. Generate ============================== */
 
     generate({ workspaceId, testCaseId, confirmedTestData = {} }) {
@@ -648,7 +721,7 @@ export default class AutomationWorkspaceApplicationService {
         // Assertion phải có TESTER_CONFIRMED.
         const confirmedAssertions = (entry.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED");
         if (confirmedAssertions.length === 0) {
-            fail(V3_ERRORS.ASSERTION_CONFIRMATION_REQUIRED, "Chưa có assertion TESTER_CONFIRMED.");
+            fail(V3_ERRORS.ASSERTION_CONFIRMATION_REQUIRED, "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.");
         }
         // Lưu confirmedTestData vào workspace (restart vẫn giữ).
         if (confirmedTestData && typeof confirmedTestData === "object" && Object.keys(confirmedTestData).length > 0) {
@@ -766,6 +839,9 @@ export default class AutomationWorkspaceApplicationService {
             selectedForAutomation: Boolean(entry.selectedForAutomation),
             automationStatus: entry.reviewStatus,
             automationDecision: entry.automationDecision ?? "UNDECIDED",
+            expectedResult: (entry.expectedResultEdited ?? entry.expectedResult ?? "").trim(),
+            expectedResultEdited: entry.expectedResultEdited ?? null,
+            expectedResultOriginal: entry.expectedResult ?? "",
             recordingSummary: rec
                 ? { status: rec.status, recordingId: rec.recordingId, version: rec.recordingVersion, hash: rec.recordingHash, approvedBy: rec.approvedBy, approvedAt: rec.approvedAt }
                 : { status: "NOT_RECORDED", recordingId: null, version: null, hash: null, approvedBy: null, approvedAt: null },

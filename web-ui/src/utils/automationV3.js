@@ -210,3 +210,79 @@ export function canConfirmSegment({ range, segType, testCaseId, stepsCount }) {
     if (segType === "TESTCASE" && !testCaseId) return false;
     return true;
 }
+
+/* ============================== 5C — Điều kiện xác nhận (assertion) helpers ============================== */
+
+/** Nhãn loại điều kiện (ngôn ngữ tester). */
+export function assertionTypeLabel(type) {
+    const map = {
+        URL: "URL",
+        TEXT_VISIBLE: "Hiển thị nội dung",
+        ROLE_VISIBLE: "Phần tử / nút",
+        LOCATOR_VISIBLE: "Phần tử (locator)",
+        VALUE_EQUALS: "Giá trị / Thuộc tính",
+        ATTRIBUTE: "Giá trị / Thuộc tính",
+        COUNT: "Số lượng phần tử"
+    };
+    return map[type] ?? type ?? "—";
+}
+
+/** Nhãn trạng thái điều kiện. */
+export function assertionStatusLabel(status) {
+    if (status === "TESTER_CONFIRMED") return "Đã xác nhận";
+    if (status === "DRAFT") return "Nháp";
+    if (status === "SUGGESTED") return "Đề xuất";
+    if (status === "REJECTED") return "Từ chối";
+    if (status === "REMOVED") return "Đã xóa";
+    return status ?? "—";
+}
+
+/** Nhãn matcher (ngôn ngữ tester). */
+export function matcherLabel(matcher) {
+    const map = {
+        toHaveURL: "URL đúng",
+        toBeVisible: "Hiển thị",
+        toBeHidden: "Không hiển thị",
+        toHaveValue: "Có giá trị",
+        toBeDisabled: "Vô hiệu",
+        toHaveCount: "Đúng số lượng"
+    };
+    return map[matcher] ?? matcher ?? "—";
+}
+
+/** Danh sách loại + matcher cho form (giữ thứ tự ổn định). */
+export const ASSERTION_TYPE_OPTIONS = [
+    { value: "TEXT_VISIBLE", label: "Hiển thị nội dung" },
+    { value: "URL", label: "URL" },
+    { value: "ROLE_VISIBLE", label: "Phần tử / nút" },
+    { value: "LOCATOR_VISIBLE", label: "Phần tử (locator)" },
+    { value: "ATTRIBUTE", label: "Giá trị / Thuộc tính" },
+    { value: "COUNT", label: "Số lượng phần tử" }
+];
+
+export const MATCHER_OPTIONS = [
+    { value: "toBeVisible", label: "Hiển thị" },
+    { value: "toBeHidden", label: "Không hiển thị" },
+    { value: "toHaveURL", label: "URL đúng" },
+    { value: "toHaveValue", label: "Có giá trị" },
+    { value: "toBeDisabled", label: "Vô hiệu" },
+    { value: "toHaveCount", label: "Đúng số lượng" }
+];
+
+/** Gate Generate (điểm giữ cứng — wireframe 5C mục 8): chọn Automation + confirmed segment + ≥1 TESTER_CONFIRMED. */
+export function canGenerateForTestcase(testCase) {
+    if (!testCase) return false;
+    if (testCase.selectedForAutomation !== true) return false;
+    const segConfirmed = (testCase.segmentSummary?.confirmed ?? 0) > 0;
+    const assertionConfirmed = (testCase.assertionStatus?.confirmed ?? 0) > 0;
+    return segConfirmed && assertionConfirmed;
+}
+
+/** Lý do chưa thể Generate (message gợi ý cho UI, không phải lỗi API). */
+export function generateGateReason(testCase) {
+    if (!testCase) return "Testcase chưa có dữ liệu.";
+    if (testCase.selectedForAutomation !== true) return "Testcase chưa được chọn để tự động hóa.";
+    if ((testCase.segmentSummary?.confirmed ?? 0) === 0) return "Chưa có đoạn thao tác đã xác nhận.";
+    if ((testCase.assertionStatus?.confirmed ?? 0) === 0) return "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.";
+    return null;
+}

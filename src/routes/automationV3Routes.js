@@ -165,11 +165,39 @@ export default function createAutomationV3Routes({ applicationService = null } =
             decision: req.body?.decision
         })));
 
-    // ---------- C. Assertions ----------
+    // ---------- B3. Expected Result (5C) ----------
+    router.patch("/workspaces/:workspaceId/testcases/:testCaseId/expected-result", handle(applicationService, (svc, req) =>
+        svc.updateExpectedResult({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            expectedResult: req.body?.expectedResult
+        })));
+
+    // ---------- C. Assertions (5B + 5C) ----------
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/assertions", handle(applicationService, (svc, req) =>
         svc.saveDraftAssertion({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
+            assertion: req.body
+        })));
+
+    router.get("/workspaces/:workspaceId/testcases/:testCaseId/assertions", handle(applicationService, (svc, req) =>
+        svc.listAssertions({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/assertions/suggest", handle(applicationService, (svc, req) =>
+        svc.suggestAssertionsForTestcase({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId
+        })));
+
+    router.patch("/workspaces/:workspaceId/testcases/:testCaseId/assertions/:assertionId", handle(applicationService, (svc, req) =>
+        svc.updateAssertion({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            assertionId: req.params.assertionId,
             assertion: req.body
         })));
 

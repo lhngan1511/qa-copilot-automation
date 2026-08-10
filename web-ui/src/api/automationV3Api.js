@@ -150,3 +150,67 @@ export function setAutomationDecision(workspaceId, testCaseId, decision) {
         { headers: jsonHeaders(), body: JSON.stringify({ decision }) }
     );
 }
+
+/* ============================== 5C — Expected Result + Assertion confirmation ============================== */
+
+/** PATCH .../testcases/:testCaseId/expected-result — tester sửa Expected Result (working copy). */
+export function updateExpectedResult(workspaceId, testCaseId, expectedResult) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/expected-result`,
+        { headers: jsonHeaders(), body: JSON.stringify({ expectedResult }) }
+    );
+}
+
+/** GET .../testcases/:testCaseId/assertions — danh sách điều kiện xác nhận. */
+export function listAssertions(workspaceId, testCaseId) {
+    return apiClient.get(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions`
+    );
+}
+
+/** POST .../testcases/:testCaseId/assertions — tạo điều kiện (DRAFT). Dùng cho "Áp dụng" / "Bổ sung tay". */
+export function createAssertion(workspaceId, testCaseId, assertion = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions`,
+        { headers: jsonHeaders(), body: JSON.stringify(assertion) }
+    );
+}
+
+/** POST .../assertions/:assertionId/confirm — tester xác nhận điều kiện. */
+export function confirmAssertion(workspaceId, testCaseId, assertionId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions/${encodeURIComponent(assertionId)}/confirm`,
+        { headers: jsonHeaders() }
+    );
+}
+
+/** DELETE .../assertions/:assertionId — xóa điều kiện. */
+export function removeAssertion(workspaceId, testCaseId, assertionId) {
+    return apiClient.delete(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions/${encodeURIComponent(assertionId)}`
+    );
+}
+
+/** POST .../testcases/:testCaseId/assertions/suggest — đề xuất điều kiện (deterministic, KHÔNG AI). */
+export function suggestAssertions(workspaceId, testCaseId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions/suggest`,
+        { headers: jsonHeaders() }
+    );
+}
+
+/** PATCH .../assertions/:assertionId — sửa điều kiện (tự quay về Nháp). */
+export function updateAssertion(workspaceId, testCaseId, assertionId, patch = {}) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/assertions/${encodeURIComponent(assertionId)}`,
+        { headers: jsonHeaders(), body: JSON.stringify(patch) }
+    );
+}
+
+/** POST .../testcases/:testCaseId/generate — Sinh automation (chỉ khi đủ gate). */
+export function generateTestcase(workspaceId, testCaseId, confirmedTestData = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/generate`,
+        { headers: jsonHeaders(), body: JSON.stringify({ confirmedTestData }) }
+    );
+}

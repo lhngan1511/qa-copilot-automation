@@ -135,6 +135,8 @@ export function renderAssertion(a) {
         case "toHaveURL": return `  await expect(page).toHaveURL(${JSON.stringify(expected)});`;
         case "toBeVisible":
             return loc ? `  await expect(${loc}).toBeVisible();` : `  await expect(page.getByText(${JSON.stringify(expected)})).toBeVisible();`;
+        case "toBeHidden":
+            return loc ? `  await expect(${loc}).toBeHidden();` : `  await expect(page.getByText(${JSON.stringify(expected)})).toBeHidden();`;
         case "toHaveValue":
             return `  await expect(${loc ?? `page.getByLabel(${JSON.stringify(a.target)})`}).toHaveValue(${JSON.stringify(expected)});`;
         case "toBeDisabled":

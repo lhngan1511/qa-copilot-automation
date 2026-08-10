@@ -106,7 +106,10 @@ export default class AutomationWorkspace {
             automationAssertions: [],
             // 5C-0 — Record Mapping: trạng thái tự động hóa do tester quyết định + mapping segment → testcase.
             automationDecision: "UNDECIDED", // UNDECIDED | MANUAL_ONLY | AUTOMATED
-            segments: [] // [{ segmentId, recordingId, orderInTestCase }] — thứ tự tester sắp xếp (KHÔNG theo index/thứ tự JSON)
+            segments: [], // [{ segmentId, recordingId, orderInTestCase }] — thứ tự tester sắp xếp (KHÔNG theo index/thứ tự JSON)
+            // 5C — Expected Result: bản gốc từ approved (chỉ đọc) + bản làm việc do tester sửa (workspace).
+            expectedResult: String(tc?.expectedResult ?? "").trim(),
+            expectedResultEdited: null
         };
     }
 
@@ -272,5 +275,27 @@ export default class AutomationWorkspace {
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!entry) return [];
         return (entry.segments ?? []).sort((a, b) => (a.orderInTestCase || 0) - (b.orderInTestCase || 0));
+    }
+
+    /* ================= 5C — Expected Result (tester sở hữu; không sửa approved) ================= */
+
+    /** Lưu bản Expected Result do tester sửa (working copy). Rỗng → quay về bản gốc approved. */
+    saveExpectedResult(workspaceId, testCaseId, expectedResult) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        const trimmed = String(expectedResult ?? "").trim();
+        entry.expectedResultEdited = trimmed && trimmed !== entry.expectedResult ? trimmed : null;
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Expected Result hiệu lực (bản làm việc nếu có, nếu không bản gốc approved). */
+    effectiveExpectedResult(workspaceId, testCaseId) {
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!entry) return "";
+        return (entry.expectedResultEdited ?? entry.expectedResult ?? "").trim();
     }
 }

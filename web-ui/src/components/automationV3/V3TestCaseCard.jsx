@@ -48,8 +48,12 @@ export default function V3TestCaseCard({
         draft: segments.filter(s => s.status === "DRAFT").length
     };
 
+    const segConfirmed = (testCase.segmentSummary?.confirmed ?? 0) > 0;
+
     let primary = null;
-    if (status === "SELECTED" && segments.length > 0) primary = { key: "segments", label: "Xem và gán đoạn", danger: false, disabled: recordingActive };
+    // 5C: có segment CONFIRMED → bước tiếp theo là Điều kiện xác nhận (flow chốt).
+    if (status === "SELECTED" && segConfirmed) primary = { key: "conditions", label: "Điều kiện xác nhận", danger: false, disabled: recordingActive };
+    else if (status === "SELECTED" && segments.length > 0) primary = { key: "segments", label: "Xem và gán đoạn", danger: false, disabled: recordingActive };
     else if (status === "SELECTED") primary = { key: "record", label: "Gắn bản ghi testcase", danger: false, disabled: recordingActive };
     else if (status === "RECORDING") primary = { key: "stop", label: "Nhập xong", danger: false };
     else if (status === "REVIEW_REQUIRED") primary = { key: "review", label: "Xem và duyệt", danger: false };
@@ -95,6 +99,11 @@ export default function V3TestCaseCard({
                         {segments.length > 0
                             ? `Đoạn thao tác: đã gán ${segSummary.total} đoạn · ${segSummary.confirmed} đã xác nhận`
                             : "Đoạn thao tác: chưa gán đoạn nào"}
+                    </div>
+                    <div className="v3-card__row v3-card__row--muted">
+                        {segConfirmed
+                            ? `Điều kiện xác nhận: ${segSummary.total > 0 ? (testCase.assertionStatus?.confirmed ?? 0) : 0} đã xác nhận`
+                            : "Điều kiện xác nhận: cần đoạn thao tác trước"}
                     </div>
                     {primary ? (
                         <div className="v3-card__action">

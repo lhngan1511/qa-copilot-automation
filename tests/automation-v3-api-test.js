@@ -204,6 +204,7 @@ async function main() {
         `/api/automation-v3/workspaces/${workspaceId}/testcases/TC001/generate`);
     assert.equal(genDraft.status, 409, "409 khi DRAFT");
     assert.equal(genDraft.body.errorCode, "ASSERTION_CONFIRMATION_REQUIRED", "DRAFT không generate");
+    assert.equal(genDraft.body.message, "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "message gate chuẩn (5C)");
 
     // ===== 10. Confirm assertion =====
     const confirm = await req(baseUrl, "PATCH",
