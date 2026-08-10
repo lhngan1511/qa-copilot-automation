@@ -13,10 +13,10 @@ Có **nhiều nhánh / kiến trúc khác nhau**, đừng nhầm. Trạng thái 
 
 | Nhánh | Commit | Nội dung |
 |---|---|---|
-| **`arena/automation-record-by-testcase`** | **`22b1b4b`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
+| **`arena/automation-record-by-testcase`** | **`0b101c9`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
 | `arena/019fcae2-codegen-mvp` | `d5158a1` | Demo cũ "Automation Intelligence 6-bước" (CodeGen upload → AI Mapping → Review → Generate → Run → Export). **KHÔNG phải V3. Đừng nhầm.** |
 | `demo/ui-polish-20260807` | `59063d6` | Nhánh **chỉ UI demo** (bắt nguồn từ codegen-mvp). Đã cherry-pick fix Generate. Không liên quan V3. |
-| `arena/019fcc7b-qa-copilot-automation` | `790dc8d` | Branch mặc định của session hiện tại. **KHÔNG dùng cho V3.** |
+| `arena/019fcc7b-qa-copilot-automation` | `790dc8d` | Branch tạm của một session Arena trước đó. **KHÔNG dùng cho V3.** |
 | `main` | `0100679` | Trunk. Không đụng trực tiếp. |
 
 **LUẬT VÀNG:**
@@ -184,7 +184,7 @@ Output `RendererResult`:
 ---
 
 ## 7. VẬY BƯỚC ĐẦU TIÊN CỦA CHAT MỚI LÀ GÌ?
-1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `22b1b4b` — commit mới nhất tính đến 2026-08-10).
+1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `0b101c9` — commit mới nhất tính đến 2026-08-10; nếu `git ls-remote` thấy commit mới hơn thì dùng commit mới nhất đó).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md`.
 4. **Soạn wireframe Bước 5C** (Expected Result → Tester-confirmed Assertion → Generate) → gửi người dùng **duyệt trước khi code**.
