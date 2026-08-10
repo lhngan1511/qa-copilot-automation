@@ -93,6 +93,7 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Bước 5C-0** | **Record Mapping: triển khai** — Segment model (store/workspace), session không gắn testcase, UI Timeline + gán đoạn + Review Mapping (↑/↓), validation gating Generate, automationDecision 3 nhãn, legacy fallback | (xem git log mới nhất) |
 | **Docs** | Wireframe **5C** (Expected Result → Điều kiện xác nhận → Generate; warning "chưa đủ thông tin", đề xuất deterministic, cắm AI sau không phá workflow) | (xem git log mới nhất) |
 | **Bước 5C** | **Expected Result → Tester-confirmed Assertion → Generate: triển khai** — tab "Kết quả mong đợi", assertionSuggester deterministic, Áp dụng→Nháp→Xác nhận, gate ≥1 TESTER_CONFIRMED, Sinh automation chỉ drawer, renderer toBeHidden | (xem git log mới nhất) |
+| **Docs** | **Architecture Correction** — mô hình Recording → Action Block → TestCase Binding; root cause BUG 1+2; CASE A/B/C; migration GIỮ/REFACTOR/BỎ/THÊM + wireframe UX mới | (xem git log mới nhất) |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -140,6 +141,21 @@ Phiên demo chứng minh mapping theo thứ tự SAI (JSON duyệt `4-3-2-1` vs 
 
 Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mục 0.1) · Wireframe **đã duyệt**: `docs/v3-record-mapping-wireframe.md` (mục F).
 
+## 3.7. ARCHITECTURE CORRECTION (2026-08-10) — Recording / TestCase / Reuse ⭐
+
+**Mốc:** 5C đã implementation tại `cccbcc8` và tester đã kiểm tra UI thật → phát hiện 2 bug data path + bài toán nghiệp vụ (CRUD nhiều TC cùng thao tác, FLOW LỒNG Nhập kho/Thêm ĐVT/Thêm KH/Cấp phát) → mô hình `Recording → Segment → TestCase` **KHÔNG ĐỦ**.
+**Quyết định:** TẠM DỪNG Step 6; không Runner; không AI mapping; **không vá lẻ UI 5C**; chuyển sang thiết kế mới (chưa code).
+
+- **Mô hình mới:** `Recording Session → Action Block → TestCase Automation Binding (Composition)`.
+  - Action Block ≠ TestCase: block là bằng chứng/thao tác từ recording (đặt tên, **dùng lại được**); TestCase sở hữu binding (danh sách block + thứ tự + test data + expected + assertions).
+  - Reuse PHẢI do tester quyết định — không AI, không theo thứ tự/index.
+  - Chi tiết: `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C + migration GIỮ/REFACTOR/BỎ/THÊM).
+  - Wireframe UX mới (context testcase, Start/End dropdown, reuse): `docs/v3-automation-composition-wireframe.md` — **CHỜ NGƯỜI DÙNG DUYỆT trước khi code.**
+
+**Root cause 2 bug (đã trace + tái hiện):**
+- **BUG 1** — Card "đã gán 1 đoạn · 1 xác nhận" nhưng tab Recording "Chưa có recording để review": drawer tab Recording gọi `store.allByTestCase(testCaseId)` (contract 5B: 1 recording = 1 testcase) trong khi recording 5C-0 có `testCaseId = null` (liên kết ở segment) → trả `[]`. Card đọc workspace refs → đúng. **Fix (thiết kế):** drawer lấy recording qua binding/block refs của testcase.
+- **BUG 2** — Tab "Kết quả mong đợi" hiển thị "(trống)" dù JSON có expectedResult: `AutomationV3Page.handleCreated` **thiếu field `expectedResult`** trong payload `createWorkspace` → workspace entry rỗng. Backend/contract đã hỗ trợ (test API PASS vì không đi qua page). **Fix (thiết kế):** map đủ `expectedResult` trong payload page.
+
 ## 4. VIỆC CHƯA LÀM (THEO THỨ TỰ — LÀM TIẾP TỪ ĐÂY)
 
 ### Bước 5C-0 — Record Mapping (ĐÃ HOÀN THÀNH 2026-08-10)
@@ -151,8 +167,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Đã có: tab **"Kết quả mong đợi"** trong Drawer (xem/sửa Expected Result — working copy trong workspace, KHÔNG đụng approved); nút **"Đề xuất điều kiện xác nhận"** chủ động (deterministic `assertionSuggester`, source SYSTEM_SUGGESTED — chưa AI nhưng cùng contract để cắm AI sau); **Áp dụng → Nháp → Xác nhận**; sửa điều kiện → quay về Nháp; **gate Generate bắt buộc ≥1 TESTER_CONFIRMED** (message "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi."); **Sinh automation chỉ ở drawer footer** (card chỉ có "Điều kiện xác nhận" + trạng thái tóm tắt).
 - Renderer hỗ trợ thêm matcher `toBeHidden`.
 
-### Bước 6 — Run (browser thật)
+### Bước 6 — Run (browser thật) — **TẠM DỪNG** (chờ Architecture Correction duyệt xong)
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
+- Phạm vi hẹp đã chốt: Generate spec → Runner → PASS/FAIL thật → log/trace. **Chưa thêm AI failure analysis.**
+
+### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — chờ duyệt)
+- Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
+- Sau khi người dùng duyệt → triển khai theo thứ tự đề xuất (mục 9 design): fix BUG 2 → fix BUG 1 → refactor Segment→ActionBlock+Binding → UI Drawer context + Step selection + Reuse → Test Data (sau).
 
 ### Bước 7 — Test tích hợp end-to-end
 - Nối toàn bộ workspace → record → approve → assertion → generate → run.
@@ -211,5 +232,5 @@ Output `RendererResult`:
 1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` — HEAD sẽ là commit mới nhất của nhánh (xác minh bằng `git log -1`; đừng so hash cố định vì mỗi lần cập nhật docs HEAD lại đổi).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md` + `docs/DESIGN_RECORD_MAPPING.md` (+ `docs/DESIGN_ASSERTION_CONFIRMATION.md` khi làm assertion).
-4. **Bước 6 — Run (browser thật):** chạy spec đã generate (cần Chromium — sandbox hiện không có, chỉ stub/test).
-5. Sau khi duyệt: code 5C (assertion confirmation UI + nối Generate), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
+4. **Bước 6.5 — Architecture Correction:** đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`; nếu chưa được người dùng duyệt → trình wireframe + 6 câu hỏi (mục 8 wireframe) → **chờ duyệt trước khi code**.
+5. Sau khi duyệt: triển khai theo mục 9 design (fix BUG 1 + BUG 2 trước, rồi Segment→ActionBlock+Binding, rồi UI), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
