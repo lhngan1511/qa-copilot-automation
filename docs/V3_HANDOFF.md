@@ -1,6 +1,6 @@
 # HANDOFF — V3 Record by Testcase (Bản chuyển giao cho session/chat mới)
 
-> Cập nhật lần cuối: 2026-08-07 · Viết để một chat/session HOÀN TOÀN MỚI có thể tiếp tục
+> Cập nhật lần cuối: 2026-08-10 · Viết để một chat/session HOÀN TOÀN MỚI có thể tiếp tục
 > **đúng, không lệch nội dung**. Đây là nguồn duy nhất cần đọc trước khi làm tiếp.
 
 ---
@@ -13,9 +13,9 @@ Có **nhiều nhánh / kiến trúc khác nhau**, đừng nhầm. Trạng thái 
 
 | Nhánh | Commit | Nội dung |
 |---|---|---|
-| **`arena/automation-record-by-testcase`** | **`89f40aa`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
-| `arena/019fcae2-codegen-mvp` | `5d34543` | Demo cũ "Automation Intelligence 6-bước" (CodeGen upload → AI Mapping → Review → Generate → Run → Export). **KHÔNG phải V3. Đừng nhầm.** |
-| `demo/ui-polish-20260807` | `0d56b4d` | Nhánh **chỉ UI demo** (bắt nguồn từ codegen-mvp). Đã cherry-pick fix Generate. Không liên quan V3. |
+| **`arena/automation-record-by-testcase`** | **`22b1b4b`** | ⭐ **NHÁNH V3 — "Record by Testcase". ĐÂY LÀ NHÁNH LÀM VIỆC.** Toàn bộ tiến trình V3 nằm đây. |
+| `arena/019fcae2-codegen-mvp` | `d5158a1` | Demo cũ "Automation Intelligence 6-bước" (CodeGen upload → AI Mapping → Review → Generate → Run → Export). **KHÔNG phải V3. Đừng nhầm.** |
+| `demo/ui-polish-20260807` | `59063d6` | Nhánh **chỉ UI demo** (bắt nguồn từ codegen-mvp). Đã cherry-pick fix Generate. Không liên quan V3. |
 | `arena/019fcc7b-qa-copilot-automation` | `790dc8d` | Branch mặc định của session hiện tại. **KHÔNG dùng cho V3.** |
 | `main` | `0100679` | Trunk. Không đụng trực tiếp. |
 
@@ -86,6 +86,7 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Bước 5B+** | Chỉnh nhãn: "Gắn bản ghi testcase" (dán source), ghi nhận chưa spawn Recorder thật + backlog | `71eb11c` |
 | **Handoff** | Tổng kết tiến trình V3 (file này) | `89f40aa` |
 | **Handoff** | Bổ sung bài học phiên demo → nền tảng Bước 5C | (xem git log mới nhất) |
+| **Handoff** | Đồng bộ hash remote sau xác minh `git ls-remote` (2026-08-10) | (xem git log mới nhất) |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -183,7 +184,7 @@ Output `RendererResult`:
 ---
 
 ## 7. VẬY BƯỚC ĐẦU TIÊN CỦA CHAT MỚI LÀ GÌ?
-1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `89f40aa`).
+1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` (đảm bảo HEAD = `22b1b4b` — commit mới nhất tính đến 2026-08-10).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md`.
 4. **Soạn wireframe Bước 5C** (Expected Result → Tester-confirmed Assertion → Generate) → gửi người dùng **duyệt trước khi code**.
