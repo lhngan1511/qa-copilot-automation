@@ -89,6 +89,7 @@ Renderer **chỉ render, không ghi file** (GenerateService ghi). API chỉ gọ
 | **Handoff** | Tổng kết tiến trình V3 (file này) | `89f40aa` |
 | **Handoff** | Bổ sung bài học phiên demo → nền tảng Bước 5C | (xem git log mới nhất) |
 | **Handoff** | Đồng bộ hash remote sau xác minh `git ls-remote` (2026-08-10) | (xem git log mới nhất) |
+| **Docs** | Chốt thiết kế **Record Mapping** (Session ≠ TestCase, Segment, tester-owned, không AI/không theo thứ tự) + wireframe | (xem git log mới nhất) |
 
 ### Test V3 (đều PASS)
 - `tests/automation-v3-api-test.js` (Bước 4 — 20 test, trong đó test backend HTTP + error contract + restart persistence).
@@ -120,9 +121,27 @@ Phiên demo trên `arena/019fcae2-codegen-mvp` đã phơi bày **lỗi gốc** c
 
 > V3 đã có sẵn renderer/generate theo hướng "tester-confirmed assertion" — không cần import mấy fix demo. Nhưng **bài học cốt lõi** (assertion phải do tester xác nhận, không suy từ recording lỗi) **là nền tảng cho Bước 5C.**
 
+## 3.6. CHỐT RECORD MAPPING (2026-08-10) — ĐỌC TRƯỚC KHI LÀM 5C ⭐
+
+Phiên demo chứng minh mapping theo thứ tự SAI (JSON duyệt `4-3-2-1` vs recording thao tác `1-2-4-3`). Đã đóng băng:
+- **Recording Session ≠ TestCase** — 1 bản ghi dài (đăng nhập → phân hệ → chức năng → form con → thêm/sửa/xóa) phục vụ nhiều testcase. **Bỏ giả định `1 recording = 1 testcase`.**
+- **Segment = khoảng steps liên tục** (metadata `startStep/endStep`, tận dụng `order/sourceStart/sourceEnd/sourceLine` của parser), **không cắt source**.
+- **Mapping thuộc quyền tester**: chọn start → end → loại (SETUP/TESTCASE) → testCaseId → xác nhận. Lưu bằng `testCaseId`, **KHÔNG theo index/order/position**.
+- **KHÔNG AI mapping**: không auto match / suggest / assign; text tương tự chỉ hỗ trợ tìm kiếm, không preselect.
+- **SETUP tách khỏi testcase** (dùng chung; giữ tinh thần `setupRecordingId` của GenerateService).
+- Testcase có thể **không automation** (Manual only / Chưa quyết định / Candidate / Automated) — thiếu segment không phải lỗi hệ thống, chỉ chặn khi Generate.
+- Testcase có thể **nhiều segment** (kể cả từ nhiều session) — lưu thứ tự, tester sắp xếp, Generate theo đúng thứ tự.
+
+Chi tiết + delta so với code: `docs/DESIGN_RECORD_MAPPING.md` · Wireframe chờ duyệt: `docs/v3-record-mapping-wireframe.md`.
+
 ## 4. VIỆC CHƯA LÀM (THEO THỨ TỰ — LÀM TIẾP TỪ ĐÂY)
 
-### Bước 5C — Expected Result → Tester-confirmed Assertion → Generate (KẾ TIẾP)
+### Bước 5C-0 — Record Mapping: Timeline + Gán đoạn (KẾ TIẾP — chờ duyệt wireframe)
+- Thiết kế đã đóng băng: `docs/DESIGN_RECORD_MAPPING.md` (7 nguyên tắc, mục 3.6).
+- Wireframe text: `docs/v3-record-mapping-wireframe.md` — **chờ người dùng duyệt trước khi code** (kèm 4 câu hỏi review ở mục F).
+- Sau duyệt: code Segment model (session/workspace), UI Timeline + gán đoạn + Review Mapping, validation gating Generate, `automationStatus` — rồi mới tới assertion.
+
+### Bước 5C — Expected Result → Tester-confirmed Assertion → Generate (SAU 5C-0)
 Phạm vi (người dùng đã chốt định hướng):
 - Chuyển **Expected Result → tester-confirmed assertion** (assertion confirmation) trong UI V3.
 - Nối **Generate** (qua GenerateService V3 đã có) vào UI — card APPROVED chuyển sang Generate.
@@ -188,6 +207,6 @@ Output `RendererResult`:
 ## 7. VẬY BƯỚC ĐẦU TIÊN CỦA CHAT MỚI LÀ GÌ?
 1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` — HEAD sẽ là commit mới nhất của nhánh (xác minh bằng `git log -1`; đừng so hash cố định vì mỗi lần cập nhật docs HEAD lại đổi).
 2. Cài deps (mục 1).
-3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md`.
-4. **Soạn wireframe Bước 5C** (Expected Result → Tester-confirmed Assertion → Generate) → gửi người dùng **duyệt trước khi code**.
-5. Sau khi duyệt: code 5C, build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
+3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md` + `docs/DESIGN_RECORD_MAPPING.md` (+ `docs/DESIGN_ASSERTION_CONFIRMATION.md` khi làm assertion).
+4. **Bước 5C-0 — Record Mapping:** nếu `docs/v3-record-mapping-wireframe.md` chưa được duyệt → gửi người dùng **duyệt trước khi code** (trả lời 4 câu hỏi mục F của wireframe).
+5. Sau khi duyệt: code 5C-0 (segment + timeline + review mapping), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
