@@ -149,8 +149,9 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - **Mô hình mới:** `Recording Session → Action Block → TestCase Automation Binding (Composition)`.
   - Action Block ≠ TestCase: block là bằng chứng/thao tác từ recording (đặt tên, **dùng lại được**); TestCase sở hữu binding (danh sách block + thứ tự + test data + expected + assertions).
   - Reuse PHẢI do tester quyết định — không AI, không theo thứ tự/index.
-  - Chi tiết: `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C + migration GIỮ/REFACTOR/BỎ/THÊM).
-  - Wireframe UX mới (context testcase, Start/End dropdown, reuse): `docs/v3-automation-composition-wireframe.md` — **CHỜ NGƯỜI DÙNG DUYỆT trước khi code.**
+  - **Đã chốt thêm:** Progressive Complexity (Simple Path mặc định / Composition Path khi cần) · ActionBlock → reusable Playwright function (design dài hạn) · **Recorded values ≠ authoritative Test Data** · slots/TestDataBinding design-only · **ActionBlock snapshot + reverse dependency** `blockId → testcaseIds[]` · 6 quyết định UX (mục 8 wireframe) · guardrail reuse (tên giống nhau ≠ bằng chứng mapping).
+  - Chi tiết: `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C + migration + checkpoint 6A→6D).
+  - Wireframe UX mới (context testcase, Start/End dropdown, reuse): `docs/v3-automation-composition-wireframe.md` (mục 8 = 6 quyết định đã chốt).
 
 **Root cause 2 bug (đã trace + tái hiện):**
 - **BUG 1** — Card "đã gán 1 đoạn · 1 xác nhận" nhưng tab Recording "Chưa có recording để review": drawer tab Recording gọi `store.allByTestCase(testCaseId)` (contract 5B: 1 recording = 1 testcase) trong khi recording 5C-0 có `testCaseId = null` (liên kết ở segment) → trả `[]`. Card đọc workspace refs → đúng. **Fix (thiết kế):** drawer lấy recording qua binding/block refs của testcase.
@@ -171,9 +172,10 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
 - Phạm vi hẹp đã chốt: Generate spec → Runner → PASS/FAIL thật → log/trace. **Chưa thêm AI failure analysis.**
 
-### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — chờ duyệt)
+### Bước 6.5 — ARCHITECTURE CORRECTION (ĐANG Ở ĐÂY — Checkpoint 6A)
 - Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
-- Sau khi người dùng duyệt → triển khai theo thứ tự đề xuất (mục 9 design): fix BUG 2 → fix BUG 1 → refactor Segment→ActionBlock+Binding → UI Drawer context + Step selection + Reuse → Test Data (sau).
+- **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs → 6B data model (quan trọng nhất: ActionBlock/Binding/snapshot/version/reverse dep/compatibility) → 6C UX → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
+- **6A (đang làm):** chỉ fix BUG 1 (drawer đọc recording qua mapping hiện hành) + BUG 2 (page truyền expectedResult). Không refactor Segment→Block, không Test Data/Slot/Runner/AI. Regression + build + commit/push + STOP chờ duyệt.
 
 ### Bước 7 — Test tích hợp end-to-end
 - Nối toàn bộ workspace → record → approve → assertion → generate → run.
@@ -232,5 +234,5 @@ Output `RendererResult`:
 1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` — HEAD sẽ là commit mới nhất của nhánh (xác minh bằng `git log -1`; đừng so hash cố định vì mỗi lần cập nhật docs HEAD lại đổi).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md` + `docs/DESIGN_RECORD_MAPPING.md` (+ `docs/DESIGN_ASSERTION_CONFIRMATION.md` khi làm assertion).
-4. **Bước 6.5 — Architecture Correction:** đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`; nếu chưa được người dùng duyệt → trình wireframe + 6 câu hỏi (mục 8 wireframe) → **chờ duyệt trước khi code**.
-5. Sau khi duyệt: triển khai theo mục 9 design (fix BUG 1 + BUG 2 trước, rồi Segment→ActionBlock+Binding, rồi UI), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
+4. **Bước 6.5 — Architecture Correction (checkpoint 6A → 6B → 6C → 6D):** đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (mục 9 lộ trình) + `docs/v3-automation-composition-wireframe.md` (mục 8 = 6 quyết định chốt). Mỗi checkpoint: code phạm vi hẹp → regression + build → commit + push → `git ls-remote` → **STOP chờ người dùng duyệt** (không tự sang checkpoint kế).
+5. 6A = chỉ fix BUG 1 (drawer recording qua refs) + BUG 2 (expectedResult payload). 6B = data model. 6C = UX. 6D = verify 3 workflow thật.

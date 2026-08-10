@@ -183,6 +183,30 @@ TestCase 1 ── 1 TestCaseAutomationBinding (blocks[] tham chiếu blockId + t
 ActionBlock * ── * TestCase (qua binding — reuse do tester quyết định)
 ```
 
+### 3.7 ActionBlock SNAPSHOT + reverse dependency (QUYẾT ĐỊNH MỚI)
+
+- **ActionBlock giữ SNAPSHOT các steps đã được tester xác nhận** — KHÔNG phải live view phụ thuộc hoàn toàn vào RecordingSession.
+- Mục tiêu: **sửa/xóa raw recording không được âm thầm thay đổi automation của hàng loạt testcase.**
+- Phân tầng rõ:
+  - `RecordingSession` = **source evidence** (thô, có thể sửa/xóa).
+  - `ActionBlock` = **tester-confirmed reusable automation artifact** (snapshot steps + metadata, độc lập với recording sau khi xác nhận).
+- Nếu ActionBlock thay đổi sau này → hệ thống phải biết testcase nào đang dùng nó → **reverse dependency**:
+
+```json
+// Lưu trên ActionBlock (hoặc index trong workspace)
+{ "blockId": "BLK-...", "usedByTestCases": ["TC003", "TC007"] }
+```
+
+- CHƯA cần implementation impact analysis ở lượt này — chỉ thiết kế để sau này cảnh báo impact khi block đổi.
+
+### 3.8 Recorded values ≠ authoritative Test Data (QUYẾT ĐỊNH MỚI — ghi cứng)
+
+- Recorded value (VD `fill username = "admin"`, `fill password = "123456"`) **KHÔNG phải Test Data chính thức** của testcase.
+- Nguồn Test Data ưu tiên: **approved testcase → tester-provided data → TestDataBinding**.
+- Recorded values chỉ là: **evidence**; **default/candidate/reference** khi phù hợp.
+- **KHÔNG tự ghi recorded value thành test data chính thức.**
+- Slot/TestDataBinding: DESIGN ONLY — chưa code slot detection, chưa parameterization, chưa `test.each`, chưa fixture system. Chỉ bảo đảm data model không khóa đường này (xem 3.4).
+
 ---
 
 ## 4. Nguyên tắc cứng (KHÔNG đổi)
@@ -274,6 +298,11 @@ Action Blocks (tester cắt theo nội dung):
 → V1 (chưa code slot): nếu 2 TC "Thêm" cần data khác hẳn nhau, tester tạo 2 block "Thêm ĐVT (data A)" / "Thêm ĐVT (data B)" từ các đoạn tương ứng — vẫn KHÔNG phải record lại toàn bộ.
 ```
 
+> **GUARDRAIL REUSE (sửa wording — bắt buộc đọc):**
+> KHÔNG được hiểu CASE B là "1 recording → 5 blocks → **tự động** compose 10 testcase".
+> Đúng là: **"1 recording có thể tạo các ActionBlock có khả năng reuse. Mỗi testcase CHỈ reuse ActionBlock khi TESTER XÁC NHẬN ActionBlock đó phù hợp với testcase."**
+> Không map theo index / order JSON / tên giống nhau / AI / similarity tự động.
+
 ### CASE C — Flow lồng: Nhập kho thiết bị (Thêm ĐVT + Thêm KH + Cấp phát)
 
 ```
@@ -307,9 +336,57 @@ Binding:
 → Không cần khái niệm MAIN/SUB riêng — tester quyết định block nào nằm trong binding của testcase nào.
 ```
 
+> **GUARDRAIL CASE C:** Không được mặc định "cùng tên 'Thêm đơn vị tính' → cùng ActionBlock". Tester phải **xác nhận reuse** từng lần. Tên giống nhau không phải bằng chứng mapping.
+
+---
+
+## 6.5. ActionBlock → Reusable Playwright Function (DESIGN dài hạn — CHƯA implementation)
+
+- Hướng codegen dài hạn: **ActionBlock → compile → Reusable Playwright Function**.
+- KHÔNG copy cứng toàn bộ recording vào từng spec nếu block đã được reuse.
+
+```js
+// ActionBlock "Thêm đơn vị tính" → compile thành:
+async function addUnitType(page, data) {
+    await page.getByRole("textbox", { name: "Mã" }).fill(data.unitCode);
+    await page.getByRole("textbox", { name: "Tên" }).fill(data.unitName);
+    await page.getByRole("button", { name: "Lưu" }).click();
+}
+
+// TestCase Binding chỉ compose:
+test("Thêm đơn vị tính", async ({ page }) => {
+    await login(page, env);        // block "Đăng nhập"
+    await openUnitType(page);      // block "Mở Danh mục ĐVT"
+    await addUnitType(page, { unitCode: "Kg", unitName: "Kilôgam" });
+    await expect(page.getByText("Thêm thành công")).toBeVisible();  // assertion TESTER_CONFIRMED
+});
+
+// Nested flow:
+test("Nhập kho thiết bị", async ({ page }) => {
+    await login(page, env);
+    await openImport(page);
+    await fillImportPart1(page, data);
+    await addUnitType(page, { unitCode: "Kg", unitName: "Kilôgam" });  // reusable/nested block
+    await fillImportPart2(page, data);
+    await addCustomer(page, data);                                     // reusable/nested block
+    await finishImport(page, data);
+    await expect(...).toBeVisible();
+});
+```
+
+- Mục tiêu dài hạn: **RECORD ONCE WHEN POSSIBLE → REUSE WHEN TESTER CONFIRMS → GENERATE MANY TESTCASES.**
+- Điều kiện tiên quyết: data model ổn định (6B) — **KHÔNG build function compiler trước khi ActionBlock/Binding/snapshot/version vững** (theo thứ tự checkpoint 6A→6B→6C→6D→Runner/CodeGen nâng cao).
+
 ---
 
 ## 7. UX CORRECTION (bắt buộc cho design mới)
+
+### 7.0 PROGRESSIVE COMPLEXITY — Simple Path / Composition Path (QUYẾT ĐỊNH MỚI)
+
+- Simple Path và Composition Path **KHÔNG phải hai architecture** — là **hai mức UX trên CÙNG data model**.
+- **SIMPLE PATH (mặc định):** testcase đơn giản (VD Login). UI gần như cũ: TC001 → [Gắn bản ghi] → hiển thị thao tác trong context TC001 → xác nhận → Expected → Assertion → Generate. Backend vẫn tạo private ActionBlock + Binding nhưng tester **không cần thấy** thuật ngữ ActionBlock/Slot/Binding/Composition. Nếu toàn recording chỉ phục vụ testcase hiện tại → UI hỗ trợ **chọn nhanh toàn bộ recording** (vẫn cần tester xác nhận).
+- **COMPOSITION PATH (chỉ khi cần):** khi tester muốn reuse / testcase nhiều đoạn / nested flow / nhiều testcase dùng chung skeleton. UI mới mở thêm: "Dùng lại thao tác", danh sách thao tác đã lưu, sắp xếp sequence, sau này Test Data Binding.
+- **Nguyên tắc: COMPLEXITY CHỈ XUẤT HIỆN KHI TESTER CẦN.**
 
 ### 7.1 TESTER LUÔN GIỮ CONTEXT TESTCASE
 
@@ -364,14 +441,17 @@ Binding:
 
 ---
 
-## 9. Phạm vi lần này — CHƯA CODE
+## 9. Phạm vi & LỘ TRÌNH CHECKPOINT (ĐÃ CHỐT — giữ cứng thứ tự)
 
-- Chưa sửa production code, chưa sửa UI code, chưa Step 6, chưa Runner, chưa AI.
-- Sau khi người dùng duyệt architecture + wireframe → mới triển khai theo thứ tự đề xuất:
-  1. Fix BUG 2 (payload expectedResult) + BUG 1 (drawer qua binding) — ưu tiên vì là data path;
-  2. Refactor Segment → ActionBlock + Binding (backend model + API);
-  3. UI Drawer context + Step selection Start/End + Reuse;
-  4. Test Data tab (design-only → triển khai sau); giữ nguyên Expected Result/Assertion 5C.
+> Thứ tự bắt buộc (người dùng chốt): **6A Fix data bugs → 6B Data Model → 6C UX → 6D Verify nghiệp vụ thật → rồi mới Runner/CodeGen nâng cao.**
+
+- **6A — Fix data bugs (LƯỢT HIỆN TẠI):** chỉ fix BUG 1 (drawer đọc recording qua mapping/reference hiện hành) + BUG 2 (page truyền expectedResult khi createWorkspace). Không refactor Segment→Block cùng commit 6A. Không Test Data/Slot/function compiler/Runner/AI. Regression + build + commit + push + `git ls-remote` → **DỪNG, chờ duyệt.**
+- **6B — Data Model (quan trọng nhất):** refactor Segment → ActionBlock + TestCaseAutomationBinding + ownership + snapshot/version + reverse dependency + compatibility. Chưa generate reusable function. DỪNG chờ duyệt.
+- **6C — UX:** testcase-context (drawer, bỏ panel global), chọn range Start/End rõ ràng, reuse UX, Simple/Composition path. Regression/build → DỪNG.
+- **6D — Verify nghiệp vụ thật:** chạy 3 workflow A Login · B CRUD Đơn vị tính · C Nhập kho nested flow trên UI thật. Chỉ khi PASS mới coi Architecture Correction hoàn tất.
+- **Sau 6D:** mới quay lại Step 6 Runner (narrow scope) + CodeGen nâng cao (ActionBlock → function, slots, test.each).
+
+**CHƯA làm ở mọi checkpoint trước 6D:** Runner, AI, Test Data/Slot implementation, function compiler.
 
 ---
 

@@ -1,8 +1,8 @@
-# WIREFRAME (TEXT) — UX mới: Testcase Context → Gắn bản ghi → Action Block → Binding → Data → Expected → Assertion → Generate
+# WIREFRAME (TEXT) — UX mới: Testcase Context → Gắn bản ghi → Thao tác (Action Block) → Binding → Data → Expected → Assertion → Generate
 
 > Branch: `arena/automation-record-by-testcase` · Ngày: 2026-08-10
-> Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT — chưa code.** Kèm theo `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C).
-> Nguyên tắc: **TESTER LUÔN GIỮ CONTEXT TESTCASE** · Action Block ≠ TestCase · reuse do tester quyết định · không AI · không theo thứ tự/index.
+> Trạng thái: **6 QUYẾT ĐỊNH ĐÃ CHỐT (mục 8) — đang Checkpoint 6A (fix data bugs).** Kèm theo `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` (data model + CASE A/B/C + checkpoint 6A→6D).
+> Nguyên tắc: **TESTER LUÔN GIỮ CONTEXT TESTCASE** · Thao tác (Action Block) ≠ TestCase · reuse do tester quyết định · không AI · không theo thứ tự/index.
 
 ---
 
@@ -10,12 +10,18 @@
 
 ```
 Card TC001 → [Gắn bản ghi] → Drawer TC001 (context giữ nguyên)
-  → tab "Thao tác": chọn bản ghi → chọn Start/End → đặt tên → [Xác nhận thao tác]
-  → (tùy chọn) [Dùng lại thao tác] từ block đã lưu
-  → danh sách "Các thao tác sẽ chạy" (binding, ↑↓ sắp xếp)
-  → tab "Test Data" (sau binding — bước này chỉ thiết kế)
+  → tab "Thao tác": chọn bản ghi → chọn Start/End → [Xác nhận thao tác] (tùy chọn "Lưu để dùng lại")
+  → (tùy chọn) [Dùng lại thao tác] từ toàn workspace
+  → danh sách "Các thao tác sẽ chạy" (binding, ↑↓ sắp xếp — KHÔNG tự reorder)
+  → tab "Test Data" (giữ chỗ — chưa implement, design only)
   → tab "Kết quả mong đợi" → tab "Điều kiện xác nhận" → [Sinh automation] (drawer footer)
 ```
+
+### 0.1 PROGRESSIVE COMPLEXITY — Simple Path / Composition Path
+
+- **SIMPLE PATH (mặc định):** testcase đơn giản (VD Login) — UI gần như cũ: TC001 → [Gắn bản ghi] → hiển thị thao tác trong context TC001 → xác nhận → Expected → Assertion → Generate. Backend vẫn tạo private thao tác + binding nhưng tester **không thấy** thuật ngữ ActionBlock/Slot/Binding/Composition. Nếu toàn recording chỉ phục vụ testcase hiện tại → UI có nút **"Chọn toàn bộ bản ghi"** (vẫn cần xác nhận).
+- **COMPOSITION PATH (chỉ khi cần):** reuse / nhiều đoạn / nested flow → UI mở thêm "Dùng lại thao tác", "Thao tác đã lưu", sắp xếp sequence.
+- **COMPLEXITY CHỈ XUẤT HIỆN KHI TESTER CẦN.**
 
 ---
 
@@ -75,14 +81,14 @@ Card TC001 → [Gắn bản ghi] → Drawer TC001 (context giữ nguyên)
 │   Bắt đầu:  [ 6 ▼ ]   Kết thúc:  [ 8 ▼ ]                            │
 │   ▓▓▓▓▓▓▓▓▓▓ (highlight khối bước 6 → 8 trên timeline)               │
 │   Đã chọn bước 6 → 8 (3 thao tác)                                    │
-│   Tên thao tác (tùy chọn): [ Thêm đơn vị tính            ]           │
+│   Tên thao tác: [ Thêm đơn vị tính                  ]  (tùy chọn)     │
+│   ☐ Lưu để dùng lại (bắt buộc đặt tên khi chọn)                      │
 │   Loại: (•) Thao tác   ( ) Bước chuẩn bị (đăng nhập/di chuyển)       │
-│                                                    [ Xác nhận thao tác ] │
-│   [ Đổi phạm vi ]                                                     │
+│   [ Đổi phạm vi ]                          [ Xác nhận thao tác ]     │
 │                                                                      │
 │ Dùng lại thao tác đã có:                                             │
-│   [ + Dùng lại thao tác ]  → chọn từ danh sách block đã lưu          │
-│      (VD: "Thêm đơn vị tính" — dùng chung cho TC Nhập kho)           │
+│   [ + Dùng lại thao tác ]  → ưu tiên thao tác của bản ghi hiện tại,  │
+│      rồi "Thao tác đã lưu" trong toàn workspace (không tự chọn)      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -103,7 +109,8 @@ Card TC001 → [Gắn bản ghi] → Drawer TC001 (context giữ nguyên)
 ```
 
 - ↑/↓ để đổi thứ tự (MVP) — thứ tự này = thứ tự Generate.
-- "Dùng lại" chỉ thêm **tham chiếu blockId** vào binding — không copy steps.
+- **KHÔNG tự reorder** "Bước chuẩn bị" lên đầu (quyết định #5): SETUP chỉ là metadata; tester quyết định sequence (nested flow cần Main → Sub → Main → Sub).
+- "Dùng lại" chỉ thêm **tham chiếu blockId** vào binding — không copy steps; tester xác nhận reuse từng lần (guardrail — tên giống nhau không phải bằng chứng mapping).
 - Bước chưa dùng: thông tin, không chặn (giữ quyết định đã chốt).
 
 ---
@@ -183,14 +190,14 @@ TC Cấp phát: [C1][C2][C8]
 
 ## 7. Điều CHƯA làm / phạm vi
 
-- Chưa code: không sửa production/UI, chưa Step 6/Runner, chưa AI, chưa parameterization thật (slot là design-only).
-- Thuật ngữ UI: "Thao tác" / "Đoạn thao tác" / "Bước chuẩn bị" / "Dùng lại thao tác" — backend vẫn dùng Segment/Block.
+- Chưa code Test Data/Slot/function compiler/Runner/AI (checkpoint 6A→6D — xem design doc mục 9).
+- Thuật ngữ UI: **"Thao tác"** / **"Nhóm thao tác"** / **"Bước chuẩn bị"** / **"Dùng lại thao tác"** — KHÔNG hiển thị ActionBlock/Segment/Binding/Composition cho tester thông thường (quyết định #1).
 
-## 8. Câu hỏi chờ người dùng quyết định khi duyệt
+## 8. 6 QUYẾT ĐỊNH ĐÃ CHỐT (người dùng — dùng làm nguồn thiết kế chính thức)
 
-1. **Tên gọi:** dùng "Thao tác" (Action Block) làm thuật ngữ UI chính — đồng ý? Cần đổi "Đoạn thao tác" thành "Thao tác" hay giữ cả hai?
-2. **Vị trí tab Test Data:** đặt sau "Thao tác", trước "Kết quả mong đợi" như wireframe — đồng ý? (Chưa code tab này.)
-3. **Reuse block từ testcase khác:** khi tester mở "Dùng lại thao tác", có nên hiển thị block của **mọi bản ghi trong workspace** (kèm tên bản ghi) hay chỉ bản ghi đang mở?
-4. **Block đặt tên bắt buộc hay tùy chọn?** (Đề xuất: tùy chọn — mặc định "Bước a → b", khuyến khích đặt tên khi muốn dùng lại.)
-5. **Thứ tự Generate với block "Bước chuẩn bị":** tester sắp xếp hoàn toàn tự do (đúng vị trí trong binding) hay hệ thống tự đẩy "Bước chuẩn bị" lên đầu? (Đề xuất: tester sắp tự do — hệ thống không tự quyết.)
-6. **Fix 2 bug:** sau khi duyệt architecture, triển khai có ưu tiên fix BUG 1 + BUG 2 trước (data path) rồi mới refactor Segment→Block — đồng ý?
+1. **Thuật ngữ UI:** dùng **"Thao tác"**; nhóm = **"Nhóm thao tác"**. Không hiển thị ActionBlock / Segment / Binding / Composition cho tester thông thường.
+2. **Tab Test Data:** đặt sau "Thao tác", trước "Kết quả mong đợi" (thứ tự dài hạn: Thao tác → Test Data → Kết quả mong đợi → Điều kiện xác nhận → Generate). **CHƯA implementation ở checkpoint này** — chỉ giữ chỗ/data model/design.
+3. **"Dùng lại thao tác" lấy từ:** có thể reuse **trong TOÀN WORKSPACE**; UI ưu tiên A) thao tác của recording hiện tại, B) "Thao tác đã lưu" trong workspace. **Không tự chọn** — tester quyết định reuse; không AI matching; có thể thêm search/filter sau.
+4. **Đặt tên:** KHÔNG bắt buộc nếu thao tác chỉ dùng cho testcase hiện tại. Nếu tester chọn **"Lưu để dùng lại" → TÊN BẮT BUỘC** (VD "Thêm đơn vị tính", "Đăng nhập"). Private/single-use block không ép đặt tên.
+5. **SETUP:** **KHÔNG tự reorder** — tester quyết định sequence. SETUP chỉ là metadata/meaning (nested workflow cần Main → Sub → Main → Sub; auto reorder có thể phá workflow).
+6. **Thứ tự implementation:** đồng ý fix BUG 1 + BUG 2 trước, chia checkpoint: **6A** (chỉ fix 2 bug → regression → commit/push → STOP) → **6B** (refactor Segment → ActionBlock + Binding, giữ compatibility → STOP) → **6C** (UX testcase-context + chọn range + reuse → STOP) → **6D** (verify 3 workflow A/B/C trên UI thật → chỉ khi PASS mới coi hoàn tất). CHƯA Step 6 Runner.
