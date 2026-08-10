@@ -149,7 +149,7 @@ Phạm vi (người dùng đã chốt định hướng):
 - Chuyển **Expected Result → tester-confirmed assertion** (assertion confirmation) trong UI V3.
 - Nối **Generate** (qua GenerateService V3 đã có) vào UI — card APPROVED chuyển sang Generate.
 - Mỗi card một primary action; không AI assertion confirmation thật trong bước này.
-- **Wireframe 5C đã soạn:** `docs/v3-ui-5c-wireframe.md` — **chờ người dùng duyệt** (6 câu hỏi ở mục 8: vị trí tab, warning heuristic, đề xuất tự động/thủ công, áp dụng 2 bước, gate assertion bắt buộc, nút Sinh automation). Chưa code.
+- **Wireframe 5C đã soạn + ĐÃ DUYỆT:** `docs/v3-ui-5c-wireframe.md` — người dùng chốt 6 quyết định (mục 8: tab Kết quả mong đợi; warning nhẹ không heuristic mạnh; đề xuất chủ động; Áp dụng→Nháp→Xác nhận; gate bắt buộc ≥1 TESTER_CONFIRMED; Sinh automation chỉ ở drawer). Chờ triển khai 5C theo đúng flow chốt.
 
 ### Bước 6 — Run (browser thật)
 - Chạy spec đã generate; RUNNING → PASS/FAIL. Cần Chromium (sandbox hiện KHÔNG có — chỉ stub/test).
@@ -211,5 +211,5 @@ Output `RendererResult`:
 1. `git worktree add /tmp/wt-v3 arena/automation-record-by-testcase` — HEAD sẽ là commit mới nhất của nhánh (xác minh bằng `git log -1`; đừng so hash cố định vì mỗi lần cập nhật docs HEAD lại đổi).
 2. Cài deps (mục 1).
 3. Đọc `docs/V3_HANDOFF.md` + `docs/backlog.md` + `docs/DESIGN_RECORD_MAPPING.md` (+ `docs/DESIGN_ASSERTION_CONFIRMATION.md` khi làm assertion).
-4. **Bước 5C — Expected Result → Tester-confirmed Assertion → Generate:** wireframe đã soạn tại `docs/v3-ui-5c-wireframe.md` → gửi người dùng **duyệt trước khi code** (6 câu hỏi mục 8 của wireframe).
+4. **Bước 5C — Expected Result → Tester-confirmed Assertion → Generate:** wireframe **đã duyệt** tại `docs/v3-ui-5c-wireframe.md` (6 quyết định chốt ở mục 8) → triển khai theo đúng flow chốt, rồi build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.
 5. Sau khi duyệt: code 5C (assertion confirmation UI + nối Generate), build + test, commit + push, xác minh `git ls-remote`, báo working tree clean.

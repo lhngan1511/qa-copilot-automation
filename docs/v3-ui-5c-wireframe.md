@@ -1,7 +1,7 @@
 # WIREFRAME (TEXT) — Bước 5C: Expected Result → Điều kiện xác nhận (Assertion) → Generate
 
 > Branch: `arena/automation-record-by-testcase` · Ngày: 2026-08-10
-> Trạng thái: **CHỜ NGƯỜI DÙNG DUYỆT — chưa code.**
+> Trạng thái: **ĐÃ DUYỆT 2026-08-10 (6 quyết định chốt — mục 8) — chờ triển khai.**
 > Bổ sung cho `docs/DESIGN_ASSERTION_CONFIRMATION.md` (giữ nguyên contract/trạng thái assertion ở đó) và nối tiếp `docs/DESIGN_RECORD_MAPPING.md` (5C-0 đã xong, `16c3b04`).
 > Ngôn ngữ UI dùng cho tester: "Kết quả mong đợi" = Expected Result · "Điều kiện kiểm tra / Điều kiện xác nhận" = assertion · "Đề xuất" = suggestion.
 
@@ -14,21 +14,22 @@
 - **Expected Result do tester sở hữu**: hệ thống/AI chỉ ĐỀ XUẤT, tester xác nhận, Generate deterministic.
 - **5C chưa dùng AI thật** — nhưng UI phải thiết kế sao cho sau này cắm AI suggestion vào **không phải phá lại workflow** (mục 6).
 - Giữ cứng bài học demo: không bịa assertion; nếu thiếu điều kiện xác nhận phù hợp → chặn Generate với message chuẩn.
+- **Quyết định chốt của người dùng (mục 8)** là nguồn thiết kế chính thức cho việc triển khai 5C.
 
 ---
 
 ## 1. Vị trí UI: Tab "Kết quả mong đợi" trong Drawer
 
 - Drawer hiện có (5B): tabs `Thông tin | Recording`. 5C thêm tab **`Kết quả mong đợi`** (sau này thêm `Kết quả chạy` khi Bước 6).
-- Mở drawer khi:
-  - Card testcase có segment CONFIRMED → primary action **`[Điều kiện xác nhận]`**.
-  - Hoặc từ menu card "Kết quả mong đợi".
-- Footer drawer: `[Đóng] [Hành động chính]` — action đổi theo trạng thái (Chỉnh sửa kết quả mong đợi / Xác nhận điều kiện / Sinh automation).
+- **Card testcase chỉ hiển thị trạng thái tóm tắt + nút vào chi tiết** — KHÔNG có nút Generate trên card (quyết định #6).
+  - Card có segment CONFIRMED → primary action **`[Điều kiện xác nhận]`** (mở drawer, tab Kết quả mong đợi).
+  - Card hiển thị trạng thái nhỏ: `Điều kiện xác nhận: 2 đã xác nhận` hoặc `Chưa có điều kiện xác nhận`.
+- Footer drawer: `[Đóng] [Hành động chính]` — action đổi theo trạng thái (Chỉnh sửa kết quả mong đợi / Xác nhận điều kiện / **Sinh automation — chỉ ở drawer, sau khi mọi gate đủ**).
 - Chỉ hiển thị khối này cho testcase `automationDecision ≠ MANUAL_ONLY` và có segment CONFIRMED.
 
 ---
 
-## 2. MÀN HÌNH A — Expected Result quá chung (tình huống TC001 "Đăng nhập thành công")
+## 2. MÀN HÌNH A — Expected Result + trạng thái điều kiện xác nhận
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -40,24 +41,20 @@
 │ └──────────────────────────────────────────────────────────────┘ │
 │ [ Chỉnh sửa kết quả mong đợi ]                                   │
 │                                                                  │
-│ ⚠ Chưa đủ thông tin để xác định điều kiện kiểm tra.              │
-│   → Hãy mô tả cụ thể hơn, ví dụ:                                 │
-│     "Đăng nhập thành công và hiển thị 'Danh mục phần mềm quản lý'"│
-│                                                                  │
 │ Điều kiện xác nhận                                               │
 │   (chưa có điều kiện nào)                                        │
-│   [ + Bổ sung điều kiện kiểm tra ]                               │
+│   [ + Bổ sung điều kiện kiểm tra ]   [ Đề xuất điều kiện xác nhận ] │
 │                                                                  │
 │                                           [ Đóng ]  [ Sinh automation ] (mờ) │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-- Warning hiện khi: **chưa có điều kiện TESTER_CONFIRMED** VÀ `analyzeExpectedResult()` đánh giá **thiếu dấu hiệu cụ thể** (mục 5).
+- **KHÔNG có warning heuristic mạnh ở 5C** (quyết định #2): không suy "đủ/chưa đủ thông tin" từ từ khóa/trích dẫn/URL. Hệ thống chỉ cảnh báo khi **không tạo được assertion candidate hợp lệ từ dữ liệu hiện có** (không có gì để gợi ý) — và đó là gợi ý nhẹ, không phải logic quyết định.
 - `[Sinh automation]` bị mờ (disabled) — chưa đủ điều kiện. Không có nút "tự tìm giúp" (không fallback/đoán).
 
 ---
 
-## 3. MÀN HÌNH B — Sau khi tester sửa Expected Result
+## 3. MÀN HÌNH B — Chỉnh sửa Expected Result + đề xuất CHỦ ĐỘNG
 
 Tester bấm `[Chỉnh sửa kết quả mong đợi]` → ô nhập (mặc định = bản approved; lưu working copy vào workspace khi lưu):
 
@@ -68,12 +65,12 @@ Tester bấm `[Chỉnh sửa kết quả mong đợi]` → ô nhập (mặc đ�
 │ │ Đăng nhập thành công và hiển thị "Danh mục phần mềm quản lý"  │ │
 │ └──────────────────────────────────────────────────────────────┘ │
 │ · Lưu trong workspace — file approved-testcases.json không đổi.  │
-│ · Xóa trống → quay về bản gốc đã duyệt + hiện warning.           │
+│ · Xóa trống → quay về bản gốc đã duyệt.                          │
 │                                 [ Hủy ]  [ Lưu ]                 │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-Sau khi lưu, hệ thống chạy lại `analyzeExpectedResult()` + bộ đề xuất deterministic:
+Sau khi lưu, tester **chủ động bấm** `[Đề xuất điều kiện xác nhận]` (quyết định #3 — không tự bung) → hệ thống chạy bộ đề xuất deterministic, hiện:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -85,7 +82,7 @@ Sau khi lưu, hệ thống chạy lại `analyzeExpectedResult()` + bộ đề x
 │ ┌──────────────────────────────────────────────────────────────┐ │
 │ │ Hiển thị nội dung "Danh mục phần mềm quản lý"                 │ │
 │ │ page.getByText('Danh mục phần mềm quản lý') → toBeVisible     │ │
-│ │ Lý do: kết quả mong đợi có chuỗi trích dẫn + từ khóa "hiển thị"│ │
+│ │ Lý do: kết quả mong đợi chứa chuỗi trích dẫn + "hiển thị"     │ │
 │ │                                   [ Áp dụng ]  [ Bỏ qua ]     │ │
 │ └──────────────────────────────────────────────────────────────┘ │
 │  (Sau này: AI suggestion hiện ở đúng vị trí này, cùng contract — │
@@ -94,7 +91,7 @@ Sau khi lưu, hệ thống chạy lại `analyzeExpectedResult()` + bộ đề x
 ```
 
 - Nhiều đề xuất → hiển thị tối đa 3, mỗi cái một `[Áp dụng]` (một primary action / thẻ).
-- **Áp dụng = tạo DRAFT** (chưa xác nhận) — 2 bước an toàn.
+- **Áp dụng = tạo DRAFT** (chưa xác nhận) — 2 bước an toàn (quyết định #4).
 
 ---
 
@@ -131,20 +128,14 @@ Sau khi lưu, hệ thống chạy lại `analyzeExpectedResult()` + bộ đề x
 
 ---
 
-## 5. Phát hiện "chưa đủ thông tin" — heuristic deterministic v1 (KHÔNG AI)
+## 5. Trạng thái "chưa có gì để gợi ý" — gợi ý NHẸ (KHÔNG heuristic quyết định)
 
-`analyzeExpectedResult(text)` (thuần, test được):
-
-| Dấu hiệu cụ thể | Điều kiện |
-|---|---|
-| Có chuỗi trích dẫn `'...'` / `"..."` | ✅ đủ |
-| Có URL (`http://`, `/đường-dẫn`, `www.`) | ✅ đủ |
-| Có từ khóa hành động (`hiển thị`, `xuất hiện`, `chuyển đến`, `chuyển hướng`, `mở trang`, `điều hướng`, `không còn`, `không hiển thị`) **và** độ dài ≥ 12 ký tự | ✅ đủ |
-| Không thuộc các trường hợp trên | ⚠ chưa đủ thông tin (hiện warning) |
-
-- Warning chỉ là **gợi ý, không chặn**: tester luôn có thể `[+ Bổ sung điều kiện kiểm tra]` tay dù Expected Result còn chung.
-- Generate chỉ chặn thật sự khi **thiếu điều kiện TESTER_CONFIRMED** (không phụ thuộc heuristic).
-- Khi Expected Result được sửa → chạy lại phân tích + đề xuất (không cần AI).
+- **KHÔNG dùng heuristic mạnh** (quyết định #2): hệ thống KHÔNG suy "đủ/chưa đủ thông tin" từ từ khóa/trích dẫn/URL trong Expected Result, và KHÔNG dùng nó làm logic quyết định.
+- Chỉ cảnh báo khi **không tạo được assertion candidate hợp lệ từ dữ liệu hiện có** — tức `suggestAssertions()` trả rỗng (Expected Result không khớp rule nào, không có locator/URL nào để gợi ý). Khi đó hiện gợi ý nhẹ:
+  `Bạn có thể bổ sung điều kiện kiểm tra thủ công, hoặc chỉnh sửa kết quả mong đợi để hệ thống đề xuất phù hợp hơn.`
+- Gợi ý này chỉ là **hỗ trợ hiển thị** — không chặn, không quyết định Generate.
+- Generate chỉ chặn thật sự khi **thiếu điều kiện TESTER_CONFIRMED** (gate, mục 4).
+- Khi Expected Result được sửa → tester bấm lại `[Đề xuất điều kiện xác nhận]` (chủ động — quyết định #3).
 
 **Bộ đề xuất deterministic v1 (mapping text → assertion, cùng contract):**
 
@@ -198,13 +189,19 @@ Sau khi lưu, hệ thống chạy lại `analyzeExpectedResult()` + bộ đề x
 
 ---
 
-## 8. Điều CHƯA làm / câu hỏi chờ bạn quyết định khi review
+## 8. QUYẾT ĐỊNH ĐÃ CHỐT (người dùng — 2026-08-10) — dùng làm nguồn thiết kế chính thức
 
-1. **Vị trí:** đặt toàn bộ ở tab "Kết quả mong đợi" trong Drawer (như wireframe) — hay tách màn hình riêng? (Đề xuất: trong Drawer, đúng tinh thần "một nơi làm việc".)
-2. **Warning "Chưa đủ thông tin"** theo heuristic v1 (mục 5) — đồng ý? Hay chỉ cần hiện khi chưa có điều kiện nào (bỏ heuristic)?
-3. **Đề xuất deterministic** ở 5C: hiện tự động khi đủ thông tin, hay để tester bấm `[Đề xuất điều kiện kiểm tra]` chủ động?
-4. **Áp dụng đề xuất → Nháp rồi mới Xác nhận (2 bước)** — đồng ý? (An toàn, đúng "tester xác nhận cuối cùng".)
-5. **Testcase không cần assertion:** design cũ (mục 11) cho phép "tester chủ động xác nhận testcase không cần assertion bổ sung" để qua gate — có giữ ở 5C không, hay bắt buộc ≥1 điều kiện TESTER_CONFIRMED cho mọi testcase tự động hóa? (Bài học demo nghiêng về bắt buộc có; đề xuất: bắt buộc.)
-6. **`[Sinh automation]`** hiển thị cả trên card (khi đủ điều kiện) lẫn trong drawer footer — đồng ý?
+1. **Vị trí — tab "Kết quả mong đợi" trong Drawer: ĐỒNG Ý.** Expected Result và Assertion quan hệ trực tiếp → để cùng một nơi. Card chỉ hiển thị trạng thái tóm tắt + nút vào chi tiết.
+2. **Warning "chưa đủ thông tin": KHÔNG heuristic mạnh ở 5C.** Chỉ cảnh báo khi **không tạo được assertion candidate hợp lệ từ dữ liệu hiện có** (gợi ý nhẹ, không làm logic quyết định).
+3. **Đề xuất deterministic: tester bấm CHỦ ĐỘNG** — nút `[Đề xuất điều kiện xác nhận]`; không tự bung khi mở drawer.
+4. **Áp dụng đề xuất → Nháp → Xác nhận (2 bước): ĐỒNG Ý.** "Áp dụng" = chép vào form để chỉnh; "Xác nhận" = tester chịu trách nhiệm. Không gộp.
+5. **Gate assertion: BẮT BUỘC ≥1 `TESTER_CONFIRMED`** cho testcase đã chọn Automation. KHÔNG giữ lựa chọn "testcase automation không cần assertion" ở MVP (tránh automation chạy mà không chứng minh PASS). Loại testcase đặc biệt không cần assertion → để mở rộng sau bằng loại test riêng.
+6. **`[Sinh automation]` CHỈ ở drawer footer**, sau khi mọi gate đủ. Card chỉ có `[Điều kiện xác nhận]` (và trạng thái tóm tắt) — một primary action thật sự, không trùng lặp.
 
-Sau khi bạn duyệt (chốt các mục trên) mình mới code 5C.
+**Flow chốt:**
+```
+Card testcase → [Điều kiện xác nhận] → xem/sửa Expected Result → [Đề xuất điều kiện xác nhận] (chủ động)
+→ Áp dụng → Nháp → tester chỉnh → [Xác nhận] → (≥1 TESTER_CONFIRMED) → [Sinh automation] (drawer)
+```
+
+**Điểm giữ cứng nhất:** Generate chỉ bật khi testcase **đã chọn Automation** + **có confirmed segment** + **≥1 assertion TESTER_CONFIRMED** → V3 không quay lại lỗi "chạy được nhưng không biết đã PASS thật chưa".
