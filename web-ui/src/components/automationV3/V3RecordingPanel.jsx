@@ -8,7 +8,12 @@
 export default function V3RecordingPanel({ active, source = "", onSourceChange, busy = false, onStop }) {
     if (!active) return null;
 
-    const label = active.title ? `${active.testCaseId} — ${active.title}` : active.testCaseId;
+    const label = active.testCaseId
+        ? (active.title ? `${active.testCaseId} — ${active.title}` : active.testCaseId)
+        : "bản ghi mới (chưa gán testcase)";
+    const pasteLabel = active.testCaseId
+        ? `Dán mã Playwright đã ghi cho ${active.testCaseId}`
+        : "Dán mã Playwright đã ghi cho bản ghi mới";
 
     return (
         <div className="v3-recording">
@@ -27,7 +32,7 @@ export default function V3RecordingPanel({ active, source = "", onSourceChange, 
                 </button>
             </div>
             <div className="v3-rec-source">
-                <label htmlFor="v3-rec-code">Dán mã Playwright đã ghi cho {active.testCaseId}</label>
+                <label htmlFor="v3-rec-code">{pasteLabel}</label>
                 <textarea
                     id="v3-rec-code"
                     className="v3-rec-source__input"

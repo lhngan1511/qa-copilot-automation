@@ -34,7 +34,15 @@ export const V3_ERRORS = {
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
     GENERATE_FAILED: "GENERATE_FAILED",
     INVALID_STATE_TRANSITION: "INVALID_STATE_TRANSITION",
-    INVALID_REQUEST: "INVALID_REQUEST"
+    INVALID_REQUEST: "INVALID_REQUEST",
+    // 5C-0 — Record Mapping (tester-owned, không AI, không theo thứ tự).
+    RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
+    SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
+    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID",
+    SEGMENT_INVALID: "SEGMENT_INVALID",
+    SEGMENT_OVERLAP: "SEGMENT_OVERLAP",
+    SEGMENT_TYPE_REQUIRES_TESTCASE: "SEGMENT_TYPE_REQUIRES_TESTCASE",
+    SEGMENT_NOT_FOUND: "SEGMENT_NOT_FOUND"
 };
 
 const STATUS_BY_CODE = {
@@ -50,7 +58,14 @@ const STATUS_BY_CODE = {
     TESTDATA_BINDING_REQUIRED: 422,
     GENERATE_FAILED: 500,
     INVALID_STATE_TRANSITION: 409,
-    INVALID_REQUEST: 400
+    INVALID_REQUEST: 400,
+    RECORDING_MAPPING_REQUIRED: 409,
+    SEGMENT_NOT_CONFIRMED: 409,
+    SEGMENT_MAPPING_INVALID: 422,
+    SEGMENT_INVALID: 400,
+    SEGMENT_OVERLAP: 409,
+    SEGMENT_TYPE_REQUIRES_TESTCASE: 400,
+    SEGMENT_NOT_FOUND: 404
 };
 
 /** Ném lỗi V3 thống nhất (errorCode + statusCode + message + details). */
@@ -67,12 +82,21 @@ const RENDERER_TO_V3 = {
     RECORDING_APPROVAL_REQUIRED: "RECORDING_APPROVAL_REQUIRED",
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
-    ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED"
+    ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
+    RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
+    SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
+    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID"
 };
 
 function newAssertionId() {
     return `ASRT-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+function newSegmentId() {
+    return `SEG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+const AUTOMATION_DECISIONS = new Set(["UNDECIDED", "MANUAL_ONLY", "AUTOMATED"]);
 
 export default class AutomationWorkspaceApplicationService {
     constructor({ workspace = null, store = null, session = null, generateService = null } = {}) {
@@ -113,7 +137,7 @@ export default class AutomationWorkspaceApplicationService {
             workspaceId: ws.workspaceId,
             status: mode,
             approvedCount: testCases.length,
-            items: (ws.selectedTestCases ?? []).map(entry => this.toItem(entry))
+            items: (ws.selectedTestCases ?? []).map(entry => this.toItem(entry, ws.workspaceId))
         };
     }
 
@@ -126,29 +150,30 @@ export default class AutomationWorkspaceApplicationService {
             module: ws.module,
             source: ws.source,
             status: "OPEN",
-            items: (ws.selectedTestCases ?? []).map(entry => this.toItem(entry))
+            items: (ws.selectedTestCases ?? []).map(entry => this.toItem(entry, ws.workspaceId))
         };
     }
 
     selectTestCase({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.setSelected(workspaceId, testCaseId, true);
-        return this.toItem(entry);
+        return this.toItem(entry, workspaceId);
     }
 
     unselectTestCase({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.setSelected(workspaceId, testCaseId, false);
-        return this.toItem(entry);
+        return this.toItem(entry, workspaceId);
     }
 
     /* ============================== B. Recording ============================== */
 
-    /** Start recording — validate workspace + testcase selected (TESTCASE) rồi gọi session. */
+    /** Start recording — validate workspace + testcase selected (TESTCASE CÓ testCaseId) rồi gọi session. */
     startRecording({ workspaceId, testCaseId = null, type = "TESTCASE", url = "", browser = "chrome" }) {
         this.ensureWorkspace(workspaceId);
         const recType = String(type ?? "TESTCASE").toUpperCase() === "SETUP" ? "SETUP" : "TESTCASE";
-        if (recType === "TESTCASE") {
+        // 5C-0: TESTCASE có thể chưa gán testCaseId (1 bản ghi dài gán nhiều testcase qua Segment).
+        if (recType === "TESTCASE" && testCaseId) {
             this.ensureTestCase(workspaceId, testCaseId);
             const entry = this.workspace.getTestCase(workspaceId, testCaseId);
             if (!entry.selectedForAutomation) {
@@ -165,9 +190,9 @@ export default class AutomationWorkspaceApplicationService {
             }
             fail(V3_ERRORS.INVALID_REQUEST, error?.message ?? "Không start được recording.");
         }
-        // Transition: SELECTED → RECORDING.
-        if (recType === "TESTCASE") {
-            this.workspace.transition(workspaceId, testCaseId, { reviewStatus: "RECORDING" });
+        // Transition: SELECTED → RECORDING (chỉ khi có testCaseId).
+        if (recType === "TESTCASE" && session.testCaseId) {
+            this.workspace.transition(workspaceId, session.testCaseId, { reviewStatus: "RECORDING" });
         }
         return {
             recordingId: session.recordingId,
@@ -297,7 +322,7 @@ export default class AutomationWorkspaceApplicationService {
             .sort((a, b) => (b.version || 0) - (a.version || 0));
     }
 
-    /** Chi tiết recording cho Review — trả steps/assertions (đã sanitize), KHÔNG trả source. */
+    /** Chi tiết recording cho Review / Mapping — trả steps/assertions/segments (đã sanitize), KHÔNG trả source. */
     getRecordingDetail({ workspaceId, recordingId }) {
         this.ensureWorkspace(workspaceId);
         const rec = this.store?.getRaw(recordingId);
@@ -317,7 +342,8 @@ export default class AutomationWorkspaceApplicationService {
                 duration: rec.summary?.duration ?? null
             },
             steps: (rec.steps ?? []).map(step => this.sanitizeStep(step)),
-            assertions: (rec.assertions ?? []).map(a => this.sanitizeAssertion(a))
+            assertions: (rec.assertions ?? []).map(a => this.sanitizeAssertion(a)),
+            segments: (rec.segments ?? []).map(seg => this.segmentDto(seg, rec.steps))
         };
     }
 
@@ -347,6 +373,8 @@ export default class AutomationWorkspaceApplicationService {
             fail(V3_ERRORS.RECORDING_DELETE_FORBIDDEN, "Không thể xóa recording đã sinh file.");
         }
         this.store.remove(recordingId);
+        // 5C-0 — gỡ mọi mapping segment trỏ tới recording này (kể cả bản ghi chưa gán testcase).
+        this.workspace.removeSegmentRefsByRecording(workspaceId, recordingId);
         // Nếu xóa recording đang được workspace tham chiếu → reset trạng thái recording.
         if (entry && entry.recordingId === recordingId) {
             this.workspace.transition(workspaceId, rec.testCaseId, {
@@ -356,6 +384,181 @@ export default class AutomationWorkspaceApplicationService {
             });
         }
         return { recordingId, testCaseId: rec.testCaseId ?? null, deleted: true };
+    }
+
+    /* ============================== B2. Segment — Record Mapping (5C-0) ============================== */
+
+    /** Tạo segment DRAFT — tester chọn khoảng steps + loại (SETUP/TESTCASE) + testCaseId. KHÔNG dùng AI. */
+    createSegment({ workspaceId, recordingId, startStep, endStep, type = "TESTCASE", testCaseId = null }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec || rec.workspaceId !== workspaceId) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        const segType = String(type ?? "TESTCASE").toUpperCase() === "SETUP" ? "SETUP" : "TESTCASE";
+        this.assertRangeValid(rec.steps, startStep, endStep);
+
+        if (segType === "TESTCASE") {
+            if (!testCaseId) fail(V3_ERRORS.SEGMENT_TYPE_REQUIRES_TESTCASE, "Đoạn Testcase bắt buộc chọn testcase.");
+            this.ensureTestCase(workspaceId, testCaseId);
+        }
+
+        // Chặn chồng lấn trong cùng recording (1 bước không thể thuộc 2 đoạn).
+        for (const seg of this.store.getSegments(recordingId)) {
+            if (rangesOverlap(startStep, endStep, seg.startStep, seg.endStep)) {
+                fail(V3_ERRORS.SEGMENT_OVERLAP, `Đoạn thao tác trùng với đoạn đã gán (bước ${seg.startStep} → ${seg.endStep}).`);
+            }
+        }
+
+        const segment = {
+            segmentId: newSegmentId(),
+            recordingId,
+            startStep,
+            endStep,
+            type: segType,
+            testCaseId: segType === "TESTCASE" ? testCaseId : null,
+            status: "DRAFT",
+            confirmedAt: null,
+            confirmedBy: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        const saved = this.store.addSegment(recordingId, segment);
+        // Mapping testcase ↔ segment lưu bằng segmentId (KHÔNG theo index/order).
+        if (segType === "TESTCASE") {
+            this.workspace.addSegmentRef(workspaceId, testCaseId, { segmentId: saved.segmentId, recordingId });
+        }
+        return this.segmentDto(saved, rec.steps);
+    }
+
+    /** Sửa segment — đổi range/loại/testcase → tự quay về DRAFT chờ xác nhận lại (quyết định đã duyệt). */
+    updateSegment({ workspaceId, recordingId, segmentId, startStep, endStep, type, testCaseId }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec || rec.workspaceId !== workspaceId) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        const current = this.store?.getSegment(recordingId, segmentId);
+        if (!current) fail(V3_ERRORS.SEGMENT_NOT_FOUND, "Không tìm thấy đoạn thao tác.");
+
+        const nextStart = Number.isInteger(startStep) ? startStep : current.startStep;
+        const nextEnd = Number.isInteger(endStep) ? endStep : current.endStep;
+        const nextType = type ? (String(type).toUpperCase() === "SETUP" ? "SETUP" : "TESTCASE") : current.type;
+        let nextTestCase = testCaseId !== undefined ? testCaseId : current.testCaseId;
+        this.assertRangeValid(rec.steps, nextStart, nextEnd);
+
+        if (nextType === "TESTCASE") {
+            if (!nextTestCase) fail(V3_ERRORS.SEGMENT_TYPE_REQUIRES_TESTCASE, "Đoạn Testcase bắt buộc chọn testcase.");
+            this.ensureTestCase(workspaceId, nextTestCase);
+        } else {
+            nextTestCase = null;
+        }
+
+        for (const seg of this.store.getSegments(recordingId)) {
+            if (seg.segmentId === segmentId) continue;
+            if (rangesOverlap(nextStart, nextEnd, seg.startStep, seg.endStep)) {
+                fail(V3_ERRORS.SEGMENT_OVERLAP, `Đoạn thao tác trùng với đoạn đã gán (bước ${seg.startStep} → ${seg.endStep}).`);
+            }
+        }
+
+        // Đổi testcase → chuyển ref trong workspace (bỏ cũ, thêm mới).
+        if (nextType === "TESTCASE" && current.type === "TESTCASE" && current.testCaseId && current.testCaseId !== nextTestCase) {
+            this.workspace.removeSegmentRef(workspaceId, current.testCaseId, segmentId);
+            this.workspace.addSegmentRef(workspaceId, nextTestCase, { segmentId, recordingId });
+        } else if (nextType === "TESTCASE" && current.type !== "TESTCASE") {
+            this.workspace.addSegmentRef(workspaceId, nextTestCase, { segmentId, recordingId });
+        } else if (nextType !== "TESTCASE" && current.type === "TESTCASE" && current.testCaseId) {
+            this.workspace.removeSegmentRef(workspaceId, current.testCaseId, segmentId);
+        }
+
+        // Quyết định #2: sửa segment → DRAFT.
+        const saved = this.store.updateSegment(recordingId, segmentId, {
+            startStep: nextStart,
+            endStep: nextEnd,
+            type: nextType,
+            testCaseId: nextType === "TESTCASE" ? nextTestCase : null,
+            status: "DRAFT",
+            confirmedAt: null,
+            confirmedBy: null
+        });
+        return this.segmentDto(saved, rec.steps);
+    }
+
+    /** Xác nhận segment (DRAFT → CONFIRMED) — tester là người quyết định. */
+    confirmSegment({ workspaceId, recordingId, segmentId }) {
+        this.ensureWorkspace(workspaceId);
+        const rec = this.store?.getRaw(recordingId);
+        if (!rec || rec.workspaceId !== workspaceId) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy recording.");
+        const current = this.store?.getSegment(recordingId, segmentId);
+        if (!current) fail(V3_ERRORS.SEGMENT_NOT_FOUND, "Không tìm thấy đoạn thao tác.");
+        this.assertRangeValid(rec.steps, current.startStep, current.endStep);
+        if (current.type === "TESTCASE" && !current.testCaseId) {
+            fail(V3_ERRORS.SEGMENT_TYPE_REQUIRES_TESTCASE, "Đoạn Testcase bắt buộc chọn testcase.");
+        }
+        const saved = this.store.updateSegment(recordingId, segmentId, {
+            status: "CONFIRMED",
+            confirmedAt: new Date().toISOString(),
+            confirmedBy: "tester"
+        });
+        // Có đoạn TESTCASE đã xác nhận → testcase tự chuyển "Có automation".
+        if (saved.type === "TESTCASE" && saved.testCaseId) {
+            this.workspace.setAutomationDecision(workspaceId, saved.testCaseId, "AUTOMATED");
+        }
+        return this.segmentDto(saved, rec.steps);
+    }
+
+    /** Xóa segment — gỡ luôn mapping trong workspace. */
+    deleteSegment({ workspaceId, recordingId, segmentId }) {
+        this.ensureWorkspace(workspaceId);
+        const current = this.store?.getSegment(recordingId, segmentId);
+        if (!current) fail(V3_ERRORS.SEGMENT_NOT_FOUND, "Không tìm thấy đoạn thao tác.");
+        this.store.removeSegment(recordingId, segmentId);
+        if (current.type === "TESTCASE" && current.testCaseId) {
+            this.workspace.removeSegmentRef(workspaceId, current.testCaseId, segmentId);
+        }
+        return { segmentId, recordingId, testCaseId: current.testCaseId ?? null, deleted: true };
+    }
+
+    /** Sắp xếp lại thứ tự đoạn của 1 testcase (↑/↓) — Generate dùng đúng thứ tự này. */
+    reorderTestCaseSegments({ workspaceId, testCaseId, segmentIds = [] }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
+        if (!Array.isArray(segmentIds) || segmentIds.length !== refs.length || segmentIds.length === 0) {
+            fail(V3_ERRORS.INVALID_REQUEST, "Danh sách thứ tự đoạn không hợp lệ.");
+        }
+        const entry = this.workspace.reorderSegmentRefs(workspaceId, testCaseId, segmentIds);
+        if (!entry) fail(V3_ERRORS.INVALID_REQUEST, "Không sắp xếp được đoạn thao tác.");
+        return this.toItem(entry, workspaceId);
+    }
+
+    /** Tester đặt trạng thái tự động hóa: UNDECIDED | MANUAL_ONLY | AUTOMATED. */
+    setAutomationDecision({ workspaceId, testCaseId, decision }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const d = String(decision ?? "UNDECIDED").toUpperCase();
+        if (!AUTOMATION_DECISIONS.has(d)) fail(V3_ERRORS.INVALID_REQUEST, `Trạng thái tự động hóa không hợp lệ: ${decision}`);
+        const entry = this.workspace.setAutomationDecision(workspaceId, testCaseId, d);
+        return this.toItem(entry, workspaceId);
+    }
+
+    /** Validate khoảng bước: số nguyên, trong phạm vi steps của recording, start ≤ end. */
+    assertRangeValid(steps, startStep, endStep) {
+        const count = Array.isArray(steps) ? steps.length : 0;
+        if (!Number.isInteger(startStep) || !Number.isInteger(endStep) || startStep < 1 || endStep < 1
+            || startStep > endStep || endStep > count) {
+            fail(V3_ERRORS.SEGMENT_INVALID, "Khoảng bước không hợp lệ.");
+        }
+    }
+
+    /** DTO segment (kèm số bước) — không lộ field nội bộ. */
+    segmentDto(seg, steps) {
+        return {
+            segmentId: seg.segmentId,
+            recordingId: seg.recordingId,
+            startStep: seg.startStep,
+            endStep: seg.endStep,
+            stepCount: seg.endStep - seg.startStep + 1,
+            type: seg.type,
+            testCaseId: seg.testCaseId ?? null,
+            status: seg.status,
+            confirmedAt: seg.confirmedAt ?? null,
+            confirmedBy: seg.confirmedBy ?? null
+        };
     }
 
     /* ============================== C. Assertions ============================== */
@@ -420,11 +623,27 @@ export default class AutomationWorkspaceApplicationService {
         if (!entry.selectedForAutomation) {
             fail(V3_ERRORS.TESTCASE_NOT_SELECTED, "Testcase chưa được chọn để automation.");
         }
-        // Pre-check: phải có latest APPROVED recording.
-        const recordings = this.store?.allByTestCase(testCaseId) ?? [];
-        const approved = recordings.filter(r => r.status === "APPROVED");
-        if (approved.length === 0) {
-            fail(V3_ERRORS.RECORDING_APPROVAL_REQUIRED, "Chưa có recording APPROVED cho testcase.");
+        // ===== 5C-0 — Pre-check Record Mapping (chỉ kiểm tra testcase đang Generate; không yêu cầu toàn bộ recording được mapping) =====
+        // Mapping testcase ↔ segment do tester xác nhận (bằng testCaseId, KHÔNG theo thứ tự/index).
+        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
+        let segmentsPayload = null;
+        if (refs.length > 0) {
+            for (const ref of refs) {
+                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
+                if (!seg || seg.type !== "TESTCASE" || seg.testCaseId !== testCaseId) {
+                    fail(V3_ERRORS.SEGMENT_MAPPING_INVALID, "Chưa xác định đầy đủ đoạn thao tác cho testcase.");
+                }
+                if (seg.status !== "CONFIRMED") {
+                    fail(V3_ERRORS.SEGMENT_NOT_CONFIRMED, "Bản ghi thao tác chưa được xác nhận.");
+                }
+            }
+            segmentsPayload = refs;
+        } else {
+            // Legacy 5B (tương thích dữ liệu cũ): recording APPROVED gắn thẳng testCaseId.
+            const approved = (this.store?.allByTestCase(testCaseId) ?? []).filter(r => r.status === "APPROVED");
+            if (approved.length === 0) {
+                fail(V3_ERRORS.RECORDING_MAPPING_REQUIRED, "Không có bản ghi thao tác cho testcase này.");
+            }
         }
         // Assertion phải có TESTER_CONFIRMED.
         const confirmedAssertions = (entry.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED");
@@ -445,7 +664,8 @@ export default class AutomationWorkspaceApplicationService {
                 testCaseId,
                 approvedTestData,
                 confirmedTestData: confirmedData,
-                confirmedAssertions
+                confirmedAssertions,
+                segments: segmentsPayload
             });
         } catch (error) {
             fail(V3_ERRORS.GENERATE_FAILED, "Generate thất bại.", { reason: error?.message ?? "Lỗi nội bộ." });
@@ -513,12 +733,31 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** DTO gọn cho 1 item testcase trong workspace. */
-    toItem(entry) {
+    toItem(entry, workspaceId) {
         const recs = (this.store?.allByTestCase(entry.testCaseId) ?? [])
             .filter(r => r.status === "APPROVED")
             .sort((a, b) => (b.recordingVersion || 0) - (a.recordingVersion || 0));
         const rec = recs[0] ?? null;
         const assertions = entry.automationAssertions ?? [];
+        // 5C-0 — mapping segment (theo thứ tự tester sắp xếp).
+        const segments = this.workspace
+            .getSegmentRefs(workspaceId, entry.testCaseId)
+            .map(ref => {
+                const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
+                if (!seg) return null;
+                return {
+                    segmentId: seg.segmentId,
+                    recordingId: seg.recordingId,
+                    orderInTestCase: ref.orderInTestCase,
+                    startStep: seg.startStep,
+                    endStep: seg.endStep,
+                    stepCount: seg.endStep - seg.startStep + 1,
+                    type: seg.type,
+                    testCaseId: seg.testCaseId ?? null,
+                    status: seg.status
+                };
+            })
+            .filter(Boolean);
         return {
             testCaseId: entry.testCaseId,
             title: entry.title,
@@ -526,9 +765,16 @@ export default class AutomationWorkspaceApplicationService {
             type: entry.type,
             selectedForAutomation: Boolean(entry.selectedForAutomation),
             automationStatus: entry.reviewStatus,
+            automationDecision: entry.automationDecision ?? "UNDECIDED",
             recordingSummary: rec
                 ? { status: rec.status, recordingId: rec.recordingId, version: rec.recordingVersion, hash: rec.recordingHash, approvedBy: rec.approvedBy, approvedAt: rec.approvedAt }
                 : { status: "NOT_RECORDED", recordingId: null, version: null, hash: null, approvedBy: null, approvedAt: null },
+            segments,
+            segmentSummary: {
+                total: segments.length,
+                confirmed: segments.filter(s => s.status === "CONFIRMED").length,
+                draft: segments.filter(s => s.status === "DRAFT").length
+            },
             assertionStatus: {
                 total: assertions.length,
                 confirmed: assertions.filter(a => a.status === "TESTER_CONFIRMED").length,
@@ -544,6 +790,11 @@ export default class AutomationWorkspaceApplicationService {
 
 function WORKSPACES_MODES_HAS(mode) {
     return WORKSPACE_MODES.has(mode);
+}
+
+/** 5C-0 — hai khoảng bước có chồng lấn hay không (theo order, không theo index mảng). */
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart <= bEnd && bStart <= aEnd;
 }
 
 /** Đọc file approved-testcases.json (chỉ đọc) — trả list testcase. Không sửa file. */

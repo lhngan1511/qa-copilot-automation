@@ -115,3 +115,98 @@ export function parseApprovedFile(content) {
 }
 
 export { NO_DATA_NOTE, READY_NOTE };
+
+/* ============================== 5C-0 — Record Mapping helpers (thuần, test được) ============================== */
+
+/** Nhãn thao tác cho 1 step (ngôn ngữ tester). */
+export const ACTION_LABEL = {
+    GOTO: "Mở trang",
+    FILL: "Nhập",
+    CLICK: "Bấm",
+    CHECK: "Tích",
+    UNCHECK: "Bỏ tích",
+    SELECT: "Chọn",
+    PRESS: "Phím",
+    ASSERT: "Kiểm tra"
+};
+
+/** Trạng thái segment — ngôn ngữ tester. */
+export function segmentStatusLabel(status) {
+    if (status === "CONFIRMED") return "Đã xác nhận";
+    if (status === "DRAFT") return "Nháp";
+    return status ?? "—";
+}
+
+/** Trạng thái tự động hóa testcase (3 nhãn đã duyệt). */
+export function decisionLabel(decision) {
+    if (decision === "AUTOMATED") return "Có automation";
+    if (decision === "MANUAL_ONLY") return "Chỉ kiểm thử thủ công";
+    return "Chưa quyết định";
+}
+
+/** Message chuẩn cho lỗi segment/mapping (không để lộ errorCode nội bộ). */
+export const SEGMENT_ERROR_MESSAGES = {
+    SEGMENT_INVALID: "Khoảng bước không hợp lệ.",
+    SEGMENT_OVERLAP: "Đoạn thao tác trùng với đoạn đã gán.",
+    SEGMENT_TYPE_REQUIRES_TESTCASE: "Đoạn Testcase bắt buộc chọn testcase.",
+    RECORDING_MAPPING_REQUIRED: "Không có bản ghi thao tác cho testcase này.",
+    SEGMENT_NOT_CONFIRMED: "Bản ghi thao tác chưa được xác nhận.",
+    SEGMENT_MAPPING_INVALID: "Chưa xác định đầy đủ đoạn thao tác cho testcase."
+};
+
+/** Map errorCode (từ ApiError) → message thân thiện. */
+export function segmentErrorMessage(code, fallback = "Không thao tác được trên đoạn thao tác.") {
+    return SEGMENT_ERROR_MESSAGES[code] ?? fallback;
+}
+
+/** Validate khoảng bước: số nguyên, 1..stepsCount, start ≤ end. Thuần — không gọi API. */
+export function validateSegmentRange(stepsCount, startStep, endStep) {
+    const count = Number.isInteger(stepsCount) ? stepsCount : 0;
+    if (!Number.isInteger(startStep) || !Number.isInteger(endStep)
+        || startStep < 1 || endStep < 1 || startStep > endStep || endStep > count) {
+        return { ok: false, errorCode: "SEGMENT_INVALID", message: SEGMENT_ERROR_MESSAGES.SEGMENT_INVALID };
+    }
+    return { ok: true, startStep, endStep, stepCount: endStep - startStep + 1 };
+}
+
+/** Label hiển thị: "bước 6 → 8 (3 bước)". */
+export function rangeLabel(startStep, endStep) {
+    const n = endStep - startStep + 1;
+    return `bước ${startStep} → ${endStep} (${n} bước)`;
+}
+
+/** Hai khoảng có chồng lấn? */
+export function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart <= bEnd && bStart <= aEnd;
+}
+
+/** Kiểm tra khoảng mới có đè lên segment đã có (loại trừ chính nó khi sửa). */
+export function findOverlap(segments, startStep, endStep, excludeSegmentId = null) {
+    return (Array.isArray(segments) ? segments : []).find(seg => {
+        if (seg.segmentId === excludeSegmentId) return false;
+        return rangesOverlap(startStep, endStep, seg.startStep, seg.endStep);
+    }) ?? null;
+}
+
+/** Số bước chưa thuộc đoạn nào (thông tin — KHÔNG chặn Generate). */
+export function unusedStepCount(steps, segments) {
+    const segs = Array.isArray(segments) ? segments : [];
+    return (Array.isArray(steps) ? steps : []).filter(step => {
+        const order = step?.order;
+        return !segs.some(seg => order >= seg.startStep && order <= seg.endStep);
+    }).length;
+}
+
+/** Steps thuộc khoảng [start..end] (theo order). */
+export function stepsInRange(steps, startStep, endStep) {
+    return (Array.isArray(steps) ? steps : [])
+        .filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
+}
+
+/** Có thể xác nhận đoạn không? (range hợp lệ + loại hợp lệ + testcase nếu cần). */
+export function canConfirmSegment({ range, segType, testCaseId, stepsCount }) {
+    if (!range || range.ok !== true) return false;
+    if (segType !== "SETUP" && segType !== "TESTCASE") return false;
+    if (segType === "TESTCASE" && !testCaseId) return false;
+    return true;
+}

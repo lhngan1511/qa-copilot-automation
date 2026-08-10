@@ -14,7 +14,7 @@ import { parseRecording, buildSummary } from "./recordingParser.js";
  Quy tắc:
    - Một thời điểm chỉ MỘT recording đang hoạt động trong workspace.
    - Start mới khi session khác đang RECORDING → RECORDING_ALREADY_ACTIVE.
-   - TESTCASE bắt buộc có testCaseId; SETUP không bắt buộc.
+   - TESTCASE có thể CHƯA gán testCaseId (5C-0: mapping ở mức Segment — 1 bản ghi dài phục vụ nhiều testcase).
    - Stop giữ đúng workspaceId/testCaseId gắn lúc Start; KHÔNG đổi testCaseId giữa Start/Stop.
    - Không tự map recording sang testcase khác. Không dùng AI.
    - Không sửa approved-testcases.json.
@@ -58,16 +58,11 @@ export default class CurrentRecordingSession {
             throw err;
         }
         const sessionType = String(type ?? "TESTCASE").toUpperCase() === "SETUP" ? "SETUP" : "TESTCASE";
-        // TESTCASE bắt buộc có testCaseId.
-        if (sessionType === "TESTCASE" && !testCaseId) {
-            const err = new Error("TESTCASE recording bắt buộc có testCaseId.");
-            err.code = "TESTCASE_ID_REQUIRED";
-            throw err;
-        }
+        // 5C-0: TESTCASE KHÔNG bắt buộc testCaseId — 1 bản ghi dài có thể gán nhiều testcase qua Segment.
         const session = {
             id: newSessionId(),
             workspaceId,
-            testCaseId: sessionType === "SETUP" ? (testCaseId ?? "SETUP") : testCaseId,
+            testCaseId: sessionType === "SETUP" ? (testCaseId ?? "SETUP") : (testCaseId ?? null),
             type: sessionType,
             status: SESSION_STATUS.RECORDING,
             startedAt: new Date().toISOString(),

@@ -126,9 +126,11 @@ const allSources = [
     read("components/automationV3/V3TestCaseList.jsx"),
     read("components/automationV3/V3UploadPanel.jsx"),
     read("components/automationV3/V3RecordingPanel.jsx"),
+    read("components/automationV3/V3SegmentMappingPanel.jsx"),
     read("components/automationV3/V3ReviewDrawer.jsx"),
     read("components/automationV3/V3RecordingTab.jsx"),
-    read("components/automationV3/V3ConfirmDialog.jsx")
+    read("components/automationV3/V3ConfirmDialog.jsx"),
+    read("utils/automationV3.js")
 ].join("\n");
 const allClean = stripComments(allSources);
 
@@ -196,5 +198,65 @@ assert.ok(!/generate|run/i.test(drawerClean), "Drawer không Generate/Run");
 // ---- Bước 5B: source chỉ tải khi "Xem mã" (V3RecordingTab) ----
 const recTab = stripComments(read("components/automationV3/V3RecordingTab.jsx"));
 assert.ok(recTab.includes("getRecordingSource") && recTab.includes("Xem mã"), "source lazy qua 'Xem mã'");
+
+// ================= 5C-0 — Record Mapping (Segment) =================
+
+// ---- 14. Card hiển thị trạng thái 3 nhãn + thông tin đoạn đã gán ----
+const utilsSource = stripComments(read("utils/automationV3.js"));
+assert.ok(utilsSource.includes("Chưa quyết định") && utilsSource.includes("Có automation") && utilsSource.includes("Chỉ kiểm thử thủ công"), "3 nhãn trạng thái (utils)");
+assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("Đoạn thao tác:"), "card dùng nhãn quyết định + thông tin đoạn");
+assert.ok(cardClean.includes("Xem và gán đoạn"), "card có primary 'Xem và gán đoạn' khi đã gán đoạn");
+assert.ok(cardClean.includes("Đánh dấu chỉ kiểm thử thủ công"), "menu có đánh dấu thủ công");
+assert.ok(!cardClean.includes("Sinh automation"), "card chưa có nút sinh (đợi 5C)");
+
+// ---- 15. Panel gán đoạn: timeline + form gán + review (wireframe đã duyệt) ----
+const mapPanel = stripComments(read("components/automationV3/V3SegmentMappingPanel.jsx"));
+assert.ok(mapPanel.includes("Gắn bản ghi testcase") && mapPanel.includes("Các bước đã ghi"), "panel timeline");
+assert.ok(mapPanel.includes("Xác nhận đoạn") && mapPanel.includes("Cập nhật đoạn"), "primary action gán đoạn");
+assert.ok(mapPanel.includes("Dùng chung") && mapPanel.includes("Testcase"), "loại SETUP/TESTCASE");
+assert.ok(mapPanel.includes("Các đoạn đã gán") && mapPanel.includes("Xác nhận") && mapPanel.includes("Chắc chắn?"), "review + xác nhận + xóa 2 bước");
+assert.ok(mapPanel.includes("↑") && mapPanel.includes("↓"), "sắp xếp nhiều đoạn bằng ↑/↓");
+assert.ok(mapPanel.includes("bước chưa thuộc đoạn nào"), "thông tin bước chưa dùng (không chặn)");
+assert.ok(mapPanel.includes("— Chọn testcase —"), "không preselect testcase");
+assert.ok(!/\bAI\b|aiMapping/i.test(mapPanel), "panel không dùng AI cho mapping");
+
+// ---- 16. API client có đủ endpoint segment (5C-0) ----
+assert.ok(apiSource.includes("createSegment") && apiSource.includes("updateSegment"), "api segment create/update");
+assert.ok(apiSource.includes("confirmSegment") && apiSource.includes("deleteSegment"), "api segment confirm/delete");
+assert.ok(apiSource.includes("reorderTestCaseSegments") && apiSource.includes("setAutomationDecision"), "api reorder + decision");
+assert.ok(!apiSource.includes("rendererV3") && !apiSource.includes("CodeGenRecordingStore"), "không gọi Store/Renderer");
+
+// ---- 17. Page nối luồng: bản ghi chưa gán testcase → mở panel gán đoạn ----
+assert.ok(pageClean2.includes("V3SegmentMappingPanel"), "page có panel gán đoạn");
+assert.ok(pageClean2.includes("setMappingPanel") && pageClean2.includes("refreshWorkspace"), "page mở panel + refresh sau khi đổi mapping");
+assert.ok(pageClean2.includes("setAutomationDecision"), "page gọi API đặt trạng thái tự động hóa");
+assert.ok(!pageClean2.includes("getRecordingSource"), "page không tải source mặc định");
+
+// ---- 18. Pure helpers 5C-0 (thuần, test được) ----
+const utils = await import(`../web-ui/src/utils/automationV3.js?t=${Date.now()}`);
+const {
+    validateSegmentRange, rangeLabel, findOverlap, unusedStepCount,
+    canConfirmSegment, decisionLabel, segmentStatusLabel, SEGMENT_ERROR_MESSAGES
+} = utils;
+assert.deepEqual(validateSegmentRange(10, 6, 8), { ok: true, startStep: 6, endStep: 8, stepCount: 3 }, "range hợp lệ");
+assert.equal(validateSegmentRange(10, 8, 6).ok, false, "start > end");
+assert.equal(validateSegmentRange(10, 0, 3).ok, false, "start < 1");
+assert.equal(validateSegmentRange(10, 9, 11).ok, false, "end > steps");
+assert.equal(rangeLabel(6, 8), "bước 6 → 8 (3 bước)", "range label");
+const segs = [
+    { segmentId: "A", startStep: 1, endStep: 5 },
+    { segmentId: "B", startStep: 6, endStep: 8 }
+];
+assert.equal(findOverlap(segs, 4, 6)?.segmentId, "A", "overlap tìm thấy");
+assert.equal(findOverlap(segs, 9, 10), null, "không overlap");
+assert.equal(findOverlap(segs, 4, 5, "A"), null, "loại trừ chính nó khi sửa");
+assert.equal(unusedStepCount([{ order: 1 }, { order: 2 }, { order: 3 }, { order: 4 }, { order: 5 }, { order: 6 }, { order: 7 }, { order: 8 }, { order: 9 }], segs), 1, "step 9 chưa dùng");
+assert.equal(canConfirmSegment({ range: { ok: true }, segType: "TESTCASE", testCaseId: "TC1", stepsCount: 5 }), true, "đủ điều kiện");
+assert.equal(canConfirmSegment({ range: { ok: true }, segType: "TESTCASE", testCaseId: "", stepsCount: 5 }), false, "thiếu testcase");
+assert.equal(canConfirmSegment({ range: null, segType: "SETUP", testCaseId: null, stepsCount: 5 }), false, "thiếu range");
+assert.equal(decisionLabel("AUTOMATED"), "Có automation", "nhãn quyết định");
+assert.equal(decisionLabel("UNDECIDED"), "Chưa quyết định", "nhãn mặc định");
+assert.equal(segmentStatusLabel("CONFIRMED"), "Đã xác nhận", "nhãn segment");
+assert.equal(SEGMENT_ERROR_MESSAGES.RECORDING_MAPPING_REQUIRED, "Không có bản ghi thao tác cho testcase này.", "message chuẩn");
 
 console.log("Automation V3 UI test: PASS");

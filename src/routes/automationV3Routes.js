@@ -115,6 +115,56 @@ export default function createAutomationV3Routes({ applicationService = null } =
     router.get("/workspaces/:workspaceId/testcases/:testCaseId/recordings", handle(applicationService, (svc, req) =>
         svc.listRecordings({ workspaceId: req.params.workspaceId, testCaseId: req.params.testCaseId })));
 
+    // ---------- B2. Record Mapping — Segment (5C-0) ----------
+    router.post("/workspaces/:workspaceId/recordings/:recordingId/segments", handle(applicationService, (svc, req) =>
+        svc.createSegment({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId,
+            startStep: req.body?.startStep,
+            endStep: req.body?.endStep,
+            type: req.body?.type,
+            testCaseId: req.body?.testCaseId
+        })));
+
+    router.patch("/workspaces/:workspaceId/recordings/:recordingId/segments/:segmentId", handle(applicationService, (svc, req) =>
+        svc.updateSegment({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId,
+            segmentId: req.params.segmentId,
+            startStep: req.body?.startStep,
+            endStep: req.body?.endStep,
+            type: req.body?.type,
+            testCaseId: req.body?.testCaseId
+        })));
+
+    router.post("/workspaces/:workspaceId/recordings/:recordingId/segments/:segmentId/confirm", handle(applicationService, (svc, req) =>
+        svc.confirmSegment({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId,
+            segmentId: req.params.segmentId
+        })));
+
+    router.delete("/workspaces/:workspaceId/recordings/:recordingId/segments/:segmentId", handle(applicationService, (svc, req) =>
+        svc.deleteSegment({
+            workspaceId: req.params.workspaceId,
+            recordingId: req.params.recordingId,
+            segmentId: req.params.segmentId
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/segments/reorder", handle(applicationService, (svc, req) =>
+        svc.reorderTestCaseSegments({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            segmentIds: req.body?.segmentIds
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/automation-decision", handle(applicationService, (svc, req) =>
+        svc.setAutomationDecision({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            decision: req.body?.decision
+        })));
+
     // ---------- C. Assertions ----------
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/assertions", handle(applicationService, (svc, req) =>
         svc.saveDraftAssertion({

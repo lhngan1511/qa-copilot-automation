@@ -744,3 +744,90 @@
 .v3-dialog h4 { margin: 0; font-size: 16px; }
 .v3-dialog p { margin: 0; font-size: 13px; color: #3a445c; }
 .v3-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+/* ================= 5C-0 — Gắn bản ghi + Gán đoạn thao tác (V3SegmentMappingPanel) ================= */
+.v3-map {
+  display: grid;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.v3-map__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.v3-map__title { margin: 0; font-size: 17px; }
+.v3-map__sub { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.v3-map__block {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding-top: 12px;
+}
+.v3-map__h { margin: 0; font-size: 14px; }
+.v3-map__hint { margin: 0; font-size: 12px; color: var(--muted); }
+.v3-map__steps { max-height: 340px; overflow: auto; }
+.v3-map-step {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.v3-map-step:hover { border-color: var(--primary); }
+.v3-map-step--range { background: #eef4ff; border-color: var(--primary); }
+.v3-map-step--seg { background: #f6fef9; border-color: #b7e4c7; }
+.v3-map__form { display: grid; gap: 10px; }
+.v3-map__types { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
+.v3-map__legend { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.v3-radio { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.v3-map__tc { display: grid; gap: 6px; }
+.v3-map__label { font-size: 13px; font-weight: 600; }
+.v3-input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #101828;
+}
+.v3-map__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.v3-map-group { display: grid; gap: 6px; margin-bottom: 8px; }
+.v3-map-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+.v3-map-group__order { font-size: 12px; color: var(--muted); font-weight: 400; }
+.v3-map-seg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.v3-map-seg__range { font-size: 13px; font-weight: 600; min-width: 150px; }
+.v3-map-seg__actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.v3-map__note { margin: 0; font-size: 12px; color: var(--muted); }
+.v3-map__note--warn { color: #b45309; font-weight: 600; }
+.v3-btn--mini { min-height: 30px; padding: 2px 10px; font-size: 12px; }
+.v3-btn--primary.v3-btn--mini { background: var(--primary); color: #fff; }
+.v3-btn--danger.v3-btn--mini { background: var(--danger, #dc2626); color: #fff; }
+.v3-card__row--muted { font-size: 12px; color: var(--muted); }
+.v3-badge--manual { background: #eef2f6; color: #475467; }

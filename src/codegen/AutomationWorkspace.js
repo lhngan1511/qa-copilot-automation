@@ -103,7 +103,10 @@ export default class AutomationWorkspace {
             recordingId: null,
             generatedFile: null,
             lastRun: null,
-            automationAssertions: []
+            automationAssertions: [],
+            // 5C-0 — Record Mapping: trạng thái tự động hóa do tester quyết định + mapping segment → testcase.
+            automationDecision: "UNDECIDED", // UNDECIDED | MANUAL_ONLY | AUTOMATED
+            segments: [] // [{ segmentId, recordingId, orderInTestCase }] — thứ tự tester sắp xếp (KHÔNG theo index/thứ tự JSON)
         };
     }
 
@@ -183,5 +186,91 @@ export default class AutomationWorkspace {
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return entry;
+    }
+
+    /* ================= 5C-0 — Record Mapping (segment ↔ testcase, tester-owned) ================= */
+
+    /** Tester đặt trạng thái tự động hóa: UNDECIDED | MANUAL_ONLY | AUTOMATED. */
+    setAutomationDecision(workspaceId, testCaseId, decision) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        const d = String(decision ?? "UNDECIDED").toUpperCase();
+        entry.automationDecision = ["UNDECIDED", "MANUAL_ONLY", "AUTOMATED"].includes(d) ? d : "UNDECIDED";
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Thêm tham chiếu segment cho testcase (mapping bằng segmentId — không theo thứ tự JSON/recording). */
+    addSegmentRef(workspaceId, testCaseId, { segmentId = "", recordingId = "" } = {}) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        entry.segments = Array.isArray(entry.segments) ? entry.segments : [];
+        if (segmentId && !entry.segments.some(s => s.segmentId === segmentId)) {
+            const maxOrder = entry.segments.reduce((m, s) => Math.max(m, s.orderInTestCase || 0), 0);
+            entry.segments.push({ segmentId, recordingId, orderInTestCase: maxOrder + 1 });
+        }
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Gỡ tham chiếu segment khỏi testcase (khi xóa segment / đổi testcase). */
+    removeSegmentRef(workspaceId, testCaseId, segmentId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        entry.segments = (entry.segments ?? []).filter(s => s.segmentId !== segmentId);
+        entry.segments.forEach((s, i) => { s.orderInTestCase = i + 1; });
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Gỡ mọi tham chiếu segment thuộc recording (khi xóa recording). */
+    removeSegmentRefsByRecording(workspaceId, recordingId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        let changed = false;
+        for (const entry of ws.selectedTestCases ?? []) {
+            const before = (entry.segments ?? []).length;
+            entry.segments = (entry.segments ?? []).filter(s => s.recordingId !== recordingId);
+            entry.segments.forEach((s, i) => { s.orderInTestCase = i + 1; });
+            if (before !== (entry.segments ?? []).length) changed = true;
+        }
+        if (changed) {
+            ws.updatedAt = new Date().toISOString();
+            this.persist();
+        }
+        return ws;
+    }
+
+    /** Sắp xếp lại thứ tự segment của testcase — đúng thứ tự tester xác nhận (Generate dùng thứ tự này). */
+    reorderSegmentRefs(workspaceId, testCaseId, segmentIds) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        const current = entry.segments ?? [];
+        if (!Array.isArray(segmentIds) || segmentIds.length !== current.length) return null;
+        const idSet = new Set(segmentIds);
+        if (current.some(s => !idSet.has(s.segmentId))) return null;
+        const byId = new Map(current.map(s => [s.segmentId, s]));
+        entry.segments = segmentIds.map((id, i) => ({ ...byId.get(id), orderInTestCase: i + 1 }));
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
+    }
+
+    /** Danh sách segment đã gán của testcase — theo thứ tự tester sắp xếp. */
+    getSegmentRefs(workspaceId, testCaseId) {
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!entry) return [];
+        return (entry.segments ?? []).sort((a, b) => (a.orderInTestCase || 0) - (b.orderInTestCase || 0));
     }
 }

@@ -238,13 +238,14 @@ async function main() {
     assert.ok(routesFile.includes("AutomationWorkspaceApplicationService"), "route dùng Application Service");
 
     // ===== 13. Generate sai state bị reject =====
-    // 13a. TC002 chưa có recording APPROVED → RECORDING_APPROVAL_REQUIRED.
+    // 13a. TC002 chưa có segment / recording → RECORDING_MAPPING_REQUIRED (5C-0: không fallback, không đoán).
     await req(baseUrl, "POST",
         `/api/automation-v3/workspaces/${workspaceId}/testcases/TC002/select`);
     const genNoRecording = await req(baseUrl, "POST",
         `/api/automation-v3/workspaces/${workspaceId}/testcases/TC002/generate`);
-    assert.equal(genNoRecording.status, 409, "409 no recording");
-    assert.equal(genNoRecording.body.errorCode, "RECORDING_APPROVAL_REQUIRED", "no recording");
+    assert.equal(genNoRecording.status, 409, "409 no mapping");
+    assert.equal(genNoRecording.body.errorCode, "RECORDING_MAPPING_REQUIRED", "RECORDING_MAPPING_REQUIRED");
+    assert.equal(genNoRecording.body.message, "Không có bản ghi thao tác cho testcase này.", "message chuẩn");
 
     // 13b. Unselect → generate → TESTCASE_NOT_SELECTED.
     await req(baseUrl, "POST",

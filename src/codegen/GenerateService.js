@@ -19,7 +19,11 @@ import { renderV3Spec, pickLatestApproved } from "./rendererV3.js";
 export const GENERATE_ERRORS = {
     RECORDING_APPROVAL_REQUIRED: "RECORDING_APPROVAL_REQUIRED",
     TESTCASE_NOT_FOUND: "TESTCASE_NOT_FOUND",
-    WORKSPACE_NOT_FOUND: "WORKSPACE_NOT_FOUND"
+    WORKSPACE_NOT_FOUND: "WORKSPACE_NOT_FOUND",
+    // 5C-0 — Record Mapping (tester-owned, không AI, không theo thứ tự).
+    RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
+    SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
+    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID"
 };
 
 export default class GenerateService {
@@ -37,9 +41,10 @@ export default class GenerateService {
      * @param {object} o.approvedTestData  testData từ approved-testcases (snapshot)
      * @param {object} o.confirmedTestData testData tester đã lưu (USER_CONFIRMED)
      * @param {Array}  o.confirmedAssertions automationAssertions TESTER_CONFIRMED
-     * @param {object} o.setupRecordingId?  nếu có, dùng recording SETUP này (mặc định latest APPROVED SETUP)
+     * @param {object} o.setupRecordingId?  nếu có, dùng recording SETUP này (mặc định: SETUP segments của các recording liên quan)
+     * @param {Array}  o.segments?          refs [{segmentId, recordingId, orderInTestCase}] từ Workspace (5C-0)
      */
-    generate({ workspaceId, testCaseId, approvedTestData = {}, confirmedTestData = {}, confirmedAssertions = [], setupRecordingId = null }) {
+    generate({ workspaceId, testCaseId, approvedTestData = {}, confirmedTestData = {}, confirmedAssertions = [], setupRecordingId = null, segments = null }) {
         const ws = this.workspace?.get(workspaceId);
         if (!ws) {
             return { ok: false, errorCode: GENERATE_ERRORS.WORKSPACE_NOT_FOUND, reason: "Không tìm thấy workspace." };
@@ -57,50 +62,66 @@ export default class GenerateService {
             type: entry.type
         };
 
-        // 1. latest APPROVED TESTCASE recording (đúng testCaseId).
-        const tcRecordings = this.store?.allByTestCase(testCaseId) ?? [];
-        const testcaseRecording = pickLatestApproved(tcRecordings);
-        if (!testcaseRecording) {
-            return { ok: false, errorCode: GENERATE_ERRORS.RECORDING_APPROVAL_REQUIRED, reason: "Chưa có recording APPROVED." };
-        }
-        const testcaseRecordingRaw = this.store?.getRaw(testcaseRecording.recordingId) ?? testcaseRecording;
-
-        // 2. SETUP recording (mặc định latest APPROVED SETUP, hoặc theo setupRecordingId).
-        let setupRecording = null;
-        if (setupRecordingId) {
-            const raw = this.store?.getRaw(setupRecordingId);
-            if (raw && raw.status === "APPROVED") setupRecording = raw;
+        let rendered;
+        if (Array.isArray(segments) && segments.length > 0) {
+            // ===== 5C-0 — Segment flow: steps ghép theo thứ tự tester xác nhận, SETUP ghép trước =====
+            const resolved = this.resolveSegmentFlow({ testCaseId, segments, setupRecordingId });
+            if (!resolved.ok) return resolved;
+            rendered = renderV3Spec({
+                testCase,
+                testcaseRecording: resolved.mainRecording,
+                setupRecording: null, // steps SETUP đã ghép sẵn trong mainRecording.steps
+                confirmedTestData,
+                confirmedAssertions,
+                approvedTestData,
+                approvedBy: resolved.mainRecording.approvedBy ?? null,
+                approvedAt: resolved.mainRecording.approvedAt ?? null
+            });
+            if (rendered.ok) {
+                rendered.metadata = { ...rendered.metadata, segments: resolved.traceSegments };
+            }
         } else {
-            const setups = this.store?.allByTestCase("SETUP") ?? [];
-            const approvedSetup = pickLatestApproved(setups);
-            if (approvedSetup) setupRecording = this.store?.getRaw(approvedSetup.recordingId) ?? approvedSetup;
+            // ===== Legacy 5B flow (tương thích dữ liệu cũ: recording gắn thẳng testCaseId) =====
+            const tcRecordings = this.store?.allByTestCase(testCaseId) ?? [];
+            const testcaseRecording = pickLatestApproved(tcRecordings);
+            if (!testcaseRecording) {
+                return { ok: false, errorCode: GENERATE_ERRORS.RECORDING_MAPPING_REQUIRED, reason: "Không có bản ghi thao tác cho testcase này." };
+            }
+            const raw = this.store?.getRaw(testcaseRecording.recordingId) ?? testcaseRecording;
+            let setupRecording = null;
+            if (setupRecordingId) {
+                const r = this.store?.getRaw(setupRecordingId);
+                if (r && r.status === "APPROVED") setupRecording = r;
+            } else {
+                const setups = this.store?.allByTestCase("SETUP") ?? [];
+                const approvedSetup = pickLatestApproved(setups);
+                if (approvedSetup) setupRecording = this.store?.getRaw(approvedSetup.recordingId) ?? approvedSetup;
+            }
+            rendered = renderV3Spec({
+                testCase,
+                testcaseRecording: raw,
+                setupRecording,
+                confirmedTestData,
+                confirmedAssertions,
+                approvedTestData,
+                approvedBy: raw.approvedBy ?? null,
+                approvedAt: raw.approvedAt ?? null
+            });
         }
-
-        // 3. Gọi Renderer (chỉ render, không ghi file).
-        const rendered = renderV3Spec({
-            testCase,
-            testcaseRecording: testcaseRecordingRaw,
-            setupRecording,
-            confirmedTestData,
-            confirmedAssertions,
-            approvedTestData,
-            approvedBy: testcaseRecordingRaw.approvedBy ?? null,
-            approvedAt: testcaseRecordingRaw.approvedAt ?? null
-        });
         if (!rendered.ok) return rendered;
 
-        // 4. Ghi file (Service làm — Renderer không biết filesystem).
+        // Ghi file (Service làm — Renderer không biết filesystem).
         fs.mkdirSync(this.outputDir, { recursive: true });
         const outputPath = path.join(this.outputDir, `${testCaseId}.spec.js`);
         fs.writeFileSync(outputPath, rendered.code, "utf8");
 
-        // 5. Cập nhật Workspace: GENERATED.
+        // Cập nhật Workspace: GENERATED.
         this.workspace.transition(workspaceId, testCaseId, {
             generateStatus: "GENERATED",
             generatedFile: outputPath,
-            recordingId: rendered.metadata.recording.id,
-            recordingVersion: rendered.metadata.recording.version,
-            recordingHash: rendered.metadata.recording.hash
+            recordingId: rendered.metadata.recording?.id ?? null,
+            recordingVersion: rendered.metadata.recording?.version ?? null,
+            recordingHash: rendered.metadata.recording?.hash ?? null
         });
 
         return {
@@ -108,5 +129,85 @@ export default class GenerateService {
             ...rendered,
             outputPath
         };
+    }
+
+    /**
+     * 5C-0 — Ghép steps từ các segment CONFIRMED theo đúng thứ tự tester (orderInTestCase).
+     * Không AI, không theo thứ tự JSON/recording. Trả recording view đã ghép (status APPROVED để qua renderer).
+     */
+    resolveSegmentFlow({ testCaseId, segments, setupRecordingId = null }) {
+        const refs = segments.slice().sort((a, b) => (a.orderInTestCase || 0) - (b.orderInTestCase || 0));
+        const testcaseSteps = [];
+        const traceSegments = [];
+        let baseRaw = null;
+
+        for (const ref of refs) {
+            const seg = this.store?.getSegment(ref.recordingId, ref.segmentId) ?? null;
+            if (!seg || seg.type !== "TESTCASE" || seg.testCaseId !== testCaseId) {
+                return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
+            }
+            if (seg.status !== "CONFIRMED") {
+                return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_NOT_CONFIRMED, reason: "Bản ghi thao tác chưa được xác nhận." };
+            }
+            const raw = this.store?.getRaw(ref.recordingId) ?? null;
+            if (!raw) {
+                return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
+            }
+            testcaseSteps.push(...this.sliceSteps(raw.steps, seg.startStep, seg.endStep));
+            traceSegments.push({
+                segmentId: seg.segmentId,
+                recordingId: raw.recordingId,
+                startStep: seg.startStep,
+                endStep: seg.endStep,
+                type: seg.type,
+                testCaseId: seg.testCaseId
+            });
+            if (!baseRaw) baseRaw = raw;
+        }
+        if (!baseRaw) {
+            return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
+        }
+
+        // SETUP dùng chung: segment SETUP CONFIRMED trong chính các recording mà testcase đang dùng
+        // (hoặc chỉ recording setupRecordingId nếu được truyền). Không bắt testcase chứa lại login/navigation.
+        const setupSteps = [];
+        if (setupRecordingId) {
+            const raw = this.store?.getRaw(setupRecordingId);
+            if (raw) setupSteps.push(...this.setupStepsFrom(raw));
+        } else {
+            const seen = new Set();
+            for (const ref of refs) {
+                if (seen.has(ref.recordingId)) continue;
+                seen.add(ref.recordingId);
+                const raw = this.store?.getRaw(ref.recordingId);
+                if (raw) setupSteps.push(...this.setupStepsFrom(raw));
+            }
+        }
+
+        // Pseudo recording APPROVED: renderer chỉ render theo steps; hash xác nhận source không đổi.
+        const mainRecording = {
+            ...baseRaw,
+            status: "APPROVED",
+            steps: [...setupSteps, ...testcaseSteps]
+        };
+        return { ok: true, mainRecording, traceSegments };
+    }
+
+    /** Steps thuộc khoảng order [startStep..endStep] của recording. */
+    sliceSteps(steps, startStep, endStep) {
+        return (Array.isArray(steps) ? steps : [])
+            .filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
+    }
+
+    /** Các step của segment SETUP CONFIRMED trong 1 recording (theo thứ tự startStep). */
+    setupStepsFrom(raw) {
+        const segs = (raw?.segments ?? [])
+            .filter(s => s.type === "SETUP" && s.status === "CONFIRMED")
+            .sort((a, b) => a.startStep - b.startStep);
+        const steps = [];
+        for (const seg of segs) {
+            steps.push(...this.sliceSteps(raw.steps, seg.startStep, seg.endStep));
+        }
+        return steps;
     }
 }

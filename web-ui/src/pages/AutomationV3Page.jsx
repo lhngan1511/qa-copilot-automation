@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import V3UploadPanel from "../components/automationV3/V3UploadPanel.jsx";
 import V3TestCaseList from "../components/automationV3/V3TestCaseList.jsx";
 import V3RecordingPanel from "../components/automationV3/V3RecordingPanel.jsx";
+import V3SegmentMappingPanel from "../components/automationV3/V3SegmentMappingPanel.jsx";
 import V3ReviewDrawer from "../components/automationV3/V3ReviewDrawer.jsx";
 import V3ConfirmDialog from "../components/automationV3/V3ConfirmDialog.jsx";
 import {
@@ -13,7 +14,8 @@ import {
     stopRecording,
     approveRecording,
     rejectRecording,
-    deleteRecording
+    deleteRecording,
+    setAutomationDecision
 } from "../api/automationV3Api.js";
 
 /*
@@ -51,6 +53,9 @@ export default function AutomationV3Page() {
     const [drawerTestcase, setDrawerTestcase] = useState(null);
     const [openMenuId, setOpenMenuId] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
+    // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
+    const [mappingPanel, setMappingPanel] = useState(null); // { recordingId, initialTestCaseId }
+    const [pendingTestCaseId, setPendingTestCaseId] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -162,25 +167,34 @@ export default function AutomationV3Page() {
         if (key === "record") await handleStart(testCase);
         else if (key === "stop") await handleStop();
         else if (key === "review") setDrawerTestcase(testCase);
+        else if (key === "segments") openMappingFor(testCase);
     };
 
-    const handleStart = async testCase => {
+    const openMappingFor = testCase => {
+        const segs = Array.isArray(testCase.segments) ? testCase.segments : [];
+        const recordingId = segs.length > 0 ? segs[0].recordingId : null;
+        if (!recordingId) return;
+        setMappingPanel({ recordingId, initialTestCaseId: testCase.testCaseId });
+    };
+
+    const handleStart = async (testCase, { prefill = null } = {}) => {
         if (recordingActive) return;
         setError("");
         setBusy(true);
         try {
+            // 5C-0: bản ghi KHÔNG gắn testcase cụ thể — 1 bản ghi dài gán nhiều testcase qua Segment.
             const start = await startRecording(workspace.workspaceId, {
-                testCaseId: testCase.testCaseId,
+                testCaseId: null,
                 type: "TESTCASE"
             });
             setActiveRecording({
-                testCaseId: testCase.testCaseId,
+                testCaseId: null,
                 recordingId: start.recordingId,
                 sessionId: start.sessionId,
-                title: testCase.title
+                title: null
             });
+            setPendingTestCaseId(prefill ?? testCase?.testCaseId ?? null);
             setRecordingSource("");
-            applyItem({ testCaseId: testCase.testCaseId, automationStatus: "RECORDING", reviewStatus: "RECORDING" });
         } catch (e) {
             setError(e?.message ?? "Không ghi được testcase.");
         } finally {
@@ -192,23 +206,30 @@ export default function AutomationV3Page() {
         if (!activeRecording) return;
         setError("");
         setBusy(true);
-        const testCaseId = activeRecording.testCaseId;
         const recordingId = activeRecording.recordingId;
         try {
             const stop = await stopRecording(workspace.workspaceId, { recordingId, source: recordingSource });
             setActiveRecording(null);
             setRecordingSource("");
-            applyItem({
-                testCaseId,
-                automationStatus: "REVIEW_REQUIRED",
-                reviewStatus: "REVIEW_REQUIRED",
-                recordingStatus: "RECORDED",
-                recordingId: stop.recordingId ?? recordingId
-            });
+            // Mở ngay màn hình gán đoạn cho bản ghi vừa nhập (wireframe A+B gộp).
+            setMappingPanel({ recordingId: stop.recordingId ?? recordingId, initialTestCaseId: pendingTestCaseId });
+            setPendingTestCaseId(null);
+            await refreshWorkspace();
         } catch (e) {
             setError(e?.message ?? "Không dừng được recording.");
         } finally {
             setBusy(false);
+        }
+    };
+
+    /** 5C-0 — tải lại workspace sau khi đổi mapping segment (để card cập nhật). */
+    const refreshWorkspace = async () => {
+        if (!workspace?.workspaceId) return;
+        try {
+            const data = await getWorkspace(workspace.workspaceId);
+            setWorkspace({ workspaceId: workspace.workspaceId, items: Array.isArray(data.items) ? data.items : [] });
+        } catch {
+            /* giữ trạng thái cũ nếu tải lỗi */
         }
     };
 
@@ -252,6 +273,27 @@ export default function AutomationV3Page() {
             });
         } else if (action === "record_again") {
             handleStart(testCase);
+        } else if (action === "segments") {
+            openMappingFor(testCase);
+        } else if (action === "decision_manual" || action === "decision_automated") {
+            handleDecision(action === "decision_manual" ? "MANUAL_ONLY" : "AUTOMATED", testCase);
+        }
+    };
+
+    /** 5C-0 — tester đặt trạng thái tự động hóa (3 nhãn). */
+    const handleDecision = async (decision, testCase) => {
+        setError("");
+        setBusy(true);
+        try {
+            const item = await setAutomationDecision(workspace.workspaceId, testCase.testCaseId, decision);
+            applyItem(item);
+            setNotice(decision === "MANUAL_ONLY"
+                ? `${testCase.testCaseId} được đánh dấu chỉ kiểm thử thủ công.`
+                : `${testCase.testCaseId} được phép tự động hóa.`);
+        } catch (e) {
+            setError(e?.message ?? "Không cập nhật được trạng thái.");
+        } finally {
+            setBusy(false);
         }
     };
 
@@ -313,6 +355,18 @@ export default function AutomationV3Page() {
                     onSourceChange={setRecordingSource}
                     busy={busy}
                     onStop={handleStop}
+                />
+            ) : null}
+
+            {mappingPanel ? (
+                <V3SegmentMappingPanel
+                    workspaceId={workspace.workspaceId}
+                    recordingId={mappingPanel.recordingId}
+                    testCases={enrichedItems}
+                    initialTestCaseId={mappingPanel.initialTestCaseId}
+                    onChanged={refreshWorkspace}
+                    onClose={() => setMappingPanel(null)}
+                    onError={setError}
                 />
             ) : null}
 

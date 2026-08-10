@@ -101,3 +101,52 @@ export function deleteRecording(workspaceId, recordingId) {
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/recordings/${encodeURIComponent(recordingId)}`
     );
 }
+
+/* ============================== Record Mapping — Segment (5C-0) ============================== */
+
+/** POST .../recordings/:recordingId/segments — tạo đoạn thao tác (DRAFT). */
+export function createSegment(workspaceId, recordingId, { startStep, endStep, type = "TESTCASE", testCaseId = null } = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/recordings/${encodeURIComponent(recordingId)}/segments`,
+        { headers: jsonHeaders(), body: JSON.stringify({ startStep, endStep, type, testCaseId }) }
+    );
+}
+
+/** PATCH .../recordings/:recordingId/segments/:segmentId — sửa đoạn (tự quay về DRAFT). */
+export function updateSegment(workspaceId, recordingId, segmentId, patch = {}) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/recordings/${encodeURIComponent(recordingId)}/segments/${encodeURIComponent(segmentId)}`,
+        { headers: jsonHeaders(), body: JSON.stringify(patch) }
+    );
+}
+
+/** POST .../recordings/:recordingId/segments/:segmentId/confirm — tester xác nhận đoạn. */
+export function confirmSegment(workspaceId, recordingId, segmentId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/recordings/${encodeURIComponent(recordingId)}/segments/${encodeURIComponent(segmentId)}/confirm`,
+        { headers: jsonHeaders() }
+    );
+}
+
+/** DELETE .../recordings/:recordingId/segments/:segmentId */
+export function deleteSegment(workspaceId, recordingId, segmentId) {
+    return apiClient.delete(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/recordings/${encodeURIComponent(recordingId)}/segments/${encodeURIComponent(segmentId)}`
+    );
+}
+
+/** POST .../testcases/:testCaseId/segments/reorder — sắp xếp thứ tự đoạn (↑/↓). */
+export function reorderTestCaseSegments(workspaceId, testCaseId, segmentIds) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/segments/reorder`,
+        { headers: jsonHeaders(), body: JSON.stringify({ segmentIds }) }
+    );
+}
+
+/** POST .../testcases/:testCaseId/automation-decision — tester đặt trạng thái tự động hóa. */
+export function setAutomationDecision(workspaceId, testCaseId, decision) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/automation-decision`,
+        { headers: jsonHeaders(), body: JSON.stringify({ decision }) }
+    );
+}

@@ -108,6 +108,8 @@ export default class CodeGenRecordingStore {
             steps: [],
             assertions: [],
             recordedValues: {},
+            // 5C-0 — segments: metadata tham chiếu khoảng steps (không cắt source). Mapping ở mức segment.
+            segments: [],
             startedAt: new Date().toISOString(),
             completedAt: null,
             createdAt: new Date().toISOString(),
@@ -201,6 +203,59 @@ export default class CodeGenRecordingStore {
             ...rest,
             hasScript: Boolean(scriptContent && scriptContent.trim())
         };
+    }
+
+    /* ================= 5C-0 — Segment (metadata tham chiếu khoảng steps, không cắt source) ================= */
+
+    getSegments(recordingId) {
+        const rec = this.recordings.find(item => item.recordingId === recordingId);
+        return rec ? (Array.isArray(rec.segments) ? rec.segments : []) : [];
+    }
+
+    getSegment(recordingId, segmentId) {
+        return this.getSegments(recordingId).find(s => s.segmentId === segmentId) ?? null;
+    }
+
+    addSegment(recordingId, segment) {
+        const rec = this.recordings.find(item => item.recordingId === recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        rec.segments = Array.isArray(rec.segments) ? rec.segments : [];
+        rec.segments.push(segment);
+        this.persist();
+        return { ...segment };
+    }
+
+    updateSegment(recordingId, segmentId, patch = {}) {
+        const rec = this.recordings.find(item => item.recordingId === recordingId);
+        if (!rec) {
+            const error = new Error(`Recording '${recordingId}' không tồn tại.`);
+            error.code = "RECORDING_NOT_FOUND";
+            throw error;
+        }
+        rec.segments = Array.isArray(rec.segments) ? rec.segments : [];
+        const idx = rec.segments.findIndex(s => s.segmentId === segmentId);
+        if (idx === -1) return null;
+        rec.segments[idx] = {
+            ...rec.segments[idx],
+            ...patch,
+            segmentId: rec.segments[idx].segmentId,
+            recordingId,
+            updatedAt: new Date().toISOString()
+        };
+        this.persist();
+        return { ...rec.segments[idx] };
+    }
+
+    removeSegment(recordingId, segmentId) {
+        const rec = this.recordings.find(item => item.recordingId === recordingId);
+        if (!rec) return null;
+        rec.segments = (rec.segments ?? []).filter(s => s.segmentId !== segmentId);
+        this.persist();
+        return segmentId;
     }
 }
 
