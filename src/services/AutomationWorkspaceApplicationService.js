@@ -301,11 +301,28 @@ export default class AutomationWorkspaceApplicationService {
         };
     }
 
-    /** List recording versions của testcase (không kèm scriptContent — an toàn). */
-    /** List recording versions — chỉ metadata/summary, KHÔNG trả steps/source (Bước 5B). */
+    /** List recording versions của testcase — chỉ metadata/summary, KHÔNG trả steps/source (Bước 5B). */
     listRecordings({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
-        return (this.store?.allByTestCase(testCaseId) ?? [])
+        // 6A — fix BUG 1: đọc recording qua MAPPING HIỆN HÀNH của testcase (segment refs trong workspace),
+        // không quay lại gán testCaseId vào recording để chữa UI. Legacy fallback (allByTestCase) giữ
+        // compatibility cho dữ liệu 5B cũ (recording gắn thẳng testCaseId).
+        const refs = this.workspace.getSegmentRefs(workspaceId, testCaseId);
+        let recordings;
+        if (refs.length > 0) {
+            recordings = [];
+            const seen = new Set();
+            for (const ref of refs) {
+                const rec = this.store?.getRaw(ref.recordingId);
+                if (rec && !seen.has(ref.recordingId)) {
+                    seen.add(ref.recordingId);
+                    recordings.push(rec);
+                }
+            }
+        } else {
+            recordings = this.store?.allByTestCase(testCaseId) ?? [];
+        }
+        return recordings
             .map(r => ({
                 recordingId: r.recordingId,
                 testCaseId: r.testCaseId,

@@ -169,6 +169,12 @@ async function main() {
     assert.equal(tc1.segmentSummary.confirmed, 1, "TC001 1 đoạn xác nhận");
     assert.equal(tc2.automationDecision, "AUTOMATED", "TC002 → Có automation (dù đứng đầu JSON)");
 
+    // ===== 4b. BUG 1 fix (6A): listRecordings đọc qua segment refs — recording testCaseId = null vẫn hiển thị =====
+    const recsList = await req(baseUrl, "GET", `/api/automation-v3/workspaces/${wid}/testcases/TC001/recordings`);
+    assert.equal(recsList.status, 200, "list recordings 200");
+    assert.ok(recsList.body.some(r => r.recordingId === recId), "recording hiển thị qua refs dù testCaseId=null (BUG 1 fix)");
+    assert.equal(recsList.body[0].summary.actionCount, 12, "summary từ recording qua refs");
+
     // ===== 5. Sửa segment đã CONFIRMED → quay về DRAFT (quyết định #2) =====
     const edited = await req(baseUrl, "PATCH", `/api/automation-v3/workspaces/${wid}/recordings/${recId}/segments/${segTc1.body.segmentId}`,
         { startStep: 6, endStep: 7 });

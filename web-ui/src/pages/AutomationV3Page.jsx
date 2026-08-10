@@ -122,6 +122,8 @@ export default function AutomationV3Page() {
                 module: tc?.module ?? "",
                 type: tc?.type ?? "",
                 testData: tc?.testData ?? null,
+                // 6A — fix BUG 2: truyền đủ expectedResult (approved) vào workspace, không để mất trên UI.
+                expectedResult: String(tc?.expectedResult ?? tc?.expected ?? "").trim(),
                 reviewStatus: "APPROVED"
             }));
             const created = await createWorkspace({ approvedTestCases: payload, module: result.meta.module, source: "NEW" });

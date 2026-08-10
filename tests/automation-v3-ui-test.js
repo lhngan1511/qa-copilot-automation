@@ -310,4 +310,7 @@ assert.ok(pageClean2.includes("generateTestcase"), "page gọi generateTestcase"
 assert.ok(pageClean2.includes("handleGenerate"), "page có handler Generate");
 assert.ok(pageClean2.includes("drawerTab"), "page mở drawer tab theo ngữ cảnh");
 
+// ---- 26. 6A — BUG 2 fix: page truyền expectedResult khi createWorkspace ----
+assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào payload createWorkspace (BUG 2 fix)");
+
 console.log("Automation V3 UI test: PASS");
