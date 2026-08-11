@@ -178,6 +178,14 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
 - **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs ✅ → 6B data model ✅ → **6C UX (wireframe chờ duyệt — CHƯA code)** → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
 
+**6C.1 — UX/WORKFLOW CORRECTION sau test UI thật (ĐÃ TRIỂN KHAI 2026-08-10):**
+- **Root cause (đã trace + reproduce):**
+  - *Duplicate 2 actions sau confirm:* `confirmAction` luôn APPEND (`bindBlock`) — không phân biệt ADD/REPLACE → workspace cũ có binding sẵn → append tạo item thứ 2 ("Đăng nhập · Dùng lại · Nháp" = block REUSABLE cũ sau saveReuse bị DRAFT).
+  - *"0/1 đã xác nhận":* `updateBlock(scope REUSABLE, label)` reset status DRAFT (đổi metadata nhưng mất CONFIRMED).
+  - *409 sau Duyệt recording:* approve lần 2 trên recording đã APPROVED → `INVALID_STATE_TRANSITION`; page không clear `notice` cũ → thấy "Recording đã được duyệt." + error đồng thời.
+- **Fixes:** ADD/REPLACE semantics (confirm đầu = REPLACE toàn bộ binding; `[+ Thêm thao tác]` = APPEND; `[Thay thế]` = REPLACE đúng item + giữ vị trí cũ) · `updateActionBlock` chỉ reset DRAFT khi NỘI DUNG (steps/range) đổi, đổi label/scope giữ CONFIRMED · **Bỏ tab Recording + nút "Duyệt recording" khỏi drawer** (recording chỉ là source/evidence; "Xem bản ghi nguồn" read-only trong expand thao tác) · status rõ "✓ Đã xác nhận" / "⚠ Chưa xác nhận" (+ nút Xác nhận) · Generate gate yêu cầu **TẤT CẢ** thao tác CONFIRMED, message `Thao tác 'X' chưa được xác nhận.` · label hiển thị = label đã lưu hoặc derive từ tên testcase (không AI) · compact drawer/action list (`[Xem]` expand steps).
+- Test mới `tests/automation-v3-workflow-test.js` (fresh workflow TC001 + A no-duplicate + B append + C replace giữ vị trí + D DRAFT chặn + E không success+error + F trace recording + G snapshot + H migration không duplicate). Regression 11/11 PASS + build OK.
+
 **6C — UX CORRECTION (ĐÃ TRIỂN KHAI 2026-08-10 theo wireframe đã duyệt `docs/v3-automation-composition-wireframe.md`):**
 - **Mental model:** TESTCASE → THAO TÁC → KẾT QUẢ MONG ĐỢI/ĐIỀU KIỆN XÁC NHẬN → SINH AUTOMATION.
 - Card: primary `[Tạo Automation] / [Tiếp tục Automation] / [Xem Automation]` + hiển thị Expected Result + "Thao tác: n đã xác nhận".

@@ -260,6 +260,7 @@ export default function AutomationV3Page() {
     const handleApprove = async detail => {
         if (!detail) return;
         setError("");
+        setNotice(""); // 6C.1 — không để notice cũ hiện cùng error mới (tránh success+error đồng thời).
         setBusy(true);
         try {
             await approveRecording(workspace.workspaceId, detail.recordingId);
@@ -445,7 +446,6 @@ export default function AutomationV3Page() {
                     testCase={drawerTestcase}
                     initialTab={drawerTab}
                     onClose={() => setDrawerTestcase(null)}
-                    onApprove={handleApprove}
                     onGenerate={handleGenerate}
                     onChanged={refreshWorkspace}
                 />

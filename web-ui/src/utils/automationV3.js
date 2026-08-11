@@ -269,20 +269,27 @@ export const MATCHER_OPTIONS = [
     { value: "toHaveCount", label: "Đúng số lượng" }
 ];
 
-/** Gate Generate (điểm giữ cứng — wireframe 5C mục 8): chọn Automation + confirmed segment + ≥1 TESTER_CONFIRMED. */
+/** Gate Generate (6C.1 — TẤT CẢ thao tác trong binding phải CONFIRMED + ≥1 assertion TESTER_CONFIRMED). */
 export function canGenerateForTestcase(testCase) {
     if (!testCase) return false;
     if (testCase.selectedForAutomation !== true) return false;
-    const segConfirmed = (testCase.segmentSummary?.confirmed ?? 0) > 0;
+    const segs = testCase.segmentSummary ?? { total: 0, confirmed: 0, draft: 0 };
+    const allConfirmed = segs.total > 0 && segs.confirmed === segs.total;
     const assertionConfirmed = (testCase.assertionStatus?.confirmed ?? 0) > 0;
-    return segConfirmed && assertionConfirmed;
+    return allConfirmed && assertionConfirmed;
 }
 
 /** Lý do chưa thể Generate (message gợi ý cho UI, không phải lỗi API). */
 export function generateGateReason(testCase) {
     if (!testCase) return "Testcase chưa có dữ liệu.";
     if (testCase.selectedForAutomation !== true) return "Testcase chưa được chọn để tự động hóa.";
-    if ((testCase.segmentSummary?.confirmed ?? 0) === 0) return "Chưa có đoạn thao tác đã xác nhận.";
+    const segs = testCase.segmentSummary ?? { total: 0, confirmed: 0, draft: 0 };
+    if (segs.total === 0) return "Chưa có thao tác nào.";
+    if (segs.confirmed !== segs.total) {
+        const draftItem = (Array.isArray(testCase.segments) ? testCase.segments : []).find(s => s.status !== "CONFIRMED");
+        const name = draftItem?.label || testCase.title || "thao tác";
+        return `Thao tác '${name}' chưa được xác nhận.`;
+    }
     if ((testCase.assertionStatus?.confirmed ?? 0) === 0) return "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.";
     return null;
 }

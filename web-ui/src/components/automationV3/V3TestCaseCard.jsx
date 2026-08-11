@@ -97,7 +97,7 @@ export default function V3TestCaseCard({
                     ) : null}
                     <div className="v3-card__row v3-card__row--muted">
                         {segments.length > 0
-                            ? `Thao tác: ${segSummary.confirmed}/${segSummary.total} đã xác nhận`
+                            ? `Thao tác: ${segSummary.confirmed === segSummary.total ? "✓" : "⚠"} ${segSummary.confirmed}/${segSummary.total} đã xác nhận`
                             : "Chưa có thao tác"}
                     </div>
                     {primary ? (

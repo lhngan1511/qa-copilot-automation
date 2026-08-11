@@ -758,7 +758,7 @@ export default class AutomationWorkspaceApplicationService {
         return { blockId, testCaseIds: this.workspace.getBlockUsage(workspaceId, blockId) };
     }
 
-    /** DTO block (không lộ field nội bộ). */
+    /** DTO block (không lộ field nội bộ). Kèm steps sanitized để UI "Xem" expanded. */
     blockDto(b) {
         return {
             blockId: b.blockId,
@@ -770,6 +770,13 @@ export default class AutomationWorkspaceApplicationService {
             startStep: b.sourceRange?.startStep ?? null,
             endStep: b.sourceRange?.endStep ?? null,
             stepCount: (b.steps ?? []).length,
+            steps: (b.steps ?? []).map(s => ({
+                order: s.order,
+                actionType: s.actionType,
+                locator: s.locator,
+                target: s.target,
+                recordedValue: s.sensitive ? "••••" : (s.recordedValue ?? "")
+            })),
             status: b.status,
             version: b.version,
             hash: b.hash ?? null,
@@ -953,7 +960,9 @@ export default class AutomationWorkspaceApplicationService {
                     fail(V3_ERRORS.SEGMENT_MAPPING_INVALID, "Chưa xác định đầy đủ đoạn thao tác cho testcase.");
                 }
                 if (block.status !== "CONFIRMED") {
-                    fail(V3_ERRORS.SEGMENT_NOT_CONFIRMED, "Bản ghi thao tác chưa được xác nhận.");
+                    // 6C.1 — nói rõ thao tác nào chưa xác nhận (không dùng chữ 'Nháp' mơ hồ).
+                    const name = block.label || entry.title || "thao tác";
+                    fail(V3_ERRORS.SEGMENT_NOT_CONFIRMED, `Thao tác '${name}' chưa được xác nhận.`);
                 }
             }
             blocksPayload = seq;
@@ -1074,7 +1083,9 @@ export default class AutomationWorkspaceApplicationService {
                 stepCount: (b.steps ?? []).length,
                 type: b.kind,
                 testCaseId: entry.testCaseId,
-                status: b.status
+                status: b.status,
+                label: b.label ?? null,
+                scope: b.scope ?? "PRIVATE"
             };
         }).filter(Boolean);
         return {

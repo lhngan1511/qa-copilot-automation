@@ -195,7 +195,8 @@ assert.ok(!pageClean2.includes("getRecordingSource"), "page không tải source 
 // ---- Bước 5B: Drawer 2 tab (Thông tin, Recording), không tab Dữ liệu ----
 const drawer = read("components/automationV3/V3ReviewDrawer.jsx");
 const drawerClean = stripComments(drawer);
-assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Recording"), "2 tab Thông tin/Recording");
+assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Thao tác") && drawerClean.includes("Kết quả mong đợi"), "tabs 6C.1 (không Recording)");
+assert.ok(!drawerClean.includes("Duyệt recording"), "6C.1: không còn Duyệt recording (recording không là business gate)");
 assert.ok(!drawerClean.includes("Dữ liệu"), "không có tab Dữ liệu ở 5B");
 assert.ok(!/run ?testcase|"RUN"|runStatus/i.test(drawerClean), "Drawer không Run (Bước 6)");
 
@@ -296,14 +297,16 @@ assert.ok(apiSource.includes("generateTestcase"), "api generate");
 // ---- 24. Pure helpers 5C ----
 assert.equal(decisionLabel("AUTOMATED"), "Có automation", "nhãn quyết định (giữ)");
 const canGen = utils.canGenerateForTestcase;
-assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 1 } }), true, "đủ gate");
-assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 0 }, assertionStatus: { confirmed: 1 } }), false, "thiếu segment confirmed");
-assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 0 } }), false, "thiếu assertion confirmed");
-assert.equal(canGen({ selectedForAutomation: false, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 1 } }), false, "chưa chọn automation");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 1 } }), true, "đủ gate");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 0 }, assertionStatus: { confirmed: 1 } }), false, "thiếu segment confirmed");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 2, confirmed: 1 }, assertionStatus: { confirmed: 1 } }), false, "6C.1: TẤT CẢ thao tác phải CONFIRMED");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 0 } }), false, "thiếu assertion confirmed");
+assert.equal(canGen({ selectedForAutomation: false, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 1 } }), false, "chưa chọn automation");
 assert.equal(utils.assertionTypeLabel("TEXT_VISIBLE"), "Hiển thị nội dung", "nhãn loại");
 assert.equal(utils.assertionStatusLabel("TESTER_CONFIRMED"), "Đã xác nhận", "nhãn trạng thái");
 assert.equal(utils.matcherLabel("toBeHidden"), "Không hiển thị", "nhãn matcher");
-assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { confirmed: 1 }, assertionStatus: { confirmed: 0 } }), "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "lý do gate");
+assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 0 } }), "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "lý do gate");
+assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 0 }, segments: [{ status: "DRAFT", label: "Đăng nhập" }], assertionStatus: { confirmed: 1 } }), "Thao tác 'Đăng nhập' chưa được xác nhận.", "lý do gate 6C.1");
 
 // ---- 25. Page: nối Generate từ drawer ----
 assert.ok(pageClean2.includes("generateTestcase"), "page gọi generateTestcase");
@@ -328,7 +331,7 @@ assert.ok(actPanel.includes("Dùng toàn bộ bản ghi") && actPanel.includes("
 assert.ok(actPanel.includes("Bạn muốn dùng phần nào cho"), "hỏi đúng context testcase");
 assert.ok(actPanel.includes("Đã chọn bước") && actPanel.includes("Xác nhận thao tác"), "preview range rõ + xác nhận");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác"), "màn D: danh sách + 1 nút thêm");
-assert.ok(actPanel.includes("Lưu thao tác để dùng lại"), "reuse là tùy chọn phụ");
+assert.ok(actPanel.includes("Lưu để dùng lại"), "reuse là tùy chọn phụ");
 assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");
 assert.ok(actPanel.includes("↑") && actPanel.includes("↓"), "sắp xếp thứ tự ↑↓");
 assert.ok(!actPanel.includes("ActionBlock") && !actPanel.includes("Composition Path"), "KHÔNG lộ thuật ngữ kỹ thuật trong UI");

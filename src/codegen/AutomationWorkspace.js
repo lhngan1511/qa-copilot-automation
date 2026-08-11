@@ -353,11 +353,13 @@ export default class AutomationWorkspace {
         return { ...block };
     }
 
-    /** Sửa ActionBlock — đổi range/label/scope/kind → status DRAFT + version++ (snapshot chốt lại). */
+    /** Sửa ActionBlock — đổi steps/sourceRange → DRAFT + version++ (nội dung đổi, phải xác nhận lại);
+     *  đổi label/scope/kind (metadata) → GIỮ nguyên status (không phá CONFIRMED — 6C.1). */
     updateActionBlock(workspaceId, blockId, { label = undefined, scope = undefined, kind = undefined, steps = undefined, sourceRange = undefined } = {}) {
         const ws = this.get(workspaceId);
         const block = this.getActionBlock(workspaceId, blockId);
         if (!ws || !block) return null;
+        const contentChanged = steps !== undefined || sourceRange !== undefined;
         if (label !== undefined) block.label = String(label).trim() || null;
         if (scope !== undefined) block.scope = scope === "REUSABLE" ? "REUSABLE" : "PRIVATE";
         if (kind !== undefined) block.kind = kind === "SETUP" ? "SETUP" : "ACTION";
@@ -365,11 +367,13 @@ export default class AutomationWorkspace {
         if (sourceRange !== undefined) {
             block.sourceRange = sourceRange && Number.isInteger(sourceRange.startStep) ? { startStep: sourceRange.startStep, endStep: sourceRange.endStep } : null;
         }
-        // Mọi thay đổi → quay về DRAFT + bump version (block phải được tester xác nhận lại).
-        block.status = "DRAFT";
-        block.confirmedAt = null;
-        block.confirmedBy = null;
-        block.version = (block.version || 1) + 1;
+        // Chỉ nội dung thao tác đổi mới quay về DRAFT; metadata (tên/scope/kind) giữ CONFIRMED.
+        if (contentChanged) {
+            block.status = "DRAFT";
+            block.confirmedAt = null;
+            block.confirmedBy = null;
+            block.version = (block.version || 1) + 1;
+        }
         block.hash = this.blockHash(block);
         block.updatedAt = new Date().toISOString();
         ws.updatedAt = new Date().toISOString();

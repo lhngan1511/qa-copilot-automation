@@ -208,7 +208,7 @@ async function main() {
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC003/binding/blocks`, { blockId: blkTc3.body.blockId });
     const gen3b = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC003/generate`);
     assert.equal(gen3b.body.errorCode, "SEGMENT_NOT_CONFIRMED", "DRAFT không generate");
-    assert.equal(gen3b.body.message, "Bản ghi thao tác chưa được xác nhận.", "message chuẩn");
+    assert.equal(gen3b.body.message, "Thao tác 'Xóa đơn vị tính' chưa được xác nhận.", "message chuẩn 6C.1 (tên thao tác/testcase)");
 
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/blocks/${blkTc3.body.blockId}/confirm`);
     await addConfirmedAssertion(baseUrl, wid, "TC003");

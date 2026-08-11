@@ -1,163 +1,70 @@
-import { useEffect, useState } from "react";
-import { listRecordings, getRecordingDetail } from "../../api/automationV3Api.js";
+import { useState } from "react";
 import { canGenerateForTestcase, generateGateReason } from "../../utils/automationV3.js";
-import V3RecordingTab from "./V3RecordingTab.jsx";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 
 /*
- V3ReviewDrawer — Drawer (6C: TESTCASE luôn là context chính).
+ V3ReviewDrawer — Drawer (6C + 6C.1: TESTCASE luôn là context chính).
 
-   Header: TCxxx · tên testcase + Expected Result + trạng thái automation (giữ ở mọi tab)
-   Tabs  : Thông tin | Thao tác (6C) | Recording | Kết quả mong đợi (5C)
-   Footer: [Đóng] + hành động chính theo tab:
-     - Recording  → [Duyệt recording]
-     - Kết quả mong đợi → [Sinh automation] (chỉ khi đủ gate: chọn Automation + thao tác CONFIRMED + ≥1 TESTER_CONFIRMED)
-   Một primary action duy nhất — không Generate trên card.
+   Header: TCxxx · tên testcase + Expected Result ngắn + trạng thái automation (giữ ở mọi tab)
+   Tabs  : Thông tin | Thao tác | Kết quả mong đợi
+     - KHÔNG còn tab Recording như primary workflow (6C.1: recording chỉ là source/evidence;
+       "Xem bản ghi nguồn" read-only nằm trong expand của thao tác).
+     - KHÔNG còn "Duyệt recording" (không business gate thứ hai sau Xác nhận thao tác).
+   Footer: [Đóng] + [Sinh automation] (chỉ ở tab Kết quả mong đợi, khi đủ gate:
+     chọn Automation + TẤT CẢ thao tác CONFIRMED + ≥1 assertion TESTER_CONFIRMED).
 */
 
-export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "recording", onClose, onApprove, onGenerate, onChanged, onError }) {
+export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onChanged, onError }) {
     const [tab, setTab] = useState(initialTab);
-    const [versions, setVersions] = useState([]);
-    const [selectedId, setSelectedId] = useState(null);
-    const [detail, setDetail] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            setLoading(true);
-            setError("");
-            try {
-                const list = await listRecordings(workspaceId, testCase.testCaseId);
-                if (cancelled) return;
-                const arr = Array.isArray(list) ? list : [];
-                setVersions(arr);
-                const latest = arr[0] ?? null;
-                setSelectedId(latest?.recordingId ?? null);
-                if (latest) {
-                    const d = await getRecordingDetail(workspaceId, latest.recordingId);
-                    if (!cancelled) setDetail(d);
-                }
-            } catch (e) {
-                if (!cancelled) setError(e?.message ?? "Không tải được recording.");
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        })();
-        return () => { cancelled = true; };
-    }, [workspaceId, testCase.testCaseId]);
-
-    const selectVersion = async recordingId => {
-        setSelectedId(recordingId);
-        setDetail(null);
-        setLoading(true);
-        try {
-            const d = await getRecordingDetail(workspaceId, recordingId);
-            setDetail(d);
-        } catch (e) {
-            setError(e?.message ?? "Không tải được recording.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const canGenerate = canGenerateForTestcase(testCase);
     const gateReason = generateGateReason(testCase);
+    const expected = String(testCase.expectedResult ?? "").trim();
+    const segCount = testCase.segmentSummary?.total ?? 0;
 
     return (
-        <div className="v3-drawer" role="dialog" aria-modal="true" aria-label={`Review ${testCase.testCaseId}`}>
+        <div className="v3-drawer" role="dialog" aria-modal="true" aria-label={`Automation ${testCase.testCaseId}`}>
             <div className="v3-drawer__head">
                 <div>
                     <b>{testCase.testCaseId} · {testCase.title}</b>
                     <div className="v3-drawer__sub">
-                        {testCase.expectedResult ? <span>Kết quả mong đợi: {testCase.expectedResult}</span> : null}
-                        <span>Automation: {(testCase.segments?.length ?? 0) > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</span>
+                        {expected ? <span>Kết quả mong đợi: {expected.length > 70 ? `${expected.slice(0, 70)}…` : expected}</span> : null}
+                        <span>Automation: {segCount > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</span>
                     </div>
                 </div>
                 <button type="button" className="v3-drawer__close" onClick={onClose} aria-label="Đóng">✕</button>
             </div>
 
             <div className="v3-drawer__tabs">
-                <button
-                    type="button"
-                    className={`v3-drawer__tab${tab === "info" ? " v3-drawer__tab--on" : ""}`}
-                    onClick={() => setTab("info")}
-                >
+                <button type="button" className={`v3-drawer__tab${tab === "info" ? " v3-drawer__tab--on" : ""}`} onClick={() => setTab("info")}>
                     Thông tin
                 </button>
                 {testCase.selectedForAutomation ? (
-                    <button
-                        type="button"
-                        className={`v3-drawer__tab${tab === "actions" ? " v3-drawer__tab--on" : ""}`}
-                        onClick={() => setTab("actions")}
-                    >
+                    <button type="button" className={`v3-drawer__tab${tab === "actions" ? " v3-drawer__tab--on" : ""}`} onClick={() => setTab("actions")}>
                         Thao tác
                     </button>
                 ) : null}
-                <button
-                    type="button"
-                    className={`v3-drawer__tab${tab === "recording" ? " v3-drawer__tab--on" : ""}`}
-                    onClick={() => setTab("recording")}
-                >
-                    Recording
-                </button>
                 {testCase.selectedForAutomation ? (
-                    <button
-                        type="button"
-                        className={`v3-drawer__tab${tab === "expected" ? " v3-drawer__tab--on" : ""}`}
-                        onClick={() => setTab("expected")}
-                    >
+                    <button type="button" className={`v3-drawer__tab${tab === "expected" ? " v3-drawer__tab--on" : ""}`} onClick={() => setTab("expected")}>
                         Kết quả mong đợi
                     </button>
                 ) : null}
             </div>
 
             <div className="v3-drawer__body">
-                {error ? <div className="v3-banner v3-banner--error">{error}</div> : null}
-
                 {tab === "info" ? (
-                    <div className="v3-info-tab">
-                        <div className="v3-info-row"><span>Testcase</span><b>{testCase.testCaseId}</b></div>
+                    <div className="v3-info-tab v3-info-tab--compact">
+                        <div className="v3-info-row"><span>TC</span><b>{testCase.testCaseId} · {testCase.type}</b></div>
                         <div className="v3-info-row"><span>Tiêu đề</span><b>{testCase.title}</b></div>
-                        <div className="v3-info-row"><span>Loại</span><b>{testCase.type}</b></div>
                         <div className="v3-info-row"><span>Module</span><b>{testCase.module || "—"}</b></div>
-                        <div className="v3-info-row"><span>Trạng thái</span><b>{testCase.automationStatus ?? "—"}</b></div>
+                        <div className="v3-info-row"><span>Automation</span><b>{segCount > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</b></div>
+                        {expected ? <div className="v3-info-row"><span>Kết quả mong đợi</span><b>{expected}</b></div> : null}
                     </div>
                 ) : tab === "actions" ? (
-                    <V3ActionSetupPanel
-                        workspaceId={workspaceId}
-                        testCase={testCase}
-                        onChanged={onChanged}
-                        onError={setError}
-                    />
-                ) : tab === "expected" ? (
-                    <V3ExpectedResultTab
-                        workspaceId={workspaceId}
-                        testCase={testCase}
-                        onChanged={onChanged}
-                        onError={setError}
-                    />
+                    <V3ActionSetupPanel workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
                 ) : (
-                    <>
-                        {versions.length > 1 ? (
-                            <div className="v3-versions">
-                                <span className="v3-versions__label">Phiên bản:</span>
-                                {versions.map(v => (
-                                    <button
-                                        key={v.recordingId}
-                                        type="button"
-                                        className={`v3-versions__chip${v.recordingId === selectedId ? " v3-versions__chip--on" : ""}`}
-                                        onClick={() => selectVersion(v.recordingId)}
-                                    >
-                                        v{v.version ?? "?"}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : null}
-                        <V3RecordingTab workspaceId={workspaceId} detail={detail} loading={loading} />
-                    </>
+                    <V3ExpectedResultTab workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
                 )}
             </div>
 
@@ -173,16 +80,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "re
                     >
                         Sinh automation
                     </button>
-                ) : (
-                    <button
-                        type="button"
-                        className="v3-btn v3-btn--primary"
-                        disabled={!detail}
-                        onClick={() => onApprove?.(detail)}
-                    >
-                        Duyệt recording
-                    </button>
-                )}
+                ) : null}
             </div>
         </div>
     );
