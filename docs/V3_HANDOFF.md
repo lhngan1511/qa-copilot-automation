@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN → ACTION LIBRARY OWNERSHIP CORRECTION (2026-08-10, DESIGN + WIREFRAME — CHỜ DUYỆT, CHƯA CODE):**
+- Vấn đề: Action Library đã có (shared asset) nhưng UX ownership sai — `V3ActionSetupPanel` vẫn làm cả recording preparation lẫn composition (screen source/paste/library/list).
+- Kiến trúc bắt buộc: **Codegen = owner Recording Preparation** (record/paste/parse/[Phân tích bản ghi]/cut → proposal review → confirm → chủ động Lưu Library) · **Automation Workspace = owner Composition** (primary `[+ Thêm thao tác từ thư viện]`; `[Tạo thao tác mới từ bản ghi]` fallback; repeat D→E→D giữ).
+- Không phá foundation (parser/ActionBlock snapshot/recordedAssertions/Library shared/repeat/reorder/Generate); không migration dữ liệu Library; chỉ thay ownership + UX.
+- AI: output = proposal review được (Đề xuất 1 · Bước 1→4 · Tên · Evidence · [Xác nhận][Chỉnh phạm vi][Đổi tên][Bỏ qua]); confirm → snapshot từ recording thật → chủ động lưu Library; không tin step AI; không tự map.
+- Docs: `V3_CODEGEN_OWNERSHIP_CORRECTION_DESIGN.md` (impact: giữ/chuyển/bỏ component; API reuse/thêm; state transition) + `v3-codegen-ownership-wireframe.md` (3 màn).
+
 **BOUNDARY — ACTION LIBRARY (MVP ĐÃ IMPLEMENT 2026-08-10, theo duyệt):**
 - **Action Library = shared asset**: `src/codegen/ActionLibrary.js` + `data/action-library.json` (độc lập workspace). `POST /library` (lưu, label bắt buộc), `GET /library` (kèm usage **derive từ bindings mọi workspace** — KHÔNG lưu usedByTestCases), `POST /testcases/:id/library/blocks` (dùng từ Library).
 - **Không migration block cũ** — compatibility: block workspace vẫn dùng; chỉ đưa vào Library khi tester chủ động `[Lưu vào thư viện]` (UI nút đổi nhãn từ "Lưu để dùng lại").
