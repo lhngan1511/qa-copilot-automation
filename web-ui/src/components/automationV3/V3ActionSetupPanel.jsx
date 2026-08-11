@@ -90,21 +90,21 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     useEffect(() => {
         refreshBinding().then(() => {
             // Binding rỗng → mở luôn màn chọn nguồn (replaceAll).
-            setScreen(prev => (prev === "list" ? (binding.length === 0 ? "source" : "list") : prev));
+            setScreen(prev => (prev === "list" ? (binding.length === 0 ? "library" : "list") : prev));
         });
     }, [refreshBinding, binding.length]);
 
     /* ---------- Điều hướng nguồn thao tác ---------- */
 
-    const openSource = (mode2 = "replaceAll") => {
-        setLocalError("");
+    // Phase 1 — Ownership: bỏ màn chọn nguồn ngang hàng.
+    // primary = mở Library; fallback = mở paste (cut-many). addMode theo ngữ cảnh append/replaceAll.
+    const openSource = (mode2 = "append") => {
         setAddMode(mode2);
-        setSource("");
-        setSteps([]);
-        setMode("all");
-        setStartSel(null);
-        setEndSel(null);
-        setScreen("source");
+        openLibrary();
+    };
+    const openFallbackPaste = (mode2 = "append") => {
+        setAddMode(mode2);
+        openPaste();
     };
 
     const openPaste = () => {
@@ -223,7 +223,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         }
     };
 
-    const handleReplace = item => openSource({ type: "replaceOne", blockId: item.blockId, order: item.order });
+    const handleReplace = item => openFallbackPaste({ type: "replaceOne", blockId: item.blockId, order: item.order });
 
     const handleMove = async (index, dir) => {
         if (saving) return;
@@ -391,8 +391,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         ))
                     )}
                     <div className="v3-act__add">
-                        <button type="button" className="v3-btn v3-btn--secondary" onClick={() => openSource("append")} disabled={saving}>
-                            + Thêm thao tác
+                        <button type="button" className="v3-btn v3-btn--primary" onClick={openLibrary} disabled={saving}>
+                            + Thêm thao tác từ thư viện
                         </button>
                         {lastRecording ? (
                             <button
@@ -415,29 +415,16 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         ) : null}
                     </div>
                     <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
+                    <p className="v3-act__note">
+                        Không có thao tác phù hợp?{" "}
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => openFallbackPaste("append")} disabled={saving}>
+                            Tạo thao tác mới từ bản ghi
+                        </button>
+                    </p>
                 </div>
             ) : null}
 
-            {/* ---------- Màn chọn nguồn (màn B) ---------- */}
-            {screen === "source" ? (
-                <div className="v3-act__source">
-                    <p className="v3-act__note">
-                        {addMode === "append"
-                            ? "Bạn muốn lấy thao tác thêm từ đâu?"
-                            : addMode && addMode.type === "replaceOne"
-                                ? "Bạn muốn thay thế bằng thao tác lấy từ đâu?"
-                                : "Testcase này chưa có thao tác automation."}
-                    </p>
-                    <div className="v3-act__source-actions">
-                        <button type="button" className="v3-btn v3-btn--primary" onClick={openPaste} disabled={saving}>
-                            Dán bản ghi Playwright
-                        </button>
-                        <button type="button" className="v3-btn v3-btn--secondary" onClick={openLibrary} disabled={saving}>
-                            Dùng thao tác đã có
-                        </button>
-                    </div>
-                </div>
-            ) : null}
+            {/* Màn chọn nguồn (source) đã BỎ — Phase 1 Ownership: Library primary, paste fallback. */}
 
             {/* ---------- Màn dán bản ghi (màn C) ---------- */}
             {screen === "paste" ? (

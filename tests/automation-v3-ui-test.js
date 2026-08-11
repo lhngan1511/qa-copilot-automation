@@ -339,11 +339,14 @@ assert.ok(!cardClean.includes("Sinh automation"), "card không có Sinh automati
 
 // ---- 28. Panel Thao tác (V3ActionSetupPanel): màn B/C/D theo wireframe ----
 const actPanel = stripComments(read("components/automationV3/V3ActionSetupPanel.jsx"));
-assert.ok(actPanel.includes("Dán bản ghi Playwright") && actPanel.includes("Dùng thao tác đã có"), "màn B: chọn nguồn");
+// Phase 1 Ownership: bỏ màn chọn nguồn ngang hàng; primary = Library
+assert.ok(!actPanel.includes("Bạn muốn lấy thao tác thêm từ đâu?"), "không còn màn chọn nguồn ngang hàng");
+assert.ok(actPanel.includes("+ Thêm thao tác từ thư viện"), "primary = thêm từ thư viện");
+assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback = tạo mới từ bản ghi (secondary)");
 assert.ok(actPanel.includes("Dùng toàn bộ bản ghi") && actPanel.includes("Chọn một phần"), "màn C: toàn bộ / một phần");
 assert.ok(actPanel.includes("Bạn muốn dùng phần nào cho"), "hỏi đúng context testcase");
 assert.ok(actPanel.includes("Đã chọn bước") && actPanel.includes("Xác nhận thao tác"), "preview range rõ + xác nhận");
-assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác"), "màn D: danh sách + 1 nút thêm");
+assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
 assert.ok(actPanel.includes("Lấy thêm từ bản ghi"), "Unit-type: lấy thêm từ bản ghi đã dán (không paste lại)");
 assert.ok(actPanel.includes("Xong"), "Unit-type: nút Xong kết thúc cắt bản ghi");
 assert.ok(actPanel.includes("Đoạn đã lưu từ bản ghi này"), "Unit-type: hiển thị đoạn đã lưu khi continue cutting");
