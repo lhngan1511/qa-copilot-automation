@@ -310,6 +310,11 @@ assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSumm
 
 // ---- 25. Page: nối Generate từ drawer ----
 assert.ok(pageClean2.includes("generateTestcase"), "page gọi generateTestcase");
+// ================= P0 — Drawer testcase context (derive từ active workspace, không snapshot stale) =================
+assert.ok(pageClean2.includes("drawerTestCaseId"), "drawer chỉ giữ testCaseId (không giữ object snapshot)");
+assert.ok(pageClean2.includes("workspace?.items ?? []").find ? true : pageClean2.includes("workspace?.items"), "drawer derive testcase từ workspace items");
+assert.ok(!pageClean2.includes("setDrawerTestcase("), "không còn setDrawerTestcase(object) — tránh snapshot stale");
+
 // ================= P0 — Workspace lifecycle =================
 assert.ok(pageClean2.includes("Đã lưu"), "header hiển thị 'Đã lưu' (trạng thái workspace)");
 assert.ok(pageClean2.includes("Workspace gần đây"), "có bộ chọn workspace gần đây (recovery)");

@@ -196,6 +196,11 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — DRAWER TESTCASE CONTEXT MISMATCH (ĐÃ TRIỂN KHAI 2026-08-10):**
+- Root cause: drawer nhận `testCase={drawerTestcase}` (object snapshot set khi mở drawer); khi user chuyển testcase khác (card) trong lúc drawer mở / refresh workspace, `drawerTestcase` không cập nhật → drawer giữ testcase cũ (TC005 trong khi card TC001).
+- Fix: drawer chỉ giữ **`drawerTestCaseId`** (id); `drawerTestcase` được **derive mỗi render từ `workspace.items`** (active workspace) theo id → mọi tab (Thông tin/Thao tác/Kết quả mong đợi) + Generate đều dùng đúng testcase hiện tại. Không còn setDrawerTestcase(object).
+- Test: ui-test asserts (drawerTestCaseId, derive từ workspace.items, không setDrawerTestcase object). Regression 12/12 PASS + build OK.
+
 **P0 — WORKSPACE LIFECYCLE / IDENTITY (ĐÃ TRIỂN KHAI 2026-08-10):**
 - Root cause (trace): browser localStorage `qa-copilot.automation.workspaceId` chỉ giữ 1 id; "Tạo workspace mới" + upload JSON = implicit context switch (handleCreated luôn tạo workspace mới + ghi đè localStorage) → tester mất workspace chứa automation mà không biết.
 - Fix (frontend-only): (A) active workspace giữ ổn định khi reload/drawer/select (không đổi) · (B) "Tạo workspace mới" có data → confirm "Bạn sắp chuyển sang workspace mới. Dữ liệu workspace hiện tại vẫn được lưu." [Hủy]/[Tạo workspace mới] · (C) header "Automation Workspace · module · N testcase · Đã lưu" (raw workspaceId chỉ title/debug) · (D) danh sách **workspace gần đây (tối đa 5)** trong header (select) → chuyển về workspace cũ (recovery tối thiểu, không workspace manager lớn) · (E) không tự tạo workspace ngoài flow user.

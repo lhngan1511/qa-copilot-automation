@@ -76,8 +76,8 @@ export default function AutomationV3Page() {
     // Bước 5B
     const [activeRecording, setActiveRecording] = useState(null); // {testCaseId, recordingId, sessionId, title}
     const [recordingSource, setRecordingSource] = useState("");
-    const [drawerTestcase, setDrawerTestcase] = useState(null);
-    const [drawerTab, setDrawerTab] = useState("recording");
+    const [drawerTestCaseId, setDrawerTestCaseId] = useState(null); // P0: chỉ giữ ID — item derive từ workspace
+    const [drawerTab, setDrawerTab] = useState("actions");
     const [openMenuId, setOpenMenuId] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
     // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
@@ -124,6 +124,12 @@ export default function AutomationV3Page() {
         ? enrichedItems.find(i => i.testCaseId === activeRecording.testCaseId) ?? null
         : null;
 
+    // P0 — Drawer LUÔN derive testcase từ ACTIVE WORKSPACE + id đã chốt (không giữ snapshot stale).
+    const drawerTestcase = useMemo(() => {
+        if (!drawerTestCaseId) return null;
+        return (workspace?.items ?? []).find(i => i.testCaseId === drawerTestCaseId) ?? null;
+    }, [drawerTestCaseId, workspace]);
+
     /** P0 lifecycle — chuyển active workspace (chỉ khi user chủ động chọn từ danh sách gần đây). */
     const switchWorkspace = async wsId => {
         if (!wsId || wsId === workspace?.workspaceId) return;
@@ -133,7 +139,7 @@ export default function AutomationV3Page() {
             const data = await getWorkspace(wsId);
             setWorkspace({ workspaceId: wsId, items: Array.isArray(data.items) ? data.items : [] });
             window.localStorage.setItem(STORAGE_KEY, wsId);
-            setDrawerTestcase(null);
+            setDrawerTestCaseId(null);
             setMappingPanel(null);
             setNotice("Đã chuyển về workspace đã lưu.");
         } catch (e) {
@@ -242,12 +248,12 @@ export default function AutomationV3Page() {
     const handlePrimaryAction = async (key, testCase) => {
         setOpenMenuId(null);
         // 6C — primary theo trạng thái: Tạo/Tiếp tục/Xem Automation → mở Drawer tab "Thao tác" (context TC giữ nguyên).
-        if (key === "setup" || key === "view") { setDrawerTestcase(testCase); setDrawerTab("actions"); }
+        if (key === "setup" || key === "view") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("actions"); }
         else if (key === "record") await handleStart(testCase);
         else if (key === "stop") await handleStop();
-        else if (key === "review") { setDrawerTestcase(testCase); setDrawerTab("recording"); }
+        else if (key === "review") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("recording"); }
         else if (key === "segments") openMappingFor(testCase);
-        else if (key === "conditions") { setDrawerTestcase(testCase); setDrawerTab("expected"); }
+        else if (key === "conditions") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("expected"); }
     };
 
     const openMappingFor = testCase => {
@@ -311,7 +317,7 @@ export default function AutomationV3Page() {
             await generateTestcase(workspace.workspaceId, testCase.testCaseId, {});
             await refreshWorkspace();
             setNotice(`Đã sinh automation cho ${testCase.testCaseId}.`);
-            setDrawerTestcase(null);
+            setDrawerTestCaseId(null);
         } catch (e) {
             setError(e?.message ?? "Không sinh được automation.");
         } finally {
@@ -344,7 +350,7 @@ export default function AutomationV3Page() {
                 recordingId: detail.recordingId,
                 recordingVersion: detail.version
             });
-            setDrawerTestcase(null);
+            setDrawerTestCaseId(null);
             setNotice("Recording đã được duyệt.");
         } catch (e) {
             setError(e?.message ?? "Không duyệt được recording.");
@@ -371,7 +377,7 @@ export default function AutomationV3Page() {
             });
         } else if (action === "record_again" || action === "setup") {
             // 6C — không đẩy panel recording global; mở Drawer tab "Thao tác" trong context testcase.
-            setDrawerTestcase(testCase);
+            setDrawerTestCaseId(testCase.testCaseId);
             setDrawerTab("actions");
         } else if (action === "segments") {
             openMappingFor(testCase);
@@ -548,7 +554,7 @@ export default function AutomationV3Page() {
                     workspaceId={workspace.workspaceId}
                     testCase={drawerTestcase}
                     initialTab={drawerTab}
-                    onClose={() => setDrawerTestcase(null)}
+                    onClose={() => setDrawerTestCaseId(null)}
                     onGenerate={handleGenerate}
                     onChanged={refreshWorkspace}
                 />
