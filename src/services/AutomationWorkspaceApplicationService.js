@@ -728,10 +728,10 @@ export default class AutomationWorkspaceApplicationService {
         return this.bindingDto(workspaceId, testCaseId, binding);
     }
 
-    /** Gỡ block khỏi binding. */
-    unbindBlock({ workspaceId, testCaseId, blockId }) {
+    /** Gỡ block khỏi binding — truyền order để xóa đúng 1 occurrence (D→E→D); không truyền = xóa tất cả. */
+    unbindBlock({ workspaceId, testCaseId, blockId, order = null }) {
         this.ensureTestCase(workspaceId, testCaseId);
-        const binding = this.workspace.unbindBlockFromTestCase(workspaceId, testCaseId, blockId);
+        const binding = this.workspace.unbindBlockFromTestCase(workspaceId, testCaseId, blockId, Number.isInteger(order) ? order : null);
         return this.bindingDto(workspaceId, testCaseId, binding);
     }
 

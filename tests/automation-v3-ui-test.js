@@ -344,6 +344,10 @@ assert.ok(actPanel.includes("Dùng toàn bộ bản ghi") && actPanel.includes("
 assert.ok(actPanel.includes("Bạn muốn dùng phần nào cho"), "hỏi đúng context testcase");
 assert.ok(actPanel.includes("Đã chọn bước") && actPanel.includes("Xác nhận thao tác"), "preview range rõ + xác nhận");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác"), "màn D: danh sách + 1 nút thêm");
+assert.ok(actPanel.includes("Lấy thêm từ bản ghi"), "Unit-type: lấy thêm từ bản ghi đã dán (không paste lại)");
+assert.ok(actPanel.includes("Xong"), "Unit-type: nút Xong kết thúc cắt bản ghi");
+assert.ok(actPanel.includes("Đoạn đã lưu từ bản ghi này"), "Unit-type: hiển thị đoạn đã lưu khi continue cutting");
+
 assert.ok(actPanel.includes("Lưu để dùng lại"), "reuse là tùy chọn phụ");
 assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");
 assert.ok(actPanel.includes("↑") && actPanel.includes("↓"), "sắp xếp thứ tự ↑↓");

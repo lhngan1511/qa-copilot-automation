@@ -49,6 +49,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [source, setSource] = useState("");
     const [steps, setSteps] = useState([]);
     const [recordingId, setRecordingId] = useState(null);
+    // Unit-type: giữ recording đã dán để CẮT TIẾP (RECORD ONCE → CUT MANY) mà không paste lại.
+    const [lastRecording, setLastRecording] = useState(null); // { recordingId, steps }
     const [mode, setMode] = useState("all"); // "all" | "part"
     const [startSel, setStartSel] = useState(null);
     const [endSel, setEndSel] = useState(null);
@@ -131,6 +133,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             const detail = await getRecordingDetail(workspaceId, recId);
             const parsed = Array.isArray(detail.steps) ? detail.steps : [];
             setSteps(parsed);
+            setLastRecording({ recordingId: recId, steps: parsed }); // giữ để cắt tiếp
             setStartSel(parsed.length > 0 ? parsed[0].order : null);
             setEndSel(parsed.length > 0 ? parsed[parsed.length - 1].order : null);
             if (parsed.length === 0) setLocalError("Bản ghi không có thao tác nào.");
@@ -168,8 +171,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             if (addMode === "append") {
                 await bindBlock(workspaceId, testCase.testCaseId, block.blockId);
             } else if (addMode && addMode.type === "replaceOne") {
-                const oldIndex = binding.findIndex(i => i.blockId === addMode.blockId);
-                await unbindBlock(workspaceId, testCase.testCaseId, addMode.blockId);
+                const oldIndex = binding.findIndex(i => i.blockId === addMode.blockId && i.order === addMode.order);
+                await unbindBlock(workspaceId, testCase.testCaseId, addMode.blockId, addMode.order);
                 await bindBlock(workspaceId, testCase.testCaseId, block.blockId);
                 // Giữ vị trí cũ của item được thay thế (tester-owned order).
                 if (oldIndex >= 0) {
@@ -186,9 +189,11 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                 await bindBlock(workspaceId, testCase.testCaseId, block.blockId);
             }
 
-            setScreen("list");
-            setSteps([]);
-            setSource("");
+            // Unit-type: KHÔNG reset recording — giữ steps/recordingId để CẮT TIẾP (RECORD ONCE → CUT MANY).
+            setMode("all");
+            setStartSel(null);
+            setEndSel(null);
+            setScreen("paste");
             await refreshBinding();
             notify();
         } catch (e) {
@@ -215,7 +220,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         }
     };
 
-    const handleReplace = item => openSource({ type: "replaceOne", blockId: item.blockId });
+    const handleReplace = item => openSource({ type: "replaceOne", blockId: item.blockId, order: item.order });
 
     const handleMove = async (index, dir) => {
         if (saving) return;
@@ -386,6 +391,25 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         <button type="button" className="v3-btn v3-btn--secondary" onClick={() => openSource("append")} disabled={saving}>
                             + Thêm thao tác
                         </button>
+                        {lastRecording ? (
+                            <button
+                                type="button"
+                                className="v3-btn v3-btn--ghost"
+                                onClick={() => {
+                                    // Unit-type: lấy thêm từ bản ghi đã dán (KHÔNG paste lại).
+                                    setRecordingId(lastRecording.recordingId);
+                                    setSteps(lastRecording.steps);
+                                    setMode("all");
+                                    setStartSel(null);
+                                    setEndSel(null);
+                                    setAddMode("append");
+                                    setScreen("paste");
+                                }}
+                                disabled={saving}
+                            >
+                                + Lấy thêm từ bản ghi
+                            </button>
+                        ) : null}
                     </div>
                     <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
                 </div>
@@ -432,6 +456,20 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
                     {steps.length > 0 ? (
                         <div className="v3-act__range">
+                            {/* Unit-type: đoạn đã lưu từ bản ghi này — cắt tiếp, không paste lại */}
+                            {binding.filter(i => i.sourceRecordingId === recordingId).length > 0 ? (
+                                <div className="v3-act__saved">
+                                    <p className="v3-act__note">Đoạn đã lưu từ bản ghi này:</p>
+                                    {binding.filter(i => i.sourceRecordingId === recordingId).map(i => (
+                                        <div key={`${i.blockId}-${i.order}`} className="v3-cond v3-cond--compact">
+                                            <div className="v3-cond__body">
+                                                <b>{i.label || "Thao tác"} · bước {i.startStep} → {i.endStep}</b>
+                                                <span className="v3-cond__meta">{i.stepCount} thao tác · {i.status === "CONFIRMED" ? "✓ Đã xác nhận" : "⚠ Chưa xác nhận"}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
                             <p className="v3-act__note">Bạn muốn dùng phần nào cho {testCase.testCaseId}?</p>
                             <label className="v3-radio">
                                 <input type="radio" name="use-mode" checked={mode === "all"} onChange={() => setMode("all")} />
@@ -477,12 +515,17 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                             ) : null}
 
                             <div className="v3-act__range-actions">
-                                <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setScreen("list")} disabled={saving}>
+                                <button type="button" className="v3-btn v3-btn--ghost" onClick={() => { setSteps([]); setSource(""); setScreen("list"); }} disabled={saving}>
                                     Hủy
                                 </button>
                                 <button type="button" className="v3-btn v3-btn--primary" onClick={confirmAction} disabled={!selRange || saving}>
                                     {saving ? "Đang lưu…" : "Xác nhận thao tác"}
                                 </button>
+                                {binding.filter(i => i.sourceRecordingId === recordingId).length > 0 ? (
+                                    <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setScreen("list")} disabled={saving}>
+                                        Xong
+                                    </button>
+                                ) : null}
                             </div>
                         </div>
                     ) : null}

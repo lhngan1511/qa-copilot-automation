@@ -132,6 +132,24 @@ async function main() {
     const genG = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, { confirmedTestData: {} });
     assert.equal(genG.status, 200, "G: generate vẫn chạy sau khi xóa recording (snapshot)");
 
+    // ===== I. Unit-type: repeated block D -> E -> D (cùng blockId nhiều lần) — workspace riêng =====
+    const createdI = await req(baseUrl, "POST", "/api/automation-v3/workspaces", { source: "NEW", module: "Login", approvedTestCases: APPROVED });
+    const widI = createdI.body.workspaceId;
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/select`);
+    const recD = await pasteRecording(baseUrl, widI, SRC8);
+    const blkD = await confirmAction(baseUrl, widI, "TC001", recD, 1, 2);
+    await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/binding/blocks`, { blockId: blkD });
+    const bindD2 = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/binding/blocks`, { blockId: blkD });
+    assert.equal(bindD2.body.sequence.length, 2, "I: bind cùng block 2 lần -> 2 occurrence");
+    // reorder giữ cả 2 (D, D) — multiset
+    const reorderD = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/binding/reorder`, { blockIds: [blkD, blkD] });
+    assert.equal(reorderD.body.sequence.length, 2, "I: reorder giữ 2 occurrence");
+    assert.deepEqual(reorderD.body.sequence.map(x => x.blockId), [blkD, blkD], "I: cả 2 là block D");
+    // unbind 1 occurrence theo order -> còn 1
+    const unbindOne = await req(baseUrl, "DELETE", `/api/automation-v3/workspaces/${widI}/testcases/TC001/binding/blocks/${blkD}?order=2`);
+    assert.equal(unbindOne.body.sequence.length, 1, "I: unbind 1 occurrence theo order -> còn 1");
+    assert.equal(unbindOne.body.sequence[0].blockId, blkD, "I: occurrence còn lại là D");
+
     // ===== H. Legacy migration không duplicate sau reload =====
     const wsH1 = await req(baseUrl, "GET", `/api/automation-v3/workspaces/${wid}`);
     const blocksH1 = wsH1.body.items.find(i => i.testCaseId === "TC001").segments.length;

@@ -237,7 +237,8 @@ export default function createAutomationV3Routes({ applicationService = null } =
         svc.unbindBlock({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
-            blockId: req.params.blockId
+            blockId: req.params.blockId,
+            order: req.query?.order !== undefined ? Number(req.query.order) : null
         })));
 
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/binding/reorder", handle(applicationService, (svc, req) =>

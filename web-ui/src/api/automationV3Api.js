@@ -213,10 +213,12 @@ export function bindBlock(workspaceId, testCaseId, blockId) {
     );
 }
 
-/** DELETE .../testcases/:testCaseId/binding/blocks/:blockId — gỡ thao tác khỏi testcase. */
-export function unbindBlock(workspaceId, testCaseId, blockId) {
+/** DELETE .../testcases/:testCaseId/binding/blocks/:blockId — gỡ thao tác khỏi testcase.
+ *  Truyền ?order=N để xóa ĐÚNG 1 occurrence (D→E→D); không truyền = xóa tất cả. */
+export function unbindBlock(workspaceId, testCaseId, blockId, order = null) {
+    const q = Number.isInteger(order) ? `?order=${order}` : "";
     return apiClient.delete(
-        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks/${encodeURIComponent(blockId)}`
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks/${encodeURIComponent(blockId)}${q}`
     );
 }
 

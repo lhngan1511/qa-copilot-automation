@@ -431,44 +431,72 @@ export default class AutomationWorkspace {
         return { ...entry.binding };
     }
 
-    /** Gán block vào binding (append cuối — tester-owned order; không tự sắp xếp). */
+    /** Gán block vào binding (append — tester-owned order; KHÔNG tự sắp xếp).
+     *  Unit-type: cho phép CÙNG blockId xuất hiện NHIỀU LẦN (D → E → D). */
     bindBlockToTestCase(workspaceId, testCaseId, blockId) {
         const ws = this.get(workspaceId);
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!ws || !entry) return null;
         const seq = (entry.binding?.sequence ?? []).slice();
-        if (!seq.some(ref => ref.blockId === blockId)) {
-            const maxOrder = seq.reduce((m, r) => Math.max(m, r.order || 0), 0);
-            seq.push({ blockId, order: maxOrder + 1 });
-            entry.binding = { sequence: seq };
-            ws.updatedAt = new Date().toISOString();
-            this.persist();
-        }
-        return { ...entry.binding };
-    }
-
-    /** Gỡ block khỏi binding. */
-    unbindBlockFromTestCase(workspaceId, testCaseId, blockId) {
-        const ws = this.get(workspaceId);
-        const entry = this.getTestCase(workspaceId, testCaseId);
-        if (!ws || !entry) return null;
-        entry.binding = { sequence: (entry.binding?.sequence ?? []).filter(ref => ref.blockId !== blockId) };
+        const maxOrder = seq.reduce((m, r) => Math.max(m, r.order || 0), 0);
+        seq.push({ blockId, order: maxOrder + 1 });
+        entry.binding = { sequence: seq };
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return { ...entry.binding };
     }
 
-    /** Sắp xếp lại sequence — đúng thứ tự tester xác nhận (Generate dùng thứ tự này). */
+    /** Gỡ block khỏi binding. Mặc định xóa TẤT CẢ occurrence; truyền order để xóa ĐÚNG 1 occurrence (D→E→D). */
+    unbindBlockFromTestCase(workspaceId, testCaseId, blockId, order = null) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry) return null;
+        let seq = entry.binding?.sequence ?? [];
+        if (Number.isInteger(order)) {
+            let removed = false;
+            seq = seq.filter(ref => {
+                if (removed) return true;
+                if (ref.blockId === blockId && ref.order === order) { removed = true; return false; }
+                return true;
+            });
+        } else {
+            seq = seq.filter(ref => ref.blockId !== blockId);
+        }
+        // Đánh lại order liên tục (1..n).
+        seq = seq.map((r, i) => ({ blockId: r.blockId, order: i + 1 }));
+        entry.binding = { sequence: seq };
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...entry.binding };
+    }
+
+    /** Sắp xếp lại sequence — đúng thứ tự tester xác nhận (Generate dùng thứ tự này).
+     *  Unit-type: support DUPLICATE blockId (D → E → D) — so multiset, không dùng Set/Map làm mất trùng. */
     reorderBinding(workspaceId, testCaseId, blockIds) {
         const ws = this.get(workspaceId);
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!ws || !entry) return null;
         const current = entry.binding?.sequence ?? [];
         if (!Array.isArray(blockIds) || blockIds.length !== current.length) return null;
-        const idSet = new Set(blockIds);
-        if (current.some(ref => !idSet.has(ref.blockId))) return null;
-        const byId = new Map(current.map(ref => [ref.blockId, ref]));
-        entry.binding = { sequence: blockIds.map((id, i) => ({ ...byId.get(id), blockId: id, order: i + 1 })) };
+        // Multiset equality (giữ duplicate).
+        const countOf = arr => arr.reduce((m, x) => m.set(x, (m.get(x) || 0) + 1), new Map());
+        const curCount = countOf(current.map(r => r.blockId));
+        const newCount = countOf(blockIds);
+        if (curCount.size !== newCount.size) return null;
+        for (const [k, v] of curCount) if (newCount.get(k) !== v) return null;
+        // Rebuild theo thứ tự mới; tiêu thụ từng ref (không mất occurrence trùng).
+        const pool = current.slice();
+        const byId = new Map();
+        for (const r of pool) {
+            if (!byId.has(r.blockId)) byId.set(r.blockId, []);
+            byId.get(r.blockId).push(r);
+        }
+        const seq = blockIds.map((id, i) => {
+            const refs = byId.get(id) || [];
+            const ref = refs.shift() || { blockId: id };
+            return { ...ref, blockId: id, order: i + 1 };
+        });
+        entry.binding = { sequence: seq };
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return { ...entry.binding };

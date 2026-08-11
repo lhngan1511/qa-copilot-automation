@@ -891,3 +891,7 @@
 /* ================= P0 — Workspace lifecycle (identity + recent + confirm) ================= */
 .v3-page__head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .v3-ws-switch { max-width: 260px; min-height: 40px; font-size: 13px; }
+
+/* ================= Unit-type — Continue cutting (RECORD ONCE → CUT MANY) ================= */
+.v3-act__saved { display: grid; gap: 6px; border: 1px dashed var(--border, #cbd5e1); border-radius: 8px; padding: 8px 10px; background: #f8fafc; }
+.v3-act__add { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
