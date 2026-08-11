@@ -27,10 +27,11 @@ export const GENERATE_ERRORS = {
 };
 
 export default class GenerateService {
-    constructor({ workspace = null, store = null, outputDir = null } = {}) {
+    constructor({ workspace = null, store = null, outputDir = null, actionLibrary = null } = {}) {
         this.workspace = workspace;
         this.store = store;
         this.outputDir = outputDir ?? path.resolve("outputs", "generated-tests");
+        this.actionLibrary = actionLibrary; // Action Library (shared asset)
     }
 
     /**
@@ -158,7 +159,11 @@ export default class GenerateService {
         const traceSegments = [];
         let baseBlock = null;
         for (const ref of refs) {
-            const block = this.workspace?.getActionBlock(workspaceId, ref.blockId) ?? null;
+            // Boundary: block có thể từ workspace (compatibility) HOẶC từ Action Library (LIB-* shared asset).
+            let block = this.workspace?.getActionBlock(workspaceId, ref.blockId) ?? null;
+            if (!block && String(ref.blockId ?? "").startsWith("LIB-")) {
+                block = this.actionLibrary?.get(ref.blockId) ?? null;
+            }
             if (!block) {
                 return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_MAPPING_INVALID, reason: "Chưa xác định đầy đủ đoạn thao tác cho testcase." };
             }

@@ -248,6 +248,24 @@ export default function createAutomationV3Routes({ applicationService = null } =
             blockIds: req.body?.blockIds
         })));
 
+    // ---------- B5. Action Library (Boundary — shared asset) ----------
+    router.get("/workspaces/:workspaceId/library", handle(applicationService, (svc, req) =>
+        svc.listLibrary({ workspaceId: req.params.workspaceId })));
+
+    router.post("/workspaces/:workspaceId/library", handle(applicationService, (svc, req) =>
+        svc.saveToLibrary({
+            workspaceId: req.params.workspaceId,
+            blockId: req.body?.blockId,
+            label: req.body?.label
+        })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/library/blocks", handle(applicationService, (svc, req) =>
+        svc.bindLibraryBlock({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockId: req.body?.blockId
+        })));
+
     // ---------- C. Assertions (5B + 5C) ----------
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/assertions", handle(applicationService, (svc, req) =>
         svc.saveDraftAssertion({

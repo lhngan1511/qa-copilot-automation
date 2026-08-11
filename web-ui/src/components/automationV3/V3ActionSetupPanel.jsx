@@ -10,7 +10,10 @@ import {
     bindBlock,
     unbindBlock,
     reorderBinding,
-    listBlocks
+    listBlocks,
+    listLibrary,
+    saveToLibrary,
+    bindLibraryBlock
 } from "../../api/automationV3Api.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
@@ -58,7 +61,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     // Library reuse
     const [library, setLibrary] = useState([]);
 
-    // Lưu để dùng lại
+    // Lưu vào thư viện (Boundary — shared asset)
     const [savingReuseId, setSavingReuseId] = useState(null);
     const [reuseName, setReuseName] = useState("");
 
@@ -77,7 +80,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
     const refreshLibrary = useCallback(async () => {
         try {
-            const data = await listBlocks(workspaceId, { reusable: true });
+            const data = await listLibrary(workspaceId);
             setLibrary(Array.isArray(data) ? data : []);
         } catch {
             setLibrary([]);
@@ -266,14 +269,14 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setSaving(true);
         setLocalError("");
         try {
-            // 6C.1 — đổi tên/scope KHÔNG làm mất CONFIRMED (backend giữ status khi chỉ đổi metadata).
-            await updateBlock(workspaceId, item.blockId, { scope: "REUSABLE", label: reuseName.trim() });
+            // Boundary — tester chủ động LƯU vào Thư viện (shared asset); block workspace giữ nguyên.
+            await saveToLibrary(workspaceId, { blockId: item.blockId, label: reuseName.trim() });
             setSavingReuseId(null);
             setReuseName("");
             await refreshBinding();
             notify();
         } catch (e) {
-            setLocalError(e?.message ?? "Không lưu được thao tác.");
+            setLocalError(e?.message ?? "Không lưu được thao tác vào thư viện.");
         } finally {
             setSaving(false);
         }
@@ -286,7 +289,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setSaving(true);
         setLocalError("");
         try {
-            await bindBlock(workspaceId, testCase.testCaseId, block.blockId);
+            await bindLibraryBlock(workspaceId, testCase.testCaseId, block.blockId);
             setScreen("list");
             await refreshBinding();
             notify();
@@ -373,7 +376,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                             </span>
                                         ) : (
                                             <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => startSaveReuse(item)} disabled={saving}>
-                                                Lưu để dùng lại
+                                                Lưu vào thư viện
                                             </button>
                                         )
                                     ) : null}

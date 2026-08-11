@@ -348,7 +348,7 @@ assert.ok(actPanel.includes("Lấy thêm từ bản ghi"), "Unit-type: lấy th�
 assert.ok(actPanel.includes("Xong"), "Unit-type: nút Xong kết thúc cắt bản ghi");
 assert.ok(actPanel.includes("Đoạn đã lưu từ bản ghi này"), "Unit-type: hiển thị đoạn đã lưu khi continue cutting");
 
-assert.ok(actPanel.includes("Lưu để dùng lại"), "reuse là tùy chọn phụ");
+assert.ok(actPanel.includes("Lưu vào thư viện"), "reuse là tùy chọn phụ (Lưu vào thư viện)");
 assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");
 assert.ok(actPanel.includes("↑") && actPanel.includes("↓"), "sắp xếp thứ tự ↑↓");
 assert.ok(!actPanel.includes("ActionBlock") && !actPanel.includes("Composition Path"), "KHÔNG lộ thuật ngữ kỹ thuật trong UI");
@@ -364,6 +364,7 @@ assert.ok(pageClean2.includes('setDrawerTab("actions")'), "page mở drawer tab 
 
 // ---- 31. API client có đủ endpoint blocks/binding (6B/6C) ----
 assert.ok(apiSource.includes("listBlocks") && apiSource.includes("createBlock"), "api list/create block");
+assert.ok(apiSource.includes("listLibrary") && apiSource.includes("saveToLibrary") && apiSource.includes("bindLibraryBlock"), "api Action Library (boundary)");
 assert.ok(apiSource.includes("updateBlock") && apiSource.includes("confirmBlock") && apiSource.includes("deleteBlock"), "api update/confirm/delete block");
 assert.ok(apiSource.includes("getBlockUsage"), "api usage (reverse dependency)");
 assert.ok(apiSource.includes("getBinding") && apiSource.includes("bindBlock"), "api binding get/bind");

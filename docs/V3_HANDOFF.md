@@ -196,6 +196,15 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**BOUNDARY — ACTION LIBRARY (MVP ĐÃ IMPLEMENT 2026-08-10, theo duyệt):**
+- **Action Library = shared asset**: `src/codegen/ActionLibrary.js` + `data/action-library.json` (độc lập workspace). `POST /library` (lưu, label bắt buộc), `GET /library` (kèm usage **derive từ bindings mọi workspace** — KHÔNG lưu usedByTestCases), `POST /testcases/:id/library/blocks` (dùng từ Library).
+- **Không migration block cũ** — compatibility: block workspace vẫn dùng; chỉ đưa vào Library khi tester chủ động `[Lưu vào thư viện]` (UI nút đổi nhãn từ "Lưu để dùng lại").
+- **Không tự lưu mọi đoạn** — chỉ lưu khi tester bấm.
+- Generate/`bindingDto`/`toItem`/listRecordings dùng `resolveBlock` (workspace → Library fallback cho `LIB-*`).
+- **Case ĐVT kiểm chứng** (`automation-v3-library-test.js` PASS): 1 recording → 4 block → lưu Library (thiếu label 400) → TC Sửa compose `Login→Open→Search→Edit→Search` (Search lặp 2, usage derive = 2) → Generate spec đúng thứ tự → **workspace khác + reload vẫn dùng lại Library** (persisted).
+- Automation UX: `[Dùng thao tác đã có]` ưu tiên (mở Library), `[Tạo từ bản ghi Playwright]` phụ; cut-many giữ.
+- Chưa AI (Recording Analysis để sau khi manual flow PASS trên UI thật). Regression 13/13 PASS + build OK.
+
 **BOUNDARY — CODEGEN ↔ ACTION LIBRARY ↔ AUTOMATION (2026-08-10, DESIGN — CHỜ DUYỆT, CHƯA CODE):**
 - Chốt kiến trúc chuẩn: Codegen (công cụ độc lập) ↔ Automation Workspace (theo testcase) — **không phụ thuộc bắt buộc**, chỉ **chia sẻ tài sản** qua **Action Library / Recording Library**. Foundation RECORD ONCE → CUT MANY (`e128d7e`) là nền móng Library.
 - Trace boundary: recording/parser/store đã dùng chung ✅; **actionBlocks[] hiện nằm TRONG workspace — chưa có Action Library dùng chung** (thiếu chính).

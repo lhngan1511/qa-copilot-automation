@@ -14,6 +14,7 @@ import AutomationWorkspace from "../codegen/AutomationWorkspace.js";
 import CurrentRecordingSession from "../codegen/CurrentRecordingSession.js";
 import GenerateService from "../codegen/GenerateService.js";
 import AutomationWorkspaceApplicationService from "../services/AutomationWorkspaceApplicationService.js";
+import ActionLibrary from "../codegen/ActionLibrary.js";
 import createAutomationV3Routes from "../routes/automationV3Routes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
@@ -123,16 +124,22 @@ export default function createApp({
         scriptsDir: path.join(projectDirectory, "outputs", "codegen")
     });
     const v3Session = new CurrentRecordingSession({ store: v3Store, workspace: v3Workspace });
+    // Boundary — Action Library: TÀI SẢN DÙNG CHUNG (mọi workspace dùng lại).
+    const v3ActionLibrary = new ActionLibrary({
+        metadataFile: path.join(codeGenDataDir, "action-library.json")
+    });
     const v3GenerateService = new GenerateService({
         workspace: v3Workspace,
         store: v3Store,
-        outputDir: v3OutputDir ?? path.join(projectDirectory, "outputs", "generated-tests")
+        outputDir: v3OutputDir ?? path.join(projectDirectory, "outputs", "generated-tests"),
+        actionLibrary: v3ActionLibrary
     });
     const v3ApplicationService = new AutomationWorkspaceApplicationService({
         workspace: v3Workspace,
         store: v3Store,
         session: v3Session,
-        generateService: v3GenerateService
+        generateService: v3GenerateService,
+        actionLibrary: v3ActionLibrary
     });
     app.use("/api/automation-v3", createAutomationV3Routes({ applicationService: v3ApplicationService }));
 

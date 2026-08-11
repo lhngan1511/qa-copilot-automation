@@ -151,6 +151,31 @@ export function setAutomationDecision(workspaceId, testCaseId, decision) {
     );
 }
 
+/* ============================== B5. Action Library (Boundary) ============================== */
+
+/** GET .../library — danh sách thao tác trong Thư viện (shared asset, kèm usage). */
+export function listLibrary(workspaceId) {
+    return apiClient.get(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/library`
+    );
+}
+
+/** POST .../library — tester chủ động LƯU thao tác vào Thư viện (bắt buộc label). */
+export function saveToLibrary(workspaceId, { blockId, label }) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/library`,
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId, label }) }
+    );
+}
+
+/** POST .../testcases/:testCaseId/library/blocks — dùng thao tác từ Thư viện cho testcase. */
+export function bindLibraryBlock(workspaceId, testCaseId, blockId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/library/blocks`,
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId }) }
+    );
+}
+
 /* ============================== 6B/6C — ActionBlock + Binding ============================== */
 
 /** GET .../blocks — danh sách thao tác (library). ?reusable=1 → chỉ thao tác đã lưu dùng lại. */

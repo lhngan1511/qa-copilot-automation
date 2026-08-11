@@ -111,11 +111,12 @@ function newBlockId() {
 }
 
 export default class AutomationWorkspaceApplicationService {
-    constructor({ workspace = null, store = null, session = null, generateService = null } = {}) {
+    constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null } = {}) {
         this.workspace = workspace;       // AutomationWorkspace
         this.store = store;               // CodeGenRecordingStore
         this.session = session;           // CurrentRecordingSession
         this.generateService = generateService; // GenerateService
+        this.actionLibrary = actionLibrary;     // ActionLibrary (shared asset)
     }
 
     /* ============================== A. Workspace ============================== */
@@ -324,7 +325,7 @@ export default class AutomationWorkspaceApplicationService {
         const seen = new Set();
         recordings = [];
         for (const ref of seq) {
-            const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            const block = this.resolveBlock(workspaceId, ref.blockId);
             if (!block?.sourceRecordingId) continue;
             const rec = this.store?.getRaw(block.sourceRecordingId);
             if (rec && !seen.has(rec.recordingId)) {
@@ -767,10 +768,10 @@ export default class AutomationWorkspaceApplicationService {
     blockDto(b) {
         return {
             blockId: b.blockId,
-            workspaceId: b.workspaceId,
+            workspaceId: b.workspaceId ?? null,
             sourceRecordingId: b.sourceRecordingId,
             label: b.label ?? null,
-            scope: b.scope,
+            scope: b.scope ?? (String(b.blockId ?? "").startsWith("LIB-") ? "REUSABLE" : "PRIVATE"),
             kind: b.kind,
             startStep: b.sourceRange?.startStep ?? null,
             endStep: b.sourceRange?.endStep ?? null,
@@ -802,6 +803,79 @@ export default class AutomationWorkspaceApplicationService {
         };
     }
 
+    /** Boundary — resolve block từ workspace (compatibility) hoặc Action Library (LIB-* shared asset). */
+    resolveBlock(workspaceId, blockId) {
+        const b = this.workspace.getActionBlock(workspaceId, blockId) ?? null;
+        if (b) return b;
+        if (String(blockId ?? "").startsWith("LIB-")) return this.actionLibrary?.get(blockId) ?? null;
+        return null;
+    }
+
+    /* ================= B5. ACTION LIBRARY (Boundary — shared asset, MVP) ================= */
+
+    /** Tester chủ động LƯU thao tác vào Thư viện (REUSABLE, bắt buộc label). KHÔNG tự lưu. */
+    saveToLibrary({ workspaceId, blockId, label }) {
+        this.ensureWorkspace(workspaceId);
+        const block = this.workspace.getActionBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        if (!this.actionLibrary) fail(V3_ERRORS.INVALID_REQUEST, "Action Library chưa được cấu hình.");
+        // Copy snapshot từ block hiện tại (không di chuyển — block workspace giữ nguyên compatibility).
+        let saved;
+        try {
+            saved = this.actionLibrary.addBlock({
+                label: label ?? block.label ?? "",
+                kind: block.kind,
+                steps: block.steps,
+                recordedAssertions: block.recordedAssertions,
+                sourceRecordingId: block.sourceRecordingId,
+                sourceRange: block.sourceRange
+            });
+        } catch (e) {
+            fail(V3_ERRORS.BLOCK_LABEL_REQUIRED, e?.message ?? "Thiếu tên thao tác.");
+        }
+        return this.libraryBlockDto(saved);
+    }
+
+    /** Danh sách thao tác trong Library (kèm usage derive từ bindings của MỌI workspace). */
+    listLibrary({ workspaceId }) {
+        this.ensureWorkspace(workspaceId);
+        const blocks = this.actionLibrary ? this.actionLibrary.list() : [];
+        const usage = this.countLibraryUsage();
+        return blocks.map(b => this.libraryBlockDto(b, usage.get(b.blockId) ?? 0));
+    }
+
+    /** Dùng thao tác từ Library cho testcase (bind). */
+    bindLibraryBlock({ workspaceId, testCaseId, blockId }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const lib = this.actionLibrary?.get(blockId);
+        if (!lib) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác trong thư viện.");
+        if (lib.status !== "CONFIRMED") fail(V3_ERRORS.BLOCK_NOT_CONFIRMED, "Thao tác thư viện chưa được xác nhận.");
+        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
+        return this.bindingDto(workspaceId, testCaseId, binding);
+    }
+
+    /** Đếm usage cho từng block Library (derive từ bindings mọi workspace — KHÔNG lưu source of truth). */
+    countLibraryUsage() {
+        const map = new Map();
+        for (const w of this.workspace?.list?.() ?? []) {
+            const ws = this.workspace.get(w.workspaceId);
+            for (const entry of ws?.selectedTestCases ?? []) {
+                for (const ref of entry.binding?.sequence ?? []) {
+                    map.set(ref.blockId, (map.get(ref.blockId) || 0) + 1);
+                }
+            }
+        }
+        return map;
+    }
+
+    /** DTO block Library (không lộ nội bộ; kèm usage đã derive). */
+    libraryBlockDto(b, usedByTestCases = 0) {
+        return {
+            ...this.blockDto(b),
+            usedByTestCases
+        };
+    }
+
     /** 6C — Danh sách block (library). reusableOnly=true → chỉ REUSABLE; kèm reverse dependency. */
     listBlocks({ workspaceId, reusableOnly = false }) {
         this.ensureWorkspace(workspaceId);
@@ -818,7 +892,7 @@ export default class AutomationWorkspaceApplicationService {
     bindingDto(workspaceId, testCaseId, binding) {
         const seq = (binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         const items = seq.map(ref => {
-            const b = this.workspace.getActionBlock(workspaceId, ref.blockId);
+            const b = this.resolveBlock(workspaceId, ref.blockId);
             return b ? { ...this.blockDto(b), order: ref.order } : null;
         }).filter(Boolean);
         return { testCaseId, sequence: items };
@@ -1073,7 +1147,7 @@ export default class AutomationWorkspaceApplicationService {
         let blocksPayload = null;
         if (seq.length > 0) {
             for (const ref of seq) {
-                const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+                const block = this.resolveBlock(workspaceId, ref.blockId);
                 if (!block) {
                     fail(V3_ERRORS.SEGMENT_MAPPING_INVALID, "Chưa xác định đầy đủ đoạn thao tác cho testcase.");
                 }
@@ -1190,7 +1264,7 @@ export default class AutomationWorkspaceApplicationService {
         // 6B — mapping qua TestCaseAutomationBinding (sequence blocks theo thứ tự tester).
         const seq = (entry.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         const segments = seq.map(ref => {
-            const b = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            const b = this.resolveBlock(workspaceId, ref.blockId);
             if (!b) return null;
             return {
                 segmentId: b.blockId,
