@@ -196,6 +196,10 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**VALIDATION — ĐƠN VỊ TÍNH (2026-08-10, trace + wireframe — CHƯA CODE):**
+- Trace thật (docs/V3_UNIT_TYPE_VALIDATION.md): backend cho 1 recording → nhiều block (cùng recordingId); **UI KHÔNG continue-cutting** (reset recording sau mỗi lần lưu) — UX P0 của checkpoint; **binding chặn cùng blockId 2 lần** (D→E→D chưa support — cần nới guard bindBlockToTestCase + fix reorderBinding với duplicate); **recorded assertion per block ĐÚNG** (3 block/3 expect khớp từng cái); **không có khái niệm prerequisite** (chỉ đề xuất gợi ý UI nhẹ, không dependency engine).
+- Kết luận: model 6B/ActionBlock/binding.sequence KHÔNG cần thay — chỉ nới unique blockId + UI giữ recording để cắt tiếp + gợi ý prerequisite. Wireframe 4.1/4.2 trong doc. Files dự kiến sửa nếu duyệt: AutomationWorkspace.js, GenerateService.js (check duplicate), V3ActionSetupPanel.jsx, utils, tests.
+
 **P0 — DRAWER TESTCASE CONTEXT MISMATCH (ĐÃ TRIỂN KHAI 2026-08-10):**
 - Root cause: drawer nhận `testCase={drawerTestcase}` (object snapshot set khi mở drawer); khi user chuyển testcase khác (card) trong lúc drawer mở / refresh workspace, `drawerTestcase` không cập nhật → drawer giữ testcase cũ (TC005 trong khi card TC001).
 - Fix: drawer chỉ giữ **`drawerTestCaseId`** (id); `drawerTestcase` được **derive mỗi render từ `workspace.items`** (active workspace) theo id → mọi tab (Thông tin/Thao tác/Kết quả mong đợi) + Generate đều dùng đúng testcase hiện tại. Không còn setDrawerTestcase(object).
