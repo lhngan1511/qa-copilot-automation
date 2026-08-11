@@ -73,7 +73,22 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
 
     useEffect(() => {
         refresh();
-    }, [refresh]);
+        // 6C.2 — tự tải recorded candidates khi mở tab (không bắt tester bấm Đề xuất trước).
+        // KHÔNG tự xác nhận — chỉ hiển thị candidate để tester [Xác nhận]/[Bỏ qua].
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await suggestAssertions(workspaceId, testCase.testCaseId);
+                if (cancelled) return;
+                const all = Array.isArray(data.recordedCandidates) ? data.recordedCandidates : [];
+                const fresh = all.filter(c => !dismissedCandidates.has(c.id));
+                setRecordedCandidates(fresh);
+            } catch {
+                /* giữ rỗng — không chặn tab */
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [workspaceId, testCase.testCaseId, dismissedCandidates]);
 
     const confirmedCount = useMemo(() => assertions.filter(a => a.status === "TESTER_CONFIRMED").length, [assertions]);
     const draftCount = useMemo(() => assertions.filter(a => a.status === "DRAFT").length, [assertions]);
