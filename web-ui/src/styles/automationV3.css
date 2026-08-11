@@ -853,3 +853,21 @@
 .v3-cond__actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .v3-cond-form { display: grid; gap: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
 .v3-cond-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+
+/* ================= 6C — Thao tác (V3ActionSetupPanel) ================= */
+.v3-act { display: grid; gap: 14px; }
+.v3-act__source { display: grid; gap: 10px; }
+.v3-act__note { margin: 0; font-size: 13px; color: var(--muted); }
+.v3-act__source-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.v3-act__paste { display: grid; gap: 10px; }
+.v3-act__range { display: grid; gap: 10px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 12px; }
+.v3-act__part { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.v3-act__preview { display: grid; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px; }
+.v3-act__preview b { font-size: 13px; }
+.v3-act__range-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.v3-act__library { display: grid; gap: 10px; }
+.v3-act__list { display: grid; gap: 10px; }
+.v3-act__add { margin-top: 4px; }
+.v3-act__reuse { display: inline-flex; gap: 6px; align-items: center; }
+.v3-act__reuse .v3-input { width: 180px; min-height: 30px; font-size: 12px; }
+.v3-drawer__sub { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 2px; }

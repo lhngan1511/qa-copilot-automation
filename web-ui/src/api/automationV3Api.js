@@ -151,6 +151,83 @@ export function setAutomationDecision(workspaceId, testCaseId, decision) {
     );
 }
 
+/* ============================== 6B/6C — ActionBlock + Binding ============================== */
+
+/** GET .../blocks — danh sách thao tác (library). ?reusable=1 → chỉ thao tác đã lưu dùng lại. */
+export function listBlocks(workspaceId, { reusable = false } = {}) {
+    return apiClient.get(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks${reusable ? "?reusable=1" : ""}`
+    );
+}
+
+/** POST .../blocks — tạo thao tác (SNAPSHOT steps từ bản ghi). scope PRIVATE mặc định; REUSABLE bắt buộc label. */
+export function createBlock(workspaceId, { recordingId, startStep, endStep, label = null, scope = "PRIVATE", kind = "ACTION" } = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks`,
+        { headers: jsonHeaders(), body: JSON.stringify({ recordingId, startStep, endStep, label, scope, kind }) }
+    );
+}
+
+/** PATCH .../blocks/:blockId — sửa thao tác (đổi phạm vi → re-snapshot; đổi scope/label → DRAFT + version++). */
+export function updateBlock(workspaceId, blockId, patch = {}) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks/${encodeURIComponent(blockId)}`,
+        { headers: jsonHeaders(), body: JSON.stringify(patch) }
+    );
+}
+
+/** POST .../blocks/:blockId/confirm — xác nhận thao tác. */
+export function confirmBlock(workspaceId, blockId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks/${encodeURIComponent(blockId)}/confirm`,
+        { headers: jsonHeaders() }
+    );
+}
+
+/** DELETE .../blocks/:blockId — xóa thao tác + gỡ khỏi mọi binding. */
+export function deleteBlock(workspaceId, blockId) {
+    return apiClient.delete(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks/${encodeURIComponent(blockId)}`
+    );
+}
+
+/** GET .../blocks/:blockId/usage — reverse dependency: blockId → testCaseIds[]. */
+export function getBlockUsage(workspaceId, blockId) {
+    return apiClient.get(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/blocks/${encodeURIComponent(blockId)}/usage`
+    );
+}
+
+/** GET .../testcases/:testCaseId/binding — danh sách thao tác sẽ chạy (đúng thứ tự tester). */
+export function getBinding(workspaceId, testCaseId) {
+    return apiClient.get(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding`
+    );
+}
+
+/** POST .../testcases/:testCaseId/binding/blocks — gắn thao tác vào testcase. */
+export function bindBlock(workspaceId, testCaseId, blockId) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks`,
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId }) }
+    );
+}
+
+/** DELETE .../testcases/:testCaseId/binding/blocks/:blockId — gỡ thao tác khỏi testcase. */
+export function unbindBlock(workspaceId, testCaseId, blockId) {
+    return apiClient.delete(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks/${encodeURIComponent(blockId)}`
+    );
+}
+
+/** POST .../testcases/:testCaseId/binding/reorder — sắp xếp thứ tự thao tác (tester-owned). */
+export function reorderBinding(workspaceId, testCaseId, blockIds) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/reorder`,
+        { headers: jsonHeaders(), body: JSON.stringify({ blockIds }) }
+    );
+}
+
 /* ============================== 5C — Expected Result + Assertion confirmation ============================== */
 
 /** PATCH .../testcases/:testCaseId/expected-result — tester sửa Expected Result (working copy). */

@@ -115,7 +115,7 @@ const cardClean = stripComments(cardSource);
 assert.ok(!cardClean.includes("Xem chi tiết"), "không có Xem chi tiết");
 assert.ok(!cardClean.includes("Generate") && !cardClean.includes("Export"), "card không Generate/Export");
 // Card có đủ primary action theo trạng thái (gắn/nhập bản ghi + duyệt).
-assert.ok(cardClean.includes("Gắn bản ghi testcase") && cardClean.includes("Nhập xong") && cardClean.includes("Xem và duyệt"), "đủ primary action theo trạng thái");
+assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Tiếp tục Automation") && cardClean.includes("Xem Automation"), "đủ primary action theo trạng thái (6C)");
 // Không dùng nhãn gây hiểu nhầm khi chưa có Recorder thật.
 assert.ok(!cardClean.includes("Đang ghi") && !cardClean.includes("Dừng ghi") && !cardClean.includes("Ghi testcase"), "không dùng 'Đang ghi'/'Dừng ghi' khi chưa spawn recorder");
 
@@ -127,6 +127,7 @@ const allSources = [
     read("components/automationV3/V3UploadPanel.jsx"),
     read("components/automationV3/V3RecordingPanel.jsx"),
     read("components/automationV3/V3SegmentMappingPanel.jsx"),
+    read("components/automationV3/V3ActionSetupPanel.jsx"),
     read("components/automationV3/V3ReviewDrawer.jsx"),
     read("components/automationV3/V3RecordingTab.jsx"),
     read("components/automationV3/V3ConfirmDialog.jsx")
@@ -207,8 +208,7 @@ assert.ok(recTab.includes("getRecordingSource") && recTab.includes("Xem mã"), "
 // ---- 14. Card hiển thị trạng thái 3 nhãn + thông tin đoạn đã gán ----
 const utilsSource = stripComments(read("utils/automationV3.js"));
 assert.ok(utilsSource.includes("Chưa quyết định") && utilsSource.includes("Có automation") && utilsSource.includes("Chỉ kiểm thử thủ công"), "3 nhãn trạng thái (utils)");
-assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("Đoạn thao tác:"), "card dùng nhãn quyết định + thông tin đoạn");
-assert.ok(cardClean.includes("Xem và gán đoạn"), "card có primary 'Xem và gán đoạn' khi đã gán đoạn");
+assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("Thao tác:"), "card dùng nhãn quyết định + thông tin thao tác");
 assert.ok(cardClean.includes("Đánh dấu chỉ kiểm thử thủ công"), "menu có đánh dấu thủ công");
 assert.ok(!cardClean.includes("Sinh automation"), "card chưa có nút sinh (đợi 5C)");
 
@@ -284,7 +284,7 @@ assert.ok(!/\bAI\b|aiSuggest/i.test(expTab), "tab không dùng AI ở 5C");
 assert.ok(!expTab.includes("Xóa trống → quay về bản gốc đã duyệt + hiện warning"), "không còn warning heuristic cũ");
 
 // ---- 22. Card: primary "Điều kiện xác nhận" khi có segment CONFIRMED; không Generate trên card ----
-assert.ok(cardClean.includes("Điều kiện xác nhận"), "card có primary 'Điều kiện xác nhận'");
+assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Xem Automation"), "card primary 6C (Tạo/Xem Automation)");
 assert.ok(!cardClean.includes("Sinh automation"), "card KHÔNG có nút Sinh automation (chỉ drawer)");
 
 // ---- 23. API client có đủ endpoint 5C ----
@@ -312,5 +312,42 @@ assert.ok(pageClean2.includes("drawerTab"), "page mở drawer tab theo ngữ c�
 
 // ---- 26. 6A — BUG 2 fix: page truyền expectedResult khi createWorkspace ----
 assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào payload createWorkspace (BUG 2 fix)");
+
+// ================= 6C — UX ĐƠN GIẢN HÓA (Thao tác) =================
+
+// ---- 27. Card: primary theo trạng thái + hiển thị Expected Result + Thao tác ----
+assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Tiếp tục Automation") && cardClean.includes("Xem Automation"), "card 3 primary 6C");
+assert.ok(cardClean.includes("Kết quả mong đợi:"), "card hiển thị Expected Result");
+assert.ok(cardClean.includes("Thao tác:") && cardClean.includes("Chưa có thao tác"), "card hiển thị trạng thái thao tác");
+assert.ok(!cardClean.includes("Sinh automation"), "card không có Sinh automation");
+
+// ---- 28. Panel Thao tác (V3ActionSetupPanel): màn B/C/D theo wireframe ----
+const actPanel = stripComments(read("components/automationV3/V3ActionSetupPanel.jsx"));
+assert.ok(actPanel.includes("Dán bản ghi Playwright") && actPanel.includes("Dùng thao tác đã có"), "màn B: chọn nguồn");
+assert.ok(actPanel.includes("Dùng toàn bộ bản ghi") && actPanel.includes("Chọn một phần"), "màn C: toàn bộ / một phần");
+assert.ok(actPanel.includes("Bạn muốn dùng phần nào cho"), "hỏi đúng context testcase");
+assert.ok(actPanel.includes("Đã chọn bước") && actPanel.includes("Xác nhận thao tác"), "preview range rõ + xác nhận");
+assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác"), "màn D: danh sách + 1 nút thêm");
+assert.ok(actPanel.includes("Lưu thao tác để dùng lại"), "reuse là tùy chọn phụ");
+assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");
+assert.ok(actPanel.includes("↑") && actPanel.includes("↓"), "sắp xếp thứ tự ↑↓");
+assert.ok(!actPanel.includes("ActionBlock") && !actPanel.includes("Composition Path"), "KHÔNG lộ thuật ngữ kỹ thuật trong UI");
+assert.ok(!/\bAI\b|aiMapping/i.test(actPanel), "panel không AI mapping");
+
+// ---- 29. Drawer: tab "Thao tác" + header context ----
+assert.ok(drawerClean2.includes("Thao tác"), "drawer có tab Thao tác");
+assert.ok(drawerClean2.includes("V3ActionSetupPanel"), "drawer render panel thao tác");
+assert.ok(drawerClean2.includes("v3-drawer__sub"), "drawer header có context (expected + trạng thái)");
+
+// ---- 30. Page: nối primary setup/view → drawer tab Thao tác ----
+assert.ok(pageClean2.includes('setDrawerTab("actions")'), "page mở drawer tab Thao tác");
+
+// ---- 31. API client có đủ endpoint blocks/binding (6B/6C) ----
+assert.ok(apiSource.includes("listBlocks") && apiSource.includes("createBlock"), "api list/create block");
+assert.ok(apiSource.includes("updateBlock") && apiSource.includes("confirmBlock") && apiSource.includes("deleteBlock"), "api update/confirm/delete block");
+assert.ok(apiSource.includes("getBlockUsage"), "api usage (reverse dependency)");
+assert.ok(apiSource.includes("getBinding") && apiSource.includes("bindBlock"), "api binding get/bind");
+assert.ok(apiSource.includes("unbindBlock") && apiSource.includes("reorderBinding"), "api unbind/reorder");
+assert.ok(!apiSource.includes("rendererV3") && !apiSource.includes("CodeGenRecordingStore"), "không gọi Store/Renderer");
 
 console.log("Automation V3 UI test: PASS");

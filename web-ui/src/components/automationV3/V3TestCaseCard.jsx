@@ -1,23 +1,20 @@
 /*
- V3TestCaseCard — Card testcase (Bước 5B + 5C-0 Record Mapping).
+ V3TestCaseCard — Card testcase (Checkpoint 6C — UX đơn giản hóa).
 
- Mỗi card MỘT primary action đổi theo trạng thái testcase:
-   SELECTED (chưa đoạn) → [Gắn bản ghi testcase]
-   SELECTED (có đoạn)   → [Xem và gán đoạn]
-   RECORDING            → [Nhập xong]
-   REVIEW_REQUIRED      → [Xem và duyệt] + menu "…"
+ Mỗi card MỘT primary action theo trạng thái automation:
+   Chưa có thao tác          → [Tạo Automation]
+   Đang thiết lập (dở dang)  → [Tiếp tục Automation]
+   Đã Generate               → [Xem Automation]
 
- 5C-0:
-   - Hiển thị trạng thái tự động hóa (3 nhãn): Chưa quyết định / Có automation / Chỉ kiểm thử thủ công.
-   - Hiển thị số đoạn đã gán + số đoạn đã xác nhận (mapping bằng testCaseId, không theo thứ tự).
-   - Menu: "Đánh dấu chỉ kiểm thử thủ công" / "Cho phép tự động hóa" (tester quyết định).
+ Hiển thị: Kết quả mong đợi + trạng thái tự động hóa (3 nhãn) + số thao tác.
+ KHÔNG hiển thị thuật ngữ ActionBlock/Binding/Segment.
 */
 
 import { decisionLabel } from "../../utils/automationV3.js";
 
 const STATUS_BADGE = {
     SELECTED: ["v3-badge--sel", "Đã chọn"],
-    RECORDING: ["v3-badge--rec", "Nhập bản ghi"],
+    RECORDING: ["v3-badge--rec", "Đang nhập bản ghi"],
     REVIEW_REQUIRED: ["v3-badge--review", "Cần duyệt"],
     APPROVED: ["v3-badge--ok", "Đã duyệt"]
 };
@@ -47,19 +44,17 @@ export default function V3TestCaseCard({
         confirmed: segments.filter(s => s.status === "CONFIRMED").length,
         draft: segments.filter(s => s.status === "DRAFT").length
     };
+    const generated = testCase.generateStatus === "GENERATED";
 
-    const segConfirmed = (testCase.segmentSummary?.confirmed ?? 0) > 0;
-
+    // 6C — primary action theo trạng thái automation (chỉ MỘT nút).
     let primary = null;
-    // 5C: có segment CONFIRMED → bước tiếp theo là Điều kiện xác nhận (flow chốt).
-    if (status === "SELECTED" && segConfirmed) primary = { key: "conditions", label: "Điều kiện xác nhận", danger: false, disabled: recordingActive };
-    else if (status === "SELECTED" && segments.length > 0) primary = { key: "segments", label: "Xem và gán đoạn", danger: false, disabled: recordingActive };
-    else if (status === "SELECTED") primary = { key: "record", label: "Gắn bản ghi testcase", danger: false, disabled: recordingActive };
-    else if (status === "RECORDING") primary = { key: "stop", label: "Nhập xong", danger: false };
-    else if (status === "REVIEW_REQUIRED") primary = { key: "review", label: "Xem và duyệt", danger: false };
+    if (generated) primary = { key: "view", label: "Xem Automation", danger: false, disabled: false };
+    else if (segments.length > 0) primary = { key: "setup", label: "Tiếp tục Automation", danger: false, disabled: recordingActive };
+    else primary = { key: "setup", label: "Tạo Automation", danger: false, disabled: recordingActive };
 
-    const showMenu = status === "REVIEW_REQUIRED" || status === "APPROVED" || (status === "SELECTED" && segments.length > 0);
+    const showMenu = status === "REVIEW_REQUIRED" || status === "APPROVED" || segments.length > 0;
     const badge = STATUS_BADGE[status] ?? ["v3-badge--nosel", "Chưa chọn"];
+    const expected = String(testCase.expectedResult ?? "").trim();
 
     return (
         <div
@@ -95,15 +90,15 @@ export default function V3TestCaseCard({
                             {decisionLabel(decision)}
                         </span>
                     </div>
+                    {expected ? (
+                        <div className="v3-card__row v3-card__row--muted">
+                            Kết quả mong đợi: {expected.length > 80 ? `${expected.slice(0, 80)}…` : expected}
+                        </div>
+                    ) : null}
                     <div className="v3-card__row v3-card__row--muted">
                         {segments.length > 0
-                            ? `Đoạn thao tác: đã gán ${segSummary.total} đoạn · ${segSummary.confirmed} đã xác nhận`
-                            : "Đoạn thao tác: chưa gán đoạn nào"}
-                    </div>
-                    <div className="v3-card__row v3-card__row--muted">
-                        {segConfirmed
-                            ? `Điều kiện xác nhận: ${segSummary.total > 0 ? (testCase.assertionStatus?.confirmed ?? 0) : 0} đã xác nhận`
-                            : "Điều kiện xác nhận: cần đoạn thao tác trước"}
+                            ? `Thao tác: ${segSummary.confirmed}/${segSummary.total} đã xác nhận`
+                            : "Chưa có thao tác"}
                     </div>
                     {primary ? (
                         <div className="v3-card__action">
@@ -124,20 +119,18 @@ export default function V3TestCaseCard({
                             type="button"
                             className="v3-menu__btn"
                             onClick={() => onMenuAction?.("__toggle", testCase)}
-                            aria-label={`Thao tác recording ${testCase.testCaseId}`}
+                            aria-label={`Thao tác ${testCase.testCaseId}`}
                             aria-expanded={menuOpen}
                         >
                             ⋯
                         </button>
                         {menuOpen ? (
                             <div className="v3-menu__pop">
-                                {segments.length > 0 ? (
-                                    <div role="button" tabIndex={0} onClick={() => onMenuAction?.("segments", testCase)}>
-                                        Xem và gán đoạn
-                                    </div>
-                                ) : null}
+                                <div role="button" tabIndex={0} onClick={() => onMenuAction?.("setup", testCase)}>
+                                    Thiết lập / xem automation
+                                </div>
                                 <div role="button" tabIndex={0} onClick={() => onMenuAction?.("record_again", testCase)}>
-                                    Ghi lại
+                                    Ghi lại bản ghi
                                 </div>
                                 {decision === "MANUAL_ONLY" ? (
                                     <div role="button" tabIndex={0} onClick={() => onMenuAction?.("decision_automated", testCase)}>

@@ -3,16 +3,17 @@ import { listRecordings, getRecordingDetail } from "../../api/automationV3Api.js
 import { canGenerateForTestcase, generateGateReason } from "../../utils/automationV3.js";
 import V3RecordingTab from "./V3RecordingTab.jsx";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
+import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 
 /*
- V3ReviewDrawer — Drawer Review (Bước 5B + 5C).
+ V3ReviewDrawer — Drawer (6C: TESTCASE luôn là context chính).
 
-   Header: TCxxx · tên testcase [×]
-   Tabs  : Thông tin | Recording | Kết quả mong đợi (5C)
+   Header: TCxxx · tên testcase + Expected Result + trạng thái automation (giữ ở mọi tab)
+   Tabs  : Thông tin | Thao tác (6C) | Recording | Kết quả mong đợi (5C)
    Footer: [Đóng] + hành động chính theo tab:
      - Recording  → [Duyệt recording]
-     - Kết quả mong đợi → [Sinh automation] (chỉ khi đủ gate: chọn Automation + confirmed segment + ≥1 TESTER_CONFIRMED)
-   Một primary action duy nhất — không Generate trên card (quyết định 5C #6).
+     - Kết quả mong đợi → [Sinh automation] (chỉ khi đủ gate: chọn Automation + thao tác CONFIRMED + ≥1 TESTER_CONFIRMED)
+   Một primary action duy nhất — không Generate trên card.
 */
 
 export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "recording", onClose, onApprove, onGenerate, onChanged, onError }) {
@@ -68,7 +69,13 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "re
     return (
         <div className="v3-drawer" role="dialog" aria-modal="true" aria-label={`Review ${testCase.testCaseId}`}>
             <div className="v3-drawer__head">
-                <b>{testCase.testCaseId} · {testCase.title}</b>
+                <div>
+                    <b>{testCase.testCaseId} · {testCase.title}</b>
+                    <div className="v3-drawer__sub">
+                        {testCase.expectedResult ? <span>Kết quả mong đợi: {testCase.expectedResult}</span> : null}
+                        <span>Automation: {(testCase.segments?.length ?? 0) > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</span>
+                    </div>
+                </div>
                 <button type="button" className="v3-drawer__close" onClick={onClose} aria-label="Đóng">✕</button>
             </div>
 
@@ -80,6 +87,15 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "re
                 >
                     Thông tin
                 </button>
+                {testCase.selectedForAutomation ? (
+                    <button
+                        type="button"
+                        className={`v3-drawer__tab${tab === "actions" ? " v3-drawer__tab--on" : ""}`}
+                        onClick={() => setTab("actions")}
+                    >
+                        Thao tác
+                    </button>
+                ) : null}
                 <button
                     type="button"
                     className={`v3-drawer__tab${tab === "recording" ? " v3-drawer__tab--on" : ""}`}
@@ -109,6 +125,13 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "re
                         <div className="v3-info-row"><span>Module</span><b>{testCase.module || "—"}</b></div>
                         <div className="v3-info-row"><span>Trạng thái</span><b>{testCase.automationStatus ?? "—"}</b></div>
                     </div>
+                ) : tab === "actions" ? (
+                    <V3ActionSetupPanel
+                        workspaceId={workspaceId}
+                        testCase={testCase}
+                        onChanged={onChanged}
+                        onError={setError}
+                    />
                 ) : tab === "expected" ? (
                     <V3ExpectedResultTab
                         workspaceId={workspaceId}

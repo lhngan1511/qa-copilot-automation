@@ -173,7 +173,13 @@ export default function createAutomationV3Routes({ applicationService = null } =
             expectedResult: req.body?.expectedResult
         })));
 
-    // ---------- B4. ActionBlock + Binding (6B — CANONICAL) ----------
+    // ---------- B4. ActionBlock + Binding (6B/6C — CANONICAL) ----------
+    router.get("/workspaces/:workspaceId/blocks", handle(applicationService, (svc, req) =>
+        svc.listBlocks({
+            workspaceId: req.params.workspaceId,
+            reusableOnly: req.query?.reusable === "1" || req.query?.reusable === "true"
+        })));
+
     router.post("/workspaces/:workspaceId/blocks", handle(applicationService, (svc, req) =>
         svc.createBlock({
             workspaceId: req.params.workspaceId,

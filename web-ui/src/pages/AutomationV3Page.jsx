@@ -168,7 +168,9 @@ export default function AutomationV3Page() {
 
     const handlePrimaryAction = async (key, testCase) => {
         setOpenMenuId(null);
-        if (key === "record") await handleStart(testCase);
+        // 6C — primary theo trạng thái: Tạo/Tiếp tục/Xem Automation → mở Drawer tab "Thao tác" (context TC giữ nguyên).
+        if (key === "setup" || key === "view") { setDrawerTestcase(testCase); setDrawerTab("actions"); }
+        else if (key === "record") await handleStart(testCase);
         else if (key === "stop") await handleStop();
         else if (key === "review") { setDrawerTestcase(testCase); setDrawerTab("recording"); }
         else if (key === "segments") openMappingFor(testCase);
@@ -293,8 +295,10 @@ export default function AutomationV3Page() {
                 message: "Recording này sẽ bị đánh dấu từ chối và cần ghi lại.",
                 testCase
             });
-        } else if (action === "record_again") {
-            handleStart(testCase);
+        } else if (action === "record_again" || action === "setup") {
+            // 6C — không đẩy panel recording global; mở Drawer tab "Thao tác" trong context testcase.
+            setDrawerTestcase(testCase);
+            setDrawerTab("actions");
         } else if (action === "segments") {
             openMappingFor(testCase);
         } else if (action === "decision_manual" || action === "decision_automated") {

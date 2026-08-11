@@ -780,6 +780,18 @@ export default class AutomationWorkspaceApplicationService {
         };
     }
 
+    /** 6C — Danh sách block (library). reusableOnly=true → chỉ REUSABLE; kèm reverse dependency. */
+    listBlocks({ workspaceId, reusableOnly = false }) {
+        this.ensureWorkspace(workspaceId);
+        return this.workspace
+            .getActionBlocks(workspaceId)
+            .filter(b => !reusableOnly || b.scope === "REUSABLE")
+            .map(b => ({
+                ...this.blockDto(b),
+                usedByTestCases: this.workspace.getBlockUsage(workspaceId, b.blockId)
+            }));
+    }
+
     /** DTO binding: sequence + block chi tiết theo đúng thứ tự. */
     bindingDto(workspaceId, testCaseId, binding) {
         const seq = (binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));

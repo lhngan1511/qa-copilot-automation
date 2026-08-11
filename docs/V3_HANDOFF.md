@@ -178,7 +178,18 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - Đọc `docs/V3_AUTOMATION_COMPOSITION_DESIGN.md` + `docs/v3-automation-composition-wireframe.md`.
 - **Lộ trình checkpoint (giữ cứng thứ tự):** 6A fix data bugs ✅ → 6B data model ✅ → **6C UX (wireframe chờ duyệt — CHƯA code)** → 6D verify 3 workflow thật → rồi mới Runner/CodeGen nâng cao. **KHÔNG build function compiler trước khi data model vững.**
 
-**6C — UX CORRECTION (wireframe ĐƠN GIẢN HÓA tại `docs/v3-automation-composition-wireframe.md`, CHỜ DUYỆT — chưa code):**
+**6C — UX CORRECTION (ĐÃ TRIỂN KHAI 2026-08-10 theo wireframe đã duyệt `docs/v3-automation-composition-wireframe.md`):**
+- **Mental model:** TESTCASE → THAO TÁC → KẾT QUẢ MONG ĐỢI/ĐIỀU KIỆN XÁC NHẬN → SINH AUTOMATION.
+- Card: primary `[Tạo Automation] / [Tiếp tục Automation] / [Xem Automation]` + hiển thị Expected Result + "Thao tác: n đã xác nhận".
+- Drawer: tab **"Thao tác"** (V3ActionSetupPanel) giữ header context TC; tab Recording + Kết quả mong đợi (5C) giữ nguyên.
+- Panel Thao tác: `[Dán bản ghi Playwright]` / `[Dùng thao tác đã có]` → dán → `(•) Dùng toàn bộ` (mặc định) / `( ) Chọn một phần` (Start/End dropdown + preview "Đã chọn bước x → y · n thao tác") → `[Xác nhận thao tác]` (tạo block PRIVATE + confirm + bind — ẩn thuật ngữ) → "Thao tác sẽ chạy" + `[+ Thêm thao tác]` (bấm mới hỏi nguồn) + ↑↓ + `[Lưu thao tác để dùng lại]` (tùy chọn; REUSABLE bắt buộc tên) + library "Đang dùng bởi N testcase".
+- Backend bổ sung: `GET /workspaces/:id/blocks` (listBlocks + reverse dependency). API client: listBlocks/createBlock/updateBlock/confirmBlock/deleteBlock/getBlockUsage/getBinding/bindBlock/unbindBlock/reorderBinding.
+- KHÔNG Test Data (checkpoint riêng); KHÔNG AI; KHÔNG Runner; KHÔNG function compiler.
+- Test: ui-test cập nhật cho 6C (card primary, panel, drawer tab, API) + action-block-test 6B cover A–G. Regression 10/10 PASS + build OK.
+
+<hr>
+
+**6C — WIREFRAME (đã duyệt, tham khảo):**
 - **Mental model duy nhất:** TESTCASE → THAO TÁC → KẾT QUẢ MONG ĐỢI / ĐIỀU KIỆN XÁC NHẬN → SINH AUTOMATION. Tester không cần biết ActionBlock/Binding/Segment/PRIVATE/REUSABLE.
 - **5 màn hình:** A card testcase (primary `[Tạo Automation]/[Tiếp tục Automation]/[Xem Automation]`) · B chọn nguồn (`[Dán bản ghi Playwright]` / `[Dùng thao tác đã có]`) · C dùng toàn bộ hoặc chọn một phần (Start/End dropdown + preview rõ) · D danh sách thao tác + reuse tùy chọn (`[Lưu thao tác để dùng lại]`; library "Đang dùng bởi N testcase") · E Expected → Đề xuất → Nháp → Xác nhận → `[Sinh automation]` (đủ gate).
 - Header testcase giữ ở mọi bước; nested function (Thêm ĐVT/Thêm KH) chỉ là thao tác bên trong TC chính; ↑↓ sắp thứ tự, không tự reorder.
