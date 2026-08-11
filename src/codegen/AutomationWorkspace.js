@@ -311,7 +311,7 @@ export default class AutomationWorkspace {
 
     blockHash(block) {
         return crypto.createHash("sha256")
-            .update(JSON.stringify({ steps: block.steps, sourceRange: block.sourceRange, label: block.label, kind: block.kind }))
+            .update(JSON.stringify({ steps: block.steps, recordedAssertions: block.recordedAssertions, sourceRange: block.sourceRange, label: block.label, kind: block.kind }))
             .digest("hex").slice(0, 12);
     }
 
@@ -324,8 +324,8 @@ export default class AutomationWorkspace {
         return this.getActionBlocks(workspaceId).find(b => b.blockId === blockId) ?? null;
     }
 
-    /** Tạo ActionBlock — steps là SNAPSHOT (không phải live view recording). */
-    addActionBlock(workspaceId, { sourceRecordingId = null, label = null, scope = "PRIVATE", kind = "ACTION", steps = [], sourceRange = null, status = "DRAFT", confirmedAt = null, confirmedBy = null } = {}) {
+    /** Tạo ActionBlock — steps + recordedAssertions là SNAPSHOT (không phải live view recording). */
+    addActionBlock(workspaceId, { sourceRecordingId = null, label = null, scope = "PRIVATE", kind = "ACTION", steps = [], recordedAssertions = [], sourceRange = null, status = "DRAFT", confirmedAt = null, confirmedBy = null } = {}) {
         const ws = this.get(workspaceId);
         if (!ws) return null;
         const block = {
@@ -336,6 +336,7 @@ export default class AutomationWorkspace {
             scope: scope === "REUSABLE" ? "REUSABLE" : "PRIVATE",
             kind: kind === "SETUP" ? "SETUP" : "ACTION",
             steps: Array.isArray(steps) ? steps.map(s => ({ ...s })) : [], // SNAPSHOT — copy
+            recordedAssertions: Array.isArray(recordedAssertions) ? recordedAssertions.map(a => ({ ...a })) : [], // SNAPSHOT — copy (6C.2)
             sourceRange: sourceRange && Number.isInteger(sourceRange.startStep) ? { startStep: sourceRange.startStep, endStep: sourceRange.endStep } : null,
             status: status === "CONFIRMED" ? "CONFIRMED" : "DRAFT",
             version: 1,
@@ -353,17 +354,18 @@ export default class AutomationWorkspace {
         return { ...block };
     }
 
-    /** Sửa ActionBlock — đổi steps/sourceRange → DRAFT + version++ (nội dung đổi, phải xác nhận lại);
+    /** Sửa ActionBlock — đổi steps/sourceRange/recordedAssertions → DRAFT + version++ (nội dung đổi, phải xác nhận lại);
      *  đổi label/scope/kind (metadata) → GIỮ nguyên status (không phá CONFIRMED — 6C.1). */
-    updateActionBlock(workspaceId, blockId, { label = undefined, scope = undefined, kind = undefined, steps = undefined, sourceRange = undefined } = {}) {
+    updateActionBlock(workspaceId, blockId, { label = undefined, scope = undefined, kind = undefined, steps = undefined, recordedAssertions = undefined, sourceRange = undefined } = {}) {
         const ws = this.get(workspaceId);
         const block = this.getActionBlock(workspaceId, blockId);
         if (!ws || !block) return null;
-        const contentChanged = steps !== undefined || sourceRange !== undefined;
+        const contentChanged = steps !== undefined || sourceRange !== undefined || recordedAssertions !== undefined;
         if (label !== undefined) block.label = String(label).trim() || null;
         if (scope !== undefined) block.scope = scope === "REUSABLE" ? "REUSABLE" : "PRIVATE";
         if (kind !== undefined) block.kind = kind === "SETUP" ? "SETUP" : "ACTION";
         if (steps !== undefined) { block.steps = Array.isArray(steps) ? steps.map(s => ({ ...s })) : []; }
+        if (recordedAssertions !== undefined) { block.recordedAssertions = Array.isArray(recordedAssertions) ? recordedAssertions.map(a => ({ ...a })) : []; }
         if (sourceRange !== undefined) {
             block.sourceRange = sourceRange && Number.isInteger(sourceRange.startStep) ? { startStep: sourceRange.startStep, endStep: sourceRange.endStep } : null;
         }

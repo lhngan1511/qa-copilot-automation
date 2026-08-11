@@ -186,6 +186,16 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - **Fixes:** ADD/REPLACE semantics (confirm đầu = REPLACE toàn bộ binding; `[+ Thêm thao tác]` = APPEND; `[Thay thế]` = REPLACE đúng item + giữ vị trí cũ) · `updateActionBlock` chỉ reset DRAFT khi NỘI DUNG (steps/range) đổi, đổi label/scope giữ CONFIRMED · **Bỏ tab Recording + nút "Duyệt recording" khỏi drawer** (recording chỉ là source/evidence; "Xem bản ghi nguồn" read-only trong expand thao tác) · status rõ "✓ Đã xác nhận" / "⚠ Chưa xác nhận" (+ nút Xác nhận) · Generate gate yêu cầu **TẤT CẢ** thao tác CONFIRMED, message `Thao tác 'X' chưa được xác nhận.` · label hiển thị = label đã lưu hoặc derive từ tên testcase (không AI) · compact drawer/action list (`[Xem]` expand steps).
 - Test mới `tests/automation-v3-workflow-test.js` (fresh workflow TC001 + A no-duplicate + B append + C replace giữ vị trí + D DRAFT chặn + E không success+error + F trace recording + G snapshot + H migration không duplicate). Regression 11/11 PASS + build OK.
 
+**6C.2 — RECORDED ASSERTION CORRECTION (ĐÃ TRIỂN KHAI 2026-08-10):**
+- Parser vốn đã tách `expect()` → `recording.assertions[]` (sourceStart/End/Line) nhưng bị rơi khỏi flow. Đã sửa:
+- **Snapshot recorded assertions vào ActionBlock:** `block.recordedAssertions[]` (COPY snapshot — không live reference; xóa/sửa raw recording không ảnh hưởng; hash block gồm cả assertions).
+- **Rule range mapping (source position, KHÔNG dùng step index):** assertion thuộc block khi sourceStart/End nằm trong phạm vi steps đã chọn, HOẶC nằm trong **trailing window ≤120 ký tự sau action cuối** (expect ngay sau click cuối → kèm theo); range xa → không kèm.
+- **UI tab "Kết quả mong đợi"** thêm khối **"Điều kiện tìm thấy trong bản ghi"**: candidate `source=RECORDED, status=SUGGESTED` (KHÔNG tự kết luận = Expected Result, không auto-select) → `[Xác nhận]` (tạo assertion TESTER_CONFIRMED giữ locator/matcher từ recording — `saveDraftAssertion` cho phép status TESTER_CONFIRMED khi source=RECORDED) / `[Bỏ qua]` (không vào spec).
+- Không có expect → fallback "Không tìm thấy điều kiện xác nhận trong bản ghi." + `[Đề xuất điều kiện]` / `[+ Tự bổ sung]` (deterministic, không AI).
+- Nhiều expect → hiển thị từng candidate, tester chọn lọc.
+- `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
+- Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
+
 **6C — UX CORRECTION (ĐÃ TRIỂN KHAI 2026-08-10 theo wireframe đã duyệt `docs/v3-automation-composition-wireframe.md`):**
 - **Mental model:** TESTCASE → THAO TÁC → KẾT QUẢ MONG ĐỢI/ĐIỀU KIỆN XÁC NHẬN → SINH AUTOMATION.
 - Card: primary `[Tạo Automation] / [Tiếp tục Automation] / [Xem Automation]` + hiển thị Expected Result + "Thao tác: n đã xác nhận".

@@ -657,12 +657,15 @@ export default class AutomationWorkspaceApplicationService {
         this.assertRangeValid(rec.steps, startStep, endStep);
         const steps = this.sliceSteps(rec.steps, startStep, endStep);
         if (steps.length === 0) fail(V3_ERRORS.SEGMENT_INVALID, "Khoảng bước không hợp lệ.");
+        // 6C.2 — snapshot recorded assertions thuộc phạm vi source của block (theo SOURCE POSITION, không theo step index).
+        const recordedAssertions = this.recordedAssertionsInRange(rec, startStep, endStep);
         const block = this.workspace.addActionBlock(workspaceId, {
             sourceRecordingId: recordingId,
             label: String(label ?? "").trim() || null,
             scope: blockScope,
             kind: blockKind,
             steps,
+            recordedAssertions,
             sourceRange: { startStep, endStep }
         });
         return this.blockDto(block);
@@ -679,15 +682,17 @@ export default class AutomationWorkspaceApplicationService {
         if (nextScope === "REUSABLE" && !nextLabel) fail(V3_ERRORS.INVALID_REQUEST, "Thao tác dùng lại bắt buộc đặt tên.");
 
         let steps = block.steps;
+        let recordedAssertions = block.recordedAssertions;
         let sourceRange = block.sourceRange;
         if (Number.isInteger(startStep) && Number.isInteger(endStep)) {
             const rec = block.sourceRecordingId ? this.store?.getRaw(block.sourceRecordingId) : null;
             if (!rec) fail(V3_ERRORS.RECORDING_NOT_FOUND, "Không tìm thấy bản ghi nguồn để cập nhật phạm vi.");
             this.assertRangeValid(rec.steps, startStep, endStep);
             steps = this.sliceSteps(rec.steps, startStep, endStep);
+            recordedAssertions = this.recordedAssertionsInRange(rec, startStep, endStep);
             sourceRange = { startStep, endStep };
         }
-        const updated = this.workspace.updateActionBlock(workspaceId, blockId, { label: nextLabel, scope: nextScope, kind: nextKind, steps, sourceRange });
+        const updated = this.workspace.updateActionBlock(workspaceId, blockId, { label: nextLabel, scope: nextScope, kind: nextKind, steps, recordedAssertions, sourceRange });
         return this.blockDto(updated);
     }
 
@@ -769,6 +774,7 @@ export default class AutomationWorkspaceApplicationService {
             kind: b.kind,
             startStep: b.sourceRange?.startStep ?? null,
             endStep: b.sourceRange?.endStep ?? null,
+            sourceRange: b.sourceRange ?? null,
             stepCount: (b.steps ?? []).length,
             steps: (b.steps ?? []).map(s => ({
                 order: s.order,
@@ -776,6 +782,15 @@ export default class AutomationWorkspaceApplicationService {
                 locator: s.locator,
                 target: s.target,
                 recordedValue: s.sensitive ? "••••" : (s.recordedValue ?? "")
+            })),
+            recordedAssertionCount: (b.recordedAssertions ?? []).length,
+            recordedAssertions: (b.recordedAssertions ?? []).map(a => ({
+                order: a.order,
+                statement: a.statement ?? "",
+                locator: a.locator ?? null,
+                matcher: a.matcher ?? null,
+                expected: a.expected ?? null,
+                sourceLine: a.sourceLine ?? null
             })),
             status: b.status,
             version: b.version,
@@ -815,12 +830,57 @@ export default class AutomationWorkspaceApplicationService {
             .filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
     }
 
+    /**
+     * 6C.2 — Recorded assertions thuộc phạm vi source tester chọn.
+     * Rule deterministic (KHÔNG dùng step index):
+     *   - Assertion có sourceStart/sourceEnd nằm TRONG [rangeSourceStart, rangeSourceEnd] → thuộc.
+     *   - Assertion ngay SAU step cuối (sourceStart nằm trong khoảng [endSourceStart, endSourceEnd + trailing gap]) → kèm theo (expect nằm ngay sau action cuối).
+     *   - Assertion XA phía sau (ngoài trailing window) → KHÔNG thuộc.
+     * Trailing window: 0 → chỉ assertion nằm sát ngay sau (≤ 120 ký tự / cùng dòng liền kề).
+     */
+    recordedAssertionsInRange(rec, startStep, endStep) {
+        const steps = Array.isArray(rec?.steps) ? rec.steps : [];
+        const assertions = Array.isArray(rec?.assertions) ? rec.assertions : [];
+        if (assertions.length === 0) return [];
+        const selSteps = steps.filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
+        if (selSteps.length === 0) return [];
+        const firstSourceStart = Math.min(...selSteps.map(s => s.sourceStart ?? Infinity));
+        const lastSourceStart = Math.min(...selSteps.map(s => s.sourceStart ?? Infinity));
+        const lastSourceEnd = Math.max(...selSteps.map(s => s.sourceEnd ?? 0));
+        const TRAILING = 120; // ký tự cho phép giữa action cuối và expect liền sau
+
+        return assertions
+            .filter(a => {
+                const as = a.sourceStart ?? -1;
+                const ae = a.sourceEnd ?? -1;
+                // Trong phạm vi steps đã chọn (source overlap).
+                if (as >= firstSourceStart && ae <= lastSourceEnd) return true;
+                // Ngay sau step cuối (expect liền sau action cuối — thường cùng khối).
+                if (as >= lastSourceStart && as <= lastSourceEnd + TRAILING) return true;
+                return false;
+            })
+            .map(a => ({
+                order: a.order,
+                statement: a.statement ?? "",
+                locator: a.locator ?? null,
+                matcher: a.matcher ?? null,
+                expected: a.expected ?? null,
+                sourceStart: a.sourceStart ?? null,
+                sourceEnd: a.sourceEnd ?? null,
+                sourceLine: a.sourceLine ?? null
+            }));
+    }
+
     /* ============================== C. Assertions ============================== */
 
     saveDraftAssertion({ workspaceId, testCaseId, assertion = {} }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         const current = Array.isArray(entry.automationAssertions) ? entry.automationAssertions : [];
+        // 6C.2 — recorded candidate được tester XÁC NHẬN → lưu thẳng TESTER_CONFIRMED (source=RECORDED);
+        // thêm tay / đề xuất → DRAFT (vẫn cần xác nhận). Không cho status khác lọt vào.
+        const requestedStatus = String(assertion.status ?? "DRAFT").toUpperCase();
+        const status = requestedStatus === "TESTER_CONFIRMED" ? "TESTER_CONFIRMED" : "DRAFT";
         const draft = {
             id: assertion.id ?? newAssertionId(),
             testCaseId,
@@ -830,7 +890,8 @@ export default class AutomationWorkspaceApplicationService {
             expected: assertion.expected,
             matcher: String(assertion.matcher ?? "").trim(),
             source: String(assertion.source ?? "TESTER_INPUT").trim(),
-            status: "DRAFT"
+            status,
+            confirmedAt: status === "TESTER_CONFIRMED" ? new Date().toISOString() : null
         };
         this.workspace.saveAssertions(workspaceId, testCaseId, [...current, draft]);
         return draft;
@@ -882,13 +943,70 @@ export default class AutomationWorkspaceApplicationService {
     /** Đề xuất điều kiện xác nhận (deterministic, KHÔNG AI) — Expected Result do tester sở hữu. */
     suggestAssertionsForTestcase({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
+        this.migrateLegacySegments(workspaceId);
         const expectedResult = this.workspace.effectiveExpectedResult(workspaceId, testCaseId);
         const steps = this.collectTestCaseSteps(workspaceId, testCaseId);
         return {
             testCaseId,
             expectedResult,
-            suggestions: suggestAssertions({ expectedResult, steps })
+            suggestions: suggestAssertions({ expectedResult, steps }),
+            // 6C.2 — recorded verification (tester đã đánh dấu trong Playwright recording) = CANDIDATE.
+            // KHÔNG tự kết luận = Expected Result; KHÔNG TESTER_CONFIRMED; tester phải xác nhận.
+            recordedCandidates: this.recordedCandidatesForTestcase(workspaceId, testCaseId)
         };
+    }
+
+    /** 6C.2 — Recorded assertion candidates từ các block trong binding (snapshot recordedAssertions). */
+    recordedCandidatesForTestcase(workspaceId, testCaseId) {
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        const seq = (entry?.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const candidates = [];
+        const seen = new Set();
+        for (const ref of seq) {
+            const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            if (!block) continue;
+            for (const a of block.recordedAssertions ?? []) {
+                const key = `${a.matcher}|${a.locator}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                candidates.push({
+                    id: `RC-${block.blockId}-${a.order}`,
+                    type: this.recordedAssertionType(a),
+                    target: this.recordedAssertionTarget(a),
+                    locator: a.locator ?? null,
+                    expected: a.expected ?? this.recordedAssertionTarget(a),
+                    matcher: a.matcher ?? "toBeVisible",
+                    source: "RECORDED",
+                    status: "SUGGESTED",
+                    reason: "Nguồn: Playwright recording",
+                    blockId: block.blockId,
+                    statement: a.statement ?? ""
+                });
+            }
+        }
+        return candidates;
+    }
+
+    /** Map recorded assertion → type (đồng bộ contract assertion). */
+    recordedAssertionType(a) {
+        const m = String(a.matcher ?? "");
+        if (m === "toHaveURL") return "URL";
+        if (m === "toHaveValue") return "VALUE_EQUALS";
+        if (m === "toBeDisabled") return "ATTRIBUTE";
+        if (m === "toHaveCount") return "COUNT";
+        return "TEXT_VISIBLE"; // toBeVisible / toBeHidden / mặc định
+    }
+
+    /** Trích target nghiệp vụ từ locator (getByRole name / getByText / label). */
+    recordedAssertionTarget(a) {
+        const loc = String(a.locator ?? a.statement ?? "");
+        const mRole = loc.match(/getByRole\([^,]+,\s*\{\s*name:\s*['"]([^'"]+)['"]/);
+        if (mRole) return mRole[1];
+        const mText = loc.match(/getByText\(\s*['"]([^'"]+)['"]\s*\)/);
+        if (mText) return mText[1];
+        const mLabel = loc.match(/getByLabel\(\s*['"]([^'"]+)['"]\s*\)/);
+        if (mLabel) return mLabel[1];
+        return "phần tử đã chọn";
     }
 
     /** Sửa assertion — tự quay về DRAFT chờ xác nhận lại (giống quyết định segment). */
@@ -1085,7 +1203,8 @@ export default class AutomationWorkspaceApplicationService {
                 testCaseId: entry.testCaseId,
                 status: b.status,
                 label: b.label ?? null,
-                scope: b.scope ?? "PRIVATE"
+                scope: b.scope ?? "PRIVATE",
+                recordedAssertionCount: (b.recordedAssertions ?? []).length
             };
         }).filter(Boolean);
         return {

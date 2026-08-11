@@ -46,6 +46,10 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
     const [suggesting, setSuggesting] = useState(false);
     const [suggestedAt, setSuggestedAt] = useState(null);
 
+    // 6C.2 — Recorded candidates (tester đánh dấu trong Playwright recording — CANDIDATE, chưa xác nhận)
+    const [recordedCandidates, setRecordedCandidates] = useState([]);
+    const [dismissedCandidates, setDismissedCandidates] = useState(() => new Set()); // bỏ qua (session)
+
     // Form điều kiện (thêm tay / sửa)
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -112,12 +116,48 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
         try {
             const data = await suggestAssertions(workspaceId, testCase.testCaseId);
             setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+            // 6C.2 — recorded candidates từ suggest (chỉ những cái chưa bị bỏ qua).
+            const all = Array.isArray(data.recordedCandidates) ? data.recordedCandidates : [];
+            const existing = new Set(assertions.map(a => a.locator || a.target));
+            const fresh = all.filter(c => !dismissedCandidates.has(c.id) && !existing.has(c.locator || c.target));
+            setRecordedCandidates(fresh);
             setSuggestedAt(new Date());
         } catch (e) {
             setLocalError(e?.message ?? "Không đề xuất được điều kiện.");
         } finally {
             setSuggesting(false);
         }
+    };
+
+    /* ---------- 6C.2 — Recorded candidate: Xác nhận / Bỏ qua ---------- */
+
+    const confirmRecordedCandidate = async candidate => {
+        if (saving) return;
+        setSaving(true);
+        setLocalError("");
+        try {
+            // Tạo assertion chính thức source=RECORDED, status TESTER_CONFIRMED (giữ locator/matcher từ recording).
+            await createAssertion(workspaceId, testCase.testCaseId, {
+                type: candidate.type,
+                target: candidate.target,
+                locator: candidate.locator,
+                expected: candidate.expected,
+                matcher: candidate.matcher,
+                source: "RECORDED",
+                status: "TESTER_CONFIRMED"
+            });
+            setRecordedCandidates(prev => prev.filter(c => c.id !== candidate.id));
+            await notify();
+        } catch (e) {
+            setLocalError(e?.message ?? "Không xác nhận được điều kiện từ bản ghi.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const dismissRecordedCandidate = candidate => {
+        setDismissedCandidates(prev => new Set(prev).add(candidate.id));
+        setRecordedCandidates(prev => prev.filter(c => c.id !== candidate.id));
     };
 
     const applySuggestion = async suggestion => {
@@ -261,6 +301,35 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             </div>
 
             {/* ---------- Đề xuất (chủ động) ---------- */}
+            {/* ---------- 6C.2 — Điều kiện tìm thấy trong bản ghi (recorded candidates) ---------- */}
+            <div className="v3-exp__block">
+                <div className="v3-exp__row">
+                    <h4 className="v3-exp__h">Điều kiện tìm thấy trong bản ghi</h4>
+                    {recordedCandidates.length === 0 ? (
+                        <span className="v3-exp__note">Không tìm thấy điều kiện xác nhận trong bản ghi.</span>
+                    ) : null}
+                </div>
+                {recordedCandidates.map((c, i) => (
+                    <div className="v3-cond" key={c.id}>
+                        <div className="v3-cond__body">
+                            <b>{i + 1}. {c.target} {c.matcher === "toBeHidden" ? "không hiển thị" : "hiển thị"}</b>
+                            <div className="v3-cond__meta">
+                                <span>Nguồn: Playwright recording</span>
+                                {c.statement ? <span className="v3-exp__stmt">{c.statement}</span> : null}
+                            </div>
+                        </div>
+                        <div className="v3-cond__actions">
+                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => confirmRecordedCandidate(c)} disabled={saving}>
+                                Xác nhận
+                            </button>
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => dismissRecordedCandidate(c)} disabled={saving}>
+                                Bỏ qua
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
                     <h4 className="v3-exp__h">Đề xuất điều kiện kiểm tra</h4>

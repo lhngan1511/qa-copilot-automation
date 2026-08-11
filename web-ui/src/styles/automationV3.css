@@ -884,3 +884,6 @@
 .v3-info-tab--compact .v3-info-row { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
 .v3-info-tab--compact .v3-info-row span { min-width: 110px; color: var(--muted); }
 .v3-info-tab--compact .v3-info-row b { font-weight: 600; }
+
+/* ================= 6C.2 — Recorded candidates ================= */
+.v3-exp__stmt { font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; max-width: 100%; overflow-wrap: anywhere; }
