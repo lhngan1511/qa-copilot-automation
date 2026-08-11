@@ -196,6 +196,14 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 PHASE 1 — OWNERSHIP UX CORRECTION (ĐÃ IMPLEMENT 2026-08-10, CHƯA AI):**
+- Bỏ màn chọn nguồn ngang hàng `Dán bản ghi / Dùng thao tác đã có` trong `V3ActionSetupPanel`.
+- **Primary = `[+ Thêm thao tác từ thư viện]`** (mở Library shared; dùng nút `Dùng` đã có).
+- **Fallback secondary = `Không có thao tác phù hợp? [Tạo thao tác mới từ bản ghi]`** — mở lại màn paste/cut-many (tái dùng logic hiện có, không duplicate).
+- Recording preparation (paste/parse/cut-many) vẫn nằm trong panel nhưng chỉ truy cập qua fallback (chưa tách Codegen page riêng — ownership UX đã đúng; Codegen tool hoàn chỉnh khi Phase 2).
+- Không migration Library; không đụng Expected/Assertion/Generate/Runner; chưa AI/analyze endpoint.
+- Test: ui-test cập nhật (bỏ màn nguồn, primary Library, fallback paste). Regression 13/13 PASS + build OK. **DỪNG — chờ tester kiểm tra UI thật trước khi Phase 2 AI.**
+
 **P0 — CODEGEN → ACTION LIBRARY OWNERSHIP CORRECTION (2026-08-10, DESIGN + WIREFRAME — CHỜ DUYỆT, CHƯA CODE):**
 - Vấn đề: Action Library đã có (shared asset) nhưng UX ownership sai — `V3ActionSetupPanel` vẫn làm cả recording preparation lẫn composition (screen source/paste/library/list).
 - Kiến trúc bắt buộc: **Codegen = owner Recording Preparation** (record/paste/parse/[Phân tích bản ghi]/cut → proposal review → confirm → chủ động Lưu Library) · **Automation Workspace = owner Composition** (primary `[+ Thêm thao tác từ thư viện]`; `[Tạo thao tác mới từ bản ghi]` fallback; repeat D→E→D giữ).
