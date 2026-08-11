@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**BOUNDARY — CODEGEN ↔ ACTION LIBRARY ↔ AUTOMATION (2026-08-10, DESIGN — CHỜ DUYỆT, CHƯA CODE):**
+- Chốt kiến trúc chuẩn: Codegen (công cụ độc lập) ↔ Automation Workspace (theo testcase) — **không phụ thuộc bắt buộc**, chỉ **chia sẻ tài sản** qua **Action Library / Recording Library**. Foundation RECORD ONCE → CUT MANY (`e128d7e`) là nền móng Library.
+- Trace boundary: recording/parser/store đã dùng chung ✅; **actionBlocks[] hiện nằm TRONG workspace — chưa có Action Library dùng chung** (thiếu chính).
+- Đề xuất: tách `ActionLibrary` (tài sản chung, snapshot; workspace chỉ tham chiếu blockId + migrate adapter cho block cũ) · Codegen UI độc lập (record/dán/[Phân tích bản ghi] sau này → lưu Library) · Automation UX chính = `[Dùng thao tác đã có]` (Library) / `[Tạo từ bản ghi Playwright]` khi cần.
+- Case Đơn vị tính reference: 1 recording → 6 thao tác → Library → compose TC Thêm/Tìm/Sửa (Sửa: Tìm→Sửa→Tìm) không record lại.
+- Docs: `V3_CODEGEN_AUTOMATION_BOUNDARY_DESIGN.md` + `v3-codegen-automation-boundary-wireframe.md` (3 màn A Codegen / B Library / C Automation). AI chưa code — chỉ [Phân tích bản ghi] gắn ở Codegen (contract đã có).
+
 **UNIT TYPE — RECORDING COMPOSITION + AI CONTRACT (2026-08-10):**
 - **Manual foundation ĐÃ IMPLEMENT:** RECORD ONCE → CUT MANY (panel giữ recording sau xác nhận — "Đoạn đã lưu từ bản ghi này" + [Xong] + `[+ Lấy thêm từ bản ghi]` không paste lại) · **Repeated D→E→D** (bindBlockToTestCase bỏ unique; reorderBinding multiset giữ occurrence trùng; unbind theo order xóa đúng 1; Generate giữ thứ tự) — test I workflow-test PASS · Assertion per block giữ đúng (6C.2).
 - **AI CHỈ DESIGN (chưa code/gọi Gemini):** `docs/V3_RECORDING_COMPOSITION_AI_CONTRACT.md` — contract Recording Analysis (proposals: suggestedName/startStep/endStep/evidence/recordedAssertions/confidence/insufficientEvidence; AI PROPOSAL ≠ PERSISTED; chỉ tester confirm mới tạo block) + Composition Analysis (suggestedSequence/evidence; chỉ tester [Áp dụng] mới ghi binding) + prerequisite suggestion (chỉ gợi ý) + 2 tầng AI tách biệt + wireframes + guardrails.
