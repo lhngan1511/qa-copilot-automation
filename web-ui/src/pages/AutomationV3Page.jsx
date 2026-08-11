@@ -31,6 +31,8 @@ import {
 
 const STORAGE_KEY = "qa-copilot.automation.workspaceId";
 const DISPLAY_KEY = "qa-copilot.automation.display";
+// P0 lifecycle — danh sách workspace gần đây (tối đa 5) để quay lại; không xây manager lớn.
+const RECENT_KEY = "qa-copilot.automation.recentWorkspaces";
 
 function readDisplayMap() {
     try {
@@ -40,9 +42,32 @@ function readDisplayMap() {
     }
 }
 
+function readRecentWorkspaces() {
+    try {
+        const list = JSON.parse(window.localStorage.getItem(RECENT_KEY) || "[]");
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+}
+
+function persistRecentWorkspaces(list) {
+    try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 5)));
+    } catch {
+        /* ignore */
+    }
+}
+
+/** Rút gọn id cho hiển thị phụ (debug/danh sách gần đây) — KHÔNG làm UX chính. */
+export function shortWorkspaceId(id) {
+    return String(id ?? "").replace(/^WS-/, "WS-").slice(0, 18);
+}
+
 export default function AutomationV3Page() {
     const [workspace, setWorkspace] = useState(null);
     const [displayMap, setDisplayMap] = useState(() => readDisplayMap());
+    const [recentWorkspaces, setRecentWorkspaces] = useState(() => readRecentWorkspaces());
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -99,6 +124,41 @@ export default function AutomationV3Page() {
         ? enrichedItems.find(i => i.testCaseId === activeRecording.testCaseId) ?? null
         : null;
 
+    /** P0 lifecycle — chuyển active workspace (chỉ khi user chủ động chọn từ danh sách gần đây). */
+    const switchWorkspace = async wsId => {
+        if (!wsId || wsId === workspace?.workspaceId) return;
+        setError("");
+        setBusy(true);
+        try {
+            const data = await getWorkspace(wsId);
+            setWorkspace({ workspaceId: wsId, items: Array.isArray(data.items) ? data.items : [] });
+            window.localStorage.setItem(STORAGE_KEY, wsId);
+            setDrawerTestcase(null);
+            setMappingPanel(null);
+            setNotice("Đã chuyển về workspace đã lưu.");
+        } catch (e) {
+            setError(e?.message ?? "Không mở được workspace.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** P0 lifecycle — "Tạo workspace mới" là destructive context switch: cần xác nhận nếu có dữ liệu automation. */
+    const handleNewWorkspaceClick = () => {
+        const hasData = (workspace?.items ?? []).some(i =>
+            i.selectedForAutomation || (Array.isArray(i.segments) ? i.segments.length : 0) > 0);
+        if (hasData) {
+            setConfirm({
+                kind: "new_workspace",
+                title: "Tạo workspace mới?",
+                message: "Bạn sắp chuyển sang workspace mới. Dữ liệu workspace hiện tại vẫn được lưu.",
+                testCase: null
+            });
+        } else {
+            setCreating(true);
+        }
+    };
+
     const applyItem = patch => {
         setWorkspace(prev => {
             if (!prev) return prev;
@@ -127,6 +187,19 @@ export default function AutomationV3Page() {
                 reviewStatus: "APPROVED"
             }));
             const created = await createWorkspace({ approvedTestCases: payload, module: result.meta.module, source: "NEW" });
+            // P0 lifecycle — workspace cũ (nếu có) được giữ trong danh sách gần đây để quay lại; KHÔNG xóa.
+            if (workspace?.workspaceId && workspace.workspaceId !== created.workspaceId) {
+                const prev = {
+                    id: workspace.workspaceId,
+                    module: meta.module,
+                    count: meta.count
+                };
+                setRecentWorkspaces(prevList => {
+                    const next = [prev, ...prevList.filter(w => w.id !== prev.id)].slice(0, 5);
+                    persistRecentWorkspaces(next);
+                    return next;
+                });
+            }
             setWorkspace({ workspaceId: created.workspaceId, items: created.items ?? [] });
             window.localStorage.setItem(STORAGE_KEY, created.workspaceId);
             const map = {};
@@ -345,6 +418,9 @@ export default function AutomationV3Page() {
                     reviewStatus: "REVIEW_REQUIRED"
                 });
                 setNotice("Đã từ chối recording.");
+            } else if (confirm.kind === "new_workspace") {
+                // P0 lifecycle — user đã xác nhận chủ động tạo workspace mới.
+                setCreating(true);
             }
             setConfirm(null);
         } catch (e) {
@@ -361,14 +437,41 @@ export default function AutomationV3Page() {
             <div className="v3-page__head">
                 <div>
                     <h1 className="v3-page__title">Automation Workspace</h1>
-                    <p className="v3-page__sub">
-                        {workspace ? `${meta.count} testcase đã duyệt · module ${meta.module || "—"}` : "Chọn testcase cần tự động hóa"}
+                    <p className="v3-page__sub" title={workspace ? `Workspace: ${workspace.workspaceId}` : undefined}>
+                        {workspace ? `${meta.count} testcase đã duyệt · module ${meta.module || "—"} · Đã lưu` : "Chọn testcase cần tự động hóa"}
                     </p>
                 </div>
                 {workspace ? (
-                    <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setCreating(true)} disabled={recordingActive}>
-                        Tạo workspace mới
-                    </button>
+                    <div className="v3-page__head-actions">
+                        {recentWorkspaces.length > 0 ? (
+                            <select
+                                className="v3-input v3-ws-switch"
+                                value={workspace.workspaceId}
+                                onChange={e => switchWorkspace(e.target.value)}
+                                aria-label="Workspace gần đây"
+                                title="Workspace gần đây — chọn để quay lại"
+                            >
+                                <option value={workspace.workspaceId}>
+                                    {meta.module || "Workspace"} · {meta.count} testcase (hiện tại)
+                                </option>
+                                {recentWorkspaces
+                                    .filter(w => w.id !== workspace.workspaceId)
+                                    .map(w => (
+                                        <option key={w.id} value={w.id}>
+                                            {w.module || "Workspace"} · {w.count ?? "?"} testcase · {shortWorkspaceId(w.id)}
+                                        </option>
+                                    ))}
+                            </select>
+                        ) : null}
+                        <button
+                            type="button"
+                            className="v3-btn v3-btn--secondary"
+                            onClick={handleNewWorkspaceClick}
+                            disabled={recordingActive}
+                        >
+                            Tạo workspace mới
+                        </button>
+                    </div>
                 ) : null}
             </div>
 
@@ -455,7 +558,11 @@ export default function AutomationV3Page() {
                 open={Boolean(confirm)}
                 title={confirm?.title ?? ""}
                 message={confirm?.message ?? ""}
-                confirmLabel={confirm?.kind === "delete" ? "Xóa recording" : "Từ chối recording"}
+                confirmLabel={confirm?.kind === "delete"
+                    ? "Xóa recording"
+                    : confirm?.kind === "new_workspace"
+                        ? "Tạo workspace mới"
+                        : "Từ chối recording"}
                 danger={confirm?.kind === "delete"}
                 busy={busy}
                 onCancel={() => setConfirm(null)}

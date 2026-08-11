@@ -310,6 +310,14 @@ assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSumm
 
 // ---- 25. Page: nối Generate từ drawer ----
 assert.ok(pageClean2.includes("generateTestcase"), "page gọi generateTestcase");
+// ================= P0 — Workspace lifecycle =================
+assert.ok(pageClean2.includes("Đã lưu"), "header hiển thị 'Đã lưu' (trạng thái workspace)");
+assert.ok(pageClean2.includes("Workspace gần đây"), "có bộ chọn workspace gần đây (recovery)");
+assert.ok(pageClean2.includes("Bạn sắp chuyển sang workspace mới"), "confirm khi tạo workspace mới có dữ liệu");
+assert.ok(pageClean2.includes("handleNewWorkspaceClick"), "nút Tạo workspace mới đi qua confirm handler");
+assert.ok(pageClean2.includes("recentWorkspaces") && pageClean2.includes("switchWorkspace"), "recent + switch workspace");
+assert.ok(pageClean2.includes("shortWorkspaceId"), "short id chỉ dùng hiển thị phụ");
+
 assert.ok(pageClean2.includes("handleGenerate"), "page có handler Generate");
 assert.ok(pageClean2.includes("drawerTab"), "page mở drawer tab theo ngữ cảnh");
 

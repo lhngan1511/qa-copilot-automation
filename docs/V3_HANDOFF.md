@@ -196,6 +196,11 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — WORKSPACE LIFECYCLE / IDENTITY (ĐÃ TRIỂN KHAI 2026-08-10):**
+- Root cause (trace): browser localStorage `qa-copilot.automation.workspaceId` chỉ giữ 1 id; "Tạo workspace mới" + upload JSON = implicit context switch (handleCreated luôn tạo workspace mới + ghi đè localStorage) → tester mất workspace chứa automation mà không biết.
+- Fix (frontend-only): (A) active workspace giữ ổn định khi reload/drawer/select (không đổi) · (B) "Tạo workspace mới" có data → confirm "Bạn sắp chuyển sang workspace mới. Dữ liệu workspace hiện tại vẫn được lưu." [Hủy]/[Tạo workspace mới] · (C) header "Automation Workspace · module · N testcase · Đã lưu" (raw workspaceId chỉ title/debug) · (D) danh sách **workspace gần đây (tối đa 5)** trong header (select) → chuyển về workspace cũ (recovery tối thiểu, không workspace manager lớn) · (E) không tự tạo workspace ngoài flow user.
+- Test: ui-test thêm asserts P0 (Đã lưu, Workspace gần đây, confirm new_workspace, switchWorkspace, shortWorkspaceId). Regression 12/12 PASS + build OK.
+
 **6C — UX CORRECTION (ĐÃ TRIỂN KHAI 2026-08-10 theo wireframe đã duyệt `docs/v3-automation-composition-wireframe.md`):**
 - **Mental model:** TESTCASE → THAO TÁC → KẾT QUẢ MONG ĐỢI/ĐIỀU KIỆN XÁC NHẬN → SINH AUTOMATION.
 - Card: primary `[Tạo Automation] / [Tiếp tục Automation] / [Xem Automation]` + hiển thị Expected Result + "Thao tác: n đã xác nhận".
