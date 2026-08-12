@@ -17,7 +17,7 @@ import { isSensitiveField } from "../../utils/sensitive.js";
      chọn Automation + TẤT CẢ thao tác CONFIRMED + ≥1 assertion TESTER_CONFIRMED).
 */
 
-export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onChanged, onError }) {
+export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onRun, onChanged, onError, generateResult = null, runResult = null }) {
     const [tab, setTab] = useState(initialTab);
     // P0-A — Test Data editor: bản nháp local; save qua API (persist workspace, không sửa approved).
     const [tdDraft, setTdDraft] = useState(null); // { "<field>": "<value>" }
@@ -111,6 +111,11 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         Kết quả mong đợi
                     </button>
                 ) : null}
+                {testCase.selectedForAutomation ? (
+                    <button type="button" className={`v3-drawer__tab${tab === "run" ? " v3-drawer__tab--on" : ""}`} onClick={() => setTab("run")}>
+                        Chạy thử
+                    </button>
+                ) : null}
             </div>
 
             <div className="v3-drawer__body">
@@ -168,6 +173,77 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                     </div>
                 ) : tab === "actions" ? (
                     <V3ActionSetupPanel workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
+                ) : tab === "run" ? (
+                    <div className="v3-run-tab">
+                        <h4 className="v3-map__h">Chạy thử</h4>
+                        {/* Test Data hiện tại */}
+                        <div className="v3-exp__block">
+                            <h4 className="v3-exp__h">Test Data hiện tại</h4>
+                            {(() => {
+                                const conf = testCase?.confirmedTestData ?? null;
+                                const appr = testCase?.testData?.fields ?? null;
+                                const entries = [];
+                                if (conf && typeof conf === "object") for (const [k, v] of Object.entries(conf)) entries.push([k, v]);
+                                else if (appr && typeof appr === "object") for (const [k, f] of Object.entries(appr)) entries.push([k, f && typeof f === "object" ? f.value : f]);
+                                if (entries.length === 0) return <p className="v3-act__note">Testcase chưa có dữ liệu kiểm thử.</p>;
+                                return entries.map(([k, v]) => <div className="v3-info-row" key={k}><span>{k}</span><b>{String(v ?? "—")}</b></div>);
+                            })()}
+                        </div>
+                        {/* Action sequence */}
+                        <div className="v3-exp__block">
+                            <h4 className="v3-exp__h">Thao tác</h4>
+                            {testCase?.segments?.length > 0 ? (
+                                testCase.segments.map(s => <div className="v3-info-row" key={s.segmentId}><span>{s.orderInTestCase}.</span><b>{s.label ?? s.segmentId}</b></div>)
+                            ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
+                        </div>
+                        {/* Điều kiện kiểm tra đã xác nhận */}
+                        <div className="v3-exp__block">
+                            <h4 className="v3-exp__h">Điều kiện kiểm tra đã xác nhận</h4>
+                            {testCase?.assertionStatus?.confirmed > 0 ? (
+                                <span className="v3-ok">✓ {testCase.assertionStatus.confirmed} điều kiện đã xác nhận</span>
+                            ) : <p className="v3-act__note">Chưa có điều kiện kiểm tra được xác nhận.</p>}
+                        </div>
+                        {/* Generated source */}
+                        <div className="v3-exp__block">
+                            <h4 className="v3-exp__h">Playwright</h4>
+                            {testCase?.generateStatus === "GENERATED" && generateResult?.ok ? (
+                                <>
+                                    <p className="v3-act__note">{generateResult.fileName}</p>
+                                    <details className="v3-act__raw"><summary>Xem script</summary><pre className="v3-exp__stmt" style={{ whiteSpace: "pre-wrap", maxHeight: 260, overflow: "auto" }}>{generateResult.code}</pre></details>
+                                    <div className="v3-td-actions">
+                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => onRun?.(testCase)} disabled={!onRun}>
+                                            Chạy thử
+                                        </button>
+                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
+                                            const blob = new Blob([generateResult.code], { type: "text/javascript;charset=utf-8" });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement("a");
+                                            a.href = url; a.download = generateResult.fileName;
+                                            document.body.appendChild(a); a.click(); a.remove();
+                                            URL.revokeObjectURL(url);
+                                        }}>Lưu file .spec.js</button>
+                                    </div>
+                                </>
+                            ) : testCase?.generateStatus === "GENERATED" ? (
+                                <>
+                                    <p className="v3-act__note">{testCase.generatedFile?.split("/").pop() ?? `${testCase.testCaseId}.spec.js`}</p>
+                                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => onGenerate?.(testCase)}>Sinh lại Playwright</button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="v3-act__note">Chưa có script. Hãy Sinh Playwright trước khi chạy thử.</p>
+                                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => onGenerate?.(testCase)}>Sinh Playwright</button>
+                                </>
+                            )}
+                        </div>
+                        {/* Kết quả run */}
+                        {runResult ? (
+                            <div className={`v3-run-result ${runResult.ok && runResult.passed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
+                                <strong>{runResult.ok && runResult.passed ? "PASS" : runResult.error ? "FAIL" : "LỖI"}</strong>
+                                {runResult.error ? <span>{String(runResult.error)}</span> : null}
+                            </div>
+                        ) : null}
+                    </div>
                 ) : (
                     <V3ExpectedResultTab workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
                 )}

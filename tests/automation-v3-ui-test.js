@@ -198,7 +198,8 @@ const drawerClean = stripComments(drawer);
 assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Thao tác") && drawerClean.includes("Kết quả mong đợi"), "tabs 6C.1 (không Recording)");
 assert.ok(!drawerClean.includes("Duyệt recording"), "6C.1: không còn Duyệt recording (recording không là business gate)");
 assert.ok(!drawerClean.includes("Dữ liệu"), "không có tab Dữ liệu ở 5B");
-assert.ok(!/run ?testcase|"RUN"|runStatus/i.test(drawerClean), "Drawer không Run (Bước 6)");
+assert.ok(drawerClean.includes("Chạy thử") && drawerClean.includes("onRun"), "P0-C: drawer có tab Chạy thử (Run 1 testcase đang mở)");
+assert.ok(!/run ?testcase/.test(drawerClean), "không có run toàn bộ testcase (chỉ chạy thử 1 testcase đang mở)");
 
 // ---- Bước 5B: source chỉ tải khi "Xem mã" (V3RecordingTab) ----
 const recTab = stripComments(read("components/automationV3/V3RecordingTab.jsx"));

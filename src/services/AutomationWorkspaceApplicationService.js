@@ -32,8 +32,12 @@ export const V3_ERRORS = {
     RECORDING_DELETE_FORBIDDEN: "RECORDING_DELETE_FORBIDDEN",
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
+    ASSERTION_DUPLICATE: "ASSERTION_DUPLICATE",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
     GENERATE_FAILED: "GENERATE_FAILED",
+    NOT_GENERATED: "NOT_GENERATED",
+    STALE_GENERATED: "STALE_GENERATED",
+    RUNNER_NOT_AVAILABLE: "RUNNER_NOT_AVAILABLE",
     INVALID_STATE_TRANSITION: "INVALID_STATE_TRANSITION",
     INVALID_REQUEST: "INVALID_REQUEST",
     // 5C-0 — Record Mapping (tester-owned, không AI, không theo thứ tự).
@@ -60,6 +64,10 @@ const STATUS_BY_CODE = {
     RECORDING_DELETE_FORBIDDEN: 409,
     RECORDING_CHANGED_AFTER_APPROVAL: 409,
     ASSERTION_CONFIRMATION_REQUIRED: 409,
+    ASSERTION_DUPLICATE: 400,
+    NOT_GENERATED: 409,
+    STALE_GENERATED: 409,
+    RUNNER_NOT_AVAILABLE: 503,
     TESTDATA_BINDING_REQUIRED: 422,
     GENERATE_FAILED: 500,
     INVALID_STATE_TRANSITION: 409,
@@ -91,6 +99,7 @@ const RENDERER_TO_V3 = {
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
+    ASSERTION_DUPLICATE: "ASSERTION_DUPLICATE",
     RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
     SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
     SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID"
@@ -111,12 +120,13 @@ function newBlockId() {
 }
 
 export default class AutomationWorkspaceApplicationService {
-    constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null } = {}) {
+    constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null, runner = null } = {}) {
         this.workspace = workspace;       // AutomationWorkspace
         this.store = store;               // CodeGenRecordingStore
         this.session = session;           // CurrentRecordingSession
         this.generateService = generateService; // GenerateService
         this.actionLibrary = actionLibrary;     // ActionLibrary (shared asset)
+        this.runner = runner;                   // PlaywrightRunner (P0-C: run thu)
     }
 
     /* ============================== A. Workspace ============================== */
@@ -952,6 +962,13 @@ export default class AutomationWorkspaceApplicationService {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         const current = Array.isArray(entry.automationAssertions) ? entry.automationAssertions : [];
+        // P0-C — duplicate condition: không dedupe theo label; dùng identity matcher|locator|expected.
+        const identityKey = `${String(assertion.matcher ?? "").trim()}|${String(assertion.locator ?? "").trim()}|${String(assertion.expected ?? "")}`;
+        const dup = current.find(a => a.status !== "REJECTED"
+            && `${String(a.matcher ?? "").trim()}|${String(a.locator ?? "").trim()}|${String(a.expected ?? "")}` === identityKey);
+        if (dup) {
+            fail(V3_ERRORS.ASSERTION_DUPLICATE, "Điều kiện kiểm tra này đã được thêm.");
+        }
         // 6C.2 — recorded candidate được tester XÁC NHẬN → lưu thẳng TESTER_CONFIRMED (source=RECORDED);
         // thêm tay / đề xuất → DRAFT (vẫn cần xác nhận). Không cho status khác lọt vào.
         const requestedStatus = String(assertion.status ?? "DRAFT").toUpperCase();
@@ -1226,6 +1243,42 @@ export default class AutomationWorkspaceApplicationService {
         };
     }
 
+    /** P0-C — Chạy thử testcase đang mở: dùng ĐÚNG generated artifact (không generate ngầm).
+     *  Nếu fingerprint hiện tại ≠ fingerprint lúc Generate → stale → chặn, yêu cầu Generate lại. */
+    async runTestcase({ workspaceId, testCaseId, env = {} }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        if (entry.generateStatus !== "GENERATED" || !entry.generatedFile) {
+            fail(V3_ERRORS.NOT_GENERATED, "Chưa có script. Hãy Sinh Playwright trước khi chạy thử.");
+        }
+        const current = this.generateService?.buildFingerprint?.({ workspaceId, testCaseId }) ?? null;
+        if (current && entry.generatedFingerprint && current !== entry.generatedFingerprint) {
+            fail(V3_ERRORS.STALE_GENERATED, "Testcase/action/data/điều kiện đã thay đổi sau lần Generate. Hãy Sinh lại rồi chạy thử.");
+        }
+        if (!this.runner) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner chưa sẵn sàng trong môi trường này.");
+        const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId });
+        // Persist kết quả run.
+        const status = result?.status === "PASS" ? "PASS" : (result?.status === "FAIL" ? "FAIL" : result?.status ?? "ERROR");
+        this.workspace.transition(workspaceId, testCaseId, {
+            runStatus: status,
+            lastRun: {
+                at: new Date().toISOString(),
+                status,
+                passed: result?.status === "PASS",
+                error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
+                durationMs: result?.durationMs ?? null
+            }
+        });
+        return {
+            testCaseId,
+            runStatus: status,
+            passed: result?.status === "PASS",
+            error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
+            durationMs: result?.durationMs ?? null,
+            filePath: entry.generatedFile
+        };
+    }
+
     /* ============================== Helpers ============================== */
 
     ensureWorkspace(workspaceId) {
@@ -1331,7 +1384,9 @@ export default class AutomationWorkspaceApplicationService {
             },
             generateStatus: entry.generateStatus,
             runStatus: entry.runStatus,
-            generatedFile: entry.generatedFile ?? null
+            generatedFile: entry.generatedFile ?? null,
+            generatedFingerprint: entry.generatedFingerprint ?? null,
+            lastRun: entry.lastRun ?? null
         };
     }
 }

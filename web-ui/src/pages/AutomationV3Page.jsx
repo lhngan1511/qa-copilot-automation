@@ -16,7 +16,8 @@ import {
     rejectRecording,
     deleteRecording,
     setAutomationDecision,
-    generateTestcase
+    generateTestcase,
+    runTestcase
 } from "../api/automationV3Api.js";
 
 /*
@@ -79,6 +80,9 @@ export default function AutomationV3Page() {
     const [drawerTestCaseId, setDrawerTestCaseId] = useState(null); // P0: chỉ giữ ID — item derive từ workspace
     const [drawerTab, setDrawerTab] = useState("actions");
     const [openMenuId, setOpenMenuId] = useState(null);
+    // P0-C - ket qua Generate/Run nam trong testcase dang mo (khong banner toan workspace).
+    const [drawerGenerateResult, setDrawerGenerateResult] = useState(null);
+    const [drawerRunResult, setDrawerRunResult] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
     // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
     const [mappingPanel, setMappingPanel] = useState(null); // { recordingId, initialTestCaseId }
@@ -141,6 +145,8 @@ export default function AutomationV3Page() {
             window.localStorage.setItem(STORAGE_KEY, wsId);
             setDrawerTestCaseId(null);
             setMappingPanel(null);
+            setDrawerGenerateResult(null);
+            setDrawerRunResult(null);
             setNotice("Đã chuyển về workspace đã lưu.");
         } catch (e) {
             setError(e?.message ?? "Không mở được workspace.");
@@ -314,12 +320,28 @@ export default function AutomationV3Page() {
         setError("");
         setBusy(true);
         try {
-            await generateTestcase(workspace.workspaceId, testCase.testCaseId, {});
+            const res = await generateTestcase(workspace.workspaceId, testCase.testCaseId, {});
             await refreshWorkspace();
-            setNotice(`Đã sinh automation cho ${testCase.testCaseId}.`);
-            setDrawerTestCaseId(null);
+            // P0-C - ket qua Generate nam trong testcase dang mo (khong success banner toan workspace).
+            setDrawerGenerateResult({ ok: true, code: res?.code ?? "", fileName: res?.outputPath?.split("/").pop() ?? `${testCase.testCaseId}.spec.js` });
         } catch (e) {
-            setError(e?.message ?? "Không sinh được automation.");
+            setDrawerGenerateResult({ ok: false, error: e?.message ?? "Không sinh được automation." });
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** P0-C - Chay thu testcase dang mo. */
+    const handleRun = async testCase => {
+        if (!testCase || busy) return;
+        setError("");
+        setBusy(true);
+        try {
+            const res = await runTestcase(workspace.workspaceId, testCase.testCaseId);
+            setDrawerRunResult({ ok: true, ...res });
+            await refreshWorkspace();
+        } catch (e) {
+            setDrawerRunResult({ ok: false, error: e?.message ?? "Không chạy được." });
         } finally {
             setBusy(false);
         }
@@ -554,8 +576,11 @@ export default function AutomationV3Page() {
                     workspaceId={workspace.workspaceId}
                     testCase={drawerTestcase}
                     initialTab={drawerTab}
-                    onClose={() => setDrawerTestCaseId(null)}
+                    onClose={() => { setDrawerTestCaseId(null); setDrawerGenerateResult(null); setDrawerRunResult(null); }}
                     onGenerate={handleGenerate}
+                    onRun={handleRun}
+                    generateResult={drawerGenerateResult}
+                    runResult={drawerRunResult}
                     onChanged={refreshWorkspace}
                 />
             ) : null}

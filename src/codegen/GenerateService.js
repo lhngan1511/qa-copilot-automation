@@ -134,9 +134,11 @@ export default class GenerateService {
         fs.writeFileSync(outputPath, rendered.code, "utf8");
 
         // Cập nhật Workspace: GENERATED.
+        const fingerprint = this.buildFingerprint({ workspaceId, testCaseId });
         this.workspace.transition(workspaceId, testCaseId, {
             generateStatus: "GENERATED",
             generatedFile: outputPath,
+            generatedFingerprint: fingerprint,
             recordingId: rendered.metadata.recording?.id ?? null,
             recordingVersion: rendered.metadata.recording?.version ?? null,
             recordingHash: rendered.metadata.recording?.hash ?? null
@@ -153,6 +155,22 @@ export default class GenerateService {
      * 6B — Ghép steps từ ActionBlock SNAPSHOT (workspace), theo đúng thứ tự binding (order).
      * KHÔNG đọc live recording — block giữ snapshot; sourceRecordingId chỉ để traceability.
      */
+    /** P0-C — fingerprint state tại thời điểm Generate: sequence + labels + data + assertions.
+     *  Run sẽ so với fingerprint hiện tại → phát hiện stale (bắt Generate lại). */
+    buildFingerprint({ workspaceId, testCaseId }) {
+        const entry = this.workspace?.getTestCase?.(workspaceId, testCaseId) ?? null;
+        const seq = (entry?.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const labels = seq.map(ref => {
+            const b = this.workspace?.getActionBlock?.(workspaceId, ref.blockId)
+                ?? (String(ref.blockId ?? "").startsWith("LIB-") ? this.actionLibrary?.get(ref.blockId) ?? null : null);
+            return b?.label ?? ref.blockId;
+        });
+        const assertions = (entry?.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED")
+            .map(a => `${a.matcher}|${a.locator ?? ""}|${a.expected ?? ""}`).sort();
+        const data = Object.entries(entry?.confirmedTestData ?? {}).map(([k, v]) => `${k}=${v}`).sort();
+        return JSON.stringify({ seq: labels, assertions, data });
+    }
+
     resolveBlockFlow({ workspaceId, testCaseId, segments }) {
         const refs = segments.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         const steps = [];

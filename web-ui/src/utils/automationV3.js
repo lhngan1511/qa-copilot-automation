@@ -212,7 +212,7 @@ export function canConfirmSegment({ range, segType, testCaseId, stepsCount }) {
     return true;
 }
 
-/* ============================== 5C — Điều kiện xác nhận (assertion) helpers ============================== */
+/* ============================== 5C — Điều kiện kiểm tra (assertion) helpers ============================== */
 
 /** Nhãn loại điều kiện (ngôn ngữ tester). */
 export function assertionTypeLabel(type) {

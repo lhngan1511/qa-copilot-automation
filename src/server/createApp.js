@@ -15,6 +15,7 @@ import CurrentRecordingSession from "../codegen/CurrentRecordingSession.js";
 import GenerateService from "../codegen/GenerateService.js";
 import AutomationWorkspaceApplicationService from "../services/AutomationWorkspaceApplicationService.js";
 import ActionLibrary from "../codegen/ActionLibrary.js";
+import PlaywrightRunner from "../automation/PlaywrightRunner.js";
 import createAutomationV3Routes from "../routes/automationV3Routes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
@@ -139,7 +140,9 @@ export default function createApp({
         store: v3Store,
         session: v3Session,
         generateService: v3GenerateService,
-        actionLibrary: v3ActionLibrary
+        actionLibrary: v3ActionLibrary,
+        // P0-C - runner de chay thu testcase dang mo (reuse PlaywrightRunner).
+        runner: new PlaywrightRunner({ rootDir: projectDirectory })
     });
     app.use("/api/automation-v3", createAutomationV3Routes({ applicationService: v3ApplicationService }));
 

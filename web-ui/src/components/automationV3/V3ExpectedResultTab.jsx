@@ -392,10 +392,10 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 ) : null}
             </div>
 
-            {/* ---------- Điều kiện xác nhận ---------- */}
+            {/* ---------- Điều kiện kiểm tra ---------- */}
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Điều kiện xác nhận</h4>
+                    <h4 className="v3-exp__h">Điều kiện kiểm tra</h4>
                     <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startAdd} disabled={saving}>
                         + Bổ sung điều kiện kiểm tra
                     </button>
@@ -480,7 +480,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 ) : null}
 
                 {confirmedCount > 0 ? (
-                    <p className="v3-exp__ok">✓ Điều kiện xác nhận đã được tester xác nhận ({confirmedCount} điều kiện).</p>
+                    <p className="v3-exp__ok">✓ Điều kiện kiểm tra đã được tester xác nhận ({confirmedCount} điều kiện).</p>
                 ) : (
                     <p className="v3-exp__note">
                         Cần ít nhất 1 điều kiện được xác nhận để Sinh automation. {draftCount > 0 ? `Còn ${draftCount} điều kiện ở trạng thái Nháp.` : ""}

@@ -832,7 +832,7 @@
 .v3-card__row--muted { font-size: 12px; color: var(--muted); }
 .v3-badge--manual { background: #eef2f6; color: #475467; }
 
-/* ================= 5C — Kết quả mong đợi + Điều kiện xác nhận (V3ExpectedResultTab) ================= */
+/* ================= 5C — Kết quả mong đợi + Điều kiện kiểm tra (V3ExpectedResultTab) ================= */
 .v3-exp { display: grid; gap: 14px; }
 .v3-exp__block { display: grid; gap: 8px; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 12px; background: #fff; }
 .v3-exp__h { margin: 0; font-size: 13px; font-weight: 700; }
@@ -980,6 +980,12 @@
 .v3-lib-group__head-row .v3-lib-group__head { flex: 1; }
 .v3-lib-group__rename { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
 .v3-lib-group__rename .v3-input { flex: 1; min-height: 30px; font-size: 12px; }
+
+/* P0-C — tab Chạy thử. */
+.v3-run-tab { display: grid; gap: 12px; }
+.v3-run-result { border-radius: 8px; padding: 10px 12px; font-size: 13px; display: grid; gap: 4px; }
+.v3-run-result--pass { background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; }
+.v3-run-result--fail { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
 
 /* P0-A — DỮ LIỆU KIỂM THỬ (info tab drawer). */
 .v3-info-td { display: grid; gap: 6px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 8px; margin-top: 4px; }

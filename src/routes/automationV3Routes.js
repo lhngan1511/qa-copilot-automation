@@ -331,5 +331,13 @@ export default function createAutomationV3Routes({ applicationService = null } =
             confirmedTestData: req.body?.confirmedTestData
         })));
 
+    // P0-C - Chay thu testcase dang mo (dung generated artifact; chan khi stale).
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/run", handle(applicationService, async (svc, req) =>
+        svc.runTestcase({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            env: req.body?.env ?? {}
+        })));
+
     return router;
 }

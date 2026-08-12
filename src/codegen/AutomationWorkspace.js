@@ -104,6 +104,8 @@ export default class AutomationWorkspace {
             runStatus: "NOT_RUN",
             recordingId: null,
             generatedFile: null,
+            // P0-C — fingerprint tại thời điểm Generate (phát hiện stale khi testcase/action/data/assertion đổi).
+            generatedFingerprint: null,
             lastRun: null,
             automationAssertions: [],
             // 5C-0 — Record Mapping (legacy compatibility): mapping segment → testcase (sẽ migrate sang binding ở 6B).

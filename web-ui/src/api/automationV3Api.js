@@ -321,6 +321,14 @@ export function updateAssertion(workspaceId, testCaseId, assertionId, patch = {}
 }
 
 /** POST .../testcases/:testCaseId/generate — Sinh automation (chỉ khi đủ gate). */
+/** P0-C - Chay thu testcase dang mo (dung generated artifact; backend chan khi stale). */
+export function runTestcase(workspaceId, testCaseId, env = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/run`,
+        { headers: jsonHeaders(), body: JSON.stringify({ env }) }
+    );
+}
+
 export function generateTestcase(workspaceId, testCaseId, confirmedTestData = {}) {
     return apiClient.post(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/generate`,
