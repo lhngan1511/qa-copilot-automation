@@ -5,6 +5,7 @@ import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange, sco
 import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
 import { buildRecordingFileName } from "../../utils/recordingFile.js";
 import { paginate, clampPage } from "../../utils/pagination.js";
+import { planLibrarySave } from "../../utils/librarySync.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
@@ -304,25 +305,32 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         try {
             if (splitLayout) {
                 // P0-3.2 — ĐÂY MỚI LÀ lúc persist working set vào Library (AI tuyệt đối không tự lưu).
-                const saved = [];
-                for (const seg of confirmed) {
-                    if (String(seg.blockId ?? "").startsWith("LIB-")) { saved.push(seg); continue; } // đã lưu rồi
+                // P0 — reconcile theo CANONICAL Library state: refresh trước để biết asset nào
+                // còn tồn tại; action có LIB-* đã bị xóa → coi là CHƯA lưu → tạo lại.
+                const canonical = await refreshLibrary();
+                const plan = planLibrarySave(confirmed, canonical);
+                const saved = [...confirmed];
+                let persistedCount = 0;
+                for (const seg of plan.toCreate) {
                     const res = await createLibraryAction({ recordingId, label: seg.label, kind: "ACTION", startStep: seg.startStep, endStep: seg.endStep });
                     const data = res?.data ?? res;
                     const blockId = data?.blockId;
                     if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
-                    saved.push({ ...seg, blockId, assertionCount: data?.recordedAssertionCount ?? 0 });
+                    persistedCount += 1;
+                    const idx = saved.findIndex(x => x.blockId === seg.blockId);
+                    if (idx >= 0) saved[idx] = { ...saved[idx], blockId, assertionCount: data?.recordedAssertionCount ?? 0 };
                     onConfirmedSegment?.(blockId, seg.label); // no-op ở CodeGen (không truyền)
                 }
-                setConfirmed(saved); // cập nhật blockId thật
-                setSaveFeedback({ count: saved.length });
+                setConfirmed(saved); // cập nhật blockId thật (kể cả action được recreate)
+                // P0 — success feedback = số action THỰC SỰ persist/re-persist, KHÔNG phải confirmed.length.
+                setSaveFeedback({ count: persistedCount, total: confirmed.length });
                 // P0-3.3 — Library phải cập nhật NGAY trong cùng màn hình (không F5/không đóng mở).
                 // Reuse refreshLibrary() (listLibrary → setLibrary) — không tạo cache thứ hai.
                 const refreshed = await refreshLibrary();
                 setShowLibrary(true);
                 // Item mới nằm cuối list (backend giữ thứ tự push) → nhảy trang cuối để thấy ngay.
                 setLibPage(clampPage(refreshed.length, refreshed.length, LIB_PAGE_SIZE));
-                onSavedToLibrary?.(saved.length);
+                onSavedToLibrary?.(persistedCount);
             } else {
                 // Fallback — các action đã persist ngay khi confirm; chỉ feedback (như cũ).
                 const res = await listLibrary();
@@ -600,7 +608,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     </button>
                     {saveFeedback ? (
                         <div className="v3-act__save-feedback">
-                            <span className="v3-ok">✓ Đã lưu {saveFeedback.count} thao tác vào Thư viện.</span>
+                            {/* P0 — message theo số persist THẬT (recreate cũng tính là lưu mới); 0 → nói rõ không tạo gì. */}
+                            <span className="v3-ok">
+                                {saveFeedback.count > 0
+                                    ? `✓ Đã lưu ${saveFeedback.count} thao tác mới vào Thư viện.`
+                                    : `✓ Tất cả ${saveFeedback.total ?? 0} thao tác đã có trong Thư viện.`}
+                            </span>
                             <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => setShowLibrary(true)}>
                                 Mở Thư viện thao tác
                             </button>

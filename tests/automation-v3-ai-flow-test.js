@@ -89,8 +89,8 @@ assert.ok(confirmSegBody.includes("createConfirmedAction"), "D: fallback (non-sp
 
 // saveAllToLibrary (split): persist từng working action qua createLibraryAction — ĐÂY mới là Library gate.
 const saveBody = clean.match(/const saveAllToLibrary = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
-assert.ok(saveBody.includes("createLibraryAction"), "C: saveAllToLibrary (split) gọi createLibraryAction cho từng action");
-assert.ok(saveBody.includes('startsWith("LIB-")'), "C: không tạo duplicate khi bấm Lưu lần 2 (skip block đã lưu)");
+assert.ok(saveBody.includes("createLibraryAction"), "C: saveAllToLibrary (split) gọi createLibraryAction cho từng action cần tạo");
+assert.ok(saveBody.includes("planLibrarySave(confirmed, canonical)"), "C: reconcile theo canonical Library — chỉ tạo action chưa lưu/đã bị xóa (không duplicate)");
 
 // UI labels
 assert.ok(clean.includes("Thêm thao tác"), "A: nút proposal = [Thêm thao tác]");

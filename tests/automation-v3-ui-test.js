@@ -493,7 +493,7 @@ assert.ok(addPBody.length > 0 && !addPBody.includes("setStartSel(") && !addPBody
     "P0-3.2: AI add KHÔNG populate form / KHÔNG tự persist Library");
 // ---- 41. Library gate: persist chỉ ở saveAllToLibrary (bấm Lưu N thao tác) ----
 const saveB = recPrepP0.match(/const saveAllToLibrary = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
-assert.ok(saveB.includes("createLibraryAction") && saveB.includes('startsWith("LIB-")'), "P0-3.2: Lưu → createLibraryAction từng action, không duplicate khi Lưu lần 2");
+assert.ok(saveB.includes("createLibraryAction") && saveB.includes("planLibrarySave"), "P0: Lưu → createLibraryAction cho action cần tạo, reconcile canonical (không duplicate)");
 assert.ok(recPrepP0.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút 'Lưu N thao tác vào Thư viện'");
 
 // ================= P0 — SAVE CURRENT PLAYWRIGHT RECORDING =================
