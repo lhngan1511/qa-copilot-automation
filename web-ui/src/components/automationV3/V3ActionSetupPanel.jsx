@@ -16,6 +16,7 @@ import {
     bindLibraryBlock
 } from "../../api/automationV3Api.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
+import V3RecordingPreparationPanel from "./V3RecordingPreparationPanel.jsx";
 
 /*
  V3ActionSetupPanel — Tab "Thao tác" (Checkpoint 6C + 6C.1).
@@ -391,7 +392,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         ))
                     )}
                     <div className="v3-act__add">
-                        <button type="button" className="v3-btn v3-btn--primary" onClick={openLibrary} disabled={saving}>
+                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={openLibrary} disabled={saving}>
                             + Thêm thao tác từ thư viện
                         </button>
                         {lastRecording ? (
@@ -429,100 +430,21 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             {/* ---------- Màn dán bản ghi (màn C) ---------- */}
             {screen === "paste" ? (
                 <div className="v3-act__paste">
-                    <h4 className="v3-map__h">Bản ghi Playwright</h4>
-                    <textarea
-                        className="v3-input"
-                        rows={6}
-                        value={source}
-                        onChange={e => setSource(e.target.value)}
-                        placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\n..."}
-                        spellCheck={false}
+                    {/* Phase 1 — REUSE shared RecordingPreparationPanel (Codegen owner; fallback secondary).
+                        onConfirmedSegment: bind block vào testcase đang mở (fallback Automation). */}
+                    <V3RecordingPreparationPanel
+                        workspaceId={workspaceId}
+                        onConfirmedSegment={async (blockId) => {
+                            await bindBlock(workspaceId, testCase.testCaseId, blockId);
+                            await refreshBinding();
+                            notify();
+                        }}
+                        onSavedToLibrary={count => setLocalError(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                        onError={setLocalError}
                     />
-                    {steps.length === 0 ? (
-                        <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
-                            {saving ? "Đang đọc…" : "Nhập xong"}
-                        </button>
-                    ) : null}
-
-                    {steps.length > 0 ? (
-                        <div className="v3-act__range">
-                            {/* Unit-type: đoạn đã lưu từ bản ghi này — cắt tiếp, không paste lại */}
-                            {binding.filter(i => i.sourceRecordingId === recordingId).length > 0 ? (
-                                <div className="v3-act__saved">
-                                    <p className="v3-act__note">Đoạn đã lưu từ bản ghi này:</p>
-                                    {binding.filter(i => i.sourceRecordingId === recordingId).map(i => (
-                                        <div key={`${i.blockId}-${i.order}`} className="v3-cond v3-cond--compact">
-                                            <div className="v3-cond__body">
-                                                <b>{i.label || "Thao tác"} · bước {i.startStep} → {i.endStep}</b>
-                                                <span className="v3-cond__meta">{i.stepCount} thao tác · {i.status === "CONFIRMED" ? "✓ Đã xác nhận" : "⚠ Chưa xác nhận"}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : null}
-                            <p className="v3-act__note">Bạn muốn dùng phần nào cho {testCase.testCaseId}?</p>
-                            <label className="v3-radio">
-                                <input type="radio" name="use-mode" checked={mode === "all"} onChange={() => setMode("all")} />
-                                <span>Dùng toàn bộ bản ghi</span>
-                            </label>
-                            <label className="v3-radio">
-                                <input type="radio" name="use-mode" checked={mode === "part"} onChange={() => setMode("part")} />
-                                <span>Chọn một phần</span>
-                            </label>
-
-                            {mode === "part" ? (
-                                <div className="v3-act__part">
-                                    <label className="v3-map__label">
-                                        Bắt đầu
-                                        <select className="v3-input" value={startSel ?? ""} onChange={e => setStartSel(Number(e.target.value))}>
-                                            {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="v3-map__label">
-                                        Kết thúc
-                                        <select className="v3-input" value={endSel ?? ""} onChange={e => setEndSel(Number(e.target.value))}>
-                                            {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
-                                        </select>
-                                    </label>
-                                </div>
-                            ) : null}
-
-                            {selRange ? (
-                                <div className="v3-act__preview">
-                                    <b>Đã chọn bước {selRange.start} → {selRange.end} · {selRange.count} thao tác</b>
-                                    <div className="v3-steps">
-                                        {steps
-                                            .filter(s => s.order >= selRange.start && s.order <= selRange.end)
-                                            .map(s => (
-                                                <div className="v3-step" key={s.order}>
-                                                    <span className="v3-step__n">{s.order}</span>
-                                                    <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
-                                                </div>
-                                            ))}
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            <div className="v3-act__range-actions">
-                                <button type="button" className="v3-btn v3-btn--ghost" onClick={() => { setSteps([]); setSource(""); setScreen("list"); }} disabled={saving}>
-                                    Hủy
-                                </button>
-                                <button type="button" className="v3-btn v3-btn--primary" onClick={confirmAction} disabled={!selRange || saving}>
-                                    {saving ? "Đang lưu…" : "Xác nhận thao tác"}
-                                </button>
-                                {binding.filter(i => i.sourceRecordingId === recordingId).length > 0 ? (
-                                    <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setScreen("list")} disabled={saving}>
-                                        Xong
-                                    </button>
-                                ) : null}
-                            </div>
-                        </div>
-                    ) : null}
                 </div>
             ) : null}
 
-            {/* ---------- Màn library ---------- */}
             {screen === "library" ? (
                 <div className="v3-act__library">
                     <h4 className="v3-map__h">Thao tác đã lưu</h4>

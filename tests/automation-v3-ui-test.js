@@ -330,6 +330,11 @@ assert.ok(pageClean2.includes("drawerTab"), "page mở drawer tab theo ngữ c�
 assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào payload createWorkspace (BUG 2 fix)");
 
 // ================= 6C — UX ĐƠN GIẢN HÓA (Thao tác) =================
+// ---- P0 Phase 1: Codegen là owner Recording Preparation (shared component) ----
+const codegenPage = stripComments(read("pages/CodeGenPage.jsx"));
+assert.ok(codegenPage.includes("V3RecordingPreparationPanel"), "Codegen page dùng shared RecordingPreparationPanel");
+assert.ok(codegenPage.includes("Thu thập thao tác → Thư viện"), "Codegen có khu vực owner recording prep");
+
 
 // ---- 27. Card: primary theo trạng thái + hiển thị Expected Result + Thao tác ----
 assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Tiếp tục Automation") && cardClean.includes("Xem Automation"), "card 3 primary 6C");
@@ -343,13 +348,14 @@ const actPanel = stripComments(read("components/automationV3/V3ActionSetupPanel.
 assert.ok(!actPanel.includes("Bạn muốn lấy thao tác thêm từ đâu?"), "không còn màn chọn nguồn ngang hàng");
 assert.ok(actPanel.includes("+ Thêm thao tác từ thư viện"), "primary = thêm từ thư viện");
 assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback = tạo mới từ bản ghi (secondary)");
-assert.ok(actPanel.includes("Dùng toàn bộ bản ghi") && actPanel.includes("Chọn một phần"), "màn C: toàn bộ / một phần");
-assert.ok(actPanel.includes("Bạn muốn dùng phần nào cho"), "hỏi đúng context testcase");
-assert.ok(actPanel.includes("Đã chọn bước") && actPanel.includes("Xác nhận thao tác"), "preview range rõ + xác nhận");
+// Màn C (toàn bộ/một phần + preview) nằm trong SHARED V3RecordingPreparationPanel
+const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
+assert.ok(recPrep.includes("Dùng toàn bộ bản ghi") && recPrep.includes("Chọn một phần"), "shared: toàn bộ / một phần");
+assert.ok(recPrep.includes("Đã chọn bước") && recPrep.includes("Xác nhận đoạn"), "shared: preview range rõ + xác nhận đoạn");
+assert.ok(recPrep.includes("Lưu vào thư viện thao tác"), "shared: Lưu vào thư viện");
+assert.ok(recPrep.includes("Các đoạn đã xác nhận"), "shared: danh sách đoạn đã xác nhận");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
-assert.ok(actPanel.includes("Lấy thêm từ bản ghi"), "Unit-type: lấy thêm từ bản ghi đã dán (không paste lại)");
-assert.ok(actPanel.includes("Xong"), "Unit-type: nút Xong kết thúc cắt bản ghi");
-assert.ok(actPanel.includes("Đoạn đã lưu từ bản ghi này"), "Unit-type: hiển thị đoạn đã lưu khi continue cutting");
+assert.ok(actPanel.includes("V3RecordingPreparationPanel"), "fallback reuse shared RecordingPreparationPanel (không duplicate)");
 
 assert.ok(actPanel.includes("Lưu vào thư viện"), "reuse là tùy chọn phụ (Lưu vào thư viện)");
 assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");

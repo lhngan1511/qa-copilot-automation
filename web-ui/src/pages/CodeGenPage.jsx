@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import V3RecordingPreparationPanel from "../components/automationV3/V3RecordingPreparationPanel.jsx";
 import {
     useCodeGenRecordings,
     useCodeGenStatus,
@@ -27,8 +28,7 @@ function downloadScript(content, fileName) {
 
 export default function CodeGenPage() {
     const [url, setUrl] = useState("");
-    const [browser, setBrowser] = useState("chrome");
-    const [mode, setMode] = useState("FULL_FLOW");
+    const [browser, setBrowser] = useState("chrome");    const [mode, setMode] = useState("FULL_FLOW");
     const [scriptText, setScriptText] = useState(""); // source of truth duy nhất
     const [notice, setNotice] = useState("");
     const [runResult, setRunResult] = useState(null);
@@ -37,6 +37,18 @@ export default function CodeGenPage() {
     const [linkSearch, setLinkSearch] = useState("");
     const [selectedTestcaseIds, setSelectedTestcaseIds] = useState([]);
     const [searchParams] = useSearchParams();
+
+    // P0 Phase 1 — Codegen owner cần workspaceId (chung Action Library). Dùng active workspace từ
+    // Automation (localStorage) nếu có; nếu chưa có, tạo workspace nền tối thiểu khi mount.
+    const [codeGenWorkspaceId, setCodeGenWorkspaceId] = useState(null);
+    useMemo(() => {
+        const saved = window.localStorage.getItem("qa-copilot.automation.workspaceId");
+        if (saved) { setCodeGenWorkspaceId(saved); return; }
+        // Không có active workspace — Codegen vẫn cần workspace để tạo block (shared Library).
+        // Tạo workspace nền qua API V3 (approved testcase rỗng sẽ lỗi; dùng workspace đã có qua createWorkspace
+        // với 1 testcase tối thiểu? Không — đơn giản: Codegen hiển thị thông báo cần tạo workspace trước).
+        setCodeGenWorkspaceId(null);
+    }, []);
 
     // Context từ AI Test Design khi mở CodeGen kèm tham số (module/feature/artifactId).
     const incomingContext = useMemo(() => {
@@ -193,6 +205,23 @@ export default function CodeGenPage() {
             </header>
 
             {notice && <div className="automation-notice" role="status">{notice}</div>}
+
+            {/* P0 Phase 1 — Codegen = OWNER của Recording Preparation (shared component; chưa AI) */}
+            <div className="codegen-card">
+                <label className="codegen-label">0. Thu thập thao tác → Thư viện (Codegen)</label>
+                <p className="codegen-hint">Dán Playwright recording, cắt thành các đoạn thao tác, lưu vào Thư viện thao tác (shared — Automation dùng lại). Chưa AI.</p>
+                {codeGenWorkspaceId ? (
+                    <V3RecordingPreparationPanel
+                        workspaceId={codeGenWorkspaceId}
+                        onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                        onError={msg => setNotice(msg)}
+                    />
+                ) : (
+                    <p className="codegen-hint">
+                        Codegen cần một Automation Workspace để chia sẻ Thư viện thao tác. Hãy mở Automation và tạo workspace trước.
+                    </p>
+                )}
+            </div>
 
             {/* RECORD */}
             <div className="codegen-card">

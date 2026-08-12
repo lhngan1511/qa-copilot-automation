@@ -196,6 +196,15 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 PHASE 1 (v2) — CODEGEN OWNER + SHARED RECORDING PREP (ĐÃ IMPLEMENT 2026-08-10, CHƯA AI):**
+- **Codegen thật sự được sửa**: `CodeGenPage` thêm khu vực "0. Thu thập thao tác → Thư viện (Codegen)" — owner Recording Preparation (dùng workspace active từ localStorage; nếu chưa có → hướng dẫn tạo workspace trước).
+- **Shared component `V3RecordingPreparationPanel`** (mới): paste/parse/preview/cut-many (toàn bộ/một phần + Start/End + Tên) → `[Xác nhận đoạn]` → "Các đoạn đã xác nhận" → `[Lưu vào thư viện thao tác]`; callback `onConfirmedSegment` cho fallback. **KHÔNG duplicate logic.**
+- **Automation fallback**: `V3ActionSetupPanel` màn paste → **reuse shared component** (`onConfirmedSegment` bind block vào testcase đang mở); bỏ paste nội bộ cũ.
+- **CSS**: nút `[+ Thêm thao tác từ thư viện]` thêm `v3-btn--mini` (compact — hết khối lớn).
+- **Parser root cause đã loại**: trace 3 case + nháy đơn/kép → parser/API trả steps đầy đủ (lỗi "không có thao tác nào" chỉ do UI cũ reset/thiếu; shared component dùng đúng data path). Không đổi message.
+- Không AI/analyze; không đụng Expected/Assertion/Generate/Runner; không migration Library.
+- Test: ui-test cập nhật (Codegen dùng shared; shared có cut-many + Lưu Library; fallback reuse). Regression 13/13 PASS + build OK. **DỪNG — chờ tester kiểm tra UI thật.**
+
 **P0 PHASE 1 — OWNERSHIP UX CORRECTION (ĐÃ IMPLEMENT 2026-08-10, CHƯA AI):**
 - Bỏ màn chọn nguồn ngang hàng `Dán bản ghi / Dùng thao tác đã có` trong `V3ActionSetupPanel`.
 - **Primary = `[+ Thêm thao tác từ thư viện]`** (mở Library shared; dùng nút `Dùng` đã có).
