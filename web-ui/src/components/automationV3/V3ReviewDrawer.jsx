@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { saveTestData } from "../../api/automationV3Api.js";
 import { canGenerateForTestcase, generateGateReason } from "../../utils/automationV3.js";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
+import { isSensitiveField } from "../../utils/sensitive.js";
 
 /*
  V3ReviewDrawer — Drawer (6C + 6C.1: TESTCASE luôn là context chính).
@@ -17,6 +19,46 @@ import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 
 export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onChanged, onError }) {
     const [tab, setTab] = useState(initialTab);
+    // P0-A — Test Data editor: bản nháp local; save qua API (persist workspace, không sửa approved).
+    const [tdDraft, setTdDraft] = useState(null); // { "<field>": "<value>" }
+    const [tdSaving, setTdSaving] = useState(false);
+    const tdApproved = testCase?.testData ?? null;
+
+    // Đồng bộ draft khi testcase đổi.
+    useEffect(() => {
+        const td = tdApproved;
+        if (!td || typeof td !== "object") { setTdDraft({}); return; }
+        const entries = [];
+        if (td.fields && typeof td.fields === "object") {
+            for (const [k, f] of Object.entries(td.fields)) entries.push([k, f && typeof f === "object" ? f.value : f]);
+        } else if (td.inputs && typeof td.inputs === "object") {
+            for (const [k, v] of Object.entries(td.inputs)) entries.push([k, v]);
+        } else {
+            for (const [k, v] of Object.entries(td)) entries.push([k, v]);
+        }
+        const merged = {};
+        for (const [k, v] of entries) merged[k] = String(v ?? "");
+        // Ưu tiên confirmedTestData (tester đã edit) khi có.
+        const confirmed = testCase?.confirmedTestData ?? null;
+        if (confirmed && typeof confirmed === "object") {
+            for (const [k, v] of Object.entries(confirmed)) if (Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = String(v ?? "");
+        }
+        setTdDraft(merged);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [testCase?.testCaseId]);
+
+    const persistTd = async next => {
+        if (tdSaving) return;
+        setTdSaving(true);
+        try {
+            await saveTestData(workspaceId, testCase.testCaseId, next ?? tdDraft ?? {});
+            onChanged?.();
+        } catch (e) {
+            onError?.(e?.message ?? "Không lưu được dữ liệu kiểm thử.");
+        } finally {
+            setTdSaving(false);
+        }
+    };
 
     const canGenerate = canGenerateForTestcase(testCase);
     const gateReason = generateGateReason(testCase);
@@ -58,6 +100,47 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         <div className="v3-info-row"><span>TC</span><b>{testCase.testCaseId} · {testCase.type}</b></div>
                         <div className="v3-info-row"><span>Tiêu đề</span><b>{testCase.title}</b></div>
                         <div className="v3-info-row"><span>Module</span><b>{testCase.module || "—"}</b></div>
+                        {/* P0-A — DỮ LIỆU KIỂM THỬ: editable (tester edit cho lần automation);
+                            approved giữ nguyên; [Khôi phục dữ liệu testcase] trả về approved. */}
+                        <div className="v3-info-td">
+                            <div className="v3-info-td__head">DỮ LIỆU KIỂM THỬ</div>
+                            {(() => {
+                                const draft = tdDraft ?? {};
+                                const keys = Object.keys(draft);
+                                if (keys.length === 0) {
+                                    return <p className="v3-act__note">Testcase chưa có dữ liệu kiểm thử.</p>;
+                                }
+                                return (
+                                    <>
+                                        {keys.map(k => (
+                                            <label className="v3-td-field" key={k}>
+                                                <span>{k}</span>
+                                                <input
+                                                    className="v3-input"
+                                                    type={isSensitiveField(k) ? "password" : "text"}
+                                                    value={draft[k] ?? ""}
+                                                    disabled={tdSaving}
+                                                    onChange={e => setTdDraft(d => ({ ...d, [k]: e.target.value }))}
+                                                    onBlur={() => persistTd()}
+                                                />
+                                            </label>
+                                        ))}
+                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
+                                            // Restore: đưa về giá trị approved (từ tdApproved.fields) rồi persist.
+                                            const td = tdApproved;
+                                            const restored = {};
+                                            if (td?.fields && typeof td.fields === "object") {
+                                                for (const [k, f] of Object.entries(td.fields)) restored[k] = String(f && typeof f === "object" ? f.value : f ?? "");
+                                            }
+                                            setTdDraft(restored);
+                                            persistTd(restored);
+                                        }}>
+                                            Khôi phục dữ liệu testcase
+                                        </button>
+                                    </>
+                                );
+                            })()}
+                        </div>
                         <div className="v3-info-row"><span>Automation</span><b>{segCount > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</b></div>
                         {expected ? <div className="v3-info-row"><span>Kết quả mong đợi</span><b>{expected}</b></div> : null}
                     </div>

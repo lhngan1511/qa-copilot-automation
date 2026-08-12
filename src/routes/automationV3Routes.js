@@ -166,6 +166,13 @@ export default function createAutomationV3Routes({ applicationService = null } =
         })));
 
     // ---------- B3. Expected Result (5C) ----------
+    router.patch("/workspaces/:workspaceId/testcases/:testCaseId/test-data", handle(applicationService, (svc, req) =>
+        svc.saveTestData({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            testData: req.body?.testData ?? {}
+        })));
+
     router.patch("/workspaces/:workspaceId/testcases/:testCaseId/expected-result", handle(applicationService, (svc, req) =>
         svc.updateExpectedResult({
             workspaceId: req.params.workspaceId,

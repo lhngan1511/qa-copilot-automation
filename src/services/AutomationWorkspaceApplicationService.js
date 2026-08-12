@@ -1008,6 +1008,17 @@ export default class AutomationWorkspaceApplicationService {
     /* ============================== C2. Expected Result + Đề xuất (5C) ============================== */
 
     /** Tester sửa Expected Result (working copy trong workspace — KHÔNG sửa approved). Rỗng → về bản gốc. */
+    /** P0-A — Lưu Test Data tester edit cho lần automation (persist trong workspace,
+     *  KHÔNG ghi ngược approved-testcases.json). Shape: { "<field>": "<value>" }. */
+    saveTestData({ workspaceId, testCaseId, testData = null }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const normalized = testData && typeof testData === "object"
+            ? Object.fromEntries(Object.entries(testData).map(([k, v]) => [k, String(v ?? "")]))
+            : {};
+        this.workspace.saveTestData(workspaceId, testCaseId, normalized);
+        return this.toItem(this.workspace.getTestCase(workspaceId, testCaseId), workspaceId);
+    }
+
     updateExpectedResult({ workspaceId, testCaseId, expectedResult }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.saveExpectedResult(workspaceId, testCaseId, expectedResult);
@@ -1203,6 +1214,8 @@ export default class AutomationWorkspaceApplicationService {
             status: "GENERATED",
             testCaseId,
             outputPath: result.outputPath,
+            // P0-A — trả code string (cho UI Xem mã / test fidelity); P0-D sẽ dùng cho Lưu file.
+            code: result.code ?? "",
             metadata: result.metadata,
             runtimeEnvKeys: Object.keys(result.runtimeEnv ?? {}),
             validation: result.validation
@@ -1293,6 +1306,10 @@ export default class AutomationWorkspaceApplicationService {
             expectedResult: (entry.expectedResultEdited ?? entry.expectedResult ?? "").trim(),
             expectedResultEdited: entry.expectedResultEdited ?? null,
             expectedResultOriginal: entry.expectedResult ?? "",
+            // P0-A — Test Data fidelity: trả đúng approved test data của testcase (canonical = entry.approvedTestData)
+            // và confirmedTestData (tester edit cho lần automation — persist riêng, KHÔNG sửa approved).
+            testData: entry.approvedTestData ?? null,
+            confirmedTestData: entry.confirmedTestData ?? null,
             recordingSummary: rec
                 ? { status: rec.status, recordingId: rec.recordingId, version: rec.recordingVersion, hash: rec.recordingHash, approvedBy: rec.approvedBy, approvedAt: rec.approvedAt }
                 : { status: "NOT_RECORDED", recordingId: null, version: null, hash: null, approvedBy: null, approvedAt: null },

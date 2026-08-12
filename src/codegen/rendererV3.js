@@ -72,8 +72,11 @@ function pickApprovedValue(approvedTestData, target) {
     return direct;
 }
 
-/** Render MỘT step — stateless: step → { line?, runtimeEnv?, diagnostics? }. */
-export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {} } = {}) {
+/** Render MỘT step — stateless: step → { line?, runtimeEnv?, diagnostics? }.
+ *  P0-A — testDataMap: map target → value (từ approved/confirmed testcase data).
+ *  Khi có mapping evidence → `fill(testData["<target>"])` (dễ sửa về sau);
+ *  KHÔNG có (recorded/fallback) → inline như cũ. KHÔNG invent mapping. */
+export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {}, testDataMap = null } = {}) {
     const diagnostics = [];
     const runtimeEnv = {};
     const action = String(step?.actionType ?? "").toUpperCase();
@@ -111,6 +114,10 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
             if (envKey) {
                 runtimeEnv[envKey] = { value: resolved.value, source: resolved.source };
                 return { line: `  await ${loc}.fill(process.env.${envKey} ?? "");`, runtimeEnv, diagnostics };
+            }
+            // P0-A — testcase-confirmed data (approved/confirmed) đi qua testData object.
+            if (testDataMap && Object.prototype.hasOwnProperty.call(testDataMap, target)) {
+                return { line: `  await ${loc}.fill(testData[${JSON.stringify(target)}]);`, runtimeEnv, diagnostics };
             }
             return { line: `  await ${loc}.fill(${JSON.stringify(resolved.value)});`, runtimeEnv, diagnostics };
         }
@@ -203,10 +210,36 @@ export function renderV3Spec({
     const runtimeEnv = {};
     const bindingDiag = [];
 
+    // P0-A — xây testDataMap: field có value từ APPROVED_JSON/USER_CONFIRMED (testcase data)
+    // → đưa vào const testData; recorded chỉ là fallback (inline, không vào map).
+    const testDataMap = {};
+    const collectTestData = rec => {
+        for (const step of rec?.steps ?? []) {
+            if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
+            const target = String(step?.target ?? "").trim();
+            if (!target || Object.prototype.hasOwnProperty.call(testDataMap, target)) continue;
+            // P0-A — sensitive field KHÔNG đưa vào testData (không expose value); renderStep
+            // xử lý qua envKeyFor → process.env.TESTDATA_* (an toàn).
+            if (isSensitiveField(target)) continue;
+            const resolved = resolveTestValue({
+                purpose: purposeMap[target],
+                savedDrawerValue: confirmedTestData?.[target],
+                approvedJsonValue: pickApprovedValue(approvedTestData, target),
+                recordedCodeGenValue: step?.recordedValue,
+                envValue: undefined
+            });
+            if (resolved.source === TESTDATA_SOURCES.APPROVED_JSON || resolved.source === TESTDATA_SOURCES.USER_CONFIRMED) {
+                testDataMap[target] = resolved.value;
+            }
+        }
+    };
+    if (setupRecording) collectTestData(setupRecording);
+    collectTestData(testcaseRecording);
+
     const renderRecording = rec => {
         const lines = [];
         for (const step of rec?.steps ?? []) {
-            const r = renderStep(step, { purposeMap, confirmedTestData, approvedTestData });
+            const r = renderStep(step, { purposeMap, confirmedTestData, approvedTestData, testDataMap });
             if (r.line) lines.push(r.line);
             for (const [k, v] of Object.entries(r.runtimeEnv || {})) runtimeEnv[k] = v;
             for (const d of r.diagnostics || []) if (d.code === "TESTDATA_BINDING_REQUIRED") bindingDiag.push(d.field);
@@ -227,9 +260,17 @@ export function renderV3Spec({
     // 5. Ghép spec.
     const title = `${testCaseId} - ${testCase?.title || "Automation"}`;
     const specLines = [
-        `import { test, expect } from '@playwright/test';`,
-        `test(${JSON.stringify(title)}, async ({ page }) => {`
+        `import { test, expect } from '@playwright/test';`
     ];
+    // P0-A — khai báo const testData (chỉ khi có field từ testcase; KHÔNG invent).
+    const testDataEntries = Object.entries(testDataMap);
+    if (testDataEntries.length > 0) {
+        specLines.push(`const testData = {`);
+        for (const [k, v] of testDataEntries) specLines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
+        specLines.push(`};`);
+        specLines.push(``);
+    }
+    specLines.push(`test(${JSON.stringify(title)}, async ({ page }) => {`);
     specLines.push(...lines);
     for (const a of confirmed) {
         const line = renderAssertion(a);

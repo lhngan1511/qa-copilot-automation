@@ -143,6 +143,15 @@ export function reorderTestCaseSegments(workspaceId, testCaseId, segmentIds) {
     );
 }
 
+/** PATCH .../testcases/:testCaseId/test-data — lưu Test Data tester edit cho automation
+ *  (persist workspace; KHÔNG sửa approved testcase). Shape { "<field>": "<value>" }. */
+export function saveTestData(workspaceId, testCaseId, testData) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/test-data`,
+        { headers: jsonHeaders(), body: JSON.stringify({ testData }) }
+    );
+}
+
 /** POST .../testcases/:testCaseId/automation-decision — tester đặt trạng thái tự động hóa. */
 export function setAutomationDecision(workspaceId, testCaseId, decision) {
     return apiClient.post(

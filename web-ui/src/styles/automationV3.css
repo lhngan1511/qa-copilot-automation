@@ -981,6 +981,12 @@
 .v3-lib-group__rename { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
 .v3-lib-group__rename .v3-input { flex: 1; min-height: 30px; font-size: 12px; }
 
+/* P0-A — DỮ LIỆU KIỂM THỬ (info tab drawer). */
+.v3-info-td { display: grid; gap: 6px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 8px; margin-top: 4px; }
+.v3-info-td__head { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+.v3-td-field { display: grid; gap: 4px; font-size: 13px; color: #475569; }
+.v3-td-field .v3-input { min-height: 32px; font-size: 13px; }
+
 /* P0 — Grouping V1: group Library (collapsed mặc định; mở 1 group → thấy actions). */
 .v3-lib-group { display: grid; gap: 4px; }
 .v3-lib-group__head {
