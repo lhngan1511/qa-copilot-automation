@@ -196,6 +196,17 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN UX REDESIGN THEO WIREFRAME (ĐÃ IMPLEMENT 2026-08-10, không thêm feature):**
+- Mental model 5 bước: GHI/DÁN → XEM BẢN GHI → CHỌN ĐOẠN → TẠO THAO TÁC → LƯU THƯ VIỆN. AI chỉ là trợ lý tùy chọn bước 3.
+- **I. BẢN GHI** (đổi tên từ "PLAYWRIGHT RECORDING"): URL + Trình duyệt + `[Bắt đầu ghi]` + `[Dán bản ghi Playwright]` → summary `N thao tác · M điều kiện kiểm tra` + `[Xem thao tác]` (collapsed; chỉ steps/verification **readable** — KHÔNG raw code; raw ở Công cụ kỹ thuật).
+- **II. TẠO THAO TÁC**: mô tả + helper nhỏ `Cần hỗ trợ chia bản ghi? [ Gợi ý bằng AI ]` (secondary, không ✨, không dính câu) → Start/End dropdown → `ĐOẠN ĐÃ CHỌN` (N thao tác · bước X→Y + steps readable) → `Điều kiện kiểm tra trong đoạn` (scoped) → Tên → `[Xác nhận thao tác]` (align phải). Spacing rõ giữa các khối.
+- **AI không overwrite/không tự lưu**: proposal hiển thị `Gợi ý i/N` + `[Dùng gợi ý]` (CHỈ điền Start/End/Tên) + `[Bỏ]`; **overlap với thao tác đã tạo → ⚠ cảnh báo + chặn Dùng** (không duplicate). Test: AI analyze 2 lần → Library count không đổi; tester tự tạo Login trước → không bị overwrite.
+- **III. THAO TÁC ĐÃ TẠO** (đổi tên): tách hẳn; mỗi item collapsed (`Tên · bước X→Y · N thao tác` + `[Xem][Sửa][Xóa]`) + `[+ Tạo thêm thao tác]` + `[Lưu vào Thư viện thao tác]` (align phải, compact).
+- **Save feedback**: `✓ Đã lưu N thao tác vào Thư viện.` + `[Mở Thư viện thao tác]` → khối **THƯ VIỆN THAO TÁC** (`[Xem tất cả]` toggle; tên/bước/verification/usage — reuse listLibrary).
+- **Công cụ kỹ thuật** ▸ collapse: `[Sao chép mã]` + `[Tải/Lưu script]` + `Xem mã Playwright gốc` (read-only); **BỎ "Chạy thử bản ghi"** (trùng runner). Không textarea lớn.
+- Bỏ khỏi UI: "PHÂN ĐOẠN THAO TÁC → THƯ VIỆN", "MỘT nguồn canonical (global)", "shared". Không green box khổng lồ; CTA không full-width.
+- Tests: ui-test cập nhật (I/II/III, Gợi ý bằng AI, overlap guard, Mở Thư viện, Sao chép mã, bỏ Chạy thử) + ai-analysis-test mở rộng (AI không tự lưu; login trước không overwrite). Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm UI. Không AI Composition; không Runner; không 6D.**
+
 **P0 — CODEGEN LIBRARY VISIBILITY / SAVE FEEDBACK (ĐÃ IMPLEMENT 2026-08-10):**
 - Phân biệt rõ: `CÁC THAO TÁC ĐÃ TẠO` (working set recording hiện tại) vs `THƯ VIỆN THAO TÁC` (shared persisted assets).
 - Sau `[Lưu vào Thư viện thao tác]`: success "✓ Đã lưu N thao tác vào Thư viện." + `[Xem trong Thư viện]` (mở khối Library); **KHÔNG auto-clear working set** (tester vẫn thấy action vừa tạo).

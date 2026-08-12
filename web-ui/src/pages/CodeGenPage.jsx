@@ -131,6 +131,20 @@ export default function CodeGenPage() {
         }
     };
 
+    const handleCopyScript = async () => {
+        const content = active?.scriptContent ?? "";
+        if (!content.trim()) {
+            setNotice("Bản ghi hiện tại chưa có script.");
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(content);
+            setNotice("Đã sao chép mã Playwright gốc.");
+        } catch {
+            setNotice("Không sao chép được (trình duyệt chặn clipboard).");
+        }
+    };
+
     const handleSaveFile = () => {
         const content = active?.scriptContent ?? "";
         if (!content.trim()) {
@@ -210,7 +224,7 @@ export default function CodeGenPage() {
 
             {/* P0 Consolidation — MAIN FLOW: Playwright Recording → Phân đoạn → Lưu Library */}
             <div className="codegen-card">
-                <label className="codegen-label">PLAYWRIGHT RECORDING</label>
+                <label className="codegen-label">I. BẢN GHI</label>
                 <div className="codegen-row">
                     <input
                         className="codegen-input"
@@ -233,25 +247,22 @@ export default function CodeGenPage() {
                 <p className="codegen-hint">Record hoặc dán bản ghi đều đổ vào MỘT nguồn — cắt đoạn → lưu Thư viện thao tác (shared).</p>
             </div>
 
-            {/* PHÂN ĐOẠN + LƯU LIBRARY — shared component (global recording, không workspace) */}
-            <div className="codegen-card">
-                <label className="codegen-label">PHÂN ĐOẠN THAO TÁC → THƯ VIỆN</label>
-                <V3RecordingPreparationPanel
-                    onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
-                    onError={msg => setNotice(msg)}
-                />
-            </div>
+            {/* II/III + Thư viện — shared component (global recording) */}
+            <V3RecordingPreparationPanel
+                onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                onError={msg => setNotice(msg)}
+            />
 
             {/* CÔNG CỤ KỸ THUẬT (collapse — consume canonical recording, không textarea thứ hai) */}
             <div className="codegen-card codegen-card--sub">
                 <details className="codegen-details">
                     <summary className="codegen-label">Công cụ kỹ thuật ▾</summary>
                     <div className="codegen-row">
-                        <button className="button button--secondary" type="button" disabled={!activeId || actions.run.isPending} onClick={handleRun}>
-                            {actions.run.isPending ? "Đang chạy..." : "Chạy thử bản ghi"}
+                        <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleCopyScript}>
+                            Sao chép mã
                         </button>
                         <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleSaveFile}>
-                            Lưu script
+                            Tải/Lưu script
                         </button>
                     </div>
                     {active?.scriptContent ? (

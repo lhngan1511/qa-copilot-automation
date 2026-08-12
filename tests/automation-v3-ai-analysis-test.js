@@ -98,6 +98,22 @@ async function main() {
 
     // 8. Không testcase context: request analyze không có testcase field (đã đúng — chỉ recordingId); backend không đọc testcase
     // (code backend chỉ dùng recording — verify qua không lỗi khi không có testcase)
+    // ===== P0 UX Redesign — AI không tự lưu Library; login trước → AI sau không overwrite =====
+    const libBefore = await req("GET", "/api/codegen/library");
+    const countBefore = (libBefore.body?.data ?? libBefore.body ?? []).length;
+    // AI analyze (2 lần) — KHÔNG được tự persist Library
+    await req("POST", "/api/codegen/analyze", { recordingId: recId });
+    await req("POST", "/api/codegen/analyze", { recordingId: recId });
+    const libAfter = await req("GET", "/api/codegen/library");
+    const countAfter = (libAfter.body?.data ?? libAfter.body ?? []).length;
+    assert.equal(countAfter, countBefore, "AI analyze KHÔNG tự lưu Library (count không đổi)");
+    // Tester tự tạo Login trước (1-2) — không bị AI overwrite (backend không tự xóa/ghi đè block)
+    const login = await req("POST", "/api/codegen/library", { recordingId: recId, label: "Đăng nhập-tester", kind: "ACTION", startStep: 1, endStep: 2 });
+    assert.equal(login.status, 201, "tester tự tạo Login 201");
+    const libAfterLogin = await req("GET", "/api/codegen/library");
+    const loginCount = (libAfterLogin.body?.data ?? libAfterLogin.body ?? []).filter(b => b.label === "Đăng nhập-tester").length;
+    assert.equal(loginCount, 1, "tester tạo Login 1 (AI không overwrite/duplicate)");
+
 
     await new Promise(r => srv.close(r));
     fs.rmSync(tempRoot, { recursive: true, force: true });
