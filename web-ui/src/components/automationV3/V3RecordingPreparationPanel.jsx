@@ -1,26 +1,17 @@
 import { useMemo, useState } from "react";
-import {
-    startRecording,
-    stopRecording,
-    getRecordingDetail,
-    createBlock,
-    confirmBlock,
-    saveToLibrary
-} from "../../api/automationV3Api.js";
+import { setRecordingScript, getRecording, createLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
- V3RecordingPreparationPanel — SHARED component (Phase 1 Ownership).
+ V3RecordingPreparationPanel — SHARED component (P0 Consolidation).
 
  OWNER: Codegen (record/paste → parse → cut-many → confirmed actions → save Library).
- REUSE: Automation fallback "Tạo thao tác mới từ bản ghi" (mode secondary).
+ REUSE: Automation fallback "Tạo thao tác mới từ bản ghi" (mode secondary; bind LIB vào testcase).
 
- KHÔNG duplicate logic: paste/parse/cut-many nằm DUY NHẤT ở đây.
- - paste/record → parse (steps + assertions từ parser)
- - preview steps + locator + verification/expect
- - Manual Cut Many: Start/End/Tên → [Xác nhận đoạn] → [+ Chọn đoạn tiếp theo]
- - "Các đoạn đã xác nhận" (✓ Đăng nhập ...)
- - [Lưu vào thư viện thao tác] (chỉ khi có đoạn xác nhận; label bắt buộc)
+ KIẾN TRÚC (không qua Automation Workspace):
+   Record/Paste → GLOBAL Recording (workspaceId=null, /api/codegen) → Parse → Cut → Confirm
+   → ActionLibrary.create() (POST /api/codegen/library) → LIB-*
+   onConfirmedSegment(blockId, label) — fallback Automation bind LIB vào testcase.
 */
 
 const STEP_LABEL = step => {
@@ -31,9 +22,9 @@ const STEP_LABEL = step => {
 
 export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onError, onConfirmedSegment }) {
     const [source, setSource] = useState("");
+    const [recordingId, setRecordingId] = useState(null);
     const [steps, setSteps] = useState([]);
     const [assertions, setAssertions] = useState([]);
-    const [recordingId, setRecordingId] = useState(null);
     const [mode, setMode] = useState("all"); // all | part
     const [startSel, setStartSel] = useState(null);
     const [endSel, setEndSel] = useState(null);
@@ -49,17 +40,23 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSaving(true);
         setLocalError("");
         try {
-            const start = await startRecording(workspaceId, { type: "TESTCASE" });
-            const stop = await stopRecording(workspaceId, { recordingId: start.recordingId, source });
-            const recId = stop.recordingId ?? start.recordingId;
+            // GLOBAL recording — không workspace: tạo session codegen rồi set script (parse backend).
+            const start = await fetch("/api/codegen/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: "about:blank", browser: "chrome", mode: "FULL_FLOW" })
+            }).then(r => r.json());
+            const recId = start?.data?.recordingId ?? start?.recordingId;
+            if (!recId) throw new Error("Không tạo được bản ghi.");
+            const saved = await setRecordingScript(recId, { script: source });
+            const detail = await getRecording(recId);
+            const rec = detail?.data ?? detail;
             setRecordingId(recId);
-            const detail = await getRecordingDetail(workspaceId, recId);
-            const parsed = Array.isArray(detail.steps) ? detail.steps : [];
-            setSteps(parsed);
-            setAssertions(Array.isArray(detail.assertions) ? detail.assertions : []);
-            setStartSel(parsed.length > 0 ? parsed[0].order : null);
-            setEndSel(parsed.length > 0 ? parsed[parsed.length - 1].order : null);
-            if (parsed.length === 0) notifyError("Bản ghi không có thao tác nào.");
+            setSteps(Array.isArray(rec?.steps) ? rec.steps : []);
+            setAssertions(Array.isArray(rec?.assertions) ? rec.assertions : []);
+            setStartSel(Array.isArray(rec?.steps) && rec.steps.length > 0 ? rec.steps[0].order : null);
+            setEndSel(Array.isArray(rec?.steps) && rec.steps.length > 0 ? rec.steps[rec.steps.length - 1].order : null);
+            if (!Array.isArray(rec?.steps) || rec.steps.length === 0) notifyError("Bản ghi không có thao tác nào.");
         } catch (e) {
             notifyError(e?.message ?? "Không đọc được bản ghi.");
         } finally {
@@ -79,25 +76,29 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSaving(true);
         setLocalError("");
         try {
-            const block = await createBlock(workspaceId, {
+            const label = name.trim();
+            if (!label) { notifyError("Vui lòng đặt tên thao tác."); return; }
+            // ActionLibrary.create() — backend slice steps/assertions từ global recording (không tin frontend).
+            const res = await createLibraryAction({
                 recordingId,
+                label,
+                kind: "ACTION",
                 startStep: selRange.start,
-                endStep: selRange.end,
-                scope: "PRIVATE",
-                label: name.trim() || null
+                endStep: selRange.end
             });
-            await confirmBlock(workspaceId, block.blockId);
+            const data = res?.data ?? res;
+            const blockId = data?.blockId;
+            if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
             setConfirmed(prev => [...prev, {
-                blockId: block.blockId,
-                label: name.trim() || `Bước ${selRange.start} → ${selRange.end}`,
+                blockId,
+                label,
                 startStep: selRange.start,
                 endStep: selRange.end,
                 stepCount: selRange.count
             }]);
-            // Fallback (Automation): bind ngay block vào testcase đang mở.
-            onConfirmedSegment?.(block.blockId, name.trim() || null);
+            // Fallback (Automation): bind LIB vào testcase đang mở.
+            onConfirmedSegment?.(blockId, label);
             setName("");
-            // Cut-many: giữ recording, quay lại chọn đoạn tiếp theo.
             setMode("all");
             setStartSel(null);
             setEndSel(null);
@@ -110,30 +111,17 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
     const saveAllToLibrary = async () => {
         if (saving || confirmed.length === 0) return;
-        setSaving(true);
-        setLocalError("");
-        try {
-            let savedCount = 0;
-            for (const seg of confirmed) {
-                await saveToLibrary(workspaceId, { blockId: seg.blockId, label: seg.label });
-                savedCount += 1;
-            }
-            setConfirmed([]);
-            onSavedToLibrary?.(savedCount);
-        } catch (e) {
-            notifyError(e?.message ?? "Không lưu được vào thư viện.");
-        } finally {
-            setSaving(false);
-        }
+        // Các đoạn đã được tạo thẳng vào Library khi confirm (confirmSegment → createLibraryAction).
+        // Nút này chỉ thông báo; không tạo lại (tránh duplicate LIB).
+        onSavedToLibrary?.(confirmed.length);
+        setConfirmed([]);
     };
 
     return (
         <div className="v3-rec-prep">
             <div className="v3-exp__row">
                 <h4 className="v3-map__h">BẢN GHI PLAYWRIGHT</h4>
-                <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setSource(""); setSteps([]); }} disabled={saving}>
-                    Dán bản ghi mới
-                </button>
+                <span className="v3-exp__note">Dán bản ghi — MỘT nguồn canonical (global)</span>
             </div>
 
             <textarea
@@ -202,7 +190,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     ) : null}
 
                     <div className="v3-act__range-actions">
-                        <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="Tên thao tác (để lưu thư viện)" />
+                        <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="Tên thao tác (lưu Thư viện)" />
                         <button type="button" className="v3-btn v3-btn--primary" onClick={confirmSegment} disabled={!selRange || saving}>
                             {saving ? "Đang lưu…" : "Xác nhận đoạn"}
                         </button>
@@ -212,12 +200,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
             {confirmed.length > 0 ? (
                 <div className="v3-act__saved">
-                    <p className="v3-act__note">Các đoạn đã xác nhận:</p>
+                    <p className="v3-act__note">Các đoạn đã xác nhận (đã vào Thư viện):</p>
                     {confirmed.map((seg, i) => (
                         <div className="v3-cond v3-cond--compact" key={seg.blockId}>
                             <div className="v3-cond__body">
                                 <b>{i + 1}. {seg.label} · bước {seg.startStep} → {seg.endStep}</b>
-                                <span className="v3-cond__meta">{seg.stepCount} thao tác · ✓ Đã xác nhận</span>
+                                <span className="v3-cond__meta">{seg.stepCount} thao tác · ✓ Đã lưu (LIB-*)</span>
                             </div>
                         </div>
                     ))}

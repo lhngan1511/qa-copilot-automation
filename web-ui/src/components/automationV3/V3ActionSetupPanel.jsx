@@ -435,7 +435,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                     <V3RecordingPreparationPanel
                         workspaceId={workspaceId}
                         onConfirmedSegment={async (blockId) => {
-                            await bindBlock(workspaceId, testCase.testCaseId, blockId);
+                            // P0 Consolidation — block là LIB-* (ActionLibrary) → bind qua bindLibraryBlock.
+                            await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
                             await refreshBinding();
                             notify();
                         }}

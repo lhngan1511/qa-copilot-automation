@@ -206,40 +206,20 @@ export default function CodeGenPage() {
 
             {notice && <div className="automation-notice" role="status">{notice}</div>}
 
-            {/* P0 Phase 1 — Codegen = OWNER của Recording Preparation (shared component; chưa AI) */}
+            {/* P0 Consolidation — MAIN FLOW: Playwright Recording → Phân đoạn → Lưu Library */}
             <div className="codegen-card">
-                <label className="codegen-label">0. Thu thập thao tác → Thư viện (Codegen)</label>
-                <p className="codegen-hint">Dán Playwright recording, cắt thành các đoạn thao tác, lưu vào Thư viện thao tác (shared — Automation dùng lại). Chưa AI.</p>
-                {codeGenWorkspaceId ? (
-                    <V3RecordingPreparationPanel
-                        workspaceId={codeGenWorkspaceId}
-                        onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
-                        onError={msg => setNotice(msg)}
-                    />
-                ) : (
-                    <p className="codegen-hint">
-                        Codegen cần một Automation Workspace để chia sẻ Thư viện thao tác. Hãy mở Automation và tạo workspace trước.
-                    </p>
-                )}
-            </div>
-
-            {/* RECORD */}
-            <div className="codegen-card">
-                <label className="codegen-label">1. Record trên Playwright Inspector</label>
+                <label className="codegen-label">PLAYWRIGHT RECORDING</label>
                 <div className="codegen-row">
                     <input
                         className="codegen-input"
                         type="text"
-                        placeholder="https://example.com"
+                        placeholder="URL để ghi (tùy chọn)"
                         value={url}
                         disabled={isRecording || actions.start.isPending}
                         onChange={e => setUrl(e.target.value)}
                     />
                     <select className="codegen-input" value={browser} disabled={isRecording} onChange={e => setBrowser(e.target.value)} aria-label="Browser">
                         {BROWSERS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                    <select className="codegen-input" value={mode} disabled={isRecording} onChange={e => setMode(e.target.value)} aria-label="Mode">
-                        {MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                     </select>
                     <button className="button button--primary" type="button" disabled={isRecording || busy} onClick={handleStart}>
                         Bắt đầu ghi
@@ -248,57 +228,45 @@ export default function CodeGenPage() {
                         Dừng ghi
                     </button>
                 </div>
+                <p className="codegen-hint">Record hoặc dán bản ghi đều đổ vào MỘT nguồn — cắt đoạn → lưu Thư viện thao tác (shared).</p>
             </div>
 
-            {/* PASTE */}
+            {/* PHÂN ĐOẠN + LƯU LIBRARY — shared component (global recording, không workspace) */}
             <div className="codegen-card">
-                <label className="codegen-label">2. Dán script từ Playwright Inspector</label>
-                <p className="codegen-hint">Trong Playwright Inspector bấm Copy, dán vào đây. Đây là nguồn script duy nhất.</p>
+                <label className="codegen-label">PHÂN ĐOẠN THAO TÁC → THƯ VIỆN</label>
+                <V3RecordingPreparationPanel
+                    onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                    onError={msg => setNotice(msg)}
+                />
+            </div>
+
+            {/* CÔNG CỤ NÂNG CAO (secondary — tách khỏi main flow) */}
+            <div className="codegen-card codegen-card--sub">
+                <label className="codegen-label">CÔNG CỤ NÂNG CAO</label>
                 <textarea
                     className="codegen-textarea"
-                    rows="12"
-                    placeholder="// Dán script Playwright ở đây..."
+                    rows="6"
+                    placeholder="// Script Playwright (debug: Chạy thử / Lưu file)"
                     value={scriptText}
                     onChange={e => setScriptText(e.target.value)}
                 />
                 <div className="codegen-row">
-                    <button className="button button--primary" type="button" disabled={!scriptText.trim()} onClick={handleSaveFile}>
-                        Lưu file
-                    </button>
                     <button className="button button--secondary" type="button" disabled={!scriptText.trim() || actions.run.isPending} onClick={handleRun}>
-                        {actions.run.isPending ? "Đang chạy..." : "Chạy thử"}
+                        {actions.run.isPending ? "Đang chạy..." : "Chạy thử bản ghi"}
+                    </button>
+                    <button className="button button--secondary" type="button" disabled={!scriptText.trim()} onClick={handleSaveFile}>
+                        Lưu file
                     </button>
                     <button className="button button--secondary" type="button" onClick={handleClear}>
                         Xóa nội dung
                     </button>
                 </div>
-            </div>
-
-            {/* RUN RESULT */}
-            {runResult && (
-                <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
-                    <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>
-                    <span>{runResult.error || runResult.diagnostic || `Mã thoát: ${runResult.status}`}</span>
-                    {runResult.output && <pre className="codegen-output">{runResult.output}</pre>}
-                </div>
-            )}
-
-            {/* ĐỐI CHIẾU TESTCASE (tính năng phụ) */}
-            <div className="codegen-card codegen-card--sub">
-                <div className="codegen-row codegen-row--between">
-                    <span className="codegen-sub-label">
-                        {active?.testcaseIds?.length > 0
-                            ? `Đã đối chiếu ${active.testcaseIds.length} testcase (${active.testcaseIds.join(", ")})`
-                            : "Chưa đối chiếu testcase"}
-                    </span>
-                    <button className="button button--secondary" type="button" onClick={openLinkModal} disabled={!activeId || !hasReliableContext} title={!hasReliableContext ? "Chỉ khả dụng khi mở CodeGen từ một bộ testcase đã duyệt" : ""}>
-                        Đối chiếu testcase
-                    </button>
-                </div>
-                {hasReliableContext ? (
-                    <p className="codegen-hint">Liên kết recording với testcase để truy vết. Không ảnh hưởng nội dung script.</p>
-                ) : (
-                    <p className="codegen-hint">Chỉ khả dụng khi mở CodeGen từ một bộ testcase đã duyệt.</p>
+                {runResult && (
+                    <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
+                        <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>
+                        <span>{runResult.error || runResult.diagnostic || `Mã thoát: ${runResult.status}`}</span>
+                        {runResult.output && <pre className="codegen-output">{runResult.output}</pre>}
+                    </div>
                 )}
             </div>
 
@@ -329,37 +297,6 @@ export default function CodeGenPage() {
                 </div>
             )}
 
-            {linkOpen && (
-                <div className="codegen-modal-overlay" role="dialog" aria-modal="true" aria-label="Đối chiếu testcase">
-                    <div className="codegen-modal codegen-modal--wide">
-                        <h3>Đối chiếu testcase</h3>
-                        <p className="codegen-hint">Chọn 0, 1 hoặc nhiều testcase liên quan đến recording này để truy vết. Liên kết không thay đổi nội dung script.</p>
-                        <input
-                            className="codegen-input"
-                            type="text"
-                            placeholder="Tìm theo ID / module / chức năng / scenario..."
-                            value={linkSearch}
-                            onChange={e => setLinkSearch(e.target.value)}
-                        />
-                        <div className="codegen-testcase-grid">
-                            {filteredTestcases.length === 0 && <p className="codegen-empty">Không tìm thấy testcase. (Kiểm tra approved-testcases.json)</p>}
-                            {filteredTestcases.map(tc => (
-                                <label key={tc.id} className="codegen-testcase-item">
-                                    <input type="checkbox" checked={selectedTestcaseIds.includes(tc.id)} onChange={() => toggleTestcase(tc.id)} />
-                                    <span>
-                                        <strong>{tc.id}</strong> — {tc.title || tc.id}
-                                        <small>{tc.module} · {tc.feature}</small>
-                                    </span>
-                                </label>
-                            ))}
-                        </div>
-                        <div className="codegen-row">
-                            <button className="button button--primary" type="button" onClick={handleSaveLink}>Lưu đối chiếu</button>
-                            <button className="button button--secondary" type="button" onClick={() => setLinkOpen(false)}>Đóng</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </section>
     );
 }

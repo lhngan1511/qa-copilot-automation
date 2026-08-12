@@ -333,7 +333,8 @@ assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào p
 // ---- P0 Phase 1: Codegen là owner Recording Preparation (shared component) ----
 const codegenPage = stripComments(read("pages/CodeGenPage.jsx"));
 assert.ok(codegenPage.includes("V3RecordingPreparationPanel"), "Codegen page dùng shared RecordingPreparationPanel");
-assert.ok(codegenPage.includes("Thu thập thao tác → Thư viện"), "Codegen có khu vực owner recording prep");
+assert.ok(codegenPage.includes("PHÂN ĐOẠN THAO TÁC → THƯ VIỆN"), "Codegen có khu vực owner recording prep");
+assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
 
 
 // ---- 27. Card: primary theo trạng thái + hiển thị Expected Result + Thao tác ----

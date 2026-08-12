@@ -106,6 +106,10 @@ export default function createApp({
     app.use("/api/automation-workspace", createAutomationWorkspaceRoutes({ dataDir }));
 
     const codeGenDataDir = path.resolve(dataDir ?? path.join(projectDirectory, "data"));
+    // Boundary — Action Library: TÀI SẢN DÙNG CHUNG (mọi workspace + Codegen dùng lại).
+    const v3ActionLibrary = new ActionLibrary({
+        metadataFile: path.join(codeGenDataDir, "action-library.json")
+    });
     const codeGenManager = new CodeGenSessionManager({
         rootDir: projectDirectory,
         store: new CodeGenRecordingStore({
@@ -113,7 +117,7 @@ export default function createApp({
             scriptsDir: path.join(projectDirectory, "outputs", "codegen")
         })
     });
-    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager }));
+    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager, actionLibrary: v3ActionLibrary }));
 
     // ---- Architecture V3 (Record by Testcase) — Route → Application Service → Domain/Store/GenerateService → Renderer ----
     const v3Workspace = new AutomationWorkspace({
@@ -124,10 +128,6 @@ export default function createApp({
         scriptsDir: path.join(projectDirectory, "outputs", "codegen")
     });
     const v3Session = new CurrentRecordingSession({ store: v3Store, workspace: v3Workspace });
-    // Boundary — Action Library: TÀI SẢN DÙNG CHUNG (mọi workspace dùng lại).
-    const v3ActionLibrary = new ActionLibrary({
-        metadataFile: path.join(codeGenDataDir, "action-library.json")
-    });
     const v3GenerateService = new GenerateService({
         workspace: v3Workspace,
         store: v3Store,

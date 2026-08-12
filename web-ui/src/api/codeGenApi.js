@@ -126,3 +126,11 @@ export async function focusCodeGenBrowser({ signal } = {}) {
     });
     return response.data;
 }
+
+/** P0 Consolidation — tạo Library Action từ GLOBAL recording (không workspace). */
+export async function createLibraryAction({ recordingId, label, kind = "ACTION", startStep, endStep }) {
+    return apiClient.post("/codegen/library", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordingId, label, kind, startStep, endStep })
+    });
+}

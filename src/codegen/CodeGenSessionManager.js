@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
 import CodeGenRecordingStore from "./CodeGenRecordingStore.js";
+import { parseRecording } from "./recordingParser.js";
 
 /*
  CodeGenSessionManager — Recording Session centric (Giai đoạn 2 MVP)
@@ -511,9 +512,23 @@ export default class CodeGenSessionManager {
             throw error;
         }
         const content = String(script ?? "").trim();
+        // P0 Consolidation — parse global recording (steps + assertions) từ script.
+        let steps = [], assertions = [], parseError = null;
+        if (content) {
+            try {
+                const parsed = parseRecording(content);
+                steps = parsed.steps ?? [];
+                assertions = parsed.assertions ?? [];
+            } catch (e) {
+                parseError = e?.message ?? "Parse recording thất bại.";
+            }
+        }
         this.store.update(recordingId, {
             scriptContent: content,
             status: content ? "SAVED" : rec.status === "RECORDING" ? "RECORDING" : "STOPPED",
+            steps,
+            assertions,
+            parseError,
             lastRunResult: null
         });
         const updated = this.get(recordingId);

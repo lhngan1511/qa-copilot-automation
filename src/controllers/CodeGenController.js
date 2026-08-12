@@ -1,8 +1,45 @@
 export default class CodeGenController {
-    constructor({ manager, testcaseLoader = null }) {
+    constructor({ manager, testcaseLoader = null, actionLibrary = null }) {
         if (!manager) throw new Error("CodeGenController cần manager.");
         this.manager = manager;
         this.testcaseLoader = testcaseLoader;
+        this.actionLibrary = actionLibrary;
+    }
+
+    /** P0 Consolidation — tạo Library Action từ GLOBAL recording (không workspace, không createBlock). */
+    async createLibraryAction(req, res) {
+        try {
+            if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
+            const { recordingId, label, kind = "ACTION", startStep, endStep } = req.body ?? {};
+            if (!recordingId || !Number.isInteger(startStep) || !Number.isInteger(endStep)) {
+                return this.fail(res, new Error("Thiếu recordingId/startStep/endStep."), 400, "INVALID_REQUEST", "Thiếu thông tin đoạn thao tác.");
+            }
+            const trimmedLabel = String(label ?? "").trim();
+            if (!trimmedLabel) return this.fail(res, new Error("Thiếu tên thao tác."), 400, "LIBRARY_LABEL_REQUIRED", "Tên thao tác bắt buộc.");
+            const rec = this.manager.get(recordingId);
+            if (!rec) return this.fail(res, new Error("Không tìm thấy bản ghi."), 404, "RECORDING_NOT_FOUND", "Không tìm thấy bản ghi.");
+            const steps = (rec.steps ?? []).filter(s => Number.isInteger(s?.order) && s.order >= startStep && s.order <= endStep);
+            if (steps.length === 0) return this.fail(res, new Error("Khoảng bước không có thao tác."), 400, "INVALID_RANGE", "Khoảng bước không hợp lệ.");
+            const last = steps[steps.length - 1];
+            const first = steps[0];
+            const asserts = (rec.assertions ?? []).filter(a => {
+                const as = a.sourceStart ?? -1; const ae = a.sourceEnd ?? -1;
+                if (as >= (first?.sourceStart ?? 0) && ae <= (last?.sourceEnd ?? 0)) return true;
+                if (as >= (last?.sourceStart ?? 0) && as <= (last?.sourceEnd ?? 0) + 120) return true;
+                return false;
+            }).map(a => ({ order: a.order, statement: a.statement ?? "", locator: a.locator ?? null, matcher: a.matcher ?? null, expected: a.expected ?? null, sourceStart: a.sourceStart ?? null, sourceEnd: a.sourceEnd ?? null, sourceLine: a.sourceLine ?? null }));
+            const block = this.actionLibrary.addBlock({
+                label: trimmedLabel,
+                kind: String(kind ?? "ACTION").toUpperCase() === "SETUP" ? "SETUP" : "ACTION",
+                steps,
+                recordedAssertions: asserts,
+                sourceRecordingId: recordingId,
+                sourceRange: { startStep, endStep }
+            });
+            return res.status(201).json({ success: true, data: { blockId: block.blockId, label: block.label, kind: block.kind, stepCount: block.steps.length, recordedAssertionCount: block.recordedAssertions.length }, error: null });
+        } catch (error) {
+            return this.fail(res, error, 400, "LIBRARY_CREATE_FAILED", "Không tạo được thao tác thư viện.");
+        }
     }
 
     async start(req, res) {
