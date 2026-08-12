@@ -22,6 +22,7 @@ export default function createCodeGenRoutes({
 
     router.post("/library", (req, res) => controller.createLibraryAction(req, res));
     router.post("/analyze", (req, res) => controller.analyzeRecording(req, res));
+    router.post("/recordings", (req, res) => controller.createRecording(req, res));
     router.get("/status", (req, res) => controller.status(req, res));
     router.get("/recordings", (req, res) => controller.list(req, res));
     router.get("/recordings/:recordingId", (req, res) => controller.get(req, res));

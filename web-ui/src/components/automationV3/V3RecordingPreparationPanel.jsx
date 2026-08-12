@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { rangesOverlap } from "../../utils/automationV3.js";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording } from "../../api/codeGenApi.js";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
@@ -14,6 +14,16 @@ import { ACTION_LABEL } from "../../utils/automationV3.js";
    → ActionLibrary.create() (POST /api/codegen/library) → LIB-*
    onConfirmedSegment(blockId, label) — fallback Automation bind LIB vào testcase.
 */
+
+const readableAssertion = a => {
+    const matcher = a.matcher || "";
+    const target = a.expected || (a.locator ? String(a.locator).replace(/^page\./, "") : "phần tử");
+    if (matcher === "toBeHidden") return `${target} không hiển thị`;
+    if (matcher === "toHaveURL") return `URL = ${a.expected}`;
+    if (matcher === "toHaveValue") return `${target} có giá trị ${a.expected}`;
+    if (matcher === "toBeDisabled") return `${target} vô hiệu`;
+    return `${target} hiển thị`;
+};
 
 const STEP_LABEL = step => {
     const act = ACTION_LABEL[step.actionType] ?? step.actionType ?? "";
@@ -36,6 +46,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // AI Recording Analysis — proposals (chưa persist; chỉ proposal)
     const [proposals, setProposals] = useState([]);
     const [analyzing, setAnalyzing] = useState(false);
+    const [showSteps, setShowSteps] = useState(false);
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
 
@@ -44,15 +55,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSaving(true);
         setLocalError("");
         try {
-            // GLOBAL recording — không workspace: tạo session codegen rồi set script (parse backend).
-            const start = await fetch("/api/codegen/start", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: "about:blank", browser: "chrome", mode: "FULL_FLOW" })
-            }).then(r => r.json());
-            const recId = start?.data?.recordingId ?? start?.recordingId;
+            // P0 Cleanup — Paste KHÔNG spawn recorder: tạo global recording trực tiếp (không mở browser).
+            const created = await createRecording({ url: "about:blank", browser: "chrome", mode: "FULL_FLOW" });
+            const recId = created?.data?.recordingId ?? created?.recordingId;
             if (!recId) throw new Error("Không tạo được bản ghi.");
-            const saved = await setRecordingScript(recId, { script: source });
+            await setRecordingScript(recId, { script: source });
             const detail = await getRecording(recId);
             const rec = detail?.data ?? detail;
             setRecordingId(recId);
@@ -217,6 +224,26 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 </div>
             )}
 
+            {steps.length > 0 ? (
+                <div className="v3-act__summary">
+                    <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
+                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setShowSteps(v => !v)}>
+                        {showSteps ? "Thu gọn" : "Xem chi tiết"}
+                    </button>
+                    {showSteps ? (
+                        <div className="v3-steps">
+                            {steps.map(s => (
+                                <div className="v3-step" key={s.order}>
+                                    <span className="v3-step__n">{s.order}</span>
+                                    <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
+                                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
+
             {localError ? <div className="v3-banner v3-banner--error" role="alert">{localError}</div> : null}
 
             {proposals.length > 0 ? (
@@ -298,7 +325,20 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                     ))}
                             </div>
                             {scopedAssertions.length > 0 ? (
-                                <p className="v3-act__note">Verification/expect trong đoạn này: {scopedAssertions.map(a => a.statement || a.matcher).join(" · ")}</p>
+                                <div className="v3-act__verif">
+                                    <span className="v3-act__note">Điều kiện kiểm tra trong đoạn:</span>
+                                    {scopedAssertions.map((a, i) => (
+                                        <div className="v3-cond v3-cond--compact" key={i}>
+                                            <div className="v3-cond__body">
+                                                <b>{readableAssertion(a)}</b>
+                                                <details className="v3-act__tech">
+                                                    <summary>Xem kỹ thuật</summary>
+                                                    <code className="v3-exp__stmt">{a.statement || a.matcher}</code>
+                                                </details>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             ) : (
                                 <p className="v3-act__note">Không có điều kiện kiểm tra được ghi trong đoạn này.</p>
                             )}

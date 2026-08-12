@@ -334,6 +334,13 @@ assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào p
 const codegenPage = stripComments(read("pages/CodeGenPage.jsx"));
 assert.ok(codegenPage.includes("V3RecordingPreparationPanel"), "Codegen page dùng shared RecordingPreparationPanel");
 assert.ok(codegenPage.includes("PHÂN ĐOẠN THAO TÁC → THƯ VIỆN"), "Codegen có khu vực owner recording prep");
+assert.ok(codegenPage.includes("Công cụ kỹ thuật ▾"), "P0 Cleanup: Advanced Tools collapse thành Công cụ kỹ thuật");
+assert.ok(!codegenPage.includes("CÔNG CỤ NÂNG CAO"), "P0 Cleanup: không còn section CÔNG CỤ NÂNG CAO lớn");
+const recPrepCleanup = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
+assert.ok(recPrepCleanup.includes("createRecording"), "P0 Cleanup: paste dùng createRecording (không spawn recorder)");
+assert.ok(recPrepCleanup.includes("thao tác") && recPrepCleanup.includes("Xem chi tiết"), "P0 Cleanup: summary + Xem chi tiết (không bung steps)");
+assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification business-readable + Xem kỹ thuật cho raw");
+
 assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
 
 

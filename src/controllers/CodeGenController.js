@@ -44,6 +44,15 @@ export default class CodeGenController {
 
     /** AI Recording Analysis — input CHỈ steps/assertions của recording (KHÔNG testcase list).
      *  Output = PROPOSAL (structured); không persist. AI lỗi/unavailable → proposals: [] (manual vẫn chạy). */
+    async createRecording(req, res) {
+        try {
+            const data = this.manager.createRecording(req.body ?? {});
+            return res.status(201).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 400, "CODE_GEN_CREATE_FAILED", "Không tạo được bản ghi.");
+        }
+    }
+
     async analyzeRecording(req, res) {
         try {
             const { recordingId } = req.body ?? {};

@@ -142,3 +142,11 @@ export async function analyzeRecording({ recordingId }) {
         body: JSON.stringify({ recordingId })
     });
 }
+
+/** P0 Cleanup — tạo GLOBAL recording KHÔNG spawn recorder (chỉ cho Paste path). */
+export async function createRecording({ url = "", browser = "chrome", mode = "FULL_FLOW" } = {}) {
+    return apiClient.post("/codegen/recordings", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, browser, mode })
+    });
+}

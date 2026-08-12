@@ -193,6 +193,12 @@ export default class CodeGenSessionManager {
     /**
      * Start một Recording Session (tự do, không bắt buộc testcase).
      */
+    /** P0 Cleanup — tạo GLOBAL recording KHÔNG spawn recorder (chỉ dùng cho Paste path). */
+    createRecording({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null } = {}) {
+        const recording = this.store.create({ mode, url: String(url ?? ""), browser: String(browser ?? "chrome"), context });
+        return this.store.get(recording.recordingId);
+    }
+
     async start({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null } = {}) {
         const normalizedUrl = String(url ?? "").trim();
         if (!normalizedUrl) {

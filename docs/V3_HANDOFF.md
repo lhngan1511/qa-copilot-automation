@@ -196,6 +196,14 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN UX CLEANUP (ĐÃ IMPLEMENT 2026-08-10, không thêm feature):**
+- **Paste KHÔNG spawn recorder:** thêm `POST /api/codegen/recordings` (tạo global recording trực tiếp — không mở browser/Inspector); `V3RecordingPreparationPanel.handlePasteDone` dùng `createRecording` (bỏ `/api/codegen/start`). Chỉ `[Bắt đầu ghi]` mới trigger recorder.
+- **Steps không bung:** hiển thị summary `N thao tác · M điều kiện kiểm tra` + `[Xem chi tiết]` (collapse).
+- **Verification business-readable + scoped theo range/proposal:** helper `readableAssertion` (target + "hiển thị/không hiển thị/URL=...") thay raw `expect(...)`; raw để trong `[Xem kỹ thuật]`.
+- **Công cụ nâng cao → `Công cụ kỹ thuật ▾`** (details collapse): bên trong Chạy thử bản ghi / Lưu script / Xem script gốc (read-only, canonical).
+- Main visual flow: Nguồn bản ghi → Phân tích → Review proposal/manual → Confirmed actions → Save Library.
+- Không AI Composition / Runner. Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm UI.**
+
 **P0/P1 — UX CORRECTION + AI RECORDING ANALYSIS (ĐÃ IMPLEMENT 2026-08-10):**
 - **Assertion scoping (P0):** `V3RecordingPreparationPanel` hiển thị verification **theo range đang chọn** (source-range rule: assertion trong phạm vi steps hoặc trailing ≤120 ký tự sau action cuối); range không có → "Không có điều kiện kiểm tra được ghi trong đoạn này." Backend `createLibraryAction` đã snapshot đúng theo range (không tin frontend).
 - **AI Recording Analysis:** endpoint `POST /api/codegen/analyze` (input CHỈ steps+assertions của recording — **không testcase list**; dùng `AIProviderFactory` + `AIConfig.provider`, không hardcode Gemini; AI unavailable/malformed JSON → `proposals: []` an toàn). UI: nút `[Phân tích bản ghi]` → proposals `[Xác nhận][Chỉnh phạm vi][Bỏ qua]` → confirm = `createLibraryAction` với range/tên tester chốt (snapshot từ recording thật). AI KHÔNG persist, không map testcase, không tự confirm.

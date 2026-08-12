@@ -242,26 +242,26 @@ export default function CodeGenPage() {
                 />
             </div>
 
-            {/* CÔNG CỤ NÂNG CAO (secondary — consume CANONICAL recording, không textarea thứ hai) */}
+            {/* CÔNG CỤ KỸ THUẬT (collapse — consume canonical recording, không textarea thứ hai) */}
             <div className="codegen-card codegen-card--sub">
-                <label className="codegen-label">CÔNG CỤ NÂNG CAO</label>
-                <p className="codegen-hint">Thao tác trên bản ghi hiện tại (canonical) — không cần dán lại script.</p>
-                <div className="codegen-row">
-                    <button className="button button--secondary" type="button" disabled={!activeId || actions.run.isPending} onClick={handleRun}>
-                        {actions.run.isPending ? "Đang chạy..." : "Chạy thử bản ghi"}
-                    </button>
-                    <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleSaveFile}>
-                        Lưu recording/script
-                    </button>
-                </div>
-                {active?.scriptContent ? (
-                    <details className="codegen-details">
-                        <summary>Xem script gốc (read-only)</summary>
-                        <pre className="codegen-output">{active.scriptContent}</pre>
-                    </details>
-                ) : (
-                    <p className="codegen-hint">Chưa có script trong bản ghi hiện tại.</p>
-                )}
+                <details className="codegen-details">
+                    <summary className="codegen-label">Công cụ kỹ thuật ▾</summary>
+                    <div className="codegen-row">
+                        <button className="button button--secondary" type="button" disabled={!activeId || actions.run.isPending} onClick={handleRun}>
+                            {actions.run.isPending ? "Đang chạy..." : "Chạy thử bản ghi"}
+                        </button>
+                        <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleSaveFile}>
+                            Lưu script
+                        </button>
+                    </div>
+                    {active?.scriptContent ? (
+                        <details className="codegen-details">
+                            <summary>Xem script gốc (read-only)</summary>
+                            <pre className="codegen-output">{active.scriptContent}</pre>
+                        </details>
+                    ) : (
+                        <p className="codegen-hint">Chưa có script trong bản ghi hiện tại.</p>
+                    )}
                 {runResult && (
                     <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
                         <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>
@@ -269,6 +269,7 @@ export default function CodeGenPage() {
                         {runResult.output && <pre className="codegen-output">{runResult.output}</pre>}
                     </div>
                 )}
+                </details>
             </div>
 
             {focusModal && (
