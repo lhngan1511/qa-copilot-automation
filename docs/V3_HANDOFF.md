@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN LIBRARY VISIBILITY / SAVE FEEDBACK (ĐÃ IMPLEMENT 2026-08-10):**
+- Phân biệt rõ: `CÁC THAO TÁC ĐÃ TẠO` (working set recording hiện tại) vs `THƯ VIỆN THAO TÁC` (shared persisted assets).
+- Sau `[Lưu vào Thư viện thao tác]`: success "✓ Đã lưu N thao tác vào Thư viện." + `[Xem trong Thư viện]` (mở khối Library); **KHÔNG auto-clear working set** (tester vẫn thấy action vừa tạo).
+- Khối `THƯ VIỆN THAO TÁC` ngay trong CodeGen (collapsed toggle) — reuse `listLibrary` API (`GET /api/codegen/library` mới: label/stepCount/recordedAssertionCount/usedByTestCases derive từ bindings); không xây Library mới.
+- Button compact (`v3-btn--mini`); raw Playwright vẫn thu gọn (Công cụ kỹ thuật).
+- Không AI Composition; không Runner. Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm UI.**
+
 **P0 — CODEGEN 3-TẦNG UX (ĐÃ IMPLEMENT 2026-08-10):**
 - **I. BẢN GHI** → "Tôi vừa đưa gì vào?": summary `N thao tác · M điều kiện kiểm tra` + `[Xem bản ghi]` (collapsed; chỉ steps/verification **readable** — KHÔNG raw code; raw ở Công cụ kỹ thuật).
 - **II. TẠO THAO TÁC** → "Tôi muốn lấy đoạn nào?": mô tả nhẹ + **link nhỏ "Gợi ý: để AI đề xuất cách chia bản ghi"** (không nút ✨ nổi, không UI AI riêng) → Start/End dropdown → "Đã chọn N thao tác · Bước X → Y" + inline `Bấm A → Bấm B` → verification scoped business-readable (`[Xem kỹ thuật]`) → Tên → `[Xác nhận thao tác]`. AI "Dùng gợi ý" chỉ đổ vào Start/End/Tên — tester review rồi Xác nhận như thường.

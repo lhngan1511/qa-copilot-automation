@@ -8,7 +8,8 @@ export default function createCodeGenRoutes({
     rootDir = process.cwd(),
     manager = null,
     testcaseLoader = null,
-    actionLibrary = null
+    actionLibrary = null,
+    usageFn = null
 } = {}) {
     const resolvedManager =
         manager ??
@@ -17,9 +18,10 @@ export default function createCodeGenRoutes({
             store: new CodeGenRecordingStore({ scriptsDir: `${rootDir}/outputs/codegen` })
         });
     const resolvedLoader = testcaseLoader ?? new ApprovedTestcaseLoader({ searchRoot: rootDir });
-    const controller = new CodeGenController({ manager: resolvedManager, testcaseLoader: resolvedLoader, actionLibrary });
+    const controller = new CodeGenController({ manager: resolvedManager, testcaseLoader: resolvedLoader, actionLibrary, usageFn });
     const router = Router();
 
+    router.get("/library", (req, res) => controller.listLibrary(req, res));
     router.post("/library", (req, res) => controller.createLibraryAction(req, res));
     router.post("/analyze", (req, res) => controller.analyzeRecording(req, res));
     router.post("/recordings", (req, res) => controller.createRecording(req, res));

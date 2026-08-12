@@ -117,7 +117,7 @@ export default function createApp({
             scriptsDir: path.join(projectDirectory, "outputs", "codegen")
         })
     });
-    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager, actionLibrary: v3ActionLibrary }));
+    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager, actionLibrary: v3ActionLibrary, usageFn: () => v3ApplicationService?.countLibraryUsage() ?? new Map() }));
 
     // ---- Architecture V3 (Record by Testcase) — Route → Application Service → Domain/Store/GenerateService → Renderer ----
     const v3Workspace = new AutomationWorkspace({

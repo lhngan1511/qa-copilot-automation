@@ -1,9 +1,32 @@
 export default class CodeGenController {
-    constructor({ manager, testcaseLoader = null, actionLibrary = null }) {
+    constructor({ manager, testcaseLoader = null, actionLibrary = null, usageFn = null }) {
         if (!manager) throw new Error("CodeGenController cần manager.");
         this.manager = manager;
         this.testcaseLoader = testcaseLoader;
         this.actionLibrary = actionLibrary;
+        this.usageFn = usageFn;
+    }
+
+    /** P0 Library Visibility — list shared Action Library (kèm usage derive). */
+    async listLibrary(req, res) {
+        try {
+            if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
+            const usage = typeof this.usageFn === "function" ? (this.usageFn() ?? new Map()) : new Map();
+            const blocks = this.actionLibrary.list().map(b => ({
+                blockId: b.blockId,
+                label: b.label ?? null,
+                kind: b.kind,
+                stepCount: (b.steps ?? []).length,
+                recordedAssertionCount: (b.recordedAssertions ?? []).length,
+                sourceRecordingId: b.sourceRecordingId ?? null,
+                sourceRange: b.sourceRange ?? null,
+                status: b.status,
+                usedByTestCases: usage.get(b.blockId) ?? 0
+            }));
+            return res.status(200).json({ success: true, data: blocks, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "LIBRARY_LIST_FAILED", "Không đọc được thư viện thao tác.");
+        }
     }
 
     /** P0 Consolidation — tạo Library Action từ GLOBAL recording (không workspace, không createBlock). */

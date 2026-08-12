@@ -344,6 +344,12 @@ assert.ok(!recPrepCleanup.includes("Dùng toàn bộ bản ghi"), "Seg UX: bỏ 
 assert.ok(recPrepCleanup.includes("CÁC THAO TÁC ĐÃ TẠO") && recPrepCleanup.includes("+ Tạo thêm thao tác"), "Seg UX: danh sách đã tạo + Tạo thêm");
 assert.ok(recPrepCleanup.includes("Gợi ý: để AI đề xuất cách chia bản ghi"), "Seg UX: AI là link gợi ý nhỏ (không nút nổi)");
 assert.ok(recPrepCleanup.includes("Dùng gợi ý") && recPrepCleanup.includes("Gợi ý tiếp"), "Seg UX: proposal dạng Gợi ý i/n");
+// P0 Library Visibility / Save Feedback
+assert.ok(recPrepCleanup.includes("THƯ VIỆN THAO TÁC") && recPrepCleanup.includes("Xem trong Thư viện"), "Lib: khối THƯ VIỆN + Xem trong Thư viện");
+assert.ok(recPrepCleanup.includes("Dùng bởi") && recPrepCleanup.includes("verification"), "Lib: hiển thị tên/bước/verification/usage");
+assert.ok(recPrepCleanup.includes("Đã lưu") && recPrepCleanup.includes("vào Thư viện"), "Lib: success feedback sau save");
+assert.ok(recPrepCleanup.includes("listLibrary"), "Lib: reuse listLibrary API (không xây Library mới)");
+
 assert.ok(recPrepCleanup.includes("TẠO THAO TÁC"), "Seg UX: tiêu đề II = TẠO THAO TÁC");
 assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification business-readable + Xem kỹ thuật cho raw");
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording } from "../../api/codeGenApi.js";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
@@ -48,6 +48,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // Đã tạo
     const [confirmed, setConfirmed] = useState([]); // [{ blockId, label, startStep, endStep, stepCount, assertionCount }]
     const [expandedItem, setExpandedItem] = useState(null);
+    // P0 Library Visibility
+    const [library, setLibrary] = useState([]);
+    const [showLibrary, setShowLibrary] = useState(false);
+    const [saveFeedback, setSaveFeedback] = useState(null); // { count }
     const [saving, setSaving] = useState(false);
     const [localError, setLocalError] = useState("");
 
@@ -159,9 +163,22 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
     const saveAllToLibrary = async () => {
         if (saving || confirmed.length === 0) return;
-        // Các đoạn đã vào Library khi confirm (createConfirmedAction → createLibraryAction).
-        onSavedToLibrary?.(confirmed.length);
-        setConfirmed([]);
+        setSaving(true);
+        setLocalError("");
+        try {
+            // Các đoạn đã vào Library khi confirm (createConfirmedAction → createLibraryAction).
+            // KHÔNG auto-clear working set — tester vẫn thấy các action vừa tạo.
+            const res = await listLibrary();
+            const data = res?.data ?? res;
+            setLibrary(Array.isArray(data) ? data : []);
+            setSaveFeedback({ count: confirmed.length });
+            setShowLibrary(true);
+            onSavedToLibrary?.(confirmed.length);
+        } catch (e) {
+            notifyError(e?.message ?? "Không đọc được thư viện.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const itemSteps = item => steps.filter(s => s.order >= item.startStep && s.order <= item.endStep);
@@ -365,9 +382,49 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setStartSel(null); setEndSel(null); setName(""); }} disabled={saving}>
                         + Tạo thêm thao tác
                     </button>
-                    <button type="button" className="v3-btn v3-btn--primary" onClick={saveAllToLibrary} disabled={saving}>
+                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveAllToLibrary} disabled={saving}>
                         Lưu vào Thư viện thao tác
                     </button>
+                    {saveFeedback ? (
+                        <p className="v3-act__note v3-ok">
+                            ✓ Đã lưu {saveFeedback.count} thao tác vào Thư viện.
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
+
+            {/* ============ THƯ VIỆN THAO TÁC (shared persisted assets) ============ */}
+            {steps.length > 0 || library.length > 0 ? (
+                <div className="v3-act__lib">
+                    <div className="v3-exp__row">
+                        <h4 className="v3-map__h">THƯ VIỆN THAO TÁC</h4>
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={async () => {
+                            try {
+                                const res = await listLibrary();
+                                const data = res?.data ?? res;
+                                setLibrary(Array.isArray(data) ? data : []);
+                            } catch { /* giữ */ }
+                            setShowLibrary(v => !v);
+                        }}>
+                            {showLibrary ? "Thu gọn" : "Xem trong Thư viện"}
+                        </button>
+                    </div>
+                    {showLibrary ? (
+                        library.length === 0 ? (
+                            <p className="v3-act__note">Thư viện chưa có thao tác nào.</p>
+                        ) : (
+                            library.map(b => (
+                                <div className="v3-cond v3-cond--compact" key={b.blockId}>
+                                    <div className="v3-cond__body">
+                                        <b>{b.label}</b>
+                                        <span className="v3-cond__meta">
+                                            {b.stepCount} bước · {b.recordedAssertionCount} verification · Dùng bởi {b.usedByTestCases ?? 0} testcase
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )
+                    ) : null}
                 </div>
             ) : null}
         </div>

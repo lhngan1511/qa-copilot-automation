@@ -150,3 +150,8 @@ export async function createRecording({ url = "", browser = "chrome", mode = "FU
         body: JSON.stringify({ url, browser, mode })
     });
 }
+
+/** P0 Library Visibility — list shared Action Library (kèm usage). */
+export async function listLibrary() {
+    return apiClient.get("/codegen/library");
+}
