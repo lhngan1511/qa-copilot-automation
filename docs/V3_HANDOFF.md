@@ -196,6 +196,14 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN UX CONSOLIDATION (v3, 2026-08-10, WIREFRAME — CHỜ DUYỆT, CHƯA CODE):**
+- Vấn đề: CodeGen có HAI nơi xử lý Playwright recording (section 0 textarea + section 2 textarea) → feature stacking. Consolidation về MỘT main flow.
+- Wireframe mới (`v3-codegen-consolidation-wireframe.md`): PLAYWRIGHT RECORDING (1 input canonical; [Bắt đầu ghi]/[Dán bản ghi]) → PHÂN ĐOẠN ([+ Chọn đoạn thủ công]/[Phân tích bản ghi sau này]) → CÁC THAO TÁC ĐÃ XÁC NHẬN → [Lưu vào Thư viện thao tác] → CÔNG CỤ NÂNG CAO (Chạy thử/Lưu file secondary).
+- Legacy: giữ Record+Đối chiếu tách; Lưu file/Chạy thử → Advanced Tools; bỏ textarea thứ hai; section 0 hấp thụ làm main flow.
+- **Codegen không phụ thuộc active workspace** (impact đã trace): startRecording/createBlock đang `ensureWorkspace` + check `rec.workspaceId` → cần cho phép workspaceId=null (recording authoring độc lập; createBlock null → thẳng ActionLibrary); KHÔNG tạo hidden workspace.
+- Automation giữ: primary `[+ Thêm thao tác từ thư viện]` (compact) + fallback reuse RecordingPreparation.
+- Chưa AI/analyze; chưa code — chờ duyệt wireframe.
+
 **P0 PHASE 1 (v2) — CODEGEN OWNER + SHARED RECORDING PREP (ĐÃ IMPLEMENT 2026-08-10, CHƯA AI):**
 - **Codegen thật sự được sửa**: `CodeGenPage` thêm khu vực "0. Thu thập thao tác → Thư viện (Codegen)" — owner Recording Preparation (dùng workspace active từ localStorage; nếu chưa có → hướng dẫn tạo workspace trước).
 - **Shared component `V3RecordingPreparationPanel`** (mới): paste/parse/preview/cut-many (toàn bộ/một phần + Start/End + Tên) → `[Xác nhận đoạn]` → "Các đoạn đã xác nhận" → `[Lưu vào thư viện thao tác]`; callback `onConfirmedSegment` cho fallback. **KHÔNG duplicate logic.**
