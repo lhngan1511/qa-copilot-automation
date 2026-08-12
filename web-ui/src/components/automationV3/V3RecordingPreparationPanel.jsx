@@ -65,6 +65,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // AI
     const [proposals, setProposals] = useState([]);
     const [analyzing, setAnalyzing] = useState(false);
+    // P0-3.1 — AI status NGAY trong section AI HỖ TRỢ (không full-width red alert):
+    // null = không có thông báo; { kind: "empty" } = AI trả về hợp lệ nhưng không có gợi ý;
+    // { kind: "error", message, retryable } = request thật sự fail.
+    const [aiStatus, setAiStatus] = useState(null);
     // Đã tạo
     const [confirmed, setConfirmed] = useState([]); // [{ blockId, label, startStep, endStep, stepCount, assertionCount }]
     // P0 Library Visibility
@@ -97,6 +101,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSteps([]);
         setAssertions([]);
         setAnalyzing(false);
+        setAiStatus(null); // P0-3.1 — thông báo AI của bản cũ không rò rỉ sang bản mới.
         // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals).
         applyAnalysisWorkspace(freshAnalysisWorkspace());
         setConfirmed([]);
@@ -187,16 +192,26 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         if (analyzing || !recordingId) return;
         const gen = parseGen.current;
         setAnalyzing(true);
-        setLocalError("");
+        setAiStatus(null);
         try {
             const res = await analyzeRecording({ recordingId });
             if (gen !== parseGen.current) return; // P0-1 — recording đã đổi — bỏ kết quả AI của bản cũ.
             const data = res?.data ?? res;
-            setProposals(Array.isArray(data?.proposals) ? data.proposals : []);
-            if (!Array.isArray(data?.proposals) || data.proposals.length === 0) setLocalError("Không có đề xuất (AI không khả dụng) — bạn có thể tự chọn đoạn.");
+            // P0-3.1 — backend đính lý do tại body.error (contract `{ success, data, error }`).
+            const err = data?.error ?? res?.error;
+            const got = Array.isArray(data?.proposals) ? data.proposals : [];
+            setProposals(got);
+            // P0-3.1 — phân biệt: request fail (có error từ backend) vs empty hợp lệ (error null).
+            if (got.length > 0) {
+                setAiStatus(null);
+            } else if (err) {
+                setAiStatus({ kind: "error", message: "Không thể lấy gợi ý lúc này.", retryable: err.retryable !== false });
+            } else {
+                setAiStatus({ kind: "empty" });
+            }
         } catch (e) {
             if (gen !== parseGen.current) return;
-            setLocalError(e?.message ?? "Không phân tích được bản ghi.");
+            setAiStatus({ kind: "error", message: "Không thể lấy gợi ý lúc này.", retryable: true });
         } finally {
             if (gen === parseGen.current) setAnalyzing(false);
         }
@@ -306,14 +321,27 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         <>
             <div className="v3-act__seg">
                 <h4 className="v3-map__h">II. TẠO THAO TÁC</h4>
-                <p className="v3-act__note">Chọn một phần trong bản ghi để tạo thao tác dùng lại.</p>
                 {/* AI TRÊN manual — AI chỉ điền Start/End/Tên, tester vẫn Xác nhận */}
                 <div className="v3-act__ai-help">
                     <span className="v3-act__ai-title">AI HỖ TRỢ</span>
                     <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={handleAnalyze} disabled={analyzing || saving}>
-                        {analyzing ? "Đang phân tích…" : "Gợi ý bằng AI"}
+                        {analyzing ? "Đang phân tích…" : "Gợi ý cách chia thao tác"}
                     </button>
                 </div>
+                {/* P0-3.1 — AI status NGAY trong section AI (compact; không full-width red alert;
+                    AI là assistant tùy chọn — failure không trình bày như workflow failure). */}
+                {aiStatus?.kind === "empty" ? (
+                    <p className="v3-act__ai-status">Không nhận được gợi ý. Bạn vẫn có thể tự chọn bên dưới.</p>
+                ) : aiStatus?.kind === "error" ? (
+                    <p className="v3-act__ai-status v3-act__ai-status--error">
+                        {aiStatus.message}
+                        {aiStatus.retryable ? (
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleAnalyze} disabled={analyzing || saving}>
+                                Thử lại
+                            </button>
+                        ) : null}
+                    </p>
+                ) : null}
 
                 {proposals.length > 0 ? (
                     <div className="v3-act__proposals">
@@ -347,6 +375,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
                 {/* Manual — chọn Start/End (cách duy nhất để chọn đoạn) */}
                 <div className="v3-act__manual">HOẶC TỰ CHỌN</div>
+                {/* P0-3.1 — thứ tự: Tên thao tác TRƯỚC Start/End (recording readable đã cố định ở cột trái). */}
+                <label className="v3-map__label v3-act__name-field">
+                    Tên thao tác
+                    <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="VD: Đăng nhập, Mở danh mục…" />
+                </label>
                 <div className="v3-act__part">
                     <label className="v3-map__label">
                         Bắt đầu
@@ -366,7 +399,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
                 {selRange ? (
                     <div className="v3-act__preview">
-                        <b>Đoạn đang chọn</b>
+                        <b>ĐOẠN ĐANG CHỌN</b>
                         <p className="v3-act__note">Bước {selRange.start} → {selRange.end} · {selRange.count} thao tác</p>
                         {/* Split layout: steps đã hiện + highlight ở cột trái → không duplicate preview ở đây.
                             Bố cục 1 cột (fallback drawer): giữ preview steps (UX dài 16-30 bước là checkpoint riêng). */}
@@ -392,7 +425,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 ) : null}
 
                 <div className="v3-act__range-actions">
-                    <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="Tên thao tác" />
                     <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
                         if (steps.length === 0) return;
                         setStartSel(steps[0].order); setEndSel(steps[steps.length - 1].order);
@@ -505,17 +537,22 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             <h4 className="v3-map__h">I. BẢN GHI</h4>
                             <span className="v3-exp__note">Nguồn cố định — quan sát, đối chiếu. Chọn đoạn ở cột phải.</span>
                         </div>
-                        <textarea
-                            className="v3-input"
-                            rows={3}
-                            value={source}
-                            onChange={e => handleSourceChange(e.target.value)}
-                            spellCheck={false}
-                            aria-label="Bản ghi nguồn"
-                        />
                         <div className="v3-act__summary">
                             <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
                         </div>
+                        {/* P0-3.1 — sau parse, raw source KHÔNG chiếm diện tích thường trực:
+                            collapse thành 'Xem mã Playwright ▾' (mở để xem/thay recording — P0-1 vẫn giữ). */}
+                        <details className="v3-act__raw">
+                            <summary>Xem mã Playwright ▾</summary>
+                            <textarea
+                                className="v3-input"
+                                rows={5}
+                                value={source}
+                                onChange={e => handleSourceChange(e.target.value)}
+                                spellCheck={false}
+                                aria-label="Mã Playwright gốc"
+                            />
+                        </details>
                         {/* Chỉ quan sát/đối chiếu — highlight range là visual feedback, KHÔNG phải control */}
                         <div className="v3-rec-prep__steps">{renderSteps(steps, true)}</div>
                     </div>

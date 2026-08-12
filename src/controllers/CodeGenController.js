@@ -114,8 +114,13 @@ export default class CodeGenController {
             const assertions = (rec.assertions ?? []).map(a => ({ order: a.order, statement: a.statement ?? "", matcher: a.matcher ?? "", locator: a.locator ?? "" }));
             if (steps.length === 0) return res.status(200).json({ success: true, data: { proposals: [] }, error: null });
             let provider = null;
+            // P0-3.1 — phân biệt rõ lý do: provider unavailable / request fail / response sai định dạng /
+            // empty hợp lệ. Trước đây mọi lỗi đều bị nuốt thành proposals:[] + error:null → frontend
+            // không thể biết "AI thật sự fail" hay "AI trả về rỗng".
             try { provider = AIProviderFactory.createProvider(AIConfig.provider); } catch { provider = null; }
-            if (!provider) return res.status(200).json({ success: true, data: { proposals: [] }, error: null });
+            if (!provider) {
+                return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "AI_PROVIDER_UNAVAILABLE", retryable: true, message: "AI provider chưa sẵn sàng." } });
+            }
             const prompt = `Bạn là trợ lý phân tích Playwright recording. Hãy nhóm các bước thành các CỤM THAO TÁC có ý nghĩa nghiệp vụ (VD: Đăng nhập, Mở chức năng, Thêm, Tìm kiếm, Sửa, Xóa).
 CHỈ trả về JSON hợp lệ, không kèm text khác, dạng:
 {"proposals":[{"suggestedName":"...","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true}]}
@@ -128,6 +133,9 @@ steps: ${JSON.stringify(steps)}
 assertions: ${JSON.stringify(assertions)}`;
             let text = "";
             try { text = String((await provider.generate(prompt)) ?? "").trim(); } catch { text = ""; }
+            if (!text) {
+                return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "AI_REQUEST_FAILED", retryable: true, message: "Không nhận được phản hồi từ AI." } });
+            }
             let proposals = [];
             try {
                 const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
@@ -141,11 +149,12 @@ assertions: ${JSON.stringify(assertions)}`;
                     needsTesterConfirmation: p.needsTesterConfirmation !== false
                 })).filter(p => Number.isInteger(p.startStep) && Number.isInteger(p.endStep));
             } catch {
-                proposals = [];
+                return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "AI_RESPONSE_INVALID", retryable: true, message: "AI trả về không đúng định dạng." } });
             }
+            // AI trả JSON hợp lệ nhưng không có proposal → empty hợp lệ (error: null — không phải lỗi).
             return res.status(200).json({ success: true, data: { proposals }, error: null });
         } catch (error) {
-            return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "ANALYZE_FAILED", message: error?.message ?? "Phân tích thất bại." } });
+            return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "ANALYZE_FAILED", retryable: true, message: error?.message ?? "Phân tích thất bại." } });
         }
     }
 

@@ -83,10 +83,20 @@ async function main() {
     const analyze = await req("POST", "/api/codegen/analyze", { recordingId: recId });
     assert.equal(analyze.status, 200, "analyze 200 (kể cả AI unavailable)");
     assert.ok(Array.isArray(analyze.body?.data?.proposals), "proposals là array");
+    // P0-3.1 — backend PHÂN BIỆT lý do: proposals rỗng phải kèm body.error.code rõ
+    // (provider/request/response) — contract `{ success, data, error }`; error ở TOP-LEVEL.
+    if (analyze.body?.data?.proposals.length === 0) {
+        assert.ok(analyze.body?.error?.code, "proposals rỗng phải có error.code phân biệt (AI_PROVIDER_UNAVAILABLE/AI_REQUEST_FAILED/AI_RESPONSE_INVALID)");
+        assert.ok(["AI_PROVIDER_UNAVAILABLE", "AI_REQUEST_FAILED", "AI_RESPONSE_INVALID", "ANALYZE_FAILED"].includes(analyze.body.error.code), "error.code thuộc tập đã định nghĩa");
+        assert.equal(analyze.body.error.retryable, true, "lỗi AI retryable (UI hiện [Thử lại])");
+    }
     // 5. Malformed JSON từ AI → backend đã wrap try/catch → proposals [] (không crash); mô phỏng bằng analyze thêm lần nữa
     const analyze2 = await req("POST", "/api/codegen/analyze", { recordingId: recId });
     assert.equal(analyze2.status, 200, "analyze lần 2 200");
     assert.ok(Array.isArray(analyze2.body?.data?.proposals), "proposals array (malformed/unavailable an toàn)");
+    if (analyze2.body?.data?.proposals.length === 0) {
+        assert.ok(analyze2.body?.error?.code, "lần 2: proposals rỗng vẫn có error.code (không nuốt lỗi)");
+    }
     // Recording vẫn còn (manual flow dùng được)
     const detail2 = await req("GET", `/api/codegen/recordings/${recId}`);
     assert.equal((detail2.body?.data ?? detail2.body).steps.length, steps.length, "recording không mất sau analyze");

@@ -341,7 +341,7 @@ assert.ok(recPrepCleanup.includes("thao tác") && recPrepCleanup.includes("Xem b
 assert.ok(!recPrepCleanup.includes("Bạn muốn dùng phần nào?"), "Seg UX: bỏ 'Bạn muốn dùng phần nào?' (hết duplication)");
 assert.ok(!recPrepCleanup.includes("Dùng toàn bộ bản ghi"), "Seg UX: bỏ Dùng toàn bộ default");
 assert.ok(recPrepCleanup.includes("THAO TÁC ĐÃ TẠO") && !recPrepCleanup.includes("III. THAO TÁC ĐÃ TẠO") && !recPrepCleanup.includes("+ Tạo thêm thao tác"), "P0-3: danh sách compact THAO TÁC ĐÃ TẠO (form luôn mở, không nút Tạo thêm)");
-assert.ok(recPrepCleanup.includes("Gợi ý bằng AI"), "Seg UX: AI là helper nhỏ secondary");
+assert.ok(recPrepCleanup.includes("Gợi ý cách chia thao tác"), "P0-3.1: nút AI = Gợi ý cách chia thao tác");
 assert.ok(recPrepCleanup.includes("Dùng gợi ý") && recPrepCleanup.includes("⚠ Trùng với thao tác đã tạo"), "Seg UX: proposal + overlap guard");
 // P0 Library Visibility / Save Feedback
 assert.ok(recPrepCleanup.includes("THƯ VIỆN THAO TÁC") && recPrepCleanup.includes("Xem tất cả"), "Lib: khối THƯ VIỆN + Xem tất cả");
@@ -374,7 +374,7 @@ assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback =
 // Màn C (toàn bộ/một phần + preview) nằm trong SHARED V3RecordingPreparationPanel
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận thao tác"), "Seg UX: manual Start/End + Xác nhận thao tác");
-assert.ok(recPrep.includes("Đoạn đang chọn") && !recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "P0-3: Đoạn đang chọn + Xác nhận thao tác");
+assert.ok(recPrep.includes("ĐOẠN ĐANG CHỌN") && !recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "P0-3.1: ĐOẠN ĐANG CHỌN + Xác nhận thao tác");
 assert.ok(recPrep.includes("Lưu vào Thư viện thao tác"), "shared: Lưu vào Thư viện");
 assert.ok(recPrep.includes("THAO TÁC ĐÃ TẠO"), "P0-3: danh sách thao tác đã tạo (compact)");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
@@ -456,11 +456,31 @@ assert.ok(recPrepP0.includes("v3-rec-prep__steps"), "P0-3: cột trái steps lu�
 assert.ok(recPrepP0.includes("v3-step--range") && recPrepP0.includes("isStepInRange"), "P0-3: highlight range visual (không phải control)");
 assert.ok(!recPrepP0.includes('type="checkbox"'), "P0-3: cột trái KHÔNG checkbox/click chọn step");
 assert.ok(recPrepP0.includes("AI HỖ TRỢ") && recPrepP0.includes("HOẶC TỰ CHỌN"), "P0-3: AI HỖ TRỢ trên manual — HOẶC TỰ CHỌN bên dưới");
-assert.ok(recPrepP0.includes("Đoạn đang chọn"), "P0-3: khối 'Đoạn đang chọn' (summary Bước X → Y · N thao tác)");
+assert.ok(recPrepP0.includes("ĐOẠN ĐANG CHỌN"), "P0-3.1: khối ĐOẠN ĐANG CHỌN (summary Bước X → Y · N thao tác)");
 assert.ok(recPrepP0.includes("!splitLayout ? renderSteps(selSteps, true) : null"),
     "P0-3: split mode KHÔNG duplicate preview steps ở cột phải (steps đã hiện + highlight ở trái)");
 assert.ok(codegenPageP0.includes("splitLayout"), "P0-3: CodeGenPage bật splitLayout");
 assert.ok(recPrepP0.includes("Nguồn cố định"), "P0-3: cột trái ghi rõ 'Nguồn cố định — quan sát, đối chiếu'");
+assert.ok(recPrepP0.includes("Nguồn cố định"), "P0-3: cột trái ghi rõ 'Nguồn cố định — quan sát, đối chiếu'");
 // Confirm action KHÔNG đóng/reset recording (mental model P0-3) — đã assert trong isolation-test (createConfirmedAction).
+
+// ================= P0-3.1 — CODEGEN SPLIT LAYOUT UX CLEANUP =================
+// ---- 37. I. BẢN GHI: raw source collapse sau parse (không chiếm diện tích thường trực) ----
+assert.ok(recPrepP0.includes("Xem mã Playwright ▾") && recPrepP0.includes("v3-act__raw"), "P0-3.1: raw source collapse 'Xem mã Playwright ▾' sau parse");
+assert.ok(recPrepP0.includes("handleSourceChange"), "P0-3.1: textarea trong collapse vẫn giữ P0-1 isolation (đổi nội dung → reset + re-parse)");
+// ---- 38. II. TẠO THAO TÁC: bỏ note, thứ tự Tên → Bắt đầu/Kết thúc → ĐOẠN ĐANG CHỌN ----
+assert.ok(!recPrepP0.includes("Chọn một phần trong bản ghi để tạo thao tác dùng lại."), "P0-3.1: bỏ dòng 'Chọn một phần trong bản ghi…'");
+const nameIdx = recPrepP0.indexOf("Tên thao tác");
+const startIdx = recPrepP0.indexOf("Bắt đầu");
+assert.ok(nameIdx > -1 && startIdx > -1 && nameIdx < startIdx, "P0-3.1: Tên thao tác đặt TRƯỚC Bắt đầu");
+assert.ok(recPrepP0.includes("ĐOẠN ĐANG CHỌN"), "P0-3.1: khối ĐOẠN ĐANG CHỌN sau Bắt đầu/Kết thúc");
+// ---- 39. AI HỖ TRỢ: status compact NGAY trong section; KHÔNG full-width red alert ----
+assert.ok(recPrepP0.includes("v3-act__ai-status"), "P0-3.1: AI status inline (v3-act__ai-status)");
+assert.ok(recPrepP0.includes("Không nhận được gợi ý. Bạn vẫn có thể tự chọn bên dưới."), "P0-3.1: empty → thông báo compact");
+assert.ok(recPrepP0.includes("Không thể lấy gợi ý lúc này.") && recPrepP0.includes("Thử lại"), "P0-3.1: fail retryable → [Thử lại]");
+const analyzeBody = recPrepP0.match(/const handleAnalyze = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+assert.ok(analyzeBody.length > 0, "tìm thấy thân handleAnalyze");
+assert.ok(!analyzeBody.includes("setLocalError("), "P0-3.1: handleAnalyze KHÔNG đẩy lỗi AI vào banner đỏ full-width");
+assert.ok(recPrepP0.includes('setAiStatus({ kind: "error"') && recPrepP0.includes('setAiStatus({ kind: "empty" })'), "P0-3.1: phân biệt error vs empty qua aiStatus");
 
 console.log("Automation V3 UI test: PASS");

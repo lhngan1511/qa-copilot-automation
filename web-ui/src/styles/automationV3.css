@@ -949,6 +949,35 @@
 .v3-step--range { background: #eef4ff; border-color: var(--primary, #2f6fed); }
 /* AI HỖ TRỢ trên manual; HOẶC TỰ CHỌN là divider nhãn. */
 .v3-act__ai-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+/* P0-3.1 — AI status compact NGAY trong section AI (không full-width red alert;
+   AI là assistant tùy chọn — failure không trình bày như workflow failure). */
+.v3-act__ai-status {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border, #e2e8f0);
+  font-size: 12.5px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.v3-act__ai-status--error { background: #fffaf5; border-color: #fed7aa; color: #9a3412; }
+/* P0-3.1 — raw source sau parse: collapse secondary 'Xem mã Playwright ▾'. */
+.v3-act__raw summary {
+  font-size: 12px;
+  color: var(--primary, #2f6fed);
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+}
+.v3-act__raw summary:hover { text-decoration: underline; }
+.v3-act__raw .v3-input { margin-top: 8px; }
+/* P0-3.1 — Tên thao tác đặt TRƯỚC Start/End (label riêng, không trong hàng nút). */
+.v3-act__name-field { display: grid; gap: 4px; }
+.v3-act__name-field .v3-act__name { max-width: 100%; }
 .v3-act__manual {
   margin: 14px 0 2px;
   padding-top: 12px;
