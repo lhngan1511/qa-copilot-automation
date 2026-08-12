@@ -23,6 +23,7 @@ export default function createCodeGenRoutes({
 
     router.get("/library", (req, res) => controller.listLibrary(req, res));
     router.post("/library", (req, res) => controller.createLibraryAction(req, res));
+    router.post("/library/rename-group", (req, res) => controller.renameLibraryGroup(req, res));
     router.delete("/library/:blockId", (req, res) => controller.deleteLibraryAction(req, res));
     router.post("/analyze", (req, res) => controller.analyzeRecording(req, res));
     router.post("/recordings", (req, res) => controller.createRecording(req, res));

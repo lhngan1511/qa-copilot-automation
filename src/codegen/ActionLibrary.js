@@ -121,6 +121,32 @@ export default class ActionLibrary {
         return { ...block };
     }
 
+    /** P0 — Rename group (tester-owned): cập nhật groupName của MỌI block thuộc group cũ.
+     *  oldGroupName null/''/"Chưa phân loại" → target null (group chưa phân loại).
+     *  newGroupName bắt buộc; trùng tên group khác → merge tự nhiên (không duplicate block). */
+    renameGroup(oldGroupName, newGroupName) {
+        const trimmed = String(newGroupName ?? "").trim();
+        if (!trimmed) {
+            const err = new Error("Tên nhóm không được để trống.");
+            err.code = "GROUP_NAME_REQUIRED";
+            throw err;
+        }
+        const oldTrimmed = String(oldGroupName ?? "").trim();
+        const isUngrouped = oldTrimmed === "" || oldTrimmed === "Chưa phân loại";
+        const oldRaw = isUngrouped ? null : oldTrimmed;
+        let updated = 0;
+        for (const block of this.blocks) {
+            const bg = block.groupName ?? null;
+            if (bg === oldRaw || (isUngrouped && bg === null)) {
+                block.groupName = trimmed;
+                block.updatedAt = new Date().toISOString();
+                updated += 1;
+            }
+        }
+        this.persist();
+        return { groupName: trimmed, updated };
+    }
+
     removeBlock(blockId) {
         const idx = this.blocks.findIndex(b => b.blockId === blockId);
         if (idx === -1) return null;

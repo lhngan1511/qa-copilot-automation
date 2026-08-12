@@ -45,7 +45,10 @@ assert.ok(!splitB.includes("setProposals(prev => prev.filter"), "14: split [Bỏ
 const addBody = clean.match(/const handleAddProposal = proposal => \{[\s\S]*?\n    \};/)?.[0] ?? "";
 assert.ok(!addBody.includes("analyzeRecording") && !addBody.includes("setProposalPage"), "14: Thêm proposal không gọi AI / không reset page");
 const pageResets = (clean.match(/setProposalPage\(0\)/g) ?? []).length;
-assert.ok(pageResets <= 1, `14: setProposalPage(0) chỉ ở reset recording (hiện ${pageResets})`);
+assert.ok(pageResets <= 2, `14: setProposalPage(0) chỉ ở reset recording/newRecording (hiện ${pageResets})`);
+// Không reset page trong handler proposal:
+const addB2 = clean.match(/const handleAddProposal = proposal => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+assert.ok(!addB2.includes("setProposalPage"), "14: handleAddProposal không reset page");
 
 // ================= 15 — spacing =================
 assert.ok(clean.includes('v3-act__verif-label">Điều kiện kiểm tra:</span>'), "15: label có class v3-act__verif-label");

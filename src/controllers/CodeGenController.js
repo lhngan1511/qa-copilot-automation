@@ -99,6 +99,23 @@ export default class CodeGenController {
         }
     }
 
+    /** P0 — Rename group trong Action Library (persist; reload giữ; không đổi blockId/action). */
+    async renameLibraryGroup(req, res) {
+        try {
+            if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
+            const { oldGroupName, newGroupName } = req.body ?? {};
+            let result;
+            try {
+                result = this.actionLibrary.renameGroup(oldGroupName, newGroupName);
+            } catch (e) {
+                return this.fail(res, e, 400, e.code ?? "GROUP_RENAME_FAILED", e.message ?? "Không đổi được tên nhóm.");
+            }
+            return res.status(200).json({ success: true, data: result, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "GROUP_RENAME_FAILED", "Không đổi được tên nhóm.");
+        }
+    }
+
     /** AI Recording Analysis — input CHỈ steps/assertions của recording (KHÔNG testcase list).
      *  Output = PROPOSAL (structured); không persist. AI lỗi/unavailable → proposals: [] (manual vẫn chạy). */
     async createRecording(req, res) {

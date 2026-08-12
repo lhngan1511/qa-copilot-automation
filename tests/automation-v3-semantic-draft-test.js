@@ -97,7 +97,8 @@ assert.ok(!reparsed.steps.some(s => s.actionType === "PRESS"), "P: step bị xó
 const twoInLine = "await page.getByRole('button', { name: 'A' }).click(); await page.getByRole('button', { name: 'B' }).click();";
 const parsed2 = parseRecording(twoInLine);
 assert.equal(removeStepFromSource(twoInLine, parsed2.steps[0]), null, "P: guard — dòng 2 statement → không xóa (không invent rewrite)");
-// UI đồng bộ: nút Xóa draft dùng removeStepFromSource + handleSourceChange reparse.
-assert.ok(clean.includes("removeStepFromSource(source, step)") && clean.includes("handleSourceChange(next)"), "P: removeDraftStep → rewrite source → reparse (UI + raw đồng bộ)");
+// UI đồng bộ: nút Xóa draft dùng removeStepFromSource + parse CỤC BỘ (không API/reload) —
+// optimistic, raw source + draft preview đồng bộ ngay (H).
+assert.ok(clean.includes("removeStepFromSource(source, step)") && clean.includes("parseRecording(next)"), "H: removeDraftStep → rewrite source → parse cục bộ (UI + raw đồng bộ)");
 
 console.log("Automation V3 Semantic + Draft Review (P0) test: PASS");

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction, renameLibraryGroup } from "../../api/codeGenApi.js";
+import { parseRecording } from "../../../../src/codegen/recordingParser.js"; // thuần — parse cục bộ khi xóa draft step (không API/không recording mới)
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange, scopedAssertionsInRange } from "../../utils/recordingPrepState.js";
 import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
@@ -114,6 +115,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [expandedGroup, setExpandedGroup] = useState(null);
     // P0 — proposal bị tester [Bỏ] (trạng thái, KHÔNG xóa khỏi mảng) → list ổn định, không remount.
     const [dismissedProposals, setDismissedProposals] = useState([]);
+    // P0 — rename group inline (Library): group đang sửa tên + giá trị nhập.
+    const [renamingGroup, setRenamingGroup] = useState(null); // { rawGroupName, draft }
+    const [renamingBusy, setRenamingBusy] = useState(false);
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
@@ -198,6 +202,45 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         await doParse(source, parseGen.current);
     };
 
+    /* ---------- P0 — [+ Bản ghi mới]: reset CHỈ transient workspace ---------- */
+
+    const newRecording = () => {
+        // D — unsaved guard: nếu còn nội dung làm việc chưa lưu → cảnh báo trước khi discard.
+        const dirty = source.trim() && (draftSteps.length > 0 || steps.length > 0 || confirmed.length > 0 || proposals.length > 0);
+        if (dirty && !window.confirm("Bạn có thay đổi chưa lưu trong bản ghi hiện tại. Tạo bản ghi mới sẽ bỏ các thay đổi này. Tiếp tục?")) return;
+        clearTimeout(parseTimer.current);
+        parseTimer.current = null;
+        parseGen.current += 1;
+        // B — reset TOÀN BỘ transient (raw source, draft, parsed, recording, AI, working, group, feedback).
+        setSource("");
+        setParsedSource("");
+        setParsing(false);
+        setRecordingId(null);
+        setSteps([]);
+        setAssertions([]);
+        setDraftSteps([]);
+        setDraftAssertions([]);
+        setDraftRecordingId(null);
+        setProposals([]);
+        setDismissedProposals([]);
+        setStartSel(null);
+        setEndSel(null);
+        setName("");
+        setConfirmed([]);
+        setSaveFeedback(null);
+        setUtilityNotice("");
+        setLocalError("");
+        setShowRecording(false);
+        setExpandedItem(null);
+        setExpandedLibId(null);
+        setDeleteConfirmId(null);
+        setAnalyzing(false);
+        setAiStatus(null);
+        setProposalPage(0);
+        setCurrentGroup(""); // KHÔNG inherit group từ recording trước (CASE 3)
+        // C — KHÔNG reset Library: không gọi setLibrary; groups đã rename giữ nguyên.
+    };
+
     /* ---------- P0 — DRAFT REVIEW: [Nhập xong] = explicit user gate ---------- */
 
     /** Chỉ lúc này mới commit canonical recording: setSteps/assertions/recordingId +
@@ -220,7 +263,14 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         if (parsing) return;
         const next = removeStepFromSource(source, step);
         if (next === null) return; // không an toàn — không xóa (guard)
-        handleSourceChange(next); // reset + reparse (P0-1: không F5, không giữ steps cũ)
+        // H — optimistic: xóa row + parse CỤC BỘ ngay (thuần, đồng bộ).
+        // KHÔNG gọi API/không tạo recording mới/không reset draft workspace/không AI.
+        const parsed = parseRecording(next);
+        setSource(next);
+        setParsedSource(next);
+        setDraftSteps(Array.isArray(parsed.steps) ? parsed.steps : []);
+        setDraftAssertions(Array.isArray(parsed.assertions) ? parsed.assertions : []);
+        if (parsed.steps.length === 0) notifyError("Bản ghi không có thao tác nào.");
     };
 
     // Dọn timer khi unmount (tránh setState sau khi rời màn).
@@ -421,6 +471,23 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             notifyError(e?.message ?? "Không xóa được thao tác thư viện.");
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const submitRenameGroup = async () => {
+        if (renamingBusy || !renamingGroup) return;
+        const name = String(renamingGroup.draft ?? "").trim();
+        if (!name) { notifyError("Tên nhóm không được để trống."); return; }
+        setRenamingBusy(true);
+        setLocalError("");
+        try {
+            await renameLibraryGroup(renamingGroup.rawGroupName, name);
+            setRenamingGroup(null);
+            await refreshLibrary();
+        } catch (e) {
+            notifyError(e?.message ?? "Không đổi được tên nhóm.");
+        } finally {
+            setRenamingBusy(false);
         }
     };
 
@@ -754,6 +821,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
                         spellCheck={false}
                     />
+                    <div className="v3-exp__row">
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={newRecording}>
+                            + Bản ghi mới
+                        </button>
+                    </div>
                     {draftSteps.length > 0 ? (
                         /* BẢN NHÁP — chưa commit canonical; tester review/chỉnh/xóa bước thừa. */
                         <div className="v3-draft">
@@ -763,7 +835,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                 {draftSteps.map(s => {
                                     const removable = canRemoveDraftStep(s);
                                     return (
-                                        <div className="v3-step" key={s.order}>
+                                        // H — key ổn định theo vị trí nguồn: các row phía TRƯỚC vị trí xóa không remount.
+                                        <div className="v3-step" key={`${s.actionType}:${s.target}:${s.sourceStart}`}>
                                             <span className="v3-step__n">{s.order}</span>
                                             <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
                                             <span className="v3-step__loc">{semanticStepText(s)}</span>
@@ -799,6 +872,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         <div className="v3-exp__row">
                             <h4 className="v3-map__h">I. BẢN GHI</h4>
                             <span className="v3-exp__note">Nguồn cố định — quan sát, đối chiếu. Chọn đoạn ở cột phải.</span>
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={newRecording}>
+                                + Bản ghi mới
+                            </button>
                         </div>
                         <div className="v3-act__summary">
                             <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
@@ -868,15 +944,39 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             return (<>
                             {groups.map(g => (
                                 <div className="v3-lib-group" key={g.rawGroupName ?? ""}>
-                                    <button
-                                        type="button"
-                                        className="v3-lib-group__head"
-                                        onClick={() => setExpandedGroup(expandedGroup === g.groupName ? null : g.groupName)}
-                                    >
-                                        <span className="v3-lib-group__arrow">{expandedGroup === g.groupName ? "▾" : "▸"}</span>
-                                        <b>{g.groupName}</b>
-                                        <span className="v3-lib-group__count">· {g.count} thao tác</span>
-                                    </button>
+                                    {renamingGroup && renamingGroup.rawGroupName === g.rawGroupName ? (
+                                        <div className="v3-lib-group__rename">
+                                            <input
+                                                className="v3-input"
+                                                value={renamingGroup.draft}
+                                                onChange={e => setRenamingGroup(r => ({ ...r, draft: e.target.value }))}
+                                                placeholder="Tên nhóm mới"
+                                                autoFocus
+                                            />
+                                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={submitRenameGroup} disabled={renamingBusy}>Lưu</button>
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setRenamingGroup(null)} disabled={renamingBusy}>Hủy</button>
+                                        </div>
+                                    ) : (
+                                        <div className="v3-lib-group__head-row">
+                                            <button
+                                                type="button"
+                                                className="v3-lib-group__head"
+                                                onClick={() => setExpandedGroup(expandedGroup === g.groupName ? null : g.groupName)}
+                                            >
+                                                <span className="v3-lib-group__arrow">{expandedGroup === g.groupName ? "▾" : "▸"}</span>
+                                                <b>{g.groupName}</b>
+                                                <span className="v3-lib-group__count">· {g.count} thao tác</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="v3-btn v3-btn--ghost v3-btn--mini"
+                                                title="Đổi tên nhóm"
+                                                onClick={() => setRenamingGroup({ rawGroupName: g.rawGroupName, draft: g.rawGroupName ?? "" })}
+                                            >
+                                                ✎
+                                            </button>
+                                        </div>
+                                    )}
                                     {expandedGroup === g.groupName ? (
                                         <div className="v3-lib-group__body">
                                             {g.items.map(b => (

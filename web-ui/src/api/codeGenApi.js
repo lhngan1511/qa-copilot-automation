@@ -160,3 +160,11 @@ export async function listLibrary() {
 export async function deleteLibraryAction(blockId) {
     return apiClient.delete(`/codegen/library/${encodeURIComponent(blockId)}`);
 }
+
+/** P0 — Rename group trong Library (persist; "Chưa phân loại"/null = group chưa phân loại). */
+export async function renameLibraryGroup(oldGroupName, newGroupName) {
+    return apiClient.post("/codegen/library/rename-group", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldGroupName, newGroupName })
+    });
+}

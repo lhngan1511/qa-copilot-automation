@@ -975,6 +975,12 @@
    không dính "Điều kiện kiểm tra:Không có thông tin..."). */
 .v3-act__verif-label { display: block; margin-bottom: 4px; }
 
+/* P0 — rename group inline (Library). */
+.v3-lib-group__head-row { display: flex; align-items: center; gap: 6px; }
+.v3-lib-group__head-row .v3-lib-group__head { flex: 1; }
+.v3-lib-group__rename { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+.v3-lib-group__rename .v3-input { flex: 1; min-height: 30px; font-size: 12px; }
+
 /* P0 — Grouping V1: group Library (collapsed mặc định; mở 1 group → thấy actions). */
 .v3-lib-group { display: grid; gap: 4px; }
 .v3-lib-group__head {
