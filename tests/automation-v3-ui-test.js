@@ -408,14 +408,23 @@ assert.ok(!apiSource.includes("rendererV3") && !apiSource.includes("CodeGenRecor
 const recPrepP0 = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrepP0.includes("handleSourceChange"), "P0: textarea onChange qua handleSourceChange");
 assert.ok(recPrepP0.includes("resetRecordingContext"), "P0: có reset context recording cũ");
-assert.ok(recPrepP0.includes("setProposals([])") && recPrepP0.includes("setConfirmed([])") && recPrepP0.includes("setSaveFeedback(null)"),
-    "P0: reset AI proposals + working actions + save feedback khi đổi recording");
+assert.ok(recPrepP0.includes("freshAnalysisWorkspace") && recPrepP0.includes("applyAnalysisWorkspace"),
+    "P0-1: reset Phần II qua freshAnalysisWorkspace (start/end/name/proposals/edit state)");
+assert.ok(recPrepP0.includes("initializeAnalysisFromSteps(parsedSteps)"),
+    "P0-1: parse xong init LẠI hoàn toàn từ steps mới");
+assert.ok(recPrepP0.includes("setConfirmed([])") && recPrepP0.includes("setSaveFeedback(null)"),
+    "P0: reset working actions + save feedback khi đổi recording");
 assert.ok(recPrepP0.includes("setTimeout") && recPrepP0.includes("doParse"), "P0: auto re-parse (debounce) — không cần F5");
 assert.ok(recPrepP0.includes("parsedSource"), "P0: track source đã parse để phát hiện nội dung mới");
+assert.ok(recPrepP0.includes("parseGen.current"), "P0-1: gen guard — async cũ (AI/confirm) không đổ vào bản mới");
 assert.ok(!recPrepP0.includes("Bạn muốn dùng phần nào?"), "P0: không còn màn chọn nguồn ngang hàng");
 // ---- 33. Action Library UI: item có Tên / N thao tác / N điều kiện / Dùng bởi N testcase / [Xem] / [Xóa] ----
 assert.ok(recPrepP0.includes("Xóa") && recPrepP0.includes("deleteLibraryAction"), "Lib: [Xóa] gọi deleteLibraryAction API");
-assert.ok(recPrepP0.includes("Thao tác đang được") && recPrepP0.includes("testcase dùng"), "Lib: confirm báo rõ số testcase đang dùng (không silently delete)");
+// P0-2 — confirm nhỏ cạnh action; KHÔNG full-width danger box; cảnh báo usage chỉ khi > 0.
+assert.ok(recPrepP0.includes("v3-lib-delete-inline"), "P0-2: confirm nhỏ cạnh action (v3-lib-delete-inline)");
+assert.ok(!recPrepP0.includes("v3-lib-delete-confirm"), "P0-2: bỏ full-width danger box (v3-lib-delete-confirm)");
+assert.ok(recPrepP0.includes("usedByTestCases > 0") && recPrepP0.includes("testcase đang phụ thuộc"),
+    "P0-2: chỉ hiện câu cảnh báo số testcase phụ thuộc khi usageCount > 0");
 assert.ok(recPrepP0.includes("Nguồn: Thư viện thao tác"), "Lib: provenance 'Nguồn: Thư viện thao tác' trong [Xem]");
 assert.ok(recPrepP0.includes("v3-act__item"), "Lib/Đã tạo: detail nằm ngoài flex row (v3-act__item — full width)");
 const codeGenApiP0 = stripComments(read("api/codeGenApi.js"));

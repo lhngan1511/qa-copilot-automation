@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
+import { freshAnalysisWorkspace, initializeAnalysisFromSteps } from "../../utils/recordingPrepState.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (P0 Segmentation UX Correction).
@@ -73,23 +74,30 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
 
-    /* ---------- P0: reset context recording cũ (khi tester nhập bản ghi mới) ---------- */
+    /* ---------- P0-1: reset context recording cũ (khi tester nhập bản ghi mới) ---------- */
+
+    /** P0-1 — áp "analysis workspace" Phần II vào state (reset hoặc init từ steps mới). */
+    const applyAnalysisWorkspace = ws => {
+        setStartSel(ws.startSel);
+        setEndSel(ws.endSel);
+        setName(ws.name);
+        setProposals(ws.proposals);
+        setExpandedItem(ws.expandedItem);
+    };
 
     const resetRecordingContext = () => {
         clearTimeout(parseTimer.current);
         parseTimer.current = null;
-        parseGen.current += 1;
+        parseGen.current += 1; // vô hiệu hóa mọi async đang chạy của recording cũ (AI analyze/confirm)
         setRecordingId(null);
         setSteps([]);
         setAssertions([]);
-        setProposals([]);
-        setStartSel(null);
-        setEndSel(null);
-        setName("");
+        setAnalyzing(false);
+        // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals/edit state).
+        applyAnalysisWorkspace(freshAnalysisWorkspace());
         setConfirmed([]);
         setSaveFeedback(null);
         setShowRecording(false);
-        setExpandedItem(null);
         setExpandedLibId(null);
         setDeleteConfirmId(null);
     };
@@ -113,8 +121,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             setRecordingId(recId);
             setSteps(parsedSteps);
             setAssertions(parsedAssertions);
-            setStartSel(parsedSteps.length > 0 ? parsedSteps[0].order : null);
-            setEndSel(parsedSteps.length > 0 ? parsedSteps[parsedSteps.length - 1].order : null);
+            // P0-1 — initialize LẠI hoàn toàn analysis workspace Phần II từ steps MỚI.
+            applyAnalysisWorkspace(initializeAnalysisFromSteps(parsedSteps));
             setParsedSource(src);
             if (parsedSteps.length === 0) notifyError("Bản ghi không có thao tác nào.");
         } catch (e) {
@@ -173,23 +181,27 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
     const handleAnalyze = async () => {
         if (analyzing || !recordingId) return;
+        const gen = parseGen.current;
         setAnalyzing(true);
         setLocalError("");
         try {
             const res = await analyzeRecording({ recordingId });
+            if (gen !== parseGen.current) return; // P0-1 — recording đã đổi — bỏ kết quả AI của bản cũ.
             const data = res?.data ?? res;
             setProposals(Array.isArray(data?.proposals) ? data.proposals : []);
             if (!Array.isArray(data?.proposals) || data.proposals.length === 0) setLocalError("Không có đề xuất (AI không khả dụng) — bạn có thể tự chọn đoạn.");
         } catch (e) {
+            if (gen !== parseGen.current) return;
             setLocalError(e?.message ?? "Không phân tích được bản ghi.");
         } finally {
-            setAnalyzing(false);
+            if (gen === parseGen.current) setAnalyzing(false);
         }
     };
 
     /* ---------- Phần II: confirm đoạn (manual + AI cùng đường) ---------- */
 
     const createConfirmedAction = async (s, e, label) => {
+        const gen = parseGen.current;
         setSaving(true);
         setLocalError("");
         try {
@@ -197,6 +209,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             const data = res?.data ?? res;
             const blockId = data?.blockId;
             if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
+            if (gen !== parseGen.current) return; // P0-1 — recording đã đổi — không đổ vào working set của bản mới.
             setConfirmed(prev => [...prev, {
                 blockId, label, startStep: s, endStep: e,
                 stepCount: e - s + 1,
@@ -207,9 +220,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             setStartSel(null);
             setEndSel(null);
         } catch (err) {
-            notifyError(err?.message ?? "Không xác nhận được đoạn.");
+            if (gen === parseGen.current) notifyError(err?.message ?? "Không xác nhận được đoạn.");
         } finally {
-            setSaving(false);
+            if (gen === parseGen.current) setSaving(false);
         }
     };
 
@@ -537,9 +550,22 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                             <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedLibId(expandedLibId === b.blockId ? null : b.blockId)}>
                                                 {expandedLibId === b.blockId ? "Thu gọn" : "Xem"}
                                             </button>
-                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(b.blockId)} disabled={deletingId === b.blockId}>
-                                                {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
-                                            </button>
+                                            {deleteConfirmId === b.blockId ? (
+                                                // P0-2 — confirm NHỎ cạnh action (không modal, không full-width danger box).
+                                                <span className="v3-lib-delete-inline">
+                                                    {b.usedByTestCases > 0 ? (
+                                                        <span className="v3-lib-delete-inline__warn">⚠ {b.usedByTestCases} testcase đang phụ thuộc</span>
+                                                    ) : null}
+                                                    <button type="button" className="v3-btn v3-btn--danger v3-btn--mini" onClick={() => doDeleteLibrary(b)} disabled={deletingId === b.blockId}>
+                                                        {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
+                                                    </button>
+                                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(null)} disabled={deletingId === b.blockId}>Hủy</button>
+                                                </span>
+                                            ) : (
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(b.blockId)} disabled={deletingId === b.blockId}>
+                                                    {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     {expandedLibId === b.blockId ? (
@@ -559,21 +585,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                                     ))}
                                                 </div>
                                             ) : null}
-                                        </div>
-                                    ) : null}
-                                    {deleteConfirmId === b.blockId ? (
-                                        <div className="v3-lib-delete-confirm" role="alert">
-                                            <span>
-                                                {b.usedByTestCases > 0
-                                                    ? `⚠ Thao tác đang được ${b.usedByTestCases} testcase dùng. Xóa sẽ khiến các testcase đó mất thao tác này.`
-                                                    : "Xóa thao tác khỏi Thư viện?"}
-                                            </span>
-                                            <span className="v3-lib-delete-confirm__actions">
-                                                <button type="button" className="v3-btn v3-btn--danger v3-btn--mini" onClick={() => doDeleteLibrary(b)} disabled={deletingId === b.blockId}>
-                                                    {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
-                                                </button>
-                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(null)} disabled={deletingId === b.blockId}>Hủy</button>
-                                            </span>
                                         </div>
                                     ) : null}
                                 </div>
