@@ -94,15 +94,12 @@ export default function CodeGenPage() {
             <Link className="back-link" to="/">
                 ← Về Dashboard
             </Link>
+            {/* P0 — Header gọn: page title chính + subtitle ngắn; bỏ CODEGEN MVP / badge / mô tả cũ. */}
             <header className="codegen-page__heading">
                 <div>
-                    <p className="workflow-id">CODEGEN MVP</p>
                     <h2>Playwright CodeGen</h2>
-                    <p>Ghi lại thao tác, dán script, lưu và chạy thử.</p>
+                    <p>Ghi hoặc dán bản ghi Playwright, tạo thao tác và lưu vào Thư viện.</p>
                 </div>
-                <span className={`status-badge ${isRecording ? "status-badge--warning" : "status-badge--neutral"}`}>
-                    {isRecording ? "Đang ghi" : "Chưa ghi"}
-                </span>
             </header>
 
             {notice && <div className="automation-notice" role="status">{notice}</div>}

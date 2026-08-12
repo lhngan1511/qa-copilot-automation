@@ -508,4 +508,13 @@ assert.ok(!codegenPage.includes("Tải/Lưu script"), "P0: bỏ nút Tải/Lưu 
 const copyH = recPrepP0.match(/const handleCopyRecording = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
 assert.ok(!copyH.includes("createLibraryAction") && !copyH.includes("listLibrary"), "P0: copy KHÔNG đụng Action Library (CASE 3)");
 
+// ================= P0 — CODEGEN PAGE HEADER CLEANUP =================
+// ---- 43. Header: bỏ CODEGEN MVP / badge Chưa ghi / mô tả cũ; title chính + subtitle ngắn ----
+assert.ok(!codegenPage.includes("CODEGEN MVP"), "P0 header: bỏ 'CODEGEN MVP'");
+assert.ok(!codegenPage.includes("Chưa ghi"), "P0 header: bỏ badge 'Chưa ghi'");
+assert.ok(!codegenPage.includes("Ghi lại thao tác, dán script, lưu và chạy thử."), "P0 header: bỏ mô tả cũ");
+assert.ok(codegenPage.includes("Playwright CodeGen") && codegenPage.includes("Ghi hoặc dán bản ghi Playwright, tạo thao tác và lưu vào Thư viện."),
+    "P0 header: title chính + subtitle ngắn mới");
+assert.ok(!codegenPage.includes('status-badge--neutral') || !/Chưa ghi/.test(codegenPage), "P0 header: không còn badge trạng thái ghi trong header");
+
 console.log("Automation V3 UI test: PASS");

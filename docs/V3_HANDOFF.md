@@ -196,6 +196,12 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN PAGE HEADER CLEANUP (ĐÃ IMPLEMENT 2026-08-12, chỉ header/layout):**
+- Bỏ hoàn toàn `CODEGEN MVP` · badge `Chưa ghi` · mô tả cũ `Ghi lại thao tác, dán script, lưu và chạy thử.` khỏi CodeGenPage header.
+- `Playwright CodeGen` là page title chính; subtitle ngắn giữ: `Ghi hoặc dán bản ghi Playwright, tạo thao tác và lưu vào Thư viện.`; CSS heading `margin-top:-24px` kéo title lên (giảm khoảng trắng đầu trang).
+- KHÔNG đụng: sidebar/header chung, Recorder logic (isRecording/statusQuery vẫn dùng cho nút Bắt đầu/Dừng ghi), Draft/AI/Library, redesign toàn trang.
+- Test: ui-test thêm assert (bỏ CODEGEN MVP/Chưa ghi/mô tả cũ; có title + subtitle mới). Regression UI liên quan PASS + build OK. **DỪNG — chờ tester kiểm UI thật.**
+
 **P0 — CODEGEN RECORDING LIFECYCLE + GROUP RENAME + XÓA STEP DRAFT OPTIMISTIC (ĐÃ IMPLEMENT 2026-08-12):**
 - **A — Rename group (tester-owned, persist):** `ActionLibrary.renameGroup(old,new)` — cập nhật groupName của MỌI block thuộc group cũ (old null/''/"Chưa phân loại" → null); tên mới bắt buộc; trùng tên group khác → merge tự nhiên (không duplicate block). API `POST /api/codegen/library/rename-group` + api client `renameLibraryGroup`. UI: nút `✎` cạnh group head → inline input `[Lưu][Hủy]` → refresh. **Rename KHÔNG thành default toàn cục** (không đụng currentGroup — action mới vẫn null).
 - **B/C — [+ Bản ghi mới]:** nút ở draft branch + canonical col rec; `newRecording()` reset CHỈ transient (source/parsedSource/draft/steps/recordingId/proposals/dismissed/confirmed/currentGroup=""/feedback/aiStatus/analyzing/page…) — **KHÔNG gọi setLibrary** (Library, group đã rename, recording đã lưu giữ nguyên); không reload; không gọi AI.
