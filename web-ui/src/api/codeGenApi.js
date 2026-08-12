@@ -134,3 +134,11 @@ export async function createLibraryAction({ recordingId, label, kind = "ACTION",
         body: JSON.stringify({ recordingId, label, kind, startStep, endStep })
     });
 }
+
+/** AI Recording Analysis — input chỉ steps/assertions của recording (không testcase). */
+export async function analyzeRecording({ recordingId }) {
+    return apiClient.post("/codegen/analyze", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordingId })
+    });
+}

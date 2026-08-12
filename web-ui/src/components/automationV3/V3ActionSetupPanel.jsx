@@ -53,8 +53,6 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [source, setSource] = useState("");
     const [steps, setSteps] = useState([]);
     const [recordingId, setRecordingId] = useState(null);
-    // Unit-type: giữ recording đã dán để CẮT TIẾP (RECORD ONCE → CUT MANY) mà không paste lại.
-    const [lastRecording, setLastRecording] = useState(null); // { recordingId, steps }
     const [mode, setMode] = useState("all"); // "all" | "part"
     const [startSel, setStartSel] = useState(null);
     const [endSel, setEndSel] = useState(null);
@@ -395,25 +393,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={openLibrary} disabled={saving}>
                             + Thêm thao tác từ thư viện
                         </button>
-                        {lastRecording ? (
-                            <button
-                                type="button"
-                                className="v3-btn v3-btn--ghost"
-                                onClick={() => {
-                                    // Unit-type: lấy thêm từ bản ghi đã dán (KHÔNG paste lại).
-                                    setRecordingId(lastRecording.recordingId);
-                                    setSteps(lastRecording.steps);
-                                    setMode("all");
-                                    setStartSel(null);
-                                    setEndSel(null);
-                                    setAddMode("append");
-                                    setScreen("paste");
-                                }}
-                                disabled={saving}
-                            >
-                                + Lấy thêm từ bản ghi
-                            </button>
-                        ) : null}
+
                     </div>
                     <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
                     <p className="v3-act__note">

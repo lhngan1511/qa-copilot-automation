@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction } from "../../api/codeGenApi.js";
+import { rangesOverlap } from "../../utils/automationV3.js";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
@@ -32,6 +33,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [confirmed, setConfirmed] = useState([]); // [{ blockId, label, startStep, endStep, stepCount }]
     const [saving, setSaving] = useState(false);
     const [localError, setLocalError] = useState("");
+    // AI Recording Analysis — proposals (chưa persist; chỉ proposal)
+    const [proposals, setProposals] = useState([]);
+    const [analyzing, setAnalyzing] = useState(false);
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
 
@@ -70,6 +74,74 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         if (!Number.isInteger(startSel) || !Number.isInteger(endSel)) return null;
         return { start: Math.min(startSel, endSel), end: Math.max(startSel, endSel), count: Math.abs(endSel - startSel) + 1 };
     }, [steps, mode, startSel, endSel]);
+
+    // P0 Assertion Scoping — chỉ hiển thị verification thuộc range đang chọn
+    // (cùng source-range rule backend: assertion trong phạm vi steps HOẶC trailing ≤120 ký tự sau action cuối).
+    const scopedAssertions = useMemo(() => {
+        if (!selRange || steps.length === 0) return [];
+        const selSteps = steps.filter(s => s.order >= selRange.start && s.order <= selRange.end);
+        if (selSteps.length === 0) return [];
+        const firstStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
+        const lastStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
+        const lastEnd = Math.max(...selSteps.map(s => s.sourceEnd ?? 0));
+        return assertions.filter(a => {
+            const as = a.sourceStart ?? -1, ae = a.sourceEnd ?? -1;
+            if (as >= firstStart && ae <= lastEnd) return true;
+            if (as >= lastStart && as <= lastEnd + 120) return true;
+            return false;
+        });
+    }, [assertions, selRange, steps]);
+
+    const handleAnalyze = async () => {
+        if (analyzing || !recordingId) return;
+        setAnalyzing(true);
+        setLocalError("");
+        try {
+            const res = await analyzeRecording({ recordingId });
+            const data = res?.data ?? res;
+            setProposals(Array.isArray(data?.proposals) ? data.proposals : []);
+            if (!Array.isArray(data?.proposals) || data.proposals.length === 0) setLocalError("Không có đề xuất (AI không khả dụng) — bạn có thể tự chọn đoạn.");
+        } catch (e) {
+            setLocalError(e?.message ?? "Không phân tích được bản ghi.");
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    // Tester xác nhận proposal → framework dùng range (tester có thể chỉnh) + tên (có thể đổi) → Library.
+    const applyProposal = async (proposal) => {
+        if (saving) return;
+        setSaving(true);
+        setLocalError("");
+        try {
+            const label = proposal.suggestedName?.trim();
+            if (!label) { notifyError("Vui lòng đặt tên cho đoạn (hoặc Bỏ qua)."); return; }
+            if (!Number.isInteger(proposal.startStep) || !Number.isInteger(proposal.endStep)) { notifyError("Đoạn không hợp lệ."); return; }
+            const res = await createLibraryAction({
+                recordingId,
+                label,
+                kind: "ACTION",
+                startStep: proposal.startStep,
+                endStep: proposal.endStep
+            });
+            const data = res?.data ?? res;
+            const blockId = data?.blockId;
+            if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
+            setConfirmed(prev => [...prev, {
+                blockId,
+                label,
+                startStep: proposal.startStep,
+                endStep: proposal.endStep,
+                stepCount: proposal.endStep - proposal.startStep + 1
+            }]);
+            onConfirmedSegment?.(blockId, label);
+            setProposals(prev => prev.filter(p => p !== proposal));
+        } catch (e) {
+            notifyError(e?.message ?? "Không xác nhận được đoạn.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const confirmSegment = async () => {
         if (!selRange || saving) return;
@@ -136,9 +208,51 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
                     {saving ? "Đang đọc…" : "Nhập xong"}
                 </button>
-            ) : null}
+            ) : (
+                <div className="v3-act__add">
+                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={handleAnalyze} disabled={analyzing || saving}>
+                        {analyzing ? "Đang phân tích…" : "Phân tích bản ghi"}
+                    </button>
+                    <span className="v3-exp__note">AI đề xuất cụm thao tác — bạn xác nhận/chỉnh. AI không tự lưu.</span>
+                </div>
+            )}
 
             {localError ? <div className="v3-banner v3-banner--error" role="alert">{localError}</div> : null}
+
+            {proposals.length > 0 ? (
+                <div className="v3-act__proposals">
+                    <h5 className="v3-map__h">AI đề xuất:</h5>
+                    {proposals.map((p, i) => (
+                        <div className="v3-cond v3-cond--compact" key={`${p.startStep}-${p.endStep}-${i}`}>
+                            <div className="v3-cond__body">
+                                <b>{i + 1}. Bước {p.startStep} → {p.endStep} · {p.suggestedName || "(chưa đủ bằng chứng)"}</b>
+                                {p.evidence?.length > 0 ? (
+                                    <span className="v3-cond__meta">Evidence: {p.evidence.join(" · ")}</span>
+                                ) : null}
+                                {p.confidence != null ? <span className="v3-cond__meta">Độ tin cậy: {Math.round(p.confidence * 100)}%</span> : null}
+                            </div>
+                            <div className="v3-cond__actions">
+                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => applyProposal(p)} disabled={saving}>
+                                    Xác nhận
+                                </button>
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
+                                    // Chỉnh phạm vi: đổ vào manual range (tester sửa rồi Xác nhận đoạn).
+                                    setMode("part");
+                                    setStartSel(p.startStep);
+                                    setEndSel(p.endStep);
+                                    setName(p.suggestedName || "");
+                                    setProposals(prev => prev.filter(x => x !== p));
+                                }} disabled={saving}>
+                                    Chỉnh phạm vi
+                                </button>
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== p))} disabled={saving}>
+                                    Bỏ qua
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : null}
 
             {steps.length > 0 ? (
                 <div className="v3-act__range">
@@ -183,9 +297,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         </div>
                                     ))}
                             </div>
-                            {assertions.length > 0 ? (
-                                <p className="v3-act__note">Verification/expect trong bản ghi: {assertions.map(a => a.statement || a.matcher).join(" · ")}</p>
-                            ) : null}
+                            {scopedAssertions.length > 0 ? (
+                                <p className="v3-act__note">Verification/expect trong đoạn này: {scopedAssertions.map(a => a.statement || a.matcher).join(" · ")}</p>
+                            ) : (
+                                <p className="v3-act__note">Không có điều kiện kiểm tra được ghi trong đoạn này.</p>
+                            )}
                         </div>
                     ) : null}
 

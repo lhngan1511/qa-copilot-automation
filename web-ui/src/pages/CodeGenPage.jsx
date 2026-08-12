@@ -132,19 +132,21 @@ export default function CodeGenPage() {
     };
 
     const handleSaveFile = () => {
-        if (!scriptText.trim()) {
-            setNotice("Dán script vào textarea trước khi lưu.");
+        const content = active?.scriptContent ?? "";
+        if (!content.trim()) {
+            setNotice("Bản ghi hiện tại chưa có script (hãy dán ở khu vực PHÂN ĐOẠN).");
             return;
         }
-        downloadScript(scriptText, active?.downloadFileName || "playwright-recording.spec.js");
-        setNotice("Đã tải file script.");
+        downloadScript(content, active?.downloadFileName || "playwright-recording.spec.js");
+        setNotice("Đã tải file script (từ bản ghi canonical).");
     };
 
     const handleRun = async () => {
         setNotice("");
         setRunResult(null);
-        if (!scriptText.trim()) {
-            setNotice("Dán script vào textarea trước khi chạy.");
+        const content = active?.scriptContent ?? "";
+        if (!content.trim()) {
+            setNotice("Bản ghi hiện tại chưa có script (hãy dán ở khu vực PHÂN ĐOẠN).");
             return;
         }
         if (!activeId) {
@@ -152,7 +154,7 @@ export default function CodeGenPage() {
             return;
         }
         try {
-            const result = await actions.run.mutateAsync({ recordingId: activeId, script: scriptText });
+            const result = await actions.run.mutateAsync({ recordingId: activeId, script: content });
             setRunResult(result);
         } catch (error) {
             setRunResult({ status: "ERROR", passed: false, error: error.message, output: "" });
@@ -240,27 +242,26 @@ export default function CodeGenPage() {
                 />
             </div>
 
-            {/* CÔNG CỤ NÂNG CAO (secondary — tách khỏi main flow) */}
+            {/* CÔNG CỤ NÂNG CAO (secondary — consume CANONICAL recording, không textarea thứ hai) */}
             <div className="codegen-card codegen-card--sub">
                 <label className="codegen-label">CÔNG CỤ NÂNG CAO</label>
-                <textarea
-                    className="codegen-textarea"
-                    rows="6"
-                    placeholder="// Script Playwright (debug: Chạy thử / Lưu file)"
-                    value={scriptText}
-                    onChange={e => setScriptText(e.target.value)}
-                />
+                <p className="codegen-hint">Thao tác trên bản ghi hiện tại (canonical) — không cần dán lại script.</p>
                 <div className="codegen-row">
-                    <button className="button button--secondary" type="button" disabled={!scriptText.trim() || actions.run.isPending} onClick={handleRun}>
+                    <button className="button button--secondary" type="button" disabled={!activeId || actions.run.isPending} onClick={handleRun}>
                         {actions.run.isPending ? "Đang chạy..." : "Chạy thử bản ghi"}
                     </button>
-                    <button className="button button--secondary" type="button" disabled={!scriptText.trim()} onClick={handleSaveFile}>
-                        Lưu file
-                    </button>
-                    <button className="button button--secondary" type="button" onClick={handleClear}>
-                        Xóa nội dung
+                    <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleSaveFile}>
+                        Lưu recording/script
                     </button>
                 </div>
+                {active?.scriptContent ? (
+                    <details className="codegen-details">
+                        <summary>Xem script gốc (read-only)</summary>
+                        <pre className="codegen-output">{active.scriptContent}</pre>
+                    </details>
+                ) : (
+                    <p className="codegen-hint">Chưa có script trong bản ghi hiện tại.</p>
+                )}
                 {runResult && (
                     <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
                         <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>

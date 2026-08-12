@@ -42,6 +42,52 @@ export default class CodeGenController {
         }
     }
 
+    /** AI Recording Analysis — input CHỈ steps/assertions của recording (KHÔNG testcase list).
+     *  Output = PROPOSAL (structured); không persist. AI lỗi/unavailable → proposals: [] (manual vẫn chạy). */
+    async analyzeRecording(req, res) {
+        try {
+            const { recordingId } = req.body ?? {};
+            const rec = recordingId ? this.manager.get(recordingId) : null;
+            if (!rec) return this.fail(res, new Error("Không tìm thấy bản ghi."), 404, "RECORDING_NOT_FOUND", "Không tìm thấy bản ghi.");
+            const steps = (rec.steps ?? []).map(s => ({ order: s.order, actionType: s.actionType, target: s.target ?? "", locator: s.locator ?? "" }));
+            const assertions = (rec.assertions ?? []).map(a => ({ order: a.order, statement: a.statement ?? "", matcher: a.matcher ?? "", locator: a.locator ?? "" }));
+            if (steps.length === 0) return res.status(200).json({ success: true, data: { proposals: [] }, error: null });
+            let provider = null;
+            try { provider = AIProviderFactory.createProvider(AIConfig.provider); } catch { provider = null; }
+            if (!provider) return res.status(200).json({ success: true, data: { proposals: [] }, error: null });
+            const prompt = `Bạn là trợ lý phân tích Playwright recording. Hãy nhóm các bước thành các CỤM THAO TÁC có ý nghĩa nghiệp vụ (VD: Đăng nhập, Mở chức năng, Thêm, Tìm kiếm, Sửa, Xóa).
+CHỈ trả về JSON hợp lệ, không kèm text khác, dạng:
+{"proposals":[{"suggestedName":"...","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true}]}
+QUY TẮC:
+- Không biết/không nhắc testcase.
+- Nếu không đủ bằng chứng cho 1 cụm, vẫn đề xuất range nhưng suggestedName có thể rỗng.
+- KHÔNG tự sửa locator.
+Dữ liệu recording:
+steps: ${JSON.stringify(steps)}
+assertions: ${JSON.stringify(assertions)}`;
+            let text = "";
+            try { text = String((await provider.generate(prompt)) ?? "").trim(); } catch { text = ""; }
+            let proposals = [];
+            try {
+                const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+                const json = JSON.parse(cleaned);
+                if (Array.isArray(json.proposals)) proposals = json.proposals.map(p => ({
+                    suggestedName: String(p.suggestedName ?? "").trim() || null,
+                    startStep: Number.isInteger(p.startStep) ? p.startStep : null,
+                    endStep: Number.isInteger(p.endStep) ? p.endStep : null,
+                    evidence: Array.isArray(p.evidence) ? p.evidence.map(String) : [],
+                    confidence: typeof p.confidence === "number" ? p.confidence : null,
+                    needsTesterConfirmation: p.needsTesterConfirmation !== false
+                })).filter(p => Number.isInteger(p.startStep) && Number.isInteger(p.endStep));
+            } catch {
+                proposals = [];
+            }
+            return res.status(200).json({ success: true, data: { proposals }, error: null });
+        } catch (error) {
+            return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "ANALYZE_FAILED", message: error?.message ?? "Phân tích thất bại." } });
+        }
+    }
+
     async start(req, res) {
         try {
             const data = await this.manager.start(req.body ?? {});

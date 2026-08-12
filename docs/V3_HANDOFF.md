@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0/P1 — UX CORRECTION + AI RECORDING ANALYSIS (ĐÃ IMPLEMENT 2026-08-10):**
+- **Assertion scoping (P0):** `V3RecordingPreparationPanel` hiển thị verification **theo range đang chọn** (source-range rule: assertion trong phạm vi steps hoặc trailing ≤120 ký tự sau action cuối); range không có → "Không có điều kiện kiểm tra được ghi trong đoạn này." Backend `createLibraryAction` đã snapshot đúng theo range (không tin frontend).
+- **AI Recording Analysis:** endpoint `POST /api/codegen/analyze` (input CHỈ steps+assertions của recording — **không testcase list**; dùng `AIProviderFactory` + `AIConfig.provider`, không hardcode Gemini; AI unavailable/malformed JSON → `proposals: []` an toàn). UI: nút `[Phân tích bản ghi]` → proposals `[Xác nhận][Chỉnh phạm vi][Bỏ qua]` → confirm = `createLibraryAction` với range/tên tester chốt (snapshot từ recording thật). AI KHÔNG persist, không map testcase, không tự confirm.
+- **Advanced Tools:** bỏ textarea Playwright thứ hai — consume canonical recording (`active.scriptContent` read-only "Xem script gốc"); `Chạy thử bản ghi`/`Lưu recording` dùng canonical.
+- **Automation empty state:** chỉ `[+ Thêm thao tác từ thư viện]` (primary compact) + fallback link `[Tạo thao tác mới từ bản ghi]`; bỏ `lastRecording` cũ; không còn source chooser 2 card.
+- Test mới `automation-v3-ai-analysis-test.js` (J.1–8: nhiều expect; Add/Search scoping; range không assertion → 0; malformed/unavailable an toàn; tester chỉnh range; không testcase context). Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm tra UI thật (AI + manual). CHƯA AI Testcase Composition; CHƯA Runner/6D.**
+
 **P0 — CODEGEN CONSOLIDATION (ĐÃ IMPLEMENT 2026-08-10, CHƯA AI):**
 - Kiến trúc: `Record/Paste → GLOBAL Recording (không workspace) → Parse → Cut → Confirm → ActionLibrary.create()` — CodeGen authoring **không qua Automation Workspace**, không hidden workspace, không orphan block, không createBlock trong CodeGen path.
 - Backend: `CodeGenSessionManager.setScript` parse steps/assertions (global recording); **API mới `POST /api/codegen/library`** (nhận recordingId+label+kind+startStep/endStep → backend tự slice steps + recordedAssertions + sourceRange → ActionLibrary.addBlock → `LIB-*`; KHÔNG tin frontend steps). ActionLibrary khởi tạo trước codegen route (dùng chung file).
