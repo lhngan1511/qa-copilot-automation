@@ -19,6 +19,7 @@ export default class CodeGenController {
                 blockId: b.blockId,
                 label: b.label ?? null,
                 kind: b.kind,
+                groupName: b.groupName ?? null,
                 stepCount: (b.steps ?? []).length,
                 // P0 — kèm steps/assertions sanitized để UI "[Xem]" expand readable (không render một cục text).
                 steps: (b.steps ?? []).map(s => ({
@@ -52,7 +53,7 @@ export default class CodeGenController {
     async createLibraryAction(req, res) {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
-            const { recordingId, label, kind = "ACTION", startStep, endStep } = req.body ?? {};
+            const { recordingId, label, kind = "ACTION", startStep, endStep, groupName } = req.body ?? {};
             if (!recordingId || !Number.isInteger(startStep) || !Number.isInteger(endStep)) {
                 return this.fail(res, new Error("Thiếu recordingId/startStep/endStep."), 400, "INVALID_REQUEST", "Thiếu thông tin đoạn thao tác.");
             }
@@ -76,9 +77,10 @@ export default class CodeGenController {
                 steps,
                 recordedAssertions: asserts,
                 sourceRecordingId: recordingId,
-                sourceRange: { startStep, endStep }
+                sourceRange: { startStep, endStep },
+                groupName: String(groupName ?? "").trim() || null
             });
-            return res.status(201).json({ success: true, data: { blockId: block.blockId, label: block.label, kind: block.kind, stepCount: block.steps.length, recordedAssertionCount: block.recordedAssertions.length }, error: null });
+            return res.status(201).json({ success: true, data: { blockId: block.blockId, label: block.label, kind: block.kind, groupName: block.groupName, stepCount: block.steps.length, recordedAssertionCount: block.recordedAssertions.length }, error: null });
         } catch (error) {
             return this.fail(res, error, 400, "LIBRARY_CREATE_FAILED", "Không tạo được thao tác thư viện.");
         }

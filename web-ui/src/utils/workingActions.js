@@ -14,7 +14,7 @@
  (createLibraryAction trong saveAllToLibrary) — AI/manual add KHÔNG tự persist.
 */
 
-export function appendWorkingAction(list, { label, startStep, endStep }) {
+export function appendWorkingAction(list, { label, startStep, endStep, groupName = null }) {
     const l = Array.isArray(list) ? list : [];
     if (!Number.isInteger(startStep) || !Number.isInteger(endStep)) return l;
     const rangeKey = `${Math.min(startStep, endStep)}:${Math.max(startStep, endStep)}`;
@@ -24,6 +24,7 @@ export function appendWorkingAction(list, { label, startStep, endStep }) {
     return [...l, {
         blockId: `WORK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         label: String(label ?? "").trim() || `Bước ${startStep}→${endStep}`,
+        groupName: String(groupName ?? "").trim() || null,
         startStep: Math.min(startStep, endStep),
         endStep: Math.max(startStep, endStep),
         stepCount: Math.abs(endStep - startStep) + 1,

@@ -78,7 +78,7 @@ assert.ok(!addProposalBody.includes("createLibraryAction"), "C: handleAddProposa
 assert.ok(addProposalBody.includes("addWorkingAction"), "A: handleAddProposal → addWorkingAction (working set)");
 
 // addWorkingAction: dùng appendWorkingAction (functional update — chống duplicate), KHÔNG API.
-const addWorkingBody = clean.match(/const addWorkingAction = \(s, e, label\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+const addWorkingBody = clean.match(/const addWorkingAction = \(s, e, label, groupName = null\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
 assert.ok(addWorkingBody.includes("appendWorkingAction") && addWorkingBody.includes("setConfirmed(prev =>"), "E: add qua functional update appendWorkingAction (chống double-click)");
 assert.ok(!addWorkingBody.includes("createLibraryAction"), "C: addWorkingAction KHÔNG persist");
 

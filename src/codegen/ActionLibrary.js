@@ -52,7 +52,7 @@ export default class ActionLibrary {
     }
 
     /** Tester chủ động LƯU thao tác vào Library (REUSABLE — bắt buộc label). */
-    addBlock({ label, kind = "ACTION", steps = [], recordedAssertions = [], sourceRecordingId = null, sourceRange = null }) {
+    addBlock({ label, kind = "ACTION", steps = [], recordedAssertions = [], sourceRecordingId = null, sourceRange = null, groupName = null }) {
         const trimmedLabel = String(label ?? "").trim();
         if (!trimmedLabel) {
             const err = new Error("Thao tác lưu vào thư viện bắt buộc đặt tên.");
@@ -63,6 +63,7 @@ export default class ActionLibrary {
             blockId: newLibraryBlockId(),
             label: trimmedLabel,
             kind: kind === "SETUP" ? "SETUP" : "ACTION",
+            groupName: String(groupName ?? "").trim() || null,
             steps: Array.isArray(steps) ? steps.map(s => ({ ...s })) : [], // SNAPSHOT
             recordedAssertions: Array.isArray(recordedAssertions) ? recordedAssertions.map(a => ({ ...a })) : [], // SNAPSHOT
             sourceRecordingId: sourceRecordingId ?? null,
@@ -94,6 +95,8 @@ export default class ActionLibrary {
             block.label = label;
         }
         if (patch.kind !== undefined) block.kind = patch.kind === "SETUP" ? "SETUP" : "ACTION";
+        // GroupName là metadata do tester chủ động — KHÔNG reset CONFIRMED.
+        if (patch.groupName !== undefined) block.groupName = String(patch.groupName ?? "").trim() || null;
         if (patch.steps !== undefined) block.steps = Array.isArray(patch.steps) ? patch.steps.map(s => ({ ...s })) : [];
         if (patch.recordedAssertions !== undefined) block.recordedAssertions = Array.isArray(patch.recordedAssertions) ? patch.recordedAssertions.map(a => ({ ...a })) : [];
         if (patch.sourceRange !== undefined) {

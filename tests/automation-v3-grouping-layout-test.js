@@ -49,9 +49,11 @@ const v3css = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "styles"
 assert.ok(v3css.includes("grid-template-columns: 3fr 2fr"), "P1: split 60/40 giữ nguyên");
 assert.ok(/@media \(max-width: 860px\)[\s\S]*?grid-template-columns: 1fr/.test(v3css), "P1: responsive nhỏ → 1 cột");
 
-// ================= Grouping CHƯA implement (chờ duyệt) =================
+// ================= Grouping V1 ĐÃ implement (tester-owned; không AI tự group) =================
 const panelSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3RecordingPreparationPanel.jsx"), "utf8");
-assert.ok(!panelSource.includes("Chưa phân loại") && !panelSource.includes("group.module"), "P0-3: grouping chưa implement trong panel (chờ duyệt schema)");
-assert.ok(fs.existsSync(path.join(testDir, "..", "docs", "V3_ACTION_LIBRARY_GROUPING_DESIGN.md")), "P0-3: có design doc đề xuất schema");
+assert.ok(panelSource.includes("groupLibraryActions(library)"), "P0-3: panel dùng grouping (nhóm theo groupName)");
+assert.ok(panelSource.includes("Chức năng") && panelSource.includes("currentGroup"), "P0-3: field Chức năng tester-owned (currentGroup default)");
+assert.ok(!/groupName\s*[:=]\s*proposal/.test(panelSource) && !panelSource.includes("handleAddProposal(proposal) ? proposal.groupName"), "P0-3: AI KHÔNG tự quyết định group (dùng currentGroup tester)");
+assert.ok(fs.existsSync(path.join(testDir, "..", "docs", "V3_ACTION_LIBRARY_GROUPING_DESIGN.md")), "P0-3: có design doc (đã duyệt → implement)");
 
 console.log("Automation V3 Duplicate Analysis + Layout (P0-4/P1) test: PASS");

@@ -771,6 +771,7 @@ export default class AutomationWorkspaceApplicationService {
             workspaceId: b.workspaceId ?? null,
             sourceRecordingId: b.sourceRecordingId,
             label: b.label ?? null,
+            groupName: b.groupName ?? null,
             scope: b.scope ?? (String(b.blockId ?? "").startsWith("LIB-") ? "REUSABLE" : "PRIVATE"),
             kind: b.kind,
             startStep: b.sourceRange?.startStep ?? null,

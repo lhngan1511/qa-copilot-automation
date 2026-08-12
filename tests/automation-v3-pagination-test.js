@@ -44,21 +44,20 @@ assert.equal(proposalStatus(p0again.items[0], ws).added, true, "B: quay lại pa
 assert.equal(proposalStatus(eight[1], ws).added, false, "B: proposal 2 chưa thêm → vẫn [Thêm thao tác]");
 // Không gọi AI khi đổi trang: setProposalPage chỉ đổi state (static bên dưới).
 
-// ---- CASE C — 12 Library actions → pagination đúng (pageSize 10) ----
-const twelve = Array.from({ length: 12 }, (_, i) => ({ blockId: `LIB-${i}`, label: `Action ${i + 1}` }));
-const l0 = paginate(twelve, 0, 10);
-assert.equal(l0.totalPages, 2, "C: 12 items / size 10 → 2 trang");
-assert.equal(l0.items.length, 10, "C: trang 1 có 10 items");
-assert.equal(paginate(twelve, 1, 10).items.length, 2, "C: trang 2 có 2 items");
+// ---- CASE C — 12 Library actions → GROUPING (primary scale; không pagination phẳng) ----
+// Grouping là cơ chế scale chính (P0 Grouping V1) — 12 actions cùng group = 1 group count 12.
+const twelve = Array.from({ length: 12 }, (_, i) => ({ blockId: `LIB-${i}`, label: `Action ${i + 1}`, groupName: "Kho" }));
+const { groupLibraryActions } = await import("../web-ui/src/utils/libraryGroups.js");
+const gTwelve = groupLibraryActions(twelve);
+assert.equal(gTwelve.length, 1, "C: 12 actions cùng group → 1 group");
+assert.equal(gTwelve[0].count, 12, "C: group count = 12 (không cần pagination phẳng)");
 
-// ---- CASE D — delete last item ở trang cuối → page tự normalize ----
-assert.equal(clampPage(1, 12, 10), 1, "D: page 1 hợp lệ khi còn 12 items");
-assert.equal(clampPage(1, 11, 10), 1, "D: page 1 hợp lệ khi 11 items (2 trang)");
-assert.equal(clampPage(1, 10, 10), 0, "D: đúng 10 items = 1 trang → page 1 clamp về 0");
-assert.equal(clampPage(1, 9, 10), 0, "D: xóa item → còn 9 → page 1 clamp về 0 (trang bị rỗng)");
-assert.equal(clampPage(1, 0, 10), 0, "D: xóa hết → page về 0");
+// ---- CASE D — xóa action trong group → group count giảm; group rỗng biến mất (derive) ----
+const gAfterDel = groupLibraryActions(twelve.slice(0, 0));
+assert.equal(gAfterDel.length, 0, "D: xóa hết action → group biến mất");
+// clampPage vẫn đúng như util (proposals dùng qua paginate) — giữ kiểm tra util.
+assert.equal(clampPage(1, 11, 10), 1, "D: clampPage util vẫn đúng (dùng cho proposal pagination)");
 assert.equal(totalPages(0, 10), 1, "D: rỗng vẫn 1 trang (không crash)");
-// Component dùng clampPage sau delete (static bên dưới).
 
 // ---- CASE E — proposal có assertion → scoped đúng range ----
 const steps = [
@@ -85,16 +84,16 @@ assert.equal(scopedAssertionsInRange(assertions, steps, 1, 2).length, 1, "F: ran
 
 // ================= Static contract — component =================
 assert.ok(clean.includes("paginate(proposals, proposalPage, PROPOSAL_PAGE_SIZE)"), "B: proposal render qua paginate");
-assert.ok(clean.includes("paginate(library, libPage, LIB_PAGE_SIZE)"), "C: library render qua paginate");
+assert.ok(clean.includes("groupLibraryActions(library)"), "C: library render qua GROUPING (không pagination phẳng)");
 assert.ok(clean.includes("‹ Trước") && clean.includes("Sau ›") && clean.includes("v3-pagination"), "B: controls ‹ Trước / Sau ›");
-assert.ok(clean.includes("Trang {libPaged.page + 1} / {libPaged.totalPages}"), "C: label Trang X / N cho Library");
-assert.ok(clean.includes("clampPage(prev, library.length - 1, LIB_PAGE_SIZE)"), "D: delete → setLibPage clamp (normalize trang rỗng)");
+assert.ok(clean.includes("{g.count} thao tác"), "C: group hiển thị count");
+assert.ok(!clean.includes("setLibPage"), "D: bỏ pagination phẳng library (group rỗng tự biến mất)");
 assert.ok(clean.includes("setProposalPage(p => p - 1)") && clean.includes("setProposalPage(p => p + 1)"), "B: đổi trang chỉ setProposalPage");
 const propControls = clean.match(/‹ Trước[\s\S]*?Sau ›/)?.[0] ?? "";
 assert.ok(propControls.includes("setProposalPage"), "B: controls proposal có setProposalPage");
 assert.ok(!propControls.includes("analyzeRecording") && !propControls.includes("handleAnalyze"), "B: KHÔNG gọi AI khi đổi trang");
 assert.ok(clean.includes("scopedAssertionsInRange(assertions, steps, proposal.startStep, proposal.endStep)"), "E: proposal dùng scoped rule (cùng rule manual)");
 assert.ok(clean.includes("Điều kiện kiểm tra:") && clean.includes("Không có thông tin xác nhận trong đoạn này."), "F: luôn có dòng Điều kiện kiểm tra — không để trống");
-assert.ok(clean.includes("PROPOSAL_PAGE_SIZE = 5") && clean.includes("LIB_PAGE_SIZE = 10"), "page size proposals 5 / library 10");
+assert.ok(clean.includes("PROPOSAL_PAGE_SIZE = 5"), "page size proposals 5");
 
 console.log("Automation V3 Library Refresh + Pagination (P0-3.3) test: PASS");
