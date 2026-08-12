@@ -971,6 +971,10 @@
 .v3-draft { display: grid; gap: 10px; border: 1px dashed var(--border, #cbd5e1); border-radius: 10px; padding: 12px; background: #f8fafc; }
 .v3-draft .v3-step .v3-btn--mini { flex: 0 0 auto; }
 
+/* P0 — label "Điều kiện kiểm tra:" dạng block (có spacing rõ với nội dung theo sau —
+   không dính "Điều kiện kiểm tra:Không có thông tin..."). */
+.v3-act__verif-label { display: block; margin-bottom: 4px; }
+
 /* P0 — Grouping V1: group Library (collapsed mặc định; mở 1 group → thấy actions). */
 .v3-lib-group { display: grid; gap: 4px; }
 .v3-lib-group__head {

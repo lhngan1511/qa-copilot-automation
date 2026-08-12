@@ -112,6 +112,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // expandedGroup = group đang mở trong THƯ VIỆN (null = tất cả collapsed).
     const [currentGroup, setCurrentGroup] = useState("");
     const [expandedGroup, setExpandedGroup] = useState(null);
+    // P0 — proposal bị tester [Bỏ] (trạng thái, KHÔNG xóa khỏi mảng) → list ổn định, không remount.
+    const [dismissedProposals, setDismissedProposals] = useState([]);
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
@@ -145,6 +147,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSaveFeedback(null);
         setUtilityNotice("");
         setProposalPage(0);
+        setDismissedProposals([]);
         setShowRecording(false);
         setExpandedLibId(null);
         setDeleteConfirmId(null);
@@ -485,19 +488,21 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             return (<>
                             {paged.items.map((proposal, idx) => {
                                 const globalIdx = paged.page * PROPOSAL_PAGE_SIZE + idx;
-                                const st = proposalStatus(proposal, confirmed);
+                                const st = proposalStatus(proposal, confirmed, dismissedProposals);
                                 const stepCount = Math.abs((proposal.endStep ?? 0) - (proposal.startStep ?? 0)) + 1;
                                 // P0-3.3 — verification scoped theo range proposal (reuse rule manual).
                                 const propAssertions = scopedAssertionsInRange(assertions, steps, proposal.startStep, proposal.endStep);
                                 return (
-                                <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}-${proposal.endStep}-${idx}`}>
+                                <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}:${proposal.endStep}`}>
                                     <div className="v3-cond__body">
                                         <b>{proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
                                         <span className="v3-cond__meta">
                                             <span className="v3-cond__num">Gợi ý {globalIdx + 1}/{proposals.length}</span>
                                             <span>Bước {proposal.startStep} → {proposal.endStep} · {stepCount} thao tác</span>
                                         </span>
-                                        {st.added ? (
+                                        {st.dismissed ? (
+                                            <span className="v3-cond__meta">Đã bỏ gợi ý này.</span>
+                                        ) : st.added ? (
                                             <span className="v3-ok">✓ Đã thêm — quản lý trong THAO TÁC ĐÃ TẠO</span>
                                         ) : st.blocked ? (
                                             <span className="v3-cond__meta v3-warn">⚠ Trùng với thao tác đã tạo "{st.overlapLabel}" — bỏ qua hoặc chọn gợi ý khác.</span>
@@ -507,7 +512,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         {/* P0-3.3 — Điều kiện kiểm tra scoped (không hiển thị assertion ngoài range;
                                             không để trống — luôn có dòng thông tin). */}
                                         <div className="v3-act__verif">
-                                            <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                            <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
                                             {propAssertions.length > 0 ? (
                                                 propAssertions.map((a, ai) => (
                                                     <div className="v3-cond v3-cond--compact" key={`pa-${ai}`}>
@@ -526,10 +531,16 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         {splitLayout ? (
                                             // P0-3.2 — AI proposal → working action TRỰC TIẾP (không vòng qua form manual).
                                             <>
-                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.added || st.blocked} onClick={() => handleAddProposal(proposal)}>
+                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.added || st.blocked || st.dismissed} onClick={() => handleAddProposal(proposal)}>
                                                     {st.added ? "Đã thêm" : "Thêm thao tác"}
                                                 </button>
-                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={saving || st.added || st.dismissed} onClick={() => {
+                                                    // P0 — "Bỏ" = đánh dấu dismissed (KHÔNG filter mảng) → list không remount/cà giật.
+                                                    const rangeKey = `${Math.min(proposal.startStep, proposal.endStep)}:${Math.max(proposal.startStep, proposal.endStep)}`;
+                                                    setDismissedProposals(prev => (prev.includes(rangeKey) ? prev : [...prev, rangeKey]));
+                                                }}>
+                                                    {st.dismissed ? "Đã bỏ" : "Bỏ"}
+                                                </button>
                                             </>
                                         ) : (
                                             // Fallback (drawer) — giữ "Dùng gợi ý" → populate form manual (Automation workflow cũ).
@@ -610,7 +621,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         <div className="v3-act__verif">
                             {scopedAssertions.length > 0 ? (
                                 <>
-                                    <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                    <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
                                     {scopedAssertions.map((a, i) => (
                                         <div className="v3-cond v3-cond--compact" key={i}>
                                             <div className="v3-cond__body">
@@ -907,7 +918,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                                             {renderSteps(b.steps ?? [])}
                                                             {(b.recordedAssertions ?? []).length > 0 ? (
                                                                 <div className="v3-act__verif">
-                                                                    <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                                                    <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
                                                                     {(b.recordedAssertions ?? []).map((a, j) => (
                                                                         <div key={j} className="v3-cond v3-cond--compact">
                                                                             <b>✓ {readableAssertion(a)}</b>

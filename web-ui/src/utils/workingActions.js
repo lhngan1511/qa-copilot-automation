@@ -36,15 +36,19 @@ export function removeWorkingAction(list, id) {
     return (Array.isArray(list) ? list : []).filter(x => x.blockId !== id);
 }
 
-export function proposalStatus(proposal, workingList) {
+export function proposalStatus(proposal, workingList, dismissed = []) {
     const l = Array.isArray(workingList) ? workingList : [];
     const p = proposal ?? {};
     if (!Number.isInteger(p.startStep) || !Number.isInteger(p.endStep)) {
-        return { added: false, blocked: false, overlapLabel: null };
+        return { added: false, blocked: false, dismissed: false, overlapLabel: null };
     }
+    const rangeKey = `${Math.min(p.startStep, p.endStep)}:${Math.max(p.startStep, p.endStep)}`;
     const added = l.some(x => x.startStep === Math.min(p.startStep, p.endStep) && x.endStep === Math.max(p.startStep, p.endStep));
+    // P0 — "Bỏ" = trạng thái (dismissed) chứ KHÔNG xóa khỏi mảng proposals → không remount list,
+    // không đổi "Gợi ý i/N", không làm UI cà giật.
+    const dismissedState = Array.isArray(dismissed) && dismissed.includes(rangeKey);
     const overlapItem = !added
         ? l.find(x => x.startStep <= Math.max(p.startStep, p.endStep) && x.endStep >= Math.min(p.startStep, p.endStep))
         : null;
-    return { added, blocked: Boolean(overlapItem), overlapLabel: overlapItem?.label ?? null };
+    return { added, blocked: Boolean(overlapItem), dismissed: dismissedState, overlapLabel: overlapItem?.label ?? null };
 }
