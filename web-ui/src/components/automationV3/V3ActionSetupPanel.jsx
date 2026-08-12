@@ -19,19 +19,29 @@ import { ACTION_LABEL } from "../../utils/automationV3.js";
 import V3RecordingPreparationPanel from "./V3RecordingPreparationPanel.jsx";
 
 /*
- V3ActionSetupPanel — Tab "Thao tác" (Checkpoint 6C + 6C.1).
+ V3ActionSetupPanel — Tab "Thao tác" (Checkpoint 6C + 6C.1 + P0 Library/Interaction Correction).
 
  Mental model: TESTCASE → THAO TÁC.
-   - Chưa có thao tác → [Dán bản ghi Playwright] / [Dùng thao tác đã có].
-   - Dán bản ghi → (•) Dùng toàn bộ (mặc định) / ( ) Chọn một phần → [Xác nhận thao tác].
+   - Chưa có thao tác → mở Library (primary) / fallback [Tạo thao tác mới từ bản ghi].
+   - Library = MULTI-SELECT (P0): checkbox batch, picker KHÔNG đóng sau mỗi chọn;
+     chỉ đóng khi [Thêm N thao tác] hoặc [Hủy]. Cho phép cùng LIB-* xuất hiện nhiều lần (D→E→D).
    - "Thao tác sẽ chạy": compact list; [Xem] expand steps + nguồn; [Xác nhận] khi DRAFT; [Thay thế]; [Xóa]; ↑↓.
 
  6C.1 fixes:
    - ADD/REPLACE semantics: confirm từ đầu = REPLACE toàn bộ binding (không giữ action cũ không rõ nguồn);
      [+ Thêm thao tác] = APPEND; [Thay thế] = REPLACE đúng item.
    - Status rõ: "✓ Đã xác nhận" (được Generate) / "⚠ Chưa xác nhận" (+ nút [Xác nhận]).
-   - Label hiển thị: label đã lưu, hoặc derive từ tên testcase (KHÔNG AI); "Bước 1→8" chỉ hiện khi expand (Nguồn).
-   - KHÔNG còn "Duyệt recording" (recording chỉ là source/evidence — read-only trong expand).
+
+ P0 — LIBRARY + AUTOMATION INTERACTION CORRECTION:
+   - TAB STATE: canonical = workspace binding.sequence → Library block. Mỗi lần mount/đổi testcase,
+     panel FETCH LẠI binding từ backend (không cache/local-only). Fix stale-closure race trước đây
+     (screen rơi về "library" dù binding có action — do đọc binding.length từ closure cũ).
+   - BỎ badge "Dùng lại" (Library block đã mặc định reusable); provenance chỉ trong [Xem]:
+     "Nguồn: Thư viện thao tác".
+   - DETAIL LAYOUT: expanded steps nằm NGOÀI flex row (v3-act__item) → full width, không bị cột
+     action ép hẹp (trước đây text dài bị rơi từng ký tự theo chiều dọc).
+   - Key item = `${blockId}:${order}` (cùng LIB-* nhiều occurrence không đụng key).
+   - [Xóa] truyền order → xóa đúng 1 occurrence (D→E→D không mất cả hai).
 */
 
 const STEP_LABEL = step => {
@@ -41,13 +51,13 @@ const STEP_LABEL = step => {
 };
 
 export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, onError }) {
-    const [screen, setScreen] = useState("list"); // "list" | "source" | "paste" | "library"
-    const [addMode, setAddMode] = useState("replaceAll"); // "replaceAll" | "append" | { type: "replaceOne", blockId }
+    const [screen, setScreen] = useState("list"); // "list" | "paste" | "library"
+    const [addMode, setAddMode] = useState("replaceAll"); // "replaceAll" | "append" | { type: "replaceOne", blockId, order }
     const [binding, setBinding] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [localError, setLocalError] = useState("");
-    const [expandedId, setExpandedId] = useState(null);
+    const [expandedId, setExpandedId] = useState(null); // `${blockId}:${order}`
 
     // Dán bản ghi
     const [source, setSource] = useState("");
@@ -57,8 +67,9 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [startSel, setStartSel] = useState(null);
     const [endSel, setEndSel] = useState(null);
 
-    // Library reuse
+    // Library reuse — P0: MULTI-SELECT (batch)
     const [library, setLibrary] = useState([]);
+    const [selectedLib, setSelectedLib] = useState([]); // blockIds theo thứ tự chọn
 
     // Lưu vào thư viện (Boundary — shared asset)
     const [savingReuseId, setSavingReuseId] = useState(null);
@@ -66,12 +77,16 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
     const notify = () => onChanged?.();
 
+    /** P0 — canonical: luôn đọc binding từ backend; trả sequence để quyết định screen không dùng closure cũ. */
     const refreshBinding = useCallback(async () => {
         try {
             const data = await getBinding(workspaceId, testCase.testCaseId);
-            setBinding(Array.isArray(data.sequence) ? data.sequence : []);
+            const seq = Array.isArray(data.sequence) ? data.sequence : [];
+            setBinding(seq);
+            return seq;
         } catch (e) {
             onError?.(e?.message ?? "Không tải được thao tác.");
+            return [];
         } finally {
             setLoading(false);
         }
@@ -86,21 +101,28 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         }
     }, [workspaceId]);
 
+    // P0 — render lại từ canonical binding mỗi khi mount/đổi testcase (KHÔNG giữ state cũ).
     useEffect(() => {
-        refreshBinding().then(() => {
-            // Binding rỗng → mở luôn màn chọn nguồn (replaceAll).
-            setScreen(prev => (prev === "list" ? (binding.length === 0 ? "library" : "list") : prev));
-        });
-    }, [refreshBinding, binding.length]);
+        setLoading(true);
+        setBinding([]);
+        setScreen("list");
+        setExpandedId(null);
+        setSelectedLib([]);
+    }, [testCase.testCaseId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const seq = await refreshBinding();
+            if (cancelled) return;
+            // Binding rỗng → mở luôn Library (primary); có action → list.
+            setScreen(prev => (prev === "list" ? (seq.length === 0 ? "library" : "list") : prev));
+        })();
+        return () => { cancelled = true; };
+    }, [refreshBinding]);
 
     /* ---------- Điều hướng nguồn thao tác ---------- */
 
-    // Phase 1 — Ownership: bỏ màn chọn nguồn ngang hàng.
-    // primary = mở Library; fallback = mở paste (cut-many). addMode theo ngữ cảnh append/replaceAll.
-    const openSource = (mode2 = "append") => {
-        setAddMode(mode2);
-        openLibrary();
-    };
     const openFallbackPaste = (mode2 = "append") => {
         setAddMode(mode2);
         openPaste();
@@ -117,6 +139,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
     const openLibrary = () => {
         setLocalError("");
+        setSelectedLib([]);
         refreshLibrary();
         setScreen("library");
     };
@@ -135,7 +158,6 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             const detail = await getRecordingDetail(workspaceId, recId);
             const parsed = Array.isArray(detail.steps) ? detail.steps : [];
             setSteps(parsed);
-            setLastRecording({ recordingId: recId, steps: parsed }); // giữ để cắt tiếp
             setStartSel(parsed.length > 0 ? parsed[0].order : null);
             setEndSel(parsed.length > 0 ? parsed[parsed.length - 1].order : null);
             if (parsed.length === 0) setLocalError("Bản ghi không có thao tác nào.");
@@ -212,7 +234,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setSaving(true);
         setLocalError("");
         try {
-            await unbindBlock(workspaceId, testCase.testCaseId, item.blockId);
+            // P0 — truyền order để xóa ĐÚNG 1 occurrence (D→E→D; cùng LIB-* nhiều lần).
+            await unbindBlock(workspaceId, testCase.testCaseId, item.blockId, item.order);
             await refreshBinding();
             notify();
         } catch (e) {
@@ -281,14 +304,22 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         }
     };
 
-    /* ---------- Library ---------- */
+    /* ---------- Library (P0 — MULTI-SELECT batch) ---------- */
 
-    const useLibraryItem = async block => {
-        if (saving) return;
+    const toggleLib = blockId => {
+        setSelectedLib(prev => (prev.includes(blockId) ? prev.filter(x => x !== blockId) : [...prev, blockId]));
+    };
+
+    const addSelectedLibrary = async () => {
+        if (saving || selectedLib.length === 0) return;
         setSaving(true);
         setLocalError("");
         try {
-            await bindLibraryBlock(workspaceId, testCase.testCaseId, block.blockId);
+            // Bind theo thứ tự chọn — append từng cái (cho phép cùng LIB-* nhiều occurrence).
+            for (const blockId of selectedLib) {
+                await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
+            }
+            setSelectedLib([]);
             setScreen("list");
             await refreshBinding();
             notify();
@@ -307,6 +338,17 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         return "Thao tác";
     };
 
+    // P0 — provenance: Library block mặc định reusable; chỉ hiển thị nguồn trong [Xem].
+    const sourceNote = item => {
+        const base = String(item.blockId ?? "").startsWith("LIB-")
+            ? "Nguồn: Thư viện thao tác"
+            : `Nguồn: Bản ghi ${item.sourceRecordingId ?? "—"}`;
+        const range = Number.isInteger(item.startStep) && Number.isInteger(item.endStep)
+            ? ` · Bước nguồn: ${item.startStep} → ${item.endStep}`
+            : "";
+        return `${base}${range}`;
+    };
+
     if (loading) return <div className="v3-note">Đang tải thao tác…</div>;
 
     return (
@@ -320,26 +362,62 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                     {binding.length === 0 ? (
                         <p className="v3-act__note">Testcase này chưa có thao tác automation.</p>
                     ) : (
-                        binding.map((item, idx) => (
-                            <div className="v3-cond v3-cond--compact" key={item.blockId}>
-                                <div className="v3-cond__body">
-                                    <div className="v3-cond__line">
-                                        <b>{idx + 1}. {blockTitle(item)}</b>
-                                        <span className="v3-cond__meta">
-                                            {item.stepCount} thao tác ·
-                                            {item.status === "CONFIRMED" ? (
-                                                <span className="v3-ok">✓ Đã xác nhận</span>
-                                            ) : (
-                                                <span className="v3-warn">⚠ Chưa xác nhận</span>
-                                            )}
-                                            {item.scope === "REUSABLE" ? <span> · Dùng lại</span> : null}
-                                        </span>
+                        binding.map((item, idx) => {
+                            const itemKey = `${item.blockId}:${item.order}`;
+                            return (
+                                <div className="v3-act__item" key={itemKey}>
+                                    <div className="v3-cond v3-cond--compact">
+                                        <div className="v3-cond__body">
+                                            <div className="v3-cond__line">
+                                                <b>{idx + 1}. {blockTitle(item)}</b>
+                                                <span className="v3-cond__meta">
+                                                    {item.stepCount} thao tác ·
+                                                    {item.status === "CONFIRMED" ? (
+                                                        <span className="v3-ok">✓ Đã xác nhận</span>
+                                                    ) : (
+                                                        <span className="v3-warn">⚠ Chưa xác nhận</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="v3-cond__actions">
+                                            {binding.length > 1 ? (
+                                                <>
+                                                    <button type="button" className="v3-btn v3-btn--mini" disabled={saving || idx === 0} onClick={() => handleMove(idx, -1)} aria-label="Lên trên">↑</button>
+                                                    <button type="button" className="v3-btn v3-btn--mini" disabled={saving || idx === binding.length - 1} onClick={() => handleMove(idx, 1)} aria-label="Xuống dưới">↓</button>
+                                                </>
+                                            ) : null}
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedId(expandedId === itemKey ? null : itemKey)}>
+                                                {expandedId === itemKey ? "Thu gọn" : "Xem"}
+                                            </button>
+                                            {item.status !== "CONFIRMED" ? (
+                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => handleConfirm(item)} disabled={saving}>
+                                                    Xác nhận
+                                                </button>
+                                            ) : null}
+                                            {item.scope !== "REUSABLE" ? (
+                                                savingReuseId === item.blockId ? (
+                                                    <span className="v3-act__reuse">
+                                                        <input className="v3-input" value={reuseName} onChange={e => setReuseName(e.target.value)} placeholder="Tên thao tác" />
+                                                        <button type="button" className="v3-btn v3-btn--mini v3-btn--primary" onClick={() => saveReuse(item)} disabled={saving || !reuseName.trim()}>Lưu</button>
+                                                    </span>
+                                                ) : (
+                                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => startSaveReuse(item)} disabled={saving}>
+                                                        Lưu vào thư viện
+                                                    </button>
+                                                )
+                                            ) : null}
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => handleReplace(item)} disabled={saving}>
+                                                Thay thế
+                                            </button>
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => handleRemove(item)} disabled={saving}>
+                                                Xóa
+                                            </button>
+                                        </div>
                                     </div>
-                                    {expandedId === item.blockId ? (
+                                    {expandedId === itemKey ? (
                                         <div className="v3-act__detail">
-                                            <p className="v3-act__note">
-                                                Nguồn: Bản ghi {item.sourceRecordingId ?? "—"} · Bước nguồn: {item.startStep ?? "?"} → {item.endStep ?? "?"}
-                                            </p>
+                                            <p className="v3-act__note">{sourceNote(item)}</p>
                                             <div className="v3-steps">
                                                 {(item.steps ?? []).map(s => (
                                                     <div className="v3-step" key={s.order}>
@@ -352,48 +430,13 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                         </div>
                                     ) : null}
                                 </div>
-                                <div className="v3-cond__actions">
-                                    {binding.length > 1 ? (
-                                        <>
-                                            <button type="button" className="v3-btn v3-btn--mini" disabled={saving || idx === 0} onClick={() => handleMove(idx, -1)} aria-label="Lên trên">↑</button>
-                                            <button type="button" className="v3-btn v3-btn--mini" disabled={saving || idx === binding.length - 1} onClick={() => handleMove(idx, 1)} aria-label="Xuống dưới">↓</button>
-                                        </>
-                                    ) : null}
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedId(expandedId === item.blockId ? null : item.blockId)}>
-                                        {expandedId === item.blockId ? "Thu gọn" : "Xem"}
-                                    </button>
-                                    {item.status !== "CONFIRMED" ? (
-                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => handleConfirm(item)} disabled={saving}>
-                                            Xác nhận
-                                        </button>
-                                    ) : null}
-                                    {item.scope !== "REUSABLE" ? (
-                                        savingReuseId === item.blockId ? (
-                                            <span className="v3-act__reuse">
-                                                <input className="v3-input" value={reuseName} onChange={e => setReuseName(e.target.value)} placeholder="Tên thao tác" />
-                                                <button type="button" className="v3-btn v3-btn--mini v3-btn--primary" onClick={() => saveReuse(item)} disabled={saving || !reuseName.trim()}>Lưu</button>
-                                            </span>
-                                        ) : (
-                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => startSaveReuse(item)} disabled={saving}>
-                                                Lưu vào thư viện
-                                            </button>
-                                        )
-                                    ) : null}
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => handleReplace(item)} disabled={saving}>
-                                        Thay thế
-                                    </button>
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => handleRemove(item)} disabled={saving}>
-                                        Xóa
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                     <div className="v3-act__add">
                         <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={openLibrary} disabled={saving}>
                             + Thêm thao tác từ thư viện
                         </button>
-
                     </div>
                     <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
                     <p className="v3-act__note">
@@ -426,32 +469,51 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                 </div>
             ) : null}
 
+            {/* ---------- Library picker (P0 — MULTI-SELECT batch) ---------- */}
             {screen === "library" ? (
                 <div className="v3-act__library">
-                    <h4 className="v3-map__h">Thao tác đã lưu</h4>
+                    <h4 className="v3-map__h">THÊM THAO TÁC TỪ THƯ VIỆN</h4>
                     {library.length === 0 ? (
                         <p className="v3-act__note">Chưa có thao tác nào được lưu để dùng lại.</p>
                     ) : (
-                        library.map(b => (
-                            <div className="v3-cond v3-cond--compact" key={b.blockId}>
-                                <div className="v3-cond__body">
-                                    <b>{b.label}</b>
-                                    <div className="v3-cond__meta">
-                                        <span>Đang dùng bởi {b.usedByTestCases?.length ?? 0} testcase</span>
-                                        {b.kind === "SETUP" ? <span>· Bước chuẩn bị</span> : null}
-                                    </div>
-                                </div>
-                                <div className="v3-cond__actions">
-                                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => useLibraryItem(b)} disabled={saving}>
-                                        Dùng
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                        library.map(b => {
+                            const inUse = binding.filter(i => i.blockId === b.blockId).length;
+                            return (
+                                <label className="v3-lib-option" key={b.blockId}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedLib.includes(b.blockId)}
+                                        onChange={() => toggleLib(b.blockId)}
+                                        disabled={saving}
+                                    />
+                                    <span className="v3-lib-option__body">
+                                        <b>{b.label}</b>
+                                        <span className="v3-cond__meta">
+                                            {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện kiểm tra · Đang dùng bởi {b.usedByTestCases ?? 0} testcase
+                                            {inUse > 0 ? <span className="v3-warn">· đã có {inUse} lần trong testcase (chọn để thêm lần nữa)</span> : null}
+                                        </span>
+                                    </span>
+                                </label>
+                            );
+                        })
                     )}
-                    <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setScreen("list")} disabled={saving}>
-                        Quay lại
-                    </button>
+                    <div className="v3-lib-pick__footer">
+                        <span className="v3-act__note">Đã chọn: {selectedLib.length} thao tác</span>
+                        <div className="v3-lib-pick__actions">
+                            <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setScreen("list")} disabled={saving}>
+                                Hủy
+                            </button>
+                            <button type="button" className="v3-btn v3-btn--primary" onClick={addSelectedLibrary} disabled={saving || selectedLib.length === 0}>
+                                {saving ? "Đang thêm…" : `Thêm ${selectedLib.length} thao tác`}
+                            </button>
+                        </div>
+                    </div>
+                    <p className="v3-act__note">
+                        Không có thao tác phù hợp?{" "}
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => openFallbackPaste("append")} disabled={saving}>
+                            Tạo thao tác mới từ bản ghi
+                        </button>
+                    </p>
                 </div>
             ) : null}
         </div>

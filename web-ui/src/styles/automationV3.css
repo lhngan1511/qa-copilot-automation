@@ -656,8 +656,8 @@
   display: grid;
   place-items: center;
 }
-.v3-step__act { font-weight: 600; font-size: 13px; color: var(--primary-dark); min-width: 56px; }
-.v3-step__loc { font-size: 13px; overflow-wrap: anywhere; flex: 1; }
+.v3-step__act { font-weight: 600; font-size: 13px; color: var(--primary-dark); min-width: 56px; flex: 0 0 auto; }
+.v3-step__loc { font-size: 13px; overflow-wrap: anywhere; flex: 1; min-width: 0; }
 .v3-step__val { font-size: 12px; color: var(--muted); }
 
 /* Xem mã */
@@ -848,7 +848,7 @@
 .v3-sugg__reason { font-size: 12px; color: #475569; font-style: italic; }
 .v3-sugg__actions { display: flex; align-items: center; }
 .v3-cond { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; background: #f8fafc; border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 10px; }
-.v3-cond__body { display: grid; gap: 4px; font-size: 13px; flex: 1; }
+.v3-cond__body { display: grid; gap: 4px; font-size: 13px; flex: 1; min-width: 0; }
 .v3-cond__meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #475569; }
 .v3-cond__actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .v3-cond-form { display: grid; gap: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
@@ -873,7 +873,9 @@
 .v3-drawer__sub { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ================= 6C.1 — Compact + status rõ ================= */
-.v3-cond--compact { padding: 8px 10px; align-items: center; }
+/* P0 — flex-wrap: khi action column quá rộng (nhiều nút), actions xuống dòng riêng,
+   body giữ full width → không ép nội dung thành cột hẹp. */
+.v3-cond--compact { padding: 8px 10px; align-items: center; flex-wrap: wrap; }
 .v3-cond--compact .v3-cond__body { display: grid; gap: 2px; }
 .v3-cond__line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 13px; }
 .v3-cond__line b { font-size: 13px; }
@@ -899,6 +901,50 @@
 /* P0 Seg UX — link gợi ý AI nhỏ (không nút nổi) */
 .v3-link { background: none; border: none; padding: 0; color: var(--primary); font-size: 13px; text-decoration: underline; cursor: pointer; }
 .v3-link:hover { text-decoration: none; }
+
+/* ================= P0 — Library + Automation Interaction Correction ================= */
+/* Item wrapper: expanded detail nằm NGOÀI flex row → full width, không bị action column ép hẹp
+   (trước đây text dài như "Asset Quản lý trang thiết bị" rơi từng ký tự theo chiều dọc). */
+.v3-act__item { display: grid; gap: 6px; min-width: 0; }
+.v3-act__detail { width: 100%; }
+.v3-lib-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.v3-lib-option input[type="checkbox"] { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--primary); flex: 0 0 auto; }
+.v3-lib-option__body { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.v3-lib-option b { font-size: 13px; }
+.v3-lib-pick__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.v3-lib-pick__actions { display: flex; gap: 8px; }
+.v3-lib-delete-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  font-size: 12.5px;
+  color: #b91c1c;
+}
+.v3-lib-delete-confirm__actions { display: flex; gap: 6px; }
 
 /* P0 Codegen UX Redesign — spacing & hierarchy */
 .v3-rec-prep { display: grid; gap: 18px; }

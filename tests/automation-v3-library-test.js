@@ -142,6 +142,21 @@ async function main() {
     assert.equal(libAfterReload.body.length, 4, "reload: Library vẫn còn (persisted)");
     const bindAfterReload = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding`);
     assert.equal(bindAfterReload.body.sequence[0].blockId, libMap["Tìm kiếm"], "reload: binding trỏ Library block còn dùng được");
+
+    // ===== P0 — Xóa khỏi Library (UI confirm; backend xóa qua codegen DELETE) =====
+    const del = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
+    assert.equal(del.status, 200, "delete library block 200");
+    const libAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/library`);
+    assert.equal(libAfterDelete.body.length, 3, "library còn 3 sau khi xóa Tìm kiếm");
+    const del404 = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
+    assert.equal(del404.status, 404, "xóa lần 2 → 404 (LIBRARY_BLOCK_NOT_FOUND)");
+    // Binding trỏ block đã xóa → resolveBlock null → sequence lọc item (không crash).
+    const bindAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding`);
+    assert.ok(!bindAfterDelete.body.sequence.some(x => x.blockId === libMap["Tìm kiếm"]), "binding không còn item đã xóa (unresolved bị lọc)");
+    // Generate testcase còn binding trỏ block đã xóa → chặn rõ ràng (422, không crash, không bịa spec).
+    const genMissing = await req(base2, "POST", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/generate`, {});
+    assert.equal(genMissing.status, 422, "generate với block đã xóa → 422 SEGMENT_MAPPING_INVALID (gate rõ ràng)");
+    assert.ok(String(genMissing.body?.message ?? "").includes("đoạn thao tác"), "message nói rõ thiếu đoạn thao tác");
     await closeServer(srv2);
 
     fs.rmSync(tempRoot, { recursive: true, force: true });

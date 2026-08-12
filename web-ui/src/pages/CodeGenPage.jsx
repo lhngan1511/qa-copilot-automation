@@ -247,11 +247,14 @@ export default function CodeGenPage() {
                 <p className="codegen-hint">Record hoặc dán bản ghi đều đổ vào MỘT nguồn — cắt đoạn → lưu Thư viện thao tác (shared).</p>
             </div>
 
-            {/* II/III + Thư viện — shared component (global recording) */}
-            <V3RecordingPreparationPanel
-                onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
-                onError={msg => setNotice(msg)}
-            />
+            {/* II/III + Thư viện — shared component (global recording).
+                P0 — bọc card để padding/margin khớp layout (không dính sát mép phải như các card khác). */}
+            <div className="codegen-card">
+                <V3RecordingPreparationPanel
+                    onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                    onError={msg => setNotice(msg)}
+                />
+            </div>
 
             {/* CÔNG CỤ KỸ THUẬT (collapse — consume canonical recording, không textarea thứ hai) */}
             <div className="codegen-card codegen-card--sub">

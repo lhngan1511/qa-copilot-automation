@@ -17,7 +17,23 @@ export default class CodeGenController {
                 label: b.label ?? null,
                 kind: b.kind,
                 stepCount: (b.steps ?? []).length,
+                // P0 — kèm steps/assertions sanitized để UI "[Xem]" expand readable (không render một cục text).
+                steps: (b.steps ?? []).map(s => ({
+                    order: s.order,
+                    actionType: s.actionType,
+                    locator: s.locator,
+                    target: s.target,
+                    recordedValue: s.sensitive ? "••••" : (s.recordedValue ?? "")
+                })),
                 recordedAssertionCount: (b.recordedAssertions ?? []).length,
+                recordedAssertions: (b.recordedAssertions ?? []).map(a => ({
+                    order: a.order,
+                    statement: a.statement ?? "",
+                    locator: a.locator ?? null,
+                    matcher: a.matcher ?? null,
+                    expected: a.expected ?? null,
+                    sourceLine: a.sourceLine ?? null
+                })),
                 sourceRecordingId: b.sourceRecordingId ?? null,
                 sourceRange: b.sourceRange ?? null,
                 status: b.status,
@@ -62,6 +78,19 @@ export default class CodeGenController {
             return res.status(201).json({ success: true, data: { blockId: block.blockId, label: block.label, kind: block.kind, stepCount: block.steps.length, recordedAssertionCount: block.recordedAssertions.length }, error: null });
         } catch (error) {
             return this.fail(res, error, 400, "LIBRARY_CREATE_FAILED", "Không tạo được thao tác thư viện.");
+        }
+    }
+
+    /** P0 — Xóa thao tác khỏi Library (tester chủ động; UI confirm trước khi gọi — block có thể đang được testcase dùng). */
+    async deleteLibraryAction(req, res) {
+        try {
+            if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
+            const { blockId } = req.params ?? {};
+            const removed = this.actionLibrary.removeBlock(blockId);
+            if (!removed) return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong thư viện.");
+            return res.status(200).json({ success: true, data: { blockId, removed: true }, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "LIBRARY_DELETE_FAILED", "Không xóa được thao tác thư viện.");
         }
     }
 

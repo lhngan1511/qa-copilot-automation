@@ -345,7 +345,7 @@ assert.ok(recPrepCleanup.includes("Gợi ý bằng AI"), "Seg UX: AI là helper 
 assert.ok(recPrepCleanup.includes("Dùng gợi ý") && recPrepCleanup.includes("⚠ Trùng với thao tác đã tạo"), "Seg UX: proposal + overlap guard");
 // P0 Library Visibility / Save Feedback
 assert.ok(recPrepCleanup.includes("THƯ VIỆN THAO TÁC") && recPrepCleanup.includes("Xem tất cả"), "Lib: khối THƯ VIỆN + Xem tất cả");
-assert.ok(recPrepCleanup.includes("Dùng bởi") && recPrepCleanup.includes("verification"), "Lib: hiển thị tên/bước/verification/usage");
+assert.ok(recPrepCleanup.includes("Dùng bởi") && recPrepCleanup.includes("điều kiện kiểm tra"), "Lib: hiển thị tên/bước/điều kiện/usage");
 assert.ok(recPrepCleanup.includes("Đã lưu") && recPrepCleanup.includes("vào Thư viện"), "Lib: success feedback sau save");
 assert.ok(recPrepCleanup.includes("listLibrary"), "Lib: reuse listLibrary API (không xây Library mới)");
 
@@ -402,5 +402,40 @@ assert.ok(apiSource.includes("getBlockUsage"), "api usage (reverse dependency)")
 assert.ok(apiSource.includes("getBinding") && apiSource.includes("bindBlock"), "api binding get/bind");
 assert.ok(apiSource.includes("unbindBlock") && apiSource.includes("reorderBinding"), "api unbind/reorder");
 assert.ok(!apiSource.includes("rendererV3") && !apiSource.includes("CodeGenRecordingStore"), "không gọi Store/Renderer");
+
+// ================= P0 — LIBRARY + AUTOMATION INTERACTION CORRECTION =================
+// ---- 32. Codegen: NEW RECORDING MUST RESET — đổi nội dung → reset context cũ + TỰ parse lại ----
+const recPrepP0 = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
+assert.ok(recPrepP0.includes("handleSourceChange"), "P0: textarea onChange qua handleSourceChange");
+assert.ok(recPrepP0.includes("resetRecordingContext"), "P0: có reset context recording cũ");
+assert.ok(recPrepP0.includes("setProposals([])") && recPrepP0.includes("setConfirmed([])") && recPrepP0.includes("setSaveFeedback(null)"),
+    "P0: reset AI proposals + working actions + save feedback khi đổi recording");
+assert.ok(recPrepP0.includes("setTimeout") && recPrepP0.includes("doParse"), "P0: auto re-parse (debounce) — không cần F5");
+assert.ok(recPrepP0.includes("parsedSource"), "P0: track source đã parse để phát hiện nội dung mới");
+assert.ok(!recPrepP0.includes("Bạn muốn dùng phần nào?"), "P0: không còn màn chọn nguồn ngang hàng");
+// ---- 33. Action Library UI: item có Tên / N thao tác / N điều kiện / Dùng bởi N testcase / [Xem] / [Xóa] ----
+assert.ok(recPrepP0.includes("Xóa") && recPrepP0.includes("deleteLibraryAction"), "Lib: [Xóa] gọi deleteLibraryAction API");
+assert.ok(recPrepP0.includes("Thao tác đang được") && recPrepP0.includes("testcase dùng"), "Lib: confirm báo rõ số testcase đang dùng (không silently delete)");
+assert.ok(recPrepP0.includes("Nguồn: Thư viện thao tác"), "Lib: provenance 'Nguồn: Thư viện thao tác' trong [Xem]");
+assert.ok(recPrepP0.includes("v3-act__item"), "Lib/Đã tạo: detail nằm ngoài flex row (v3-act__item — full width)");
+const codeGenApiP0 = stripComments(read("api/codeGenApi.js"));
+assert.ok(codeGenApiP0.includes("deleteLibraryAction"), "api codegen: có deleteLibraryAction");
+const codegenPageP0 = stripComments(read("pages/CodeGenPage.jsx"));
+assert.ok(codegenPageP0.includes("codegen-card") && codegenPageP0.includes("V3RecordingPreparationPanel"),
+    "Codegen: prep panel bọc card (padding/margin khớp layout — không dính sát mép phải)");
+// ---- 34. Automation: ADD FROM LIBRARY MULTI-SELECT (batch, picker không đóng sau mỗi chọn) ----
+assert.ok(actPanel.includes("THÊM THAO TÁC TỪ THƯ VIỆN"), "P0: heading picker THÊM THAO TÁC TỪ THƯ VIỆN");
+assert.ok(actPanel.includes('type="checkbox"') && actPanel.includes("toggleLib"), "P0: checkbox batch selection");
+assert.ok(actPanel.includes("Đã chọn:") && actPanel.includes("Thêm ${selectedLib.length} thao tác"), "P0: footer 'Đã chọn: N thao tác' + [Thêm N thao tác]");
+assert.ok(actPanel.includes("addSelectedLibrary"), "P0: [Thêm N thao tác] bind batch theo thứ tự chọn");
+assert.ok(actPanel.includes("Hủy"), "P0: [Hủy] đóng picker");
+assert.ok(!/Dùng lại/.test(actPanel), "P0: bỏ badge 'Dùng lại' khỏi action card");
+assert.ok(actPanel.includes("Nguồn: Thư viện thao tác"), "P0: provenance chỉ trong [Xem]: 'Nguồn: Thư viện thao tác'");
+// ---- 35. TAB STATE — canonical binding (không stale closure), repeated LIB-* không đụng key ----
+assert.ok(actPanel.includes("refreshBinding()") && actPanel.includes("seq.length === 0"), "P0: quyết định screen từ sequence vừa fetch (không closure cũ)");
+assert.ok(actPanel.includes("${item.blockId}:${item.order}"), "P0: key item = blockId:order (repeated D→E→D không đụng key)");
+assert.ok(actPanel.includes("item.blockId, item.order"), "P0: [Xóa] truyền order → xóa đúng 1 occurrence");
+assert.ok(actPanel.includes("v3-act__item"), "P0: expanded detail ngoài flex row (không bị ép hẹp)");
+assert.ok(actPanel.includes("binding.filter(i => i.blockId === b.blockId)"), "P0: picker đếm số lần block đã có trong testcase (hỗ trợ duplicate)");
 
 console.log("Automation V3 UI test: PASS");

@@ -155,3 +155,8 @@ export async function createRecording({ url = "", browser = "chrome", mode = "FU
 export async function listLibrary() {
     return apiClient.get("/codegen/library");
 }
+
+/** P0 — xóa thao tác khỏi Library (UI đã confirm — block có thể đang được testcase dùng). */
+export async function deleteLibraryAction(blockId) {
+    return apiClient.delete(`/codegen/library/${encodeURIComponent(blockId)}`);
+}

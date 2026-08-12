@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary } from "../../api/codeGenApi.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
@@ -13,6 +13,14 @@ import { ACTION_LABEL } from "../../utils/automationV3.js";
        AI: [Phân tích bản ghi] → proposals đổ vào CÙNG UI tạo đoạn → [Xác nhận]/[Chỉnh]/[Bỏ].
        Sau confirm → "CÁC THAO TÁC ĐÃ TẠO" (compact, collapsed per item) → [+ Tạo thêm] → [Lưu vào Thư viện].
    Bỏ "Dùng toàn bộ bản ghi" default; thay secondary [Chọn toàn bộ].
+
+ P0 — LIBRARY + AUTOMATION INTERACTION CORRECTION:
+   - NEW RECORDING MUST RESET: khi nội dung textarea đổi → reset context recording cũ
+     (recordingId/steps/assertions/proposals/Start-End/name/working set/save feedback) → TỰ parse lại
+     (debounce, KHÔNG cần F5). Không còn cảnh "paste B không phân tích lại".
+   - THƯ VIỆN item: Tên · N thao tác · N điều kiện kiểm tra · Dùng bởi N testcase · [Xem] (expand steps) · [Xóa]
+     (confirm inline — báo rõ số testcase đang dùng, không silently delete).
+   - Expanded detail nằm NGOÀI flex row (v3-act__item) → full width, không bị action column ép hẹp.
 */
 
 const readableAssertion = a => {
@@ -36,6 +44,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [recordingId, setRecordingId] = useState(null);
     const [steps, setSteps] = useState([]);
     const [assertions, setAssertions] = useState([]);
+    // P0 — source đã parse + trạng thái parse (auto re-parse khi đổi nội dung).
+    const [parsedSource, setParsedSource] = useState("");
+    const [parsing, setParsing] = useState(false);
+    const parseTimer = useRef(null);
+    const parseGen = useRef(0);
     // Phần I — collapsed mặc định
     const [showRecording, setShowRecording] = useState(false);
     // Phần II — manual
@@ -51,38 +64,84 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // P0 Library Visibility
     const [library, setLibrary] = useState([]);
     const [showLibrary, setShowLibrary] = useState(false);
+    const [expandedLibId, setExpandedLibId] = useState(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
     const [saveFeedback, setSaveFeedback] = useState(null); // { count }
     const [saving, setSaving] = useState(false);
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
 
-    /* ---------- Phần I: nhận recording ---------- */
+    /* ---------- P0: reset context recording cũ (khi tester nhập bản ghi mới) ---------- */
 
-    const handlePasteDone = async () => {
-        if (saving || !source.trim()) return;
-        setSaving(true);
+    const resetRecordingContext = () => {
+        clearTimeout(parseTimer.current);
+        parseTimer.current = null;
+        parseGen.current += 1;
+        setRecordingId(null);
+        setSteps([]);
+        setAssertions([]);
+        setProposals([]);
+        setStartSel(null);
+        setEndSel(null);
+        setName("");
+        setConfirmed([]);
+        setSaveFeedback(null);
+        setShowRecording(false);
+        setExpandedItem(null);
+        setExpandedLibId(null);
+        setDeleteConfirmId(null);
+    };
+
+    /* ---------- Phần I: nhận recording (parse) ---------- */
+
+    const doParse = async (src, gen) => {
+        setParsing(true);
         setLocalError("");
         try {
             // P0 Cleanup — Paste KHÔNG spawn recorder.
             const created = await createRecording({ url: "about:blank", browser: "chrome", mode: "FULL_FLOW" });
             const recId = created?.data?.recordingId ?? created?.recordingId;
             if (!recId) throw new Error("Không tạo được bản ghi.");
-            await setRecordingScript(recId, { script: source });
+            await setRecordingScript(recId, { script: src });
             const detail = await getRecording(recId);
             const rec = detail?.data ?? detail;
+            if (gen !== parseGen.current) return; // tester đã đổi nội dung — bỏ kết quả cũ.
+            const parsedSteps = Array.isArray(rec?.steps) ? rec.steps : [];
+            const parsedAssertions = Array.isArray(rec?.assertions) ? rec.assertions : [];
             setRecordingId(recId);
-            setSteps(Array.isArray(rec?.steps) ? rec.steps : []);
-            setAssertions(Array.isArray(rec?.assertions) ? rec.assertions : []);
-            setStartSel(Array.isArray(rec?.steps) && rec.steps.length > 0 ? rec.steps[0].order : null);
-            setEndSel(Array.isArray(rec?.steps) && rec.steps.length > 0 ? rec.steps[rec.steps.length - 1].order : null);
-            if (!Array.isArray(rec?.steps) || rec.steps.length === 0) notifyError("Bản ghi không có thao tác nào.");
+            setSteps(parsedSteps);
+            setAssertions(parsedAssertions);
+            setStartSel(parsedSteps.length > 0 ? parsedSteps[0].order : null);
+            setEndSel(parsedSteps.length > 0 ? parsedSteps[parsedSteps.length - 1].order : null);
+            setParsedSource(src);
+            if (parsedSteps.length === 0) notifyError("Bản ghi không có thao tác nào.");
         } catch (e) {
-            notifyError(e?.message ?? "Không đọc được bản ghi.");
+            if (gen === parseGen.current) notifyError(e?.message ?? "Không đọc được bản ghi.");
         } finally {
-            setSaving(false);
+            if (gen === parseGen.current) setParsing(false);
         }
     };
+
+    /** P0 — nội dung bản ghi đổi → reset context cũ + TỰ phân tích lại (không cần F5). */
+    const handleSourceChange = value => {
+        setSource(value);
+        if (value.trim() && value.trim() === (parsedSource ?? "").trim()) return;
+        resetRecordingContext();
+        if (!value.trim()) { setParsedSource(""); return; }
+        parseTimer.current = setTimeout(() => doParse(value, parseGen.current), 500);
+    };
+
+    const handlePasteDone = async () => {
+        if (saving || !source.trim()) return;
+        clearTimeout(parseTimer.current);
+        parseTimer.current = null;
+        await doParse(source, parseGen.current);
+    };
+
+    // Dọn timer khi unmount (tránh setState sau khi rời màn).
+    useEffect(() => () => clearTimeout(parseTimer.current), []);
 
     /* ---------- Phần II: range + verification scoped ---------- */
 
@@ -181,6 +240,34 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
+    /* ---------- P0: Thư viện — Xóa (confirm inline, báo rõ usage) ---------- */
+
+    const doDeleteLibrary = async block => {
+        if (deletingId) return;
+        setDeletingId(block.blockId);
+        setLocalError("");
+        try {
+            await deleteLibraryAction(block.blockId);
+            setLibrary(prev => prev.filter(x => x.blockId !== block.blockId));
+            setDeleteConfirmId(null);
+            if (expandedLibId === block.blockId) setExpandedLibId(null);
+        } catch (e) {
+            notifyError(e?.message ?? "Không xóa được thao tác thư viện.");
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const refreshLibrary = async () => {
+        try {
+            const res = await listLibrary();
+            const data = res?.data ?? res;
+            setLibrary(Array.isArray(data) ? data : []);
+        } catch {
+            /* giữ */
+        }
+    };
+
     const itemSteps = item => steps.filter(s => s.order >= item.startStep && s.order <= item.endStep);
     const itemAssertions = item => scopedAssertionsFor(item);
 
@@ -198,6 +285,18 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         });
     };
 
+    const renderSteps = list => (
+        <div className="v3-steps">
+            {list.map(s => (
+                <div className="v3-step" key={s.order}>
+                    <span className="v3-step__n">{s.order}</span>
+                    <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
+                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
+                </div>
+            ))}
+        </div>
+    );
+
     return (
         <div className="v3-rec-prep">
             {/* ============ I. BẢN GHI PLAYWRIGHT ============ */}
@@ -210,13 +309,13 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 className="v3-input"
                 rows={4}
                 value={source}
-                onChange={e => setSource(e.target.value)}
+                onChange={e => handleSourceChange(e.target.value)}
                 placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
                 spellCheck={false}
             />
             {steps.length === 0 ? (
                 <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
-                    {saving ? "Đang đọc…" : "Nhập xong"}
+                    {parsing || saving ? "Đang phân tích…" : "Nhập xong"}
                 </button>
             ) : (
                 <div className="v3-act__summary">
@@ -309,15 +408,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         <div className="v3-act__preview">
                             <b>ĐOẠN ĐÃ CHỌN</b>
                             <p className="v3-act__note">{selRange.count} thao tác · bước {selRange.start} → {selRange.end}</p>
-                            <div className="v3-steps">
-                                {selSteps.map(s => (
-                                    <div className="v3-step" key={s.order}>
-                                        <span className="v3-step__n">{s.order}</span>
-                                        <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                        <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
-                                    </div>
-                                ))}
-                            </div>
+                            {renderSteps(selSteps)}
                             <div className="v3-act__verif">
                                 {scopedAssertions.length > 0 ? (
                                     <>
@@ -357,45 +448,47 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             {confirmed.length > 0 ? (
                 <div className="v3-act__saved">
                     <h4 className="v3-map__h">III. THAO TÁC ĐÃ TẠO</h4>
-                    {confirmed.map((seg, i) => (
-                        <div className="v3-cond v3-cond--compact" key={seg.blockId}>
-                            <div className="v3-cond__body">
-                                <div className="v3-cond__line">
-                                    <b>{seg.label} · bước {seg.startStep} → {seg.endStep}</b>
-                                    <span className="v3-cond__meta">{seg.stepCount} thao tác · {seg.assertionCount > 0 ? `${seg.assertionCount} verification` : "không verification"}</span>
+                    {confirmed.map(seg => (
+                        <div className="v3-act__item" key={seg.blockId}>
+                            <div className="v3-cond v3-cond--compact">
+                                <div className="v3-cond__body">
+                                    <div className="v3-cond__line">
+                                        <b>{seg.label} · bước {seg.startStep} → {seg.endStep}</b>
+                                        <span className="v3-cond__meta">{seg.stepCount} thao tác · {seg.assertionCount > 0 ? `${seg.assertionCount} điều kiện kiểm tra` : "không điều kiện kiểm tra"}</span>
+                                    </div>
                                 </div>
-                                {expandedItem === seg.blockId ? (
-                                    <div className="v3-act__detail">
-                                        <div className="v3-steps">
-                                            {itemSteps(seg).map(s => (
-                                                <div className="v3-step" key={s.order}>
-                                                    <span className="v3-step__n">{s.order}</span>
-                                                    <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
+                                <div className="v3-cond__actions">
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedItem(expandedItem === seg.blockId ? null : seg.blockId)}>
+                                        {expandedItem === seg.blockId ? "Thu gọn" : "Xem"}
+                                    </button>
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Chỉnh</button>
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => prev.filter(x => x !== seg))} disabled={saving}>Xóa</button>
+                                </div>
+                            </div>
+                            {expandedItem === seg.blockId ? (
+                                <div className="v3-act__detail">
+                                    <div className="v3-steps">
+                                        {itemSteps(seg).map(s => (
+                                            <div className="v3-step" key={s.order}>
+                                                <span className="v3-step__n">{s.order}</span>
+                                                <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
+                                                <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {itemAssertions(seg).length > 0 ? (
+                                        <div className="v3-act__verif">
+                                            <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                            {itemAssertions(seg).map((a, j) => (
+                                                <div key={j} className="v3-cond v3-cond--compact">
+                                                    <b>✓ {readableAssertion(a)}</b>
+                                                    <details className="v3-act__tech"><summary>Xem code kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
                                                 </div>
                                             ))}
                                         </div>
-                                        {itemAssertions(seg).length > 0 ? (
-                                            <div className="v3-act__verif">
-                                                <span className="v3-act__note">Verification:</span>
-                                                {itemAssertions(seg).map((a, j) => (
-                                                    <div key={j} className="v3-cond v3-cond--compact">
-                                                        <b>✓ {readableAssertion(a)}</b>
-                                                        <details className="v3-act__tech"><summary>Xem code kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                ) : null}
-                            </div>
-                            <div className="v3-cond__actions">
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedItem(expandedItem === seg.blockId ? null : seg.blockId)}>
-                                    {expandedItem === seg.blockId ? "Thu gọn" : "Xem"}
-                                </button>
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Chỉnh</button>
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => prev.filter(x => x !== seg))} disabled={saving}>Xóa</button>
-                            </div>
+                                    ) : null}
+                                </div>
+                            ) : null}
                         </div>
                     ))}
                     <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setStartSel(null); setEndSel(null); setName(""); }} disabled={saving}>
@@ -421,11 +514,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     <div className="v3-exp__row">
                         <h4 className="v3-map__h">THƯ VIỆN THAO TÁC</h4>
                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={async () => {
-                            try {
-                                const res = await listLibrary();
-                                const data = res?.data ?? res;
-                                setLibrary(Array.isArray(data) ? data : []);
-                            } catch { /* giữ */ }
+                            await refreshLibrary();
                             setShowLibrary(v => !v);
                         }}>
                             {showLibrary ? "Thu gọn" : "Xem tất cả"}
@@ -436,13 +525,57 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             <p className="v3-act__note">Thư viện chưa có thao tác nào.</p>
                         ) : (
                             library.map(b => (
-                                <div className="v3-cond v3-cond--compact" key={b.blockId}>
-                                    <div className="v3-cond__body">
-                                        <b>{b.label}</b>
-                                        <span className="v3-cond__meta">
-                                            {b.stepCount} bước · {b.recordedAssertionCount} verification · Dùng bởi {b.usedByTestCases ?? 0} testcase
-                                        </span>
+                                <div className="v3-act__item" key={b.blockId}>
+                                    <div className="v3-cond v3-cond--compact">
+                                        <div className="v3-cond__body">
+                                            <b>{b.label}</b>
+                                            <span className="v3-cond__meta">
+                                                {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện kiểm tra · Dùng bởi {b.usedByTestCases ?? 0} testcase
+                                            </span>
+                                        </div>
+                                        <div className="v3-cond__actions">
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedLibId(expandedLibId === b.blockId ? null : b.blockId)}>
+                                                {expandedLibId === b.blockId ? "Thu gọn" : "Xem"}
+                                            </button>
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(b.blockId)} disabled={deletingId === b.blockId}>
+                                                {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
+                                            </button>
+                                        </div>
                                     </div>
+                                    {expandedLibId === b.blockId ? (
+                                        <div className="v3-act__detail">
+                                            <p className="v3-act__note">
+                                                Nguồn: Thư viện thao tác · Bản ghi {b.sourceRecordingId ?? "—"} · Bước {b.sourceRange?.startStep ?? "?"} → {b.sourceRange?.endStep ?? "?"}
+                                            </p>
+                                            {renderSteps(b.steps ?? [])}
+                                            {(b.recordedAssertions ?? []).length > 0 ? (
+                                                <div className="v3-act__verif">
+                                                    <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                                    {(b.recordedAssertions ?? []).map((a, j) => (
+                                                        <div key={j} className="v3-cond v3-cond--compact">
+                                                            <b>✓ {readableAssertion(a)}</b>
+                                                            <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                    {deleteConfirmId === b.blockId ? (
+                                        <div className="v3-lib-delete-confirm" role="alert">
+                                            <span>
+                                                {b.usedByTestCases > 0
+                                                    ? `⚠ Thao tác đang được ${b.usedByTestCases} testcase dùng. Xóa sẽ khiến các testcase đó mất thao tác này.`
+                                                    : "Xóa thao tác khỏi Thư viện?"}
+                                            </span>
+                                            <span className="v3-lib-delete-confirm__actions">
+                                                <button type="button" className="v3-btn v3-btn--danger v3-btn--mini" onClick={() => doDeleteLibrary(b)} disabled={deletingId === b.blockId}>
+                                                    {deletingId === b.blockId ? "Đang xóa…" : "Xóa"}
+                                                </button>
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setDeleteConfirmId(null)} disabled={deletingId === b.blockId}>Hủy</button>
+                                            </span>
+                                        </div>
+                                    ) : null}
                                 </div>
                             ))
                         )
