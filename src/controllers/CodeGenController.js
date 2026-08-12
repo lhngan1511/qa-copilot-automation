@@ -1,3 +1,6 @@
+import AIProviderFactory from "../providers/AIProviderFactory.js";
+import AIConfig from "../config/AIConfig.js";
+
 export default class CodeGenController {
     constructor({ manager, testcaseLoader = null, actionLibrary = null, usageFn = null }) {
         if (!manager) throw new Error("CodeGenController cần manager.");

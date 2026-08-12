@@ -88,6 +88,8 @@ async function main() {
     if (analyze.body?.data?.proposals.length === 0) {
         assert.ok(analyze.body?.error?.code, "proposals rỗng phải có error.code phân biệt (AI_PROVIDER_UNAVAILABLE/AI_REQUEST_FAILED/AI_RESPONSE_INVALID)");
         assert.ok(["AI_PROVIDER_UNAVAILABLE", "AI_REQUEST_FAILED", "AI_RESPONSE_INVALID", "ANALYZE_FAILED"].includes(analyze.body.error.code), "error.code thuộc tập đã định nghĩa");
+        assert.ok(analyze.body.error.code !== "AI_PROVIDER_UNAVAILABLE",
+            "môi trường test không cấu hình gemini (default ollama) → createProvider phải chạy thật; UNAVAILABLE = dấu hiệu ReferenceError bị nuốt (bug thiếu import đã fix)");
         assert.equal(analyze.body.error.retryable, true, "lỗi AI retryable (UI hiện [Thử lại])");
     }
     // 5. Malformed JSON từ AI → backend đã wrap try/catch → proposals [] (không crash); mô phỏng bằng analyze thêm lần nữa
