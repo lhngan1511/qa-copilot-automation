@@ -88,7 +88,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             }
         })();
         return () => { cancelled = true; };
-    }, [workspaceId, testCase.testCaseId, dismissedCandidates]);
+    }, [workspaceId, testCase.testCaseId, dismissedCandidates, testCase?.segmentSummary?.total]);
 
     const confirmedCount = useMemo(() => assertions.filter(a => a.status === "TESTER_CONFIRMED").length, [assertions]);
     const draftCount = useMemo(() => assertions.filter(a => a.status === "DRAFT").length, [assertions]);
@@ -321,7 +321,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 <div className="v3-exp__row">
                     <h4 className="v3-exp__h">Điều kiện tìm thấy trong bản ghi</h4>
                     {recordedCandidates.length === 0 ? (
-                        <span className="v3-exp__note">Không tìm thấy điều kiện xác nhận trong bản ghi.</span>
+                        <span className="v3-exp__note">Chưa có điều kiện xác nhận phù hợp.</span>
                     ) : null}
                 </div>
                 {recordedCandidates.map((c, i) => (
@@ -329,7 +329,8 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                         <div className="v3-cond__body">
                             <b>{i + 1}. {c.target} {c.matcher === "toBeHidden" ? "không hiển thị" : "hiển thị"}</b>
                             <div className="v3-cond__meta">
-                                <span>Nguồn: Playwright recording</span>
+                                {/* P0-B — nguồn ACTION của candidate (selected action trong binding). */}
+                                <span>Nguồn: {c.actionLabel || "Playwright recording"}</span>
                                 {c.statement ? <span className="v3-exp__stmt">{c.statement}</span> : null}
                             </div>
                         </div>

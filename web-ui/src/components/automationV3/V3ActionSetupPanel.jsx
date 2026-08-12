@@ -15,8 +15,9 @@ import {
     saveToLibrary,
     bindLibraryBlock
 } from "../../api/automationV3Api.js";
+import { Link } from "react-router-dom";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
-import V3RecordingPreparationPanel from "./V3RecordingPreparationPanel.jsx";
+import { groupLibraryActions, groupDisplayName } from "../../utils/libraryGroups.js";
 
 /*
  V3ActionSetupPanel — Tab "Thao tác" (Checkpoint 6C + 6C.1 + P0 Library/Interaction Correction).
@@ -71,6 +72,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [library, setLibrary] = useState([]);
     const [libraryLoading, setLibraryLoading] = useState(false); // P0-regression: tránh flash "Chưa có thao tác..."
     const [selectedLib, setSelectedLib] = useState([]); // blockIds theo thứ tự chọn
+    // P0-B — picker group-first: null = đang chọn Chức năng; string = đang xem group đó.
+    const [pickerGroup, setPickerGroup] = useState(null);
 
     // Lưu vào thư viện (Boundary — shared asset)
     const [savingReuseId, setSavingReuseId] = useState(null);
@@ -150,6 +153,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const openLibrary = async () => {
         setLocalError("");
         setSelectedLib([]);
+        setPickerGroup(null);
         setScreen("library");
         setLibraryLoading(true);
         await refreshLibrary();
@@ -453,31 +457,8 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                     <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
                     <p className="v3-act__note">
                         Không có thao tác phù hợp?{" "}
-                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => openFallbackPaste("append")} disabled={saving}>
-                            Tạo thao tác mới từ bản ghi
-                        </button>
+                        <Link className="v3-link" to="/codegen">Mở CodeGen</Link>
                     </p>
-                </div>
-            ) : null}
-
-            {/* Màn chọn nguồn (source) đã BỎ — Phase 1 Ownership: Library primary, paste fallback. */}
-
-            {/* ---------- Màn dán bản ghi (màn C) ---------- */}
-            {screen === "paste" ? (
-                <div className="v3-act__paste">
-                    {/* Phase 1 — REUSE shared RecordingPreparationPanel (Codegen owner; fallback secondary).
-                        onConfirmedSegment: bind block vào testcase đang mở (fallback Automation). */}
-                    <V3RecordingPreparationPanel
-                        workspaceId={workspaceId}
-                        onConfirmedSegment={async (blockId) => {
-                            // P0 Consolidation — block là LIB-* (ActionLibrary) → bind qua bindLibraryBlock.
-                            await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
-                            await refreshBinding();
-                            notify();
-                        }}
-                        onSavedToLibrary={count => setLocalError(`Đã lưu ${count} thao tác vào Thư viện.`)}
-                        onError={setLocalError}
-                    />
                 </div>
             ) : null}
 
@@ -489,27 +470,48 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         <p className="v3-act__note">Đang tải thư viện…</p>
                     ) : library.length === 0 ? (
                         <p className="v3-act__note">Chưa có thao tác nào được lưu để dùng lại.</p>
+                    ) : pickerGroup === null ? (
+                        /* P0-B — chọn CHỨC NĂNG trước (group-first), không render flat toàn bộ Library. */
+                        <>
+                            <p className="v3-act__note">Chọn chức năng để xem thao tác:</p>
+                            {groupLibraryActions(library).map(g => (
+                                <button type="button" className="v3-lib-group__head" key={g.rawGroupName ?? ""} onClick={() => setPickerGroup(g.rawGroupName ?? "")}>
+                                    <span className="v3-lib-group__arrow">▸</span>
+                                    <b>{g.groupName}</b>
+                                    <span className="v3-lib-group__count">· {g.count} thao tác</span>
+                                </button>
+                            ))}
+                        </>
                     ) : (
-                        library.map(b => {
-                            const inUse = binding.filter(i => i.blockId === b.blockId).length;
-                            return (
-                                <label className="v3-lib-option" key={b.blockId}>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedLib.includes(b.blockId)}
-                                        onChange={() => toggleLib(b.blockId)}
-                                        disabled={saving}
-                                    />
-                                    <span className="v3-lib-option__body">
-                                        <b>{b.label}</b>
-                                        <span className="v3-cond__meta">
-                                            {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện kiểm tra · Đang dùng bởi {b.usedByTestCases ?? 0} testcase
-                                            {inUse > 0 ? <span className="v3-warn">· đã có {inUse} lần trong testcase (chọn để thêm lần nữa)</span> : null}
+                        /* Đang xem 1 group — render actions bên trong; multi-select + repeated giữ. */
+                        <>
+                            <div className="v3-exp__row">
+                                <b className="v3-map__h">{groupDisplayName(pickerGroup)}</b>
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setPickerGroup(null)} disabled={saving}>
+                                    ← Tất cả chức năng
+                                </button>
+                            </div>
+                            {library.filter(b => (b.groupName ?? "") === pickerGroup).map(b => {
+                                const inUse = binding.filter(i => i.blockId === b.blockId).length;
+                                return (
+                                    <label className="v3-lib-option" key={b.blockId}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedLib.includes(b.blockId)}
+                                            onChange={() => toggleLib(b.blockId)}
+                                            disabled={saving}
+                                        />
+                                        <span className="v3-lib-option__body">
+                                            <b>{b.label}</b>
+                                            <span className="v3-cond__meta">
+                                                {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện kiểm tra · Đang dùng bởi {b.usedByTestCases ?? 0} testcase
+                                                {inUse > 0 ? <span className="v3-warn">· đã có {inUse} lần trong testcase (chọn để thêm lần nữa)</span> : null}
+                                            </span>
                                         </span>
-                                    </span>
-                                </label>
-                            );
-                        })
+                                    </label>
+                                );
+                            })}
+                        </>
                     )}
                     <div className="v3-lib-pick__footer">
                         <span className="v3-act__note">Đã chọn: {selectedLib.length} thao tác</span>
@@ -524,9 +526,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                     </div>
                     <p className="v3-act__note">
                         Không có thao tác phù hợp?{" "}
-                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => openFallbackPaste("append")} disabled={saving}>
-                            Tạo thao tác mới từ bản ghi
-                        </button>
+                        <Link className="v3-link" to="/codegen">Mở CodeGen</Link>
                     </p>
                 </div>
             ) : null}

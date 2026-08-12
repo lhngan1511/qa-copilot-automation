@@ -138,7 +138,7 @@ const allClean = stripComments(allSources);
 // ngoài Drawer — không cấm keyword `generate` (page/drawer dùng hàm generateTestcase hợp lệ).
 for (const forbidden of [
     /Ghi thao tác và sinh/i,
-    /AI Mapping|aiMapping/i, /codeGenFile|CodeGen/i
+    /AI Mapping|aiMapping/i, /codeGenFile/i
 ]) {
     assert.ok(!forbidden.test(allClean), `không chứa: ${forbidden}`);
 }
@@ -370,7 +370,7 @@ const actPanel = stripComments(read("components/automationV3/V3ActionSetupPanel.
 // Phase 1 Ownership: bỏ màn chọn nguồn ngang hàng; primary = Library
 assert.ok(!actPanel.includes("Bạn muốn lấy thao tác thêm từ đâu?"), "không còn màn chọn nguồn ngang hàng");
 assert.ok(actPanel.includes("+ Thêm thao tác từ thư viện"), "primary = thêm từ thư viện");
-assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback = tạo mới từ bản ghi (secondary)");
+assert.ok(actPanel.includes("Mở CodeGen") && actPanel.includes('to="/codegen"'), "P0-B: fallback = link Mở CodeGen (không nhúng CodeGen)");
 // Màn C (toàn bộ/một phần + preview) nằm trong SHARED V3RecordingPreparationPanel
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận thao tác"), "Seg UX: manual Start/End + Xác nhận thao tác");
@@ -378,7 +378,7 @@ assert.ok(recPrep.includes("ĐOẠN ĐANG CHỌN") && !recPrep.includes("ĐOẠN
 assert.ok(recPrep.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút save phản ánh số lượng");
 assert.ok(recPrep.includes("THAO TÁC ĐÃ TẠO"), "P0-3: danh sách thao tác đã tạo (compact)");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
-assert.ok(actPanel.includes("V3RecordingPreparationPanel"), "fallback reuse shared RecordingPreparationPanel (không duplicate)");
+assert.ok(!actPanel.includes("V3RecordingPreparationPanel"), "P0-B: Automation KHÔNG nhúng V3RecordingPreparationPanel (Library-only)");
 
 assert.ok(actPanel.includes("Lưu vào thư viện"), "reuse là tùy chọn phụ (Lưu vào thư viện)");
 assert.ok(actPanel.includes("Đang dùng bởi"), "library hiển thị 'Đang dùng bởi N testcase'");

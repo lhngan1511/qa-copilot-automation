@@ -1049,7 +1049,9 @@ export default class AutomationWorkspaceApplicationService {
         const candidates = [];
         const seen = new Set();
         for (const ref of seq) {
-            const block = this.workspace.getActionBlock(workspaceId, ref.blockId) ?? null;
+            // P0-B — resolveBlock (workspace + LIB-* fallback): selected action từ Action Library
+            // cũng phải đóng góp recordedAssertions làm evidence (trước đây bỏ sót LIB blocks).
+            const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
             if (!block) continue;
             for (const a of block.recordedAssertions ?? []) {
                 const key = `${a.matcher}|${a.locator}`;
@@ -1066,6 +1068,8 @@ export default class AutomationWorkspaceApplicationService {
                     status: "SUGGESTED",
                     reason: "Nguồn: Playwright recording",
                     blockId: block.blockId,
+                    // P0-B — hiển thị rõ nguồn ACTION của candidate (selected action trong binding).
+                    actionLabel: block.label ?? `Bước ${block.sourceRange?.startStep ?? "?"}→${block.sourceRange?.endStep ?? "?"}`,
                     statement: a.statement ?? ""
                 });
             }
