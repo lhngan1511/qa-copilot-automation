@@ -196,6 +196,12 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN CONSOLIDATION IMPACT (2026-08-10, trace — CHỜ DUYỆT, CHƯA CODE):**
+- Kiến trúc mục tiêu: Record/Paste → **Global Recording (workspaceId=null)** → Parse → Cut → Confirm → **ActionLibrary.create() trực tiếp** (không qua workspace, không hidden workspace, không orphan block). Automation chỉ consume `LIB-*` qua binding.
+- Impact trace: (1) RecordingStore đã hỗ trợ global (workspaceId null; CodeGenSessionManager.start không truyền workspace) · (2) API /api/codegen (start/stop/get) không workspace — cần xác minh stop parse steps (bổ sung nếu chưa) · (3) **bỏ hoàn toàn createBlock khỏi CodeGen path** (thay API mới `POST /api/codegen/library` → ActionLibrary.addBlock; createBlock workspace giữ cho compatibility) · (4) ActionLibrary.addBlock **đã đủ** steps/recordedAssertions/sourceRange/label/kind (status CONFIRMED) · (5) Fallback Automation **reuse cùng global flow** (panel dùng global + bindLibraryBlock cho testcase).
+- "Đối chiếu testcase" = POST /recordings/:id/link (legacy CodeGen→testcase, gắn testcaseIds) — **V3 KHÔNG dùng** (mapping qua binding) → **REMOVE khỏi CodeGen V3** (backend link giữ legacy).
+- Chi tiết: `docs/V3_CODEGEN_CONSOLIDATION_IMPACT.md`. Chưa code.
+
 **P0 — CODEGEN UX CONSOLIDATION (v3, 2026-08-10, WIREFRAME — CHỜ DUYỆT, CHƯA CODE):**
 - Vấn đề: CodeGen có HAI nơi xử lý Playwright recording (section 0 textarea + section 2 textarea) → feature stacking. Consolidation về MỘT main flow.
 - Wireframe mới (`v3-codegen-consolidation-wireframe.md`): PLAYWRIGHT RECORDING (1 input canonical; [Bắt đầu ghi]/[Dán bản ghi]) → PHÂN ĐOẠN ([+ Chọn đoạn thủ công]/[Phân tích bản ghi sau này]) → CÁC THAO TÁC ĐÃ XÁC NHẬN → [Lưu vào Thư viện thao tác] → CÔNG CỤ NÂNG CAO (Chạy thử/Lưu file secondary).
