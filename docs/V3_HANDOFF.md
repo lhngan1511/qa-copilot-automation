@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN 3-TẦNG UX (ĐÃ IMPLEMENT 2026-08-10):**
+- **I. BẢN GHI** → "Tôi vừa đưa gì vào?": summary `N thao tác · M điều kiện kiểm tra` + `[Xem bản ghi]` (collapsed; chỉ steps/verification **readable** — KHÔNG raw code; raw ở Công cụ kỹ thuật).
+- **II. TẠO THAO TÁC** → "Tôi muốn lấy đoạn nào?": mô tả nhẹ + **link nhỏ "Gợi ý: để AI đề xuất cách chia bản ghi"** (không nút ✨ nổi, không UI AI riêng) → Start/End dropdown → "Đã chọn N thao tác · Bước X → Y" + inline `Bấm A → Bấm B` → verification scoped business-readable (`[Xem kỹ thuật]`) → Tên → `[Xác nhận thao tác]`. AI "Dùng gợi ý" chỉ đổ vào Start/End/Tên — tester review rồi Xác nhận như thường.
+- **III. THAO TÁC ĐÃ TẠO** → "Tôi đã tạo được gì?": compact collapsed per item (`▸ Tên · bước X→Y · N thao tác · M verification`) + `[Xem]/[Chỉnh]/[Xóa]` + `[+ Tạo thêm thao tác]` + `[Lưu vào Thư viện thao tác]`.
+- Đổi tên "PHÂN TÍCH / TẠO THAO TÁC" → "TẠO THAO TÁC" (nói theo mục tiêu tester).
+- Không thêm feature; không AI Composition; không Runner. Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm UI.**
+
 **P0 — CODEGEN SEGMENTATION UX CORRECTION (ĐÃ IMPLEMENT 2026-08-10, không thêm feature):**
 - Tách 2 phần rõ ràng, hết duplication:
   - **I. BẢN GHI PLAYWRIGHT**: summary `N thao tác · M điều kiện kiểm tra` + `[Xem bản ghi]` (collapsed mặc định; chỉ review/debug steps + verification). KHÔNG chọn Start/End ở đây; KHÔNG render lại danh sách.

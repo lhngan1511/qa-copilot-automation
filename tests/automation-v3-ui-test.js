@@ -339,11 +339,12 @@ assert.ok(!codegenPage.includes("CÔNG CỤ NÂNG CAO"), "P0 Cleanup: không cò
 const recPrepCleanup = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrepCleanup.includes("createRecording"), "P0 Cleanup: paste dùng createRecording (không spawn recorder)");
 assert.ok(recPrepCleanup.includes("thao tác") && recPrepCleanup.includes("Xem bản ghi"), "Seg UX: summary + Xem bản ghi (collapsed)");
-assert.ok(recPrepCleanup.includes("PHÂN TÍCH / TẠO THAO TÁC"), "Seg UX: phần II PHÂN TÍCH/TẠO THAO TÁC");
 assert.ok(!recPrepCleanup.includes("Bạn muốn dùng phần nào?"), "Seg UX: bỏ 'Bạn muốn dùng phần nào?' (hết duplication)");
 assert.ok(!recPrepCleanup.includes("Dùng toàn bộ bản ghi"), "Seg UX: bỏ Dùng toàn bộ default");
 assert.ok(recPrepCleanup.includes("CÁC THAO TÁC ĐÃ TẠO") && recPrepCleanup.includes("+ Tạo thêm thao tác"), "Seg UX: danh sách đã tạo + Tạo thêm");
-assert.ok(recPrepCleanup.includes("✨ Phân tích bản ghi"), "Seg UX: AI nằm trong phần II");
+assert.ok(recPrepCleanup.includes("Gợi ý: để AI đề xuất cách chia bản ghi"), "Seg UX: AI là link gợi ý nhỏ (không nút nổi)");
+assert.ok(recPrepCleanup.includes("Dùng gợi ý") && recPrepCleanup.includes("Gợi ý tiếp"), "Seg UX: proposal dạng Gợi ý i/n");
+assert.ok(recPrepCleanup.includes("TẠO THAO TÁC"), "Seg UX: tiêu đề II = TẠO THAO TÁC");
 assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification business-readable + Xem kỹ thuật cho raw");
 
 assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
@@ -364,7 +365,7 @@ assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback =
 // Màn C (toàn bộ/một phần + preview) nằm trong SHARED V3RecordingPreparationPanel
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận đoạn"), "Seg UX: manual Start/End + Xác nhận đoạn");
-assert.ok(recPrep.includes("Đã chọn bước") && recPrep.includes("Xác nhận đoạn"), "shared: preview range rõ + xác nhận đoạn");
+assert.ok(recPrep.includes("Đã chọn") && recPrep.includes("Xác nhận đoạn"), "Seg UX: preview + Xác nhận đoạn");
 assert.ok(recPrep.includes("Lưu vào Thư viện thao tác"), "shared: Lưu vào Thư viện");
 assert.ok(recPrep.includes("CÁC THAO TÁC ĐÃ TẠO"), "Seg UX: danh sách thao tác đã tạo");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
