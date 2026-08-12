@@ -196,6 +196,15 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — CODEGEN SEGMENTATION UX CORRECTION (ĐÃ IMPLEMENT 2026-08-10, không thêm feature):**
+- Tách 2 phần rõ ràng, hết duplication:
+  - **I. BẢN GHI PLAYWRIGHT**: summary `N thao tác · M điều kiện kiểm tra` + `[Xem bản ghi]` (collapsed mặc định; chỉ review/debug steps + verification). KHÔNG chọn Start/End ở đây; KHÔNG render lại danh sách.
+  - **II. PHÂN TÍCH / TẠO THAO TÁC**: nơi duy nhất tạo reusable action — Start/End dropdown → preview (chỉ steps thuộc range) → verification scoped (business-readable + `[Xem kỹ thuật]`) → Tên → `[Xác nhận đoạn]`; `[✨ Phân tích bản ghi]` (AI) proposals đổ vào CÙNG UI → `[Xác nhận]/[Chỉnh]/[Bỏ]`; `[Chọn toàn bộ]` secondary.
+  - Sau confirm → **"CÁC THAO TÁC ĐÃ TẠO"** compact (mỗi item collapsed; bấm Xem mới thấy steps/verification/raw) + `[Chỉnh]/[Xóa]` + `[+ Tạo thêm thao tác]` + `[Lưu vào Thư viện thao tác]`.
+- Bỏ `"Bạn muốn dùng phần nào? (o) Dùng toàn bộ ( ) Chọn một phần"` với danh sách render lần 2.
+- AI không tạo UI riêng — cùng flow manual (cả hai kết thúc: đoạn chọn → verification scoped → tên → xác nhận → danh sách đã tạo).
+- Test: ui-test cập nhật (PHÂN TÍCH/TẠO THAO TÁC, không duplication, Xem bản ghi, CÁC THAO TÁC ĐÃ TẠO). Regression 15/15 PASS + build OK. **DỪNG — chờ tester kiểm UI.**
+
 **P0 — CODEGEN UX CLEANUP (ĐÃ IMPLEMENT 2026-08-10, không thêm feature):**
 - **Paste KHÔNG spawn recorder:** thêm `POST /api/codegen/recordings` (tạo global recording trực tiếp — không mở browser/Inspector); `V3RecordingPreparationPanel.handlePasteDone` dùng `createRecording` (bỏ `/api/codegen/start`). Chỉ `[Bắt đầu ghi]` mới trigger recorder.
 - **Steps không bung:** hiển thị summary `N thao tác · M điều kiện kiểm tra` + `[Xem chi tiết]` (collapse).
