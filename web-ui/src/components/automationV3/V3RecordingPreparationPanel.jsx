@@ -421,7 +421,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
                 {proposals.length > 0 ? (
                     <div className="v3-act__proposals">
-                        {proposals.slice(0, 3).map((proposal, idx) => {
+                        {proposals.map((proposal, idx) => {
                             const st = proposalStatus(proposal, confirmed);
                             const stepCount = Math.abs((proposal.endStep ?? 0) - (proposal.startStep ?? 0)) + 1;
                             return (

@@ -196,6 +196,11 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — AI PROPOSAL LIST MẤT 4/5, 5/5 (ĐÃ FIX 2026-08-12, fix tối thiểu):**
+- **Root cause (trace đủ 5 câu):** backend `/api/codegen/analyze` trả ĐỦ proposals (chỉ filter range hợp lệ `Number.isInteger` — không giới hạn số lượng); frontend state `proposals.length` = đủ; nhưng JSX render dùng **`proposals.slice(0, 3)`** → hard limit 3 → UI chỉ thấy `Gợi ý 1/5, 2/5, 3/5` (nhãn i/N dùng `idx+1`/`proposals.length=5`) rồi nhảy sang HOẶC TỰ TẠO, 4/5 và 5/5 bị cắt. CSS `.v3-act__proposals` không max-height/overflow/clipping; `proposalStatus`/`handleAddProposal` KHÔNG filter proposal khỏi list (proposal đã thêm vẫn hiện "Đã thêm" — đúng thiết kế P0-3.2).
+- **Fix:** bỏ `slice(0, 3)` → `proposals.map(...)` render TOÀN BỘ. KHÔNG sửa Gemini/prompt/backend (response đã đủ 5).
+- **Test mới `tests/automation-v3-ai-proposals-test.js`:** static (không còn `proposals.slice(`) + logic: 5 proposals → add 1,2,3 → 4/5,5/5 vẫn `added=false, blocked=false` (visible + add được) → add tiếp → working = 5 đúng thứ tự; 1,2,3 vẫn `added=true`. Regression 20/20 PASS + build OK. **DỪNG — chờ tester kiểm UI thật.**
+
 **P0 — SAVE CURRENT PLAYWRIGHT RECORDING (ĐÃ IMPLEMENT 2026-08-12, không Recording Library/Runner/AI):**
 - **Root cause "Tải/Lưu script" cũ không hoạt động:** `CodeGenRecordingStore.sanitize()` **loại bỏ `scriptContent` khỏi list DTO** (chỉ giữ `hasScript`) → `CodeGenPage.active = recordings[0]` có `scriptContent = undefined` → card "Công cụ kỹ thuật" luôn báo "Chưa có script trong bản ghi hiện tại." và Copy/Save không làm gì. Ngoài ra `recordings[0]` = recording CŨ NHẤT (P0-1 tạo recording mới mỗi lần parse) — còn trỏ nhầm recording.
 - **Canonical source:** state `source` trong `V3RecordingPreparationPanel` — raw Playwright duy nhất (record/paste đều đổ vào; "Xem mã Playwright ▾" đã đọc đúng). Copy/Save giờ đọc CHÍNH `source` này; KHÔNG tạo state thứ hai, KHÔNG dùng legacy `active.scriptContent`.
