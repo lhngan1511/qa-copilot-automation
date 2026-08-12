@@ -23,7 +23,8 @@ const clean = panelSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/
 
 // ---- 1. Static contract: KHÔNG còn hard limit slice trên proposals ----
 assert.ok(!clean.includes("proposals.slice("), "root cause: bỏ `proposals.slice(...)` khỏi render (không giới hạn cứng 3)");
-assert.ok(clean.includes("proposals.map((proposal, idx) =>"), "render TOÀN BỘ proposals qua map");
+assert.ok(clean.includes("paged.items.map((proposal, idx) =>"), "render TOÀN BỘ proposals qua map (paginate - 5 proposals = 1 trang, khong slice)");
+assert.ok(clean.includes("PROPOSAL_PAGE_SIZE = 5"), "page size proposals = 5 (5 proposals -> 1 trang, du visible)");
 
 // ---- 2. Logic: 5 proposals → add 1,2,3 → 4,5 vẫn visible (chưa added, chưa blocked) và add được ----
 const five = [

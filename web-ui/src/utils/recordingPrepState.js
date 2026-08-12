@@ -35,3 +35,26 @@ export function isStepInRange(order, startSel, endSel) {
     if (!Number.isInteger(order) || !Number.isInteger(startSel) || !Number.isInteger(endSel)) return false;
     return order >= Math.min(startSel, endSel) && order <= Math.max(startSel, endSel);
 }
+
+/** P0-3.3 — assertion thuộc range [startStep..endStep] (reuse scoping rule backend/UI cho manual range):
+ *  - sourceStart/sourceEnd nằm TRONG phạm vi steps chọn;
+ *  - HOẶC ngay sau step cuối (trailing ≤120 ký tự — expect liền sau action cuối).
+ *  Assertion ngoài range KHÔNG được kèm. Dùng chung cho manual + AI proposal. */
+export function scopedAssertionsInRange(assertions, steps, startStep, endStep) {
+    const st = Array.isArray(steps) ? steps : [];
+    const as = Array.isArray(assertions) ? assertions : [];
+    if (as.length === 0) return [];
+    if (!Number.isInteger(startStep) || !Number.isInteger(endStep)) return [];
+    const selSteps = st.filter(s => Number.isInteger(s?.order) && s.order >= Math.min(startStep, endStep) && s.order <= Math.max(startStep, endStep));
+    if (selSteps.length === 0) return [];
+    const firstStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
+    const lastStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
+    const lastEnd = Math.max(...selSteps.map(s => s.sourceEnd ?? 0));
+    return as.filter(a => {
+        const astart = a.sourceStart ?? -1;
+        const aend = a.sourceEnd ?? -1;
+        if (astart >= firstStart && aend <= lastEnd) return true;
+        if (astart >= lastStart && astart <= lastEnd + 120) return true;
+        return false;
+    });
+}

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
-import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange } from "../../utils/recordingPrepState.js";
+import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange, scopedAssertionsInRange } from "../../utils/recordingPrepState.js";
 import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
 import { buildRecordingFileName } from "../../utils/recordingFile.js";
+import { paginate, clampPage } from "../../utils/pagination.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
@@ -41,6 +42,9 @@ const readableAssertion = a => {
     if (matcher === "toBeDisabled") return `${target} vô hiệu`;
     return `${target} hiển thị`;
 };
+
+const PROPOSAL_PAGE_SIZE = 5; // P0-3.3 — pagination AI proposals (không hard-limit 3)
+const LIB_PAGE_SIZE = 10; // P0-3.3 — pagination Thư viện
 
 const STEP_LABEL = step => {
     const act = ACTION_LABEL[step.actionType] ?? step.actionType ?? "";
@@ -98,6 +102,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [saving, setSaving] = useState(false);
     // P0 — feedback nhỏ cho utility recording (Sao chép mã / Lưu bản ghi).
     const [utilityNotice, setUtilityNotice] = useState("");
+    // P0-3.3 — pagination độc lập: AI proposals + Thư viện (page 0-based).
+    const [proposalPage, setProposalPage] = useState(0);
+    const [libPage, setLibPage] = useState(0);
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
@@ -126,6 +133,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setConfirmed([]);
         setSaveFeedback(null);
         setUtilityNotice("");
+        setProposalPage(0);
+        setLibPage(0);
         setShowRecording(false);
         setExpandedLibId(null);
         setDeleteConfirmId(null);
@@ -193,18 +202,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         return steps.filter(s => s.order >= selRange.start && s.order <= selRange.end);
     }, [steps, selRange]);
 
-    const scopedAssertions = useMemo(() => {
-        if (!selRange || selSteps.length === 0) return [];
-        const firstStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
-        const lastStart = Math.min(...selSteps.map(s => s.sourceStart ?? 0));
-        const lastEnd = Math.max(...selSteps.map(s => s.sourceEnd ?? 0));
-        return assertions.filter(a => {
-            const as = a.sourceStart ?? -1, ae = a.sourceEnd ?? -1;
-            if (as >= firstStart && ae <= lastEnd) return true;
-            if (as >= lastStart && as <= lastEnd + 120) return true;
-            return false;
-        });
-    }, [assertions, selSteps, selRange]);
+    // P0-3.3 — reuse scoping rule thuần (dùng chung manual + AI proposal).
+    const scopedAssertions = useMemo(
+        () => (selRange ? scopedAssertionsInRange(assertions, steps, selRange.start, selRange.end) : []),
+        [assertions, steps, selRange]
+    );
 
     /* ---------- Phần II: AI ---------- */
 
@@ -314,7 +316,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 }
                 setConfirmed(saved); // cập nhật blockId thật
                 setSaveFeedback({ count: saved.length });
+                // P0-3.3 — Library phải cập nhật NGAY trong cùng màn hình (không F5/không đóng mở).
+                // Reuse refreshLibrary() (listLibrary → setLibrary) — không tạo cache thứ hai.
+                const refreshed = await refreshLibrary();
                 setShowLibrary(true);
+                // Item mới nằm cuối list (backend giữ thứ tự push) → nhảy trang cuối để thấy ngay.
+                setLibPage(clampPage(refreshed.length, refreshed.length, LIB_PAGE_SIZE));
                 onSavedToLibrary?.(saved.length);
             } else {
                 // Fallback — các action đã persist ngay khi confirm; chỉ feedback (như cũ).
@@ -359,6 +366,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         try {
             await deleteLibraryAction(block.blockId);
             setLibrary(prev => prev.filter(x => x.blockId !== block.blockId));
+            // P0-3.3 — xóa item ở trang cuối → normalize page nếu trang bị rỗng.
+            setLibPage(prev => clampPage(prev, library.length - 1, LIB_PAGE_SIZE));
             setDeleteConfirmId(null);
             if (expandedLibId === block.blockId) setExpandedLibId(null);
         } catch (e) {
@@ -372,9 +381,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         try {
             const res = await listLibrary();
             const data = res?.data ?? res;
-            setLibrary(Array.isArray(data) ? data : []);
+            const list = Array.isArray(data) ? data : [];
+            setLibrary(list);
+            return list;
         } catch {
             /* giữ */
+            return [];
         }
     };
 
@@ -421,15 +433,23 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
                 {proposals.length > 0 ? (
                     <div className="v3-act__proposals">
-                        {proposals.map((proposal, idx) => {
-                            const st = proposalStatus(proposal, confirmed);
-                            const stepCount = Math.abs((proposal.endStep ?? 0) - (proposal.startStep ?? 0)) + 1;
-                            return (
+                        {(() => {
+                            // P0-3.3 — pagination: chỉ đổi item hiển thị; KHÔNG gọi AI khi đổi trang;
+                            // added/blocked là derived từ `confirmed` → giữ nguyên khi đổi trang.
+                            const paged = paginate(proposals, proposalPage, PROPOSAL_PAGE_SIZE);
+                            return (<>
+                            {paged.items.map((proposal, idx) => {
+                                const globalIdx = paged.page * PROPOSAL_PAGE_SIZE + idx;
+                                const st = proposalStatus(proposal, confirmed);
+                                const stepCount = Math.abs((proposal.endStep ?? 0) - (proposal.startStep ?? 0)) + 1;
+                                // P0-3.3 — verification scoped theo range proposal (reuse rule manual).
+                                const propAssertions = scopedAssertionsInRange(assertions, steps, proposal.startStep, proposal.endStep);
+                                return (
                                 <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}-${proposal.endStep}-${idx}`}>
                                     <div className="v3-cond__body">
                                         <b>{proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
                                         <span className="v3-cond__meta">
-                                            <span className="v3-cond__num">Gợi ý {idx + 1}/{proposals.length}</span>
+                                            <span className="v3-cond__num">Gợi ý {globalIdx + 1}/{proposals.length}</span>
                                             <span>Bước {proposal.startStep} → {proposal.endStep} · {stepCount} thao tác</span>
                                         </span>
                                         {st.added ? (
@@ -439,6 +459,23 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         ) : proposal.evidence?.length > 0 ? (
                                             <span className="v3-cond__meta">Evidence: {proposal.evidence.join(" · ")}</span>
                                         ) : null}
+                                        {/* P0-3.3 — Điều kiện kiểm tra scoped (không hiển thị assertion ngoài range;
+                                            không để trống — luôn có dòng thông tin). */}
+                                        <div className="v3-act__verif">
+                                            <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                            {propAssertions.length > 0 ? (
+                                                propAssertions.map((a, ai) => (
+                                                    <div className="v3-cond v3-cond--compact" key={`pa-${ai}`}>
+                                                        <div className="v3-cond__body">
+                                                            <b>✓ {readableAssertion(a)}</b>
+                                                            <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="v3-act__note">Không có thông tin xác nhận trong đoạn này.</span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="v3-cond__actions">
                                         {splitLayout ? (
@@ -462,7 +499,17 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                     </div>
                                 </div>
                             );
-                        })}
+                            })}
+                            {/* P0-3.3 — pagination proposals (chỉ đổi trang hiển thị, không gọi AI) */}
+                            {paged.totalPages > 1 ? (
+                                <div className="v3-pagination">
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!paged.hasPrev} onClick={() => setProposalPage(p => p - 1)}>‹ Trước</button>
+                                    <span>{paged.page + 1} / {paged.totalPages}</span>
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!paged.hasNext} onClick={() => setProposalPage(p => p + 1)}>Sau ›</button>
+                                </div>
+                            ) : null}
+                            </>);
+                        })()}
                     </div>
                 ) : null}
 
@@ -700,7 +747,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         library.length === 0 ? (
                             <p className="v3-act__note">Thư viện chưa có thao tác nào.</p>
                         ) : (
-                            library.map(b => (
+                            (() => {
+                            // P0-3.3 — pagination Thư viện (độc lập với AI proposals);
+                            // libPaged.page đã clamp → xóa item trang cuối tự normalize hiển thị.
+                            const libPaged = paginate(library, libPage, LIB_PAGE_SIZE);
+                            return (<>
+                            {libPaged.items.map(b => (
                                 <div className="v3-act__item" key={b.blockId}>
                                     <div className="v3-cond v3-cond--compact">
                                         <div className="v3-cond__body">
@@ -751,7 +803,16 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         </div>
                                     ) : null}
                                 </div>
-                            ))
+                            ))}
+                            {libPaged.totalPages > 1 ? (
+                                <div className="v3-pagination">
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!libPaged.hasPrev} onClick={() => setLibPage(p => p - 1)}>Trước</button>
+                                    <span>Trang {libPaged.page + 1} / {libPaged.totalPages}</span>
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!libPaged.hasNext} onClick={() => setLibPage(p => p + 1)}>Sau</button>
+                                </div>
+                            ) : null}
+                            </>);
+                            })()
                         )
                     ) : null}
                 </div>
