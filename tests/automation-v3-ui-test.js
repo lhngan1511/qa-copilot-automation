@@ -333,7 +333,7 @@ assert.ok(pageClean2.includes("expectedResult"), "page map expectedResult vào p
 // ---- P0 Phase 1: Codegen là owner Recording Preparation (shared component) ----
 const codegenPage = stripComments(read("pages/CodeGenPage.jsx"));
 assert.ok(codegenPage.includes("V3RecordingPreparationPanel"), "Codegen page dùng shared RecordingPreparationPanel");
-assert.ok(codegenPage.includes("Công cụ kỹ thuật ▾"), "P0 Cleanup: Advanced Tools collapse thành Công cụ kỹ thuật");
+assert.ok(!codegenPage.includes("Công cụ kỹ thuật"), "P0 Save Recording: bỏ card Công cụ kỹ thuật cuối trang (chức năng recording chuyển vào panel)");
 assert.ok(!codegenPage.includes("CÔNG CỤ NÂNG CAO"), "P0 Cleanup: không còn section CÔNG CỤ NÂNG CAO lớn");
 const recPrepCleanup = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrepCleanup.includes("createRecording"), "P0 Cleanup: paste dùng createRecording (không spawn recorder)");
@@ -355,8 +355,8 @@ assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification
 assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
 assert.ok(codegenPage.includes("I. BẢN GHI"), "Codegen: heading I. BẢN GHI");
 assert.ok(!codegenPage.includes("PHÂN ĐOẠN THAO TÁC → THƯ VIỆN"), "Codegen: bỏ heading PHÂN ĐOẠN");
-assert.ok(codegenPage.includes("Sao chép mã") && codegenPage.includes("Tải/Lưu script"), "Codegen: Công cụ kỹ thuật có Sao chép/Tải");
-assert.ok(!codegenPage.includes("Chạy thử bản ghi"), "Codegen: bỏ Chạy thử bản ghi khỏi Công cụ kỹ thuật");
+assert.ok(recPrepCleanup.includes("Sao chép mã") && recPrepCleanup.includes("Lưu bản ghi Playwright"), "P0 Save Recording: panel có Sao chép mã + Lưu bản ghi Playwright (canonical source)");
+assert.ok(!codegenPage.includes("Chạy thử bản ghi"), "Codegen: bỏ Chạy thử bản ghi");
 
 
 // ---- 27. Card: primary theo trạng thái + hiển thị Expected Result + Thao tác ----
@@ -495,5 +495,17 @@ assert.ok(addPBody.length > 0 && !addPBody.includes("setStartSel(") && !addPBody
 const saveB = recPrepP0.match(/const saveAllToLibrary = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
 assert.ok(saveB.includes("createLibraryAction") && saveB.includes('startsWith("LIB-")'), "P0-3.2: Lưu → createLibraryAction từng action, không duplicate khi Lưu lần 2");
 assert.ok(recPrepP0.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút 'Lưu N thao tác vào Thư viện'");
+
+// ================= P0 — SAVE CURRENT PLAYWRIGHT RECORDING =================
+// ---- 42. Utility recording: copy/save dùng CHÍNH canonical `source` (KHÔNG active.scriptContent list) ----
+assert.ok(!codegenPage.includes("scriptContent"), "P0: CodeGenPage không còn đọc active.scriptContent từ list recordings (sai canonical)");
+assert.ok(recPrepP0.includes("handleCopyRecording") && recPrepP0.includes("navigator.clipboard.writeText(source)"), "P0: Sao chép mã đọc `source`");
+assert.ok(recPrepP0.includes("handleSaveRecording") && recPrepP0.includes("downloadScript(source,"), "P0: Lưu bản ghi Playwright download `source`");
+assert.ok(recPrepP0.includes("buildRecordingFileName"), "P0: filename playwright-recording-<timestamp>.js (util thuần, đã test trong save-recording-test)");
+assert.ok(recPrepP0.includes("v3-rec-utils") && recPrepP0.includes("steps.length > 0"), "P0: utility chỉ render khi recording tồn tại (empty state không báo nhầm)");
+assert.ok(!recPrepP0.includes("Chưa có script trong bản ghi hiện tại."), "P0: bỏ message 'Chưa có script…' gây hiểu lầm");
+assert.ok(!codegenPage.includes("Tải/Lưu script"), "P0: bỏ nút Tải/Lưu script cũ");
+const copyH = recPrepP0.match(/const handleCopyRecording = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+assert.ok(!copyH.includes("createLibraryAction") && !copyH.includes("listLibrary"), "P0: copy KHÔNG đụng Action Library (CASE 3)");
 
 console.log("Automation V3 UI test: PASS");

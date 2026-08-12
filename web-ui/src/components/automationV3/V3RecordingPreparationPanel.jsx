@@ -3,6 +3,7 @@ import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange } from "../../utils/recordingPrepState.js";
 import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
+import { buildRecordingFileName } from "../../utils/recordingFile.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
@@ -47,6 +48,21 @@ const STEP_LABEL = step => {
     return `${act}${target ? ` ${target}` : ""}`.trim();
 };
 
+/* P0 — Lưu bản ghi Playwright: download CHÍNH raw source hiện tại (canonical `source`).
+   KHÔNG tạo scriptText/source thứ hai; KHÔNG đụng Action Library. */
+
+function downloadScript(content, fileName) {
+    const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName || "playwright-recording.spec.js";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
 export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onError, onConfirmedSegment, splitLayout = false }) {
     const [source, setSource] = useState("");
     const [recordingId, setRecordingId] = useState(null);
@@ -80,6 +96,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [deletingId, setDeletingId] = useState(null);
     const [saveFeedback, setSaveFeedback] = useState(null); // { count }
     const [saving, setSaving] = useState(false);
+    // P0 — feedback nhỏ cho utility recording (Sao chép mã / Lưu bản ghi).
+    const [utilityNotice, setUtilityNotice] = useState("");
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
@@ -107,6 +125,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         applyAnalysisWorkspace(freshAnalysisWorkspace());
         setConfirmed([]);
         setSaveFeedback(null);
+        setUtilityNotice("");
         setShowRecording(false);
         setExpandedLibId(null);
         setDeleteConfirmId(null);
@@ -311,6 +330,24 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         } finally {
             setSaving(false);
         }
+    };
+
+    /* ---------- P0 — Lưu bản ghi Playwright: utilities gắn với recording hiện tại (canonical `source`) ---------- */
+
+    const handleCopyRecording = async () => {
+        if (saving || !source.trim()) return;
+        try {
+            await navigator.clipboard.writeText(source);
+            setUtilityNotice("✓ Đã sao chép mã Playwright gốc.");
+        } catch {
+            setUtilityNotice("Không sao chép được (trình duyệt chặn clipboard).");
+        }
+    };
+
+    const handleSaveRecording = () => {
+        if (saving || !source.trim()) return;
+        downloadScript(source, buildRecordingFileName());
+        setUtilityNotice("✓ Đã tải bản ghi Playwright.");
     };
 
     /* ---------- P0-2: Thư viện — Xóa (confirm nhỏ cạnh action, báo rõ usage) ---------- */
@@ -549,6 +586,16 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     {showRecording ? "Thu gọn" : "Xem bản ghi"}
                 </button>
             </div>
+            {/* P0 — utility recording (canonical `source`); chỉ khi recording đã tồn tại. */}
+            <div className="v3-rec-utils">
+                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleCopyRecording} disabled={saving}>
+                    Sao chép mã
+                </button>
+                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleSaveRecording} disabled={saving}>
+                    Lưu bản ghi Playwright
+                </button>
+                {utilityNotice ? <span className="v3-rec-utils__notice">{utilityNotice}</span> : null}
+            </div>
             {showRecording ? (
                 <>
                     {renderSteps(steps, true)}
@@ -595,6 +642,17 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         </div>
                         <div className="v3-act__summary">
                             <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
+                        </div>
+                        {/* P0 — utility recording: gắn trực tiếp với recording hiện tại (canonical `source`).
+                            KHÔNG render khi chưa có recording (empty state — không báo nhầm "chưa có script"). */}
+                        <div className="v3-rec-utils">
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleCopyRecording} disabled={saving}>
+                                Sao chép mã
+                            </button>
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleSaveRecording} disabled={saving}>
+                                Lưu bản ghi Playwright
+                            </button>
+                            {utilityNotice ? <span className="v3-rec-utils__notice">{utilityNotice}</span> : null}
                         </div>
                         {/* P0-3.1 — sau parse, raw source KHÔNG chiếm diện tích thường trực:
                             collapse thành 'Xem mã Playwright ▾' (mở để xem/thay recording — P0-1 vẫn giữ). */}

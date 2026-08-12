@@ -967,6 +967,9 @@
   flex-wrap: wrap;
 }
 .v3-act__ai-status--error { background: #fffaf5; border-color: #fed7aa; color: #9a3412; }
+/* P0 — utility recording (Sao chép mã / Lưu bản ghi Playwright) — secondary, compact. */
+.v3-rec-utils { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.v3-rec-utils__notice { font-size: 12px; color: #047857; font-weight: 600; }
 /* P0-3.1 — raw source sau parse: collapse secondary 'Xem mã Playwright ▾'. */
 .v3-act__raw summary {
   font-size: 12px;

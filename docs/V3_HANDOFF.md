@@ -196,6 +196,13 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0 — SAVE CURRENT PLAYWRIGHT RECORDING (ĐÃ IMPLEMENT 2026-08-12, không Recording Library/Runner/AI):**
+- **Root cause "Tải/Lưu script" cũ không hoạt động:** `CodeGenRecordingStore.sanitize()` **loại bỏ `scriptContent` khỏi list DTO** (chỉ giữ `hasScript`) → `CodeGenPage.active = recordings[0]` có `scriptContent = undefined` → card "Công cụ kỹ thuật" luôn báo "Chưa có script trong bản ghi hiện tại." và Copy/Save không làm gì. Ngoài ra `recordings[0]` = recording CŨ NHẤT (P0-1 tạo recording mới mỗi lần parse) — còn trỏ nhầm recording.
+- **Canonical source:** state `source` trong `V3RecordingPreparationPanel` — raw Playwright duy nhất (record/paste đều đổ vào; "Xem mã Playwright ▾" đã đọc đúng). Copy/Save giờ đọc CHÍNH `source` này; KHÔNG tạo state thứ hai, KHÔNG dùng legacy `active.scriptContent`.
+- **UI:** bỏ card "Công cụ kỹ thuật" cuối CodeGenPage (kèm dead handlers handleCopyScript/handleSaveFile/handleRun/runResult/cụm link legacy). Panel thêm utility row `[Sao chép mã] [Lưu bản ghi Playwright]` (compact, cạnh "Xem mã Playwright", cả split lẫn fallback) — chỉ render khi recording tồn tại (`steps.length > 0`); empty state không báo nhầm. File: `playwright-recording-<timestamp>.js` (util thuần `web-ui/src/utils/recordingFile.js`).
+- **Tách biệt Recording vs Action Library:** Lưu bản ghi = download local raw source; KHÔNG đụng `createLibraryAction`/Library (CASE 3). P0-1 isolation giữ (A→B → source=B).
+- **Test mới `tests/automation-v3-save-recording-test.js`:** CASE 1 (copy/save đọc `source`), CASE 2 (không state thứ hai, A→B qua isolation), CASE 3 (không gọi Library API), CASE 4 (utility render có điều kiện, bỏ message "Chưa có script…"). Regression 19/19 PASS + build OK. **DỪNG — chờ tester kiểm UI thật.**
+
 **P0-3.2 — RÚT GỌN FLOW AI → TẠO THAO TÁC (ĐÃ IMPLEMENT 2026-08-12, không AI/Runner/backend/Automation):**
 - **Vấn đề UX:** flow cũ "Dùng gợi ý → đổ xuống form HOẶC TỰ CHỌN → Xác nhận thao tác → THAO TÁC ĐÃ TẠO → Lưu Library" khiến tester xác nhận cùng quyết định 2 lần; hơn nữa `createConfirmedAction` cũ **persist Library NGAY khi confirm** (vi phạm Library gate).
 - **Tách HAI ĐƯỜNG SONG SONG (splitLayout/CodeGen):**

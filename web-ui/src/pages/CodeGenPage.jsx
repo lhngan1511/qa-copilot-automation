@@ -4,7 +4,6 @@ import V3RecordingPreparationPanel from "../components/automationV3/V3RecordingP
 import {
     useCodeGenRecordings,
     useCodeGenStatus,
-    useApprovedTestcases,
     useCodeGenActions
 } from "../hooks/useCodeGen.js";
 
@@ -14,28 +13,11 @@ const MODES = [
     { value: "TESTCASE_SEGMENT", label: "Testcase Segment (đoạn ghi phục vụ testcase)" }
 ];
 
-function downloadScript(content, fileName) {
-    const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName || "playwright-recording.spec.js";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-}
-
 export default function CodeGenPage() {
     const [url, setUrl] = useState("");
     const [browser, setBrowser] = useState("chrome");    const [mode, setMode] = useState("FULL_FLOW");
-    const [scriptText, setScriptText] = useState(""); // source of truth duy nhất
     const [notice, setNotice] = useState("");
-    const [runResult, setRunResult] = useState(null);
     const [focusModal, setFocusModal] = useState(null);
-    const [linkOpen, setLinkOpen] = useState(false);
-    const [linkSearch, setLinkSearch] = useState("");
-    const [selectedTestcaseIds, setSelectedTestcaseIds] = useState([]);
     const [searchParams] = useSearchParams();
 
     // P0 Phase 1 — Codegen owner cần workspaceId (chung Action Library). Dùng active workspace từ
@@ -68,34 +50,8 @@ export default function CodeGenPage() {
     const statusQuery = useCodeGenStatus();
     const actions = useCodeGenActions();
 
-    const recordings = recordingsQuery.data ?? [];
-    // Recording mới nhất = recording đang active/session hiện tại.
-    const active = recordings[0] ?? null;
-    const activeId = active?.recordingId ?? "";
     const isRecording = statusQuery.data?.status === "RECORDING";
-    const busy = actions.start.isPending || actions.stop.isPending || actions.run.isPending;
-
-    // Chỉ đối chiếu khi recording có context đáng tin cậy (có module/feature/artifactId...).
-    const hasReliableContext = Boolean(
-        active?.context &&
-            (active.context.module ||
-                active.context.feature ||
-                active.context.moduleId ||
-                active.context.functionId ||
-                active.context.artifactId ||
-                active.context.workflowSessionId)
-    );
-    const testcasesQuery = useApprovedTestcases(hasReliableContext ? activeId : null);
-    const testcases = useMemo(() => testcasesQuery.data?.testcases ?? [], [testcasesQuery.data]);
-    const filteredTestcases = useMemo(() => {
-        const q = linkSearch.trim().toLocaleLowerCase("vi");
-        if (!q) return testcases;
-        return testcases.filter(tc =>
-            [tc.id, tc.title, tc.module, tc.feature, tc.scenario]
-                .map(v => String(v ?? "").toLocaleLowerCase("vi"))
-                .some(v => v.includes(q))
-        );
-    }, [testcases, linkSearch]);
+    const busy = actions.start.isPending || actions.stop.isPending || actions.focus.isPending;
 
     const handleStart = async () => {
         setNotice("");
@@ -128,77 +84,6 @@ export default function CodeGenPage() {
             setNotice("Đã dừng ghi. Trong Playwright Inspector bấm Copy, rồi dán script vào ô bên dưới.");
         } catch (error) {
             setNotice(error.message || "Không thể dừng ghi.");
-        }
-    };
-
-    const handleCopyScript = async () => {
-        const content = active?.scriptContent ?? "";
-        if (!content.trim()) {
-            setNotice("Bản ghi hiện tại chưa có script.");
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(content);
-            setNotice("Đã sao chép mã Playwright gốc.");
-        } catch {
-            setNotice("Không sao chép được (trình duyệt chặn clipboard).");
-        }
-    };
-
-    const handleSaveFile = () => {
-        const content = active?.scriptContent ?? "";
-        if (!content.trim()) {
-            setNotice("Bản ghi hiện tại chưa có script (hãy dán ở khu vực PHÂN ĐOẠN).");
-            return;
-        }
-        downloadScript(content, active?.downloadFileName || "playwright-recording.spec.js");
-        setNotice("Đã tải file script (từ bản ghi canonical).");
-    };
-
-    const handleRun = async () => {
-        setNotice("");
-        setRunResult(null);
-        const content = active?.scriptContent ?? "";
-        if (!content.trim()) {
-            setNotice("Bản ghi hiện tại chưa có script (hãy dán ở khu vực PHÂN ĐOẠN).");
-            return;
-        }
-        if (!activeId) {
-            setNotice("Không có recording đang hoạt động để chạy. Hãy Start Recording trước.");
-            return;
-        }
-        try {
-            const result = await actions.run.mutateAsync({ recordingId: activeId, script: content });
-            setRunResult(result);
-        } catch (error) {
-            setRunResult({ status: "ERROR", passed: false, error: error.message, output: "" });
-        }
-    };
-
-    const handleClear = () => {
-        setScriptText("");
-        setRunResult(null);
-        setNotice("Đã xoá nội dung.");
-    };
-
-    const openLinkModal = () => {
-        setSelectedTestcaseIds(active?.testcaseIds ?? []);
-        setLinkSearch("");
-        setLinkOpen(true);
-    };
-
-    const toggleTestcase = id =>
-        setSelectedTestcaseIds(ids =>
-            ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
-        );
-
-    const handleSaveLink = async () => {
-        try {
-            await actions.link.mutateAsync({ recordingId: activeId, testcaseIds: selectedTestcaseIds });
-            setLinkOpen(false);
-            setNotice("Đã lưu đối chiếu testcase.");
-        } catch (error) {
-            setNotice(error.message || "Không thể lưu đối chiếu.");
         }
     };
 
@@ -256,36 +141,6 @@ export default function CodeGenPage() {
                     onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
                     onError={msg => setNotice(msg)}
                 />
-            </div>
-
-            {/* CÔNG CỤ KỸ THUẬT (collapse — consume canonical recording, không textarea thứ hai) */}
-            <div className="codegen-card codegen-card--sub">
-                <details className="codegen-details">
-                    <summary className="codegen-label">Công cụ kỹ thuật ▾</summary>
-                    <div className="codegen-row">
-                        <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleCopyScript}>
-                            Sao chép mã
-                        </button>
-                        <button className="button button--secondary" type="button" disabled={!activeId} onClick={handleSaveFile}>
-                            Tải/Lưu script
-                        </button>
-                    </div>
-                    {active?.scriptContent ? (
-                        <details className="codegen-details">
-                            <summary>Xem script gốc (read-only)</summary>
-                            <pre className="codegen-output">{active.scriptContent}</pre>
-                        </details>
-                    ) : (
-                        <p className="codegen-hint">Chưa có script trong bản ghi hiện tại.</p>
-                    )}
-                {runResult && (
-                    <div className={`codegen-run ${runResult.passed ? "codegen-run--pass" : "codegen-run--fail"}`}>
-                        <strong>{runResult.passed ? "PASS" : "FAIL"}</strong>
-                        <span>{runResult.error || runResult.diagnostic || `Mã thoát: ${runResult.status}`}</span>
-                        {runResult.output && <pre className="codegen-output">{runResult.output}</pre>}
-                    </div>
-                )}
-                </details>
             </div>
 
             {focusModal && (
