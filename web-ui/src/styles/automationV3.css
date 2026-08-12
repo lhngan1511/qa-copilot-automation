@@ -938,6 +938,30 @@
 
 /* P0 Codegen UX Redesign — spacing & hierarchy */
 .v3-rec-prep { display: grid; gap: 18px; }
+
+/* ================= P0-3 — Codegen Workspace Split Layout ================= */
+/* 2 cột sau khi parse: trái ~60% (recording cố định) · phải ~40% (tạo thao tác). */
+.v3-rec-prep__split { display: grid; grid-template-columns: 3fr 2fr; gap: 22px; align-items: start; }
+.v3-rec-prep__col { display: grid; gap: 12px; min-width: 0; }
+/* Cột trái — nguồn cố định: steps luôn hiển thị, scroll được. */
+.v3-rec-prep__steps { display: grid; gap: 6px; max-height: 56vh; overflow: auto; padding-right: 6px; }
+/* Highlight range = VISUAL feedback thuần (KHÔNG phải control — không checkbox/click). */
+.v3-step--range { background: #eef4ff; border-color: var(--primary, #2f6fed); }
+/* AI HỖ TRỢ trên manual; HOẶC TỰ CHỌN là divider nhãn. */
+.v3-act__ai-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+.v3-act__manual {
+  margin: 14px 0 2px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border, #cbd5e1);
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 860px) {
+  .v3-rec-prep__split { grid-template-columns: 1fr; }
+}
 .v3-act__seg, .v3-act__saved, .v3-act__lib { display: grid; gap: 12px; margin-top: 8px; }
 .v3-act__ai-help { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
 .v3-act__range-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }

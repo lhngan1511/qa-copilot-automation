@@ -340,7 +340,7 @@ assert.ok(recPrepCleanup.includes("createRecording"), "P0 Cleanup: paste dùng c
 assert.ok(recPrepCleanup.includes("thao tác") && recPrepCleanup.includes("Xem bản ghi"), "Seg UX: summary + Xem bản ghi (collapsed)");
 assert.ok(!recPrepCleanup.includes("Bạn muốn dùng phần nào?"), "Seg UX: bỏ 'Bạn muốn dùng phần nào?' (hết duplication)");
 assert.ok(!recPrepCleanup.includes("Dùng toàn bộ bản ghi"), "Seg UX: bỏ Dùng toàn bộ default");
-assert.ok(recPrepCleanup.includes("III. THAO TÁC ĐÃ TẠO") && recPrepCleanup.includes("+ Tạo thêm thao tác"), "Seg UX: danh sách đã tạo + Tạo thêm");
+assert.ok(recPrepCleanup.includes("THAO TÁC ĐÃ TẠO") && !recPrepCleanup.includes("III. THAO TÁC ĐÃ TẠO") && !recPrepCleanup.includes("+ Tạo thêm thao tác"), "P0-3: danh sách compact THAO TÁC ĐÃ TẠO (form luôn mở, không nút Tạo thêm)");
 assert.ok(recPrepCleanup.includes("Gợi ý bằng AI"), "Seg UX: AI là helper nhỏ secondary");
 assert.ok(recPrepCleanup.includes("Dùng gợi ý") && recPrepCleanup.includes("⚠ Trùng với thao tác đã tạo"), "Seg UX: proposal + overlap guard");
 // P0 Library Visibility / Save Feedback
@@ -349,7 +349,7 @@ assert.ok(recPrepCleanup.includes("Dùng bởi") && recPrepCleanup.includes("đi
 assert.ok(recPrepCleanup.includes("Đã lưu") && recPrepCleanup.includes("vào Thư viện"), "Lib: success feedback sau save");
 assert.ok(recPrepCleanup.includes("listLibrary"), "Lib: reuse listLibrary API (không xây Library mới)");
 
-assert.ok(recPrepCleanup.includes("II. TẠO THAO TÁC") && recPrepCleanup.includes("I. BẢN GHI") && recPrepCleanup.includes("III. THAO TÁC ĐÃ TẠO"), "Seg UX: headings I/II/III");
+assert.ok(recPrepCleanup.includes("II. TẠO THAO TÁC") && recPrepCleanup.includes("I. BẢN GHI") && recPrepCleanup.includes("THAO TÁC ĐÃ TẠO"), "P0-3: headings I. BẢN GHI / II. TẠO THAO TÁC / THAO TÁC ĐÃ TẠO");
 assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification business-readable + Xem kỹ thuật cho raw");
 
 assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
@@ -374,9 +374,9 @@ assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback =
 // Màn C (toàn bộ/một phần + preview) nằm trong SHARED V3RecordingPreparationPanel
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận thao tác"), "Seg UX: manual Start/End + Xác nhận thao tác");
-assert.ok(recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "Seg UX: preview + Xác nhận thao tác");
+assert.ok(recPrep.includes("Đoạn đang chọn") && !recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "P0-3: Đoạn đang chọn + Xác nhận thao tác");
 assert.ok(recPrep.includes("Lưu vào Thư viện thao tác"), "shared: Lưu vào Thư viện");
-assert.ok(recPrep.includes("III. THAO TÁC ĐÃ TẠO"), "Seg UX: danh sách thao tác đã tạo");
+assert.ok(recPrep.includes("THAO TÁC ĐÃ TẠO"), "P0-3: danh sách thao tác đã tạo (compact)");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
 assert.ok(actPanel.includes("V3RecordingPreparationPanel"), "fallback reuse shared RecordingPreparationPanel (không duplicate)");
 
@@ -446,5 +446,21 @@ assert.ok(actPanel.includes("${item.blockId}:${item.order}"), "P0: key item = bl
 assert.ok(actPanel.includes("item.blockId, item.order"), "P0: [Xóa] truyền order → xóa đúng 1 occurrence");
 assert.ok(actPanel.includes("v3-act__item"), "P0: expanded detail ngoài flex row (không bị ép hẹp)");
 assert.ok(actPanel.includes("binding.filter(i => i.blockId === b.blockId)"), "P0: picker đếm số lần block đã có trong testcase (hỗ trợ duplicate)");
+
+// ================= P0-3 — CODEGEN WORKSPACE SPLIT LAYOUT =================
+// ---- 36. Split 2 cột: trái ~60% recording cố định · phải ~40% tạo thao tác ----
+assert.ok(recPrepP0.includes("splitLayout"), "P0-3: prop splitLayout (CodeGen bật, fallback drawer tắt)");
+assert.ok(recPrepP0.includes("v3-rec-prep__split") && recPrepP0.includes("v3-rec-prep__col--rec") && recPrepP0.includes("v3-rec-prep__col--actions"),
+    "P0-3: grid split 2 cột rec/actions");
+assert.ok(recPrepP0.includes("v3-rec-prep__steps"), "P0-3: cột trái steps luôn hiển thị + scroll (nguồn cố định)");
+assert.ok(recPrepP0.includes("v3-step--range") && recPrepP0.includes("isStepInRange"), "P0-3: highlight range visual (không phải control)");
+assert.ok(!recPrepP0.includes('type="checkbox"'), "P0-3: cột trái KHÔNG checkbox/click chọn step");
+assert.ok(recPrepP0.includes("AI HỖ TRỢ") && recPrepP0.includes("HOẶC TỰ CHỌN"), "P0-3: AI HỖ TRỢ trên manual — HOẶC TỰ CHỌN bên dưới");
+assert.ok(recPrepP0.includes("Đoạn đang chọn"), "P0-3: khối 'Đoạn đang chọn' (summary Bước X → Y · N thao tác)");
+assert.ok(recPrepP0.includes("!splitLayout ? renderSteps(selSteps, true) : null"),
+    "P0-3: split mode KHÔNG duplicate preview steps ở cột phải (steps đã hiện + highlight ở trái)");
+assert.ok(codegenPageP0.includes("splitLayout"), "P0-3: CodeGenPage bật splitLayout");
+assert.ok(recPrepP0.includes("Nguồn cố định"), "P0-3: cột trái ghi rõ 'Nguồn cố định — quan sát, đối chiếu'");
+// Confirm action KHÔNG đóng/reset recording (mental model P0-3) — đã assert trong isolation-test (createConfirmedAction).
 
 console.log("Automation V3 UI test: PASS");

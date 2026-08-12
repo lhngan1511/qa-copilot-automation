@@ -1,27 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
-import { freshAnalysisWorkspace, initializeAnalysisFromSteps } from "../../utils/recordingPrepState.js";
+import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange } from "../../utils/recordingPrepState.js";
 
 /*
- V3RecordingPreparationPanel — SHARED (P0 Segmentation UX Correction).
+ V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
 
- Layout 2 phần (KHÔNG duplicate recording):
-   I. BẢN GHI PLAYWRIGHT — summary (N thao tác · M điều kiện) + [Xem bản ghi] (collapsed; review/debug).
-      KHÔNG chọn Start/End ở đây. KHÔNG render lại danh sách.
-   II. PHÂN TÍCH / TẠO THAO TÁC — nơi duy nhất tạo reusable action:
-       Manual: Start/End dropdown → preview (chỉ steps thuộc range) → verification scoped → Tên → [Xác nhận thao tác].
-       AI: [Phân tích bản ghi] → proposals đổ vào CÙNG UI tạo đoạn → [Xác nhận]/[Chỉnh]/[Bỏ].
-       Sau confirm → "CÁC THAO TÁC ĐÃ TẠO" (compact, collapsed per item) → [+ Tạo thêm] → [Lưu vào Thư viện].
-   Bỏ "Dùng toàn bộ bản ghi" default; thay secondary [Chọn toàn bộ].
+ Mental model (P0-3): Recording = NGUỒN CỐ ĐỊNH của cả phiên tạo thao tác.
+   Action = một đoạn Start → End lấy ra từ recording đó.
+   Sau khi xác nhận action, recording KHÔNG được đóng/reset/thay thế/biến mất —
+   tester tiếp tục chọn range khác từ CÙNG recording (RECORD ONCE → CUT MANY).
 
- P0 — LIBRARY + AUTOMATION INTERACTION CORRECTION:
-   - NEW RECORDING MUST RESET: khi nội dung textarea đổi → reset context recording cũ
-     (recordingId/steps/assertions/proposals/Start-End/name/working set/save feedback) → TỰ parse lại
-     (debounce, KHÔNG cần F5). Không còn cảnh "paste B không phân tích lại".
-   - THƯ VIỆN item: Tên · N thao tác · N điều kiện kiểm tra · Dùng bởi N testcase · [Xem] (expand steps) · [Xóa]
-     (confirm inline — báo rõ số testcase đang dùng, không silently delete).
-   - Expanded detail nằm NGOÀI flex row (v3-act__item) → full width, không bị action column ép hẹp.
+ P0-3 — CODEGEN WORKSPACE SPLIT LAYOUT (chỉ áp dụng khi prop splitLayout — CodeGenPage):
+   - Parse xong → 2 cột: TRÁI ~60% = I. BẢN GHI (nguồn cố định, quan sát/đối chiếu,
+     steps luôn hiển thị, scroll; KHÔNG checkbox/click/multi-select/drag — chọn đoạn
+     CHỈ qua Bắt đầu/Kết thúc bên phải); PHẢI ~40% = II. TẠO THAO TÁC + THAO TÁC ĐÃ TẠO.
+   - Highlight range bên trái = VISUAL feedback thuần (v3-step--range) — không phải control.
+   - AI HỖ TRỢ nằm TRÊN manual; AI chỉ điền Start/End/Tên vào form manual — tester vẫn
+     bấm [Xác nhận thao tác].
+   - THAO TÁC ĐÃ TẠO compact: `Tên · bước X→Y` + [Sửa][Xóa]; KHÔNG bung steps trong danh sách.
+   - splitLayout=false (fallback Automation trong drawer) → giữ bố cục 1 cột cũ.
+
+ P0-1 — Recording context isolation: đổi nội dung textarea → reset TOÀN BỘ analysis
+   workspace Phần II (freshAnalysisWorkspace) + gen guard (parseGen) chặn async cũ;
+   parse xong init LẠI từ steps mới (initializeAnalysisFromSteps). KHÔNG reset Library.
+
+ P0-2 — Delete confirm Library: confirm NHỎ cạnh action (v3-lib-delete-inline);
+   cảnh báo '⚠ N testcase đang phụ thuộc' CHỈ khi usedByTestCases > 0. Không modal,
+   không full-width danger box.
 */
 
 const readableAssertion = a => {
@@ -40,7 +46,7 @@ const STEP_LABEL = step => {
     return `${act}${target ? ` ${target}` : ""}`.trim();
 };
 
-export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onError, onConfirmedSegment }) {
+export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onError, onConfirmedSegment, splitLayout = false }) {
     const [source, setSource] = useState("");
     const [recordingId, setRecordingId] = useState(null);
     const [steps, setSteps] = useState([]);
@@ -50,7 +56,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [parsing, setParsing] = useState(false);
     const parseTimer = useRef(null);
     const parseGen = useRef(0);
-    // Phần I — collapsed mặc định
+    // Phần I — collapsed mặc định (chỉ dùng bố cục 1 cột; split layout luôn hiển thị steps)
     const [showRecording, setShowRecording] = useState(false);
     // Phần II — manual
     const [startSel, setStartSel] = useState(null);
@@ -61,7 +67,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [analyzing, setAnalyzing] = useState(false);
     // Đã tạo
     const [confirmed, setConfirmed] = useState([]); // [{ blockId, label, startStep, endStep, stepCount, assertionCount }]
-    const [expandedItem, setExpandedItem] = useState(null);
     // P0 Library Visibility
     const [library, setLibrary] = useState([]);
     const [showLibrary, setShowLibrary] = useState(false);
@@ -82,7 +87,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setEndSel(ws.endSel);
         setName(ws.name);
         setProposals(ws.proposals);
-        setExpandedItem(ws.expandedItem);
     };
 
     const resetRecordingContext = () => {
@@ -93,7 +97,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSteps([]);
         setAssertions([]);
         setAnalyzing(false);
-        // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals/edit state).
+        // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals).
         applyAnalysisWorkspace(freshAnalysisWorkspace());
         setConfirmed([]);
         setSaveFeedback(null);
@@ -216,6 +220,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 assertionCount: data?.recordedAssertionCount ?? 0
             }]);
             onConfirmedSegment?.(blockId, label);
+            // P0-3 — KHÔNG reset steps/source/recordingId: recording là nguồn cố định,
+            // tester tiếp tục chọn range khác từ CÙNG recording. Chỉ xóa form để chọn đoạn mới.
             setName("");
             setStartSel(null);
             setEndSel(null);
@@ -253,7 +259,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
-    /* ---------- P0: Thư viện — Xóa (confirm inline, báo rõ usage) ---------- */
+    /* ---------- P0-2: Thư viện — Xóa (confirm nhỏ cạnh action, báo rõ usage) ---------- */
 
     const doDeleteLibrary = async block => {
         if (deletingId) return;
@@ -281,27 +287,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
-    const itemSteps = item => steps.filter(s => s.order >= item.startStep && s.order <= item.endStep);
-    const itemAssertions = item => scopedAssertionsFor(item);
-
-    const scopedAssertionsFor = item => {
-        const its = steps.filter(s => s.order >= item.startStep && s.order <= item.endStep);
-        if (its.length === 0) return [];
-        const firstStart = Math.min(...its.map(s => s.sourceStart ?? 0));
-        const lastStart = Math.min(...its.map(s => s.sourceStart ?? 0));
-        const lastEnd = Math.max(...its.map(s => s.sourceEnd ?? 0));
-        return assertions.filter(a => {
-            const as = a.sourceStart ?? -1, ae = a.sourceEnd ?? -1;
-            if (as >= firstStart && ae <= lastEnd) return true;
-            if (as >= lastStart && as <= lastEnd + 120) return true;
-            return false;
-        });
-    };
-
-    const renderSteps = list => (
+    /** Steps render — highlight range VISUAL khi highlight=true (cột trái split). */
+    const renderSteps = (list, highlight = false) => (
         <div className="v3-steps">
             {list.map(s => (
-                <div className="v3-step" key={s.order}>
+                <div className={`v3-step${highlight && isStepInRange(s.order, startSel, endSel) ? " v3-step--range" : ""}`} key={s.order}>
                     <span className="v3-step__n">{s.order}</span>
                     <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
                     <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
@@ -310,203 +300,129 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         </div>
     );
 
-    return (
-        <div className="v3-rec-prep">
-            {/* ============ I. BẢN GHI PLAYWRIGHT ============ */}
-            <div className="v3-exp__row">
-                <h4 className="v3-map__h">I. BẢN GHI</h4>
-                <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector để tạo thao tác.</span>
+    /* ============ Phần II + THAO TÁC ĐÃ TẠO — panel phải (dùng chung 2 bố cục) ============ */
+
+    const renderActionSection = () => (
+        <>
+            <div className="v3-act__seg">
+                <h4 className="v3-map__h">II. TẠO THAO TÁC</h4>
+                <p className="v3-act__note">Chọn một phần trong bản ghi để tạo thao tác dùng lại.</p>
+                {/* AI TRÊN manual — AI chỉ điền Start/End/Tên, tester vẫn Xác nhận */}
+                <div className="v3-act__ai-help">
+                    <span className="v3-act__ai-title">AI HỖ TRỢ</span>
+                    <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={handleAnalyze} disabled={analyzing || saving}>
+                        {analyzing ? "Đang phân tích…" : "Gợi ý bằng AI"}
+                    </button>
+                </div>
+
+                {proposals.length > 0 ? (
+                    <div className="v3-act__proposals">
+                        {proposals.slice(0, 3).map((proposal, idx) => {
+                            const overlapItem = confirmed.find(c => c.startStep <= proposal.endStep && c.endStep >= proposal.startStep);
+                            const blocked = Boolean(overlapItem);
+                            return (
+                                <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}-${proposal.endStep}-${idx}`}>
+                                    <div className="v3-cond__body">
+                                        <b>Gợi ý {idx + 1}/{proposals.length} — {proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
+                                        <span className="v3-cond__meta">Bước {proposal.startStep} → {proposal.endStep}</span>
+                                        {blocked ? (
+                                            <span className="v3-cond__meta v3-warn">⚠ Trùng với thao tác đã tạo "{overlapItem.label}" — bỏ qua hoặc chọn gợi ý khác.</span>
+                                        ) : proposal.evidence?.length > 0 ? (
+                                            <span className="v3-cond__meta">Evidence: {proposal.evidence.join(" · ")}</span>
+                                        ) : null}
+                                    </div>
+                                    <div className="v3-cond__actions">
+                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || blocked} onClick={() => {
+                                            // AI KHÔNG tự confirm — chỉ điền Start/End/Tên vào form manual.
+                                            setStartSel(proposal.startStep); setEndSel(proposal.endStep); setName(proposal.suggestedName || "");
+                                            setProposals(prev => prev.filter(x => x !== proposal));
+                                        }}>Dùng gợi ý</button>
+                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : null}
+
+                {/* Manual — chọn Start/End (cách duy nhất để chọn đoạn) */}
+                <div className="v3-act__manual">HOẶC TỰ CHỌN</div>
+                <div className="v3-act__part">
+                    <label className="v3-map__label">
+                        Bắt đầu
+                        <select className="v3-input" value={startSel ?? ""} onChange={e => setStartSel(e.target.value === "" ? null : Number(e.target.value))}>
+                            {!Number.isInteger(startSel) ? <option value="">Chọn bước…</option> : null}
+                            {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
+                        </select>
+                    </label>
+                    <label className="v3-map__label">
+                        Kết thúc
+                        <select className="v3-input" value={endSel ?? ""} onChange={e => setEndSel(e.target.value === "" ? null : Number(e.target.value))}>
+                            {!Number.isInteger(endSel) ? <option value="">Chọn bước…</option> : null}
+                            {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
+                        </select>
+                    </label>
+                </div>
+
+                {selRange ? (
+                    <div className="v3-act__preview">
+                        <b>Đoạn đang chọn</b>
+                        <p className="v3-act__note">Bước {selRange.start} → {selRange.end} · {selRange.count} thao tác</p>
+                        {/* Split layout: steps đã hiện + highlight ở cột trái → không duplicate preview ở đây.
+                            Bố cục 1 cột (fallback drawer): giữ preview steps (UX dài 16-30 bước là checkpoint riêng). */}
+                        {!splitLayout ? renderSteps(selSteps, true) : null}
+                        <div className="v3-act__verif">
+                            {scopedAssertions.length > 0 ? (
+                                <>
+                                    <span className="v3-act__note">Điều kiện kiểm tra:</span>
+                                    {scopedAssertions.map((a, i) => (
+                                        <div className="v3-cond v3-cond--compact" key={i}>
+                                            <div className="v3-cond__body">
+                                                <b>✓ {readableAssertion(a)}</b>
+                                                <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <span className="v3-act__note">Không có điều kiện kiểm tra.</span>
+                            )}
+                        </div>
+                    </div>
+                ) : null}
+
+                <div className="v3-act__range-actions">
+                    <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="Tên thao tác" />
+                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
+                        if (steps.length === 0) return;
+                        setStartSel(steps[0].order); setEndSel(steps[steps.length - 1].order);
+                    }} disabled={saving}>
+                        Chọn toàn bộ
+                    </button>
+                    <button type="button" className="v3-btn v3-btn--primary" onClick={confirmSegment} disabled={!selRange || saving}>
+                        {saving ? "Đang lưu…" : "Xác nhận thao tác"}
+                    </button>
+                </div>
             </div>
 
-            <textarea
-                className="v3-input"
-                rows={4}
-                value={source}
-                onChange={e => handleSourceChange(e.target.value)}
-                placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
-                spellCheck={false}
-            />
-            {steps.length === 0 ? (
-                <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
-                    {parsing || saving ? "Đang phân tích…" : "Nhập xong"}
-                </button>
-            ) : (
-                <div className="v3-act__summary">
-                    <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
-                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setShowRecording(v => !v)}>
-                        {showRecording ? "Thu gọn" : "Xem bản ghi"}
-                    </button>
-                    {showRecording ? (
-                        <div className="v3-steps">
-                            {steps.map(s => (
-                                <div className="v3-step" key={s.order}>
-                                    <span className="v3-step__n">{s.order}</span>
-                                    <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
-                                </div>
-                            ))}
-                            {assertions.map((a, i) => (
-                                <div className="v3-step" key={`a-${i}`}>
-                                    <span className="v3-step__n">A</span>
-                                    <span className="v3-step__act">Kiểm tra</span>
-                                    <span className="v3-step__loc">{readableAssertion(a)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
-                </div>
-            )}
-
-            {localError ? <div className="v3-banner v3-banner--error" role="alert">{localError}</div> : null}
-
-            {/* ============ II. TẠO THAO TÁC ============ */}
-            {steps.length > 0 ? (
-                <div className="v3-act__seg">
-                    <h4 className="v3-map__h">II. TẠO THAO TÁC</h4>
-                    <p className="v3-act__note">Chọn một phần trong bản ghi để tạo thao tác dùng lại.</p>
-                    <div className="v3-act__ai-help">
-                        <span className="v3-act__note">Cần hỗ trợ chia bản ghi?</span>
-                        <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={handleAnalyze} disabled={analyzing || saving}>
-                            {analyzing ? "Đang phân tích…" : "Gợi ý bằng AI"}
-                        </button>
-                    </div>
-
-                    {proposals.length > 0 ? (
-                        <div className="v3-act__proposals">
-                            {proposals.slice(0, 3).map((proposal, idx) => {
-                                const overlapItem = confirmed.find(c => c.startStep <= proposal.endStep && c.endStep >= proposal.startStep);
-                                const blocked = Boolean(overlapItem);
-                                return (
-                                    <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}-${proposal.endStep}-${idx}`}>
-                                        <div className="v3-cond__body">
-                                            <b>Gợi ý {idx + 1}/{proposals.length} — {proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
-                                            <span className="v3-cond__meta">Bước {proposal.startStep} → {proposal.endStep}</span>
-                                            {blocked ? (
-                                                <span className="v3-cond__meta v3-warn">⚠ Trùng với thao tác đã tạo "{overlapItem.label}" — bỏ qua hoặc chọn gợi ý khác.</span>
-                                            ) : proposal.evidence?.length > 0 ? (
-                                                <span className="v3-cond__meta">Evidence: {proposal.evidence.join(" · ")}</span>
-                                            ) : null}
-                                        </div>
-                                        <div className="v3-cond__actions">
-                                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || blocked} onClick={() => {
-                                                // Dùng gợi ý: CHỈ điền Start/End/Tên — KHÔNG tự lưu/overwrite.
-                                                setStartSel(proposal.startStep); setEndSel(proposal.endStep); setName(proposal.suggestedName || "");
-                                                setProposals(prev => prev.filter(x => x !== proposal));
-                                            }}>Dùng gợi ý</button>
-                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : null}
-
-                    {/* Manual — chọn Start/End */}
-                    <div className="v3-act__part">
-                        <label className="v3-map__label">
-                            Bắt đầu
-                            <select className="v3-input" value={startSel ?? ""} onChange={e => setStartSel(Number(e.target.value))}>
-                                {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
-                            </select>
-                        </label>
-                        <label className="v3-map__label">
-                            Kết thúc
-                            <select className="v3-input" value={endSel ?? ""} onChange={e => setEndSel(Number(e.target.value))}>
-                                {steps.map(s => <option key={s.order} value={s.order}>{s.order} — {STEP_LABEL(s)}</option>)}
-                            </select>
-                        </label>
-                    </div>
-
-                    {selRange ? (
-                        <div className="v3-act__preview">
-                            <b>ĐOẠN ĐÃ CHỌN</b>
-                            <p className="v3-act__note">{selRange.count} thao tác · bước {selRange.start} → {selRange.end}</p>
-                            {renderSteps(selSteps)}
-                            <div className="v3-act__verif">
-                                {scopedAssertions.length > 0 ? (
-                                    <>
-                                        <span className="v3-act__note">Điều kiện kiểm tra trong đoạn:</span>
-                                        {scopedAssertions.map((a, i) => (
-                                            <div className="v3-cond v3-cond--compact" key={i}>
-                                                <div className="v3-cond__body">
-                                                    <b>✓ {readableAssertion(a)}</b>
-                                                    <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </>
-                                ) : (
-                                    <span className="v3-act__note">Không có điều kiện kiểm tra.</span>
-                                )}
-                            </div>
-                        </div>
-                    ) : null}
-
-                    <div className="v3-act__range-actions">
-                        <input className="v3-input v3-act__name" value={name} onChange={e => setName(e.target.value)} placeholder="Tên thao tác" />
-                        <button type="button" className="v3-btn v3-btn--primary" onClick={confirmSegment} disabled={!selRange || saving}>
-                            {saving ? "Đang lưu…" : "Xác nhận thao tác"}
-                        </button>
-                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
-                            if (steps.length === 0) return;
-                            setStartSel(steps[0].order); setEndSel(steps[steps.length - 1].order);
-                        }} disabled={saving}>
-                            Chọn toàn bộ
-                        </button>
-                    </div>
-                </div>
-            ) : null}
-
-            {/* ============ CÁC THAO TÁC ĐÃ TẠO (compact, collapsed) ============ */}
+            {/* THAO TÁC ĐÃ TẠO — compact: Tên · bước X→Y; KHÔNG bung steps trong danh sách */}
             {confirmed.length > 0 ? (
                 <div className="v3-act__saved">
-                    <h4 className="v3-map__h">III. THAO TÁC ĐÃ TẠO</h4>
+                    <h4 className="v3-map__h">THAO TÁC ĐÃ TẠO</h4>
                     {confirmed.map(seg => (
-                        <div className="v3-act__item" key={seg.blockId}>
-                            <div className="v3-cond v3-cond--compact">
-                                <div className="v3-cond__body">
-                                    <div className="v3-cond__line">
-                                        <b>{seg.label} · bước {seg.startStep} → {seg.endStep}</b>
-                                        <span className="v3-cond__meta">{seg.stepCount} thao tác · {seg.assertionCount > 0 ? `${seg.assertionCount} điều kiện kiểm tra` : "không điều kiện kiểm tra"}</span>
-                                    </div>
-                                </div>
-                                <div className="v3-cond__actions">
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedItem(expandedItem === seg.blockId ? null : seg.blockId)}>
-                                        {expandedItem === seg.blockId ? "Thu gọn" : "Xem"}
-                                    </button>
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Chỉnh</button>
-                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => prev.filter(x => x !== seg))} disabled={saving}>Xóa</button>
+                        <div className="v3-cond v3-cond--compact" key={seg.blockId}>
+                            <div className="v3-cond__body">
+                                <div className="v3-cond__line">
+                                    <b>{seg.label}</b>
+                                    <span className="v3-cond__meta">{seg.startStep}→{seg.endStep} · {seg.stepCount} thao tác</span>
                                 </div>
                             </div>
-                            {expandedItem === seg.blockId ? (
-                                <div className="v3-act__detail">
-                                    <div className="v3-steps">
-                                        {itemSteps(seg).map(s => (
-                                            <div className="v3-step" key={s.order}>
-                                                <span className="v3-step__n">{s.order}</span>
-                                                <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                                <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {itemAssertions(seg).length > 0 ? (
-                                        <div className="v3-act__verif">
-                                            <span className="v3-act__note">Điều kiện kiểm tra:</span>
-                                            {itemAssertions(seg).map((a, j) => (
-                                                <div key={j} className="v3-cond v3-cond--compact">
-                                                    <b>✓ {readableAssertion(a)}</b>
-                                                    <details className="v3-act__tech"><summary>Xem code kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ) : null}
+                            <div className="v3-cond__actions">
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Sửa</button>
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => prev.filter(x => x !== seg))} disabled={saving}>Xóa</button>
+                            </div>
                         </div>
                     ))}
-                    <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setStartSel(null); setEndSel(null); setName(""); }} disabled={saving}>
-                        + Tạo thêm thao tác
-                    </button>
                     <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveAllToLibrary} disabled={saving}>
                         Lưu vào Thư viện thao tác
                     </button>
@@ -520,8 +436,104 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                     ) : null}
                 </div>
             ) : null}
+        </>
+    );
 
-            {/* ============ THƯ VIỆN THAO TÁC (shared persisted assets) ============ */}
+    /* ============ I. BẢN GHI — bố cục 1 cột (fallback) ============ */
+
+    const renderRecordingSingle = () => (
+        <>
+            <div className="v3-exp__row">
+                <h4 className="v3-map__h">I. BẢN GHI</h4>
+                <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector để tạo thao tác.</span>
+            </div>
+            <textarea
+                className="v3-input"
+                rows={4}
+                value={source}
+                onChange={e => handleSourceChange(e.target.value)}
+                placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
+                spellCheck={false}
+            />
+            <div className="v3-act__summary">
+                <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
+                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setShowRecording(v => !v)}>
+                    {showRecording ? "Thu gọn" : "Xem bản ghi"}
+                </button>
+            </div>
+            {showRecording ? (
+                <>
+                    {renderSteps(steps, true)}
+                    {assertions.map((a, i) => (
+                        <div className="v3-step" key={`a-${i}`}>
+                            <span className="v3-step__n">A</span>
+                            <span className="v3-step__act">Kiểm tra</span>
+                            <span className="v3-step__loc">{readableAssertion(a)}</span>
+                        </div>
+                    ))}
+                </>
+            ) : null}
+        </>
+    );
+
+    return (
+        <div className="v3-rec-prep">
+            {steps.length === 0 ? (
+                /* ---------- Chưa có recording — dán bản ghi (2 bố cục giống nhau) ---------- */
+                <>
+                    <div className="v3-exp__row">
+                        <h4 className="v3-map__h">I. BẢN GHI</h4>
+                        <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector để tạo thao tác.</span>
+                    </div>
+                    <textarea
+                        className="v3-input"
+                        rows={4}
+                        value={source}
+                        onChange={e => handleSourceChange(e.target.value)}
+                        placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
+                        spellCheck={false}
+                    />
+                    <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
+                        {parsing || saving ? "Đang phân tích…" : "Nhập xong"}
+                    </button>
+                </>
+            ) : splitLayout ? (
+                /* ---------- P0-3 — SPLIT: trái = recording cố định · phải = tạo thao tác ---------- */
+                <div className="v3-rec-prep__split">
+                    <div className="v3-rec-prep__col v3-rec-prep__col--rec">
+                        <div className="v3-exp__row">
+                            <h4 className="v3-map__h">I. BẢN GHI</h4>
+                            <span className="v3-exp__note">Nguồn cố định — quan sát, đối chiếu. Chọn đoạn ở cột phải.</span>
+                        </div>
+                        <textarea
+                            className="v3-input"
+                            rows={3}
+                            value={source}
+                            onChange={e => handleSourceChange(e.target.value)}
+                            spellCheck={false}
+                            aria-label="Bản ghi nguồn"
+                        />
+                        <div className="v3-act__summary">
+                            <span><b>{steps.length} thao tác</b> · <b>{assertions.length} điều kiện kiểm tra</b></span>
+                        </div>
+                        {/* Chỉ quan sát/đối chiếu — highlight range là visual feedback, KHÔNG phải control */}
+                        <div className="v3-rec-prep__steps">{renderSteps(steps, true)}</div>
+                    </div>
+                    <div className="v3-rec-prep__col v3-rec-prep__col--actions">
+                        {renderActionSection()}
+                    </div>
+                </div>
+            ) : (
+                /* ---------- 1 cột (fallback Automation — drawer) ---------- */
+                <>
+                    {renderRecordingSingle()}
+                    {renderActionSection()}
+                </>
+            )}
+
+            {localError ? <div className="v3-banner v3-banner--error" role="alert">{localError}</div> : null}
+
+            {/* ============ THƯ VIỆN THAO TÁC (shared persisted assets — KHÔNG redesign) ============ */}
             {steps.length > 0 || library.length > 0 ? (
                 <div className="v3-act__lib">
                     <div className="v3-exp__row">

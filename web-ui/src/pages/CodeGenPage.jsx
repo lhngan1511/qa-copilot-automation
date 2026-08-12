@@ -248,9 +248,11 @@ export default function CodeGenPage() {
             </div>
 
             {/* II/III + Thư viện — shared component (global recording).
-                P0 — bọc card để padding/margin khớp layout (không dính sát mép phải như các card khác). */}
+                P0 — bọc card để padding/margin khớp layout (không dính sát mép phải như các card khác).
+                P0-3 — splitLayout: CodeGen = 2 cột (trái recording cố định · phải tạo thao tác). */}
             <div className="codegen-card">
                 <V3RecordingPreparationPanel
+                    splitLayout
                     onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
                     onError={msg => setNotice(msg)}
                 />

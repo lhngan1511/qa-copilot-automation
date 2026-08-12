@@ -1,20 +1,22 @@
 /*
  P0-1 — Recording context isolation (V3RecordingPreparationPanel, Phần II).
 
- "Analysis workspace" của Phần II = { startSel, endSel, name, proposals, expandedItem }
+ "Analysis workspace" của Phần II = { startSel, endSel, name, proposals }
  (start/end → range preview + scoped assertions đều derive từ steps + startSel/endSel).
 
  - freshAnalysisWorkspace(): trạng thái RỖNG — dùng để RESET khi nội dung bản ghi đổi.
  - initializeAnalysisFromSteps(steps): khởi tạo LẠI hoàn toàn từ steps MỚI
-   (start = order đầu, end = order cuối; name/proposals/edit state rỗng).
+   (start = order đầu, end = order cuối; name/proposals rỗng).
+ - isStepInRange(order, startSel, endSel): step có nằm trong đoạn đang chọn không
+   (P0-3 — highlight VISUAL bên cột trái; KHÔNG phải control).
 
- Component dùng 2 helper này trong resetRecordingContext / doParse. Tách thuần
- để regression test "A → parse → B → parse without F5" chạy được không cần browser,
+ Component dùng các helper này trong resetRecordingContext / doParse / render steps.
+ Tách thuần để regression test "A → parse → B → parse without F5" chạy được không cần browser,
  xác nhận Phần II chỉ chứa nội dung của B, và KHÔNG reset Library.
 */
 
 export function freshAnalysisWorkspace() {
-    return { startSel: null, endSel: null, name: "", proposals: [], expandedItem: null };
+    return { startSel: null, endSel: null, name: "", proposals: [] };
 }
 
 export function initializeAnalysisFromSteps(steps) {
@@ -25,7 +27,11 @@ export function initializeAnalysisFromSteps(steps) {
         startSel: orders.length > 0 ? orders[0] : null,
         endSel: orders.length > 0 ? orders[orders.length - 1] : null,
         name: "",
-        proposals: [],
-        expandedItem: null
+        proposals: []
     };
+}
+
+export function isStepInRange(order, startSel, endSel) {
+    if (!Number.isInteger(order) || !Number.isInteger(startSel) || !Number.isInteger(endSel)) return false;
+    return order >= Math.min(startSel, endSel) && order <= Math.max(startSel, endSel);
 }
