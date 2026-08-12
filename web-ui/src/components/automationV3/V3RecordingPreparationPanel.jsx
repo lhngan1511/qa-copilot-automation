@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange } from "../../utils/recordingPrepState.js";
+import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
@@ -217,8 +218,21 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
-    /* ---------- Phần II: confirm đoạn (manual + AI cùng đường) ---------- */
+    /* ---------- Phần II: working actions (THAO TÁC ĐÃ TẠO — working set trước persist Library) ---------- */
 
+    /** P0-3.2 — thêm action vào working set (KHÔNG gọi API, KHÔNG persist Library). */
+    const addWorkingAction = (s, e, label) => {
+        setConfirmed(prev => appendWorkingAction(prev, { label, startStep: s, endStep: e }));
+    };
+
+    /** P0-3.2 — AI proposal đi THẲNG vào working set; KHÔNG populate form, KHÔNG xóa proposal khỏi list,
+     *  KHÔNG tự persist. Tester tiếp tục chọn proposal khác; persist chỉ khi bấm "Lưu ... vào Thư viện". */
+    const handleAddProposal = proposal => {
+        if (saving) return;
+        addWorkingAction(proposal?.startStep, proposal?.endStep, proposal?.suggestedName || `Bước ${proposal?.startStep}→${proposal?.endStep}`);
+    };
+
+    /** Fallback (non-split) — giữ hành vi cũ: confirm → persist Library + bind ngay (Automation workflow). */
     const createConfirmedAction = async (s, e, label) => {
         const gen = parseGen.current;
         setSaving(true);
@@ -251,7 +265,15 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         if (!selRange || saving) return;
         const label = name.trim();
         if (!label) { notifyError("Vui lòng đặt tên thao tác."); return; }
-        await createConfirmedAction(selRange.start, selRange.end, label);
+        if (splitLayout) {
+            // P0-3.2 — CodeGen: working set trước; persist chỉ khi bấm "Lưu ... vào Thư viện".
+            addWorkingAction(selRange.start, selRange.end, label);
+            setName("");
+            setStartSel(null);
+            setEndSel(null);
+        } else {
+            await createConfirmedAction(selRange.start, selRange.end, label); // fallback — giữ cũ
+        }
     };
 
     const saveAllToLibrary = async () => {
@@ -259,14 +281,31 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setSaving(true);
         setLocalError("");
         try {
-            // Các đoạn đã vào Library khi confirm (createConfirmedAction → createLibraryAction).
-            // KHÔNG auto-clear working set — tester vẫn thấy các action vừa tạo.
-            const res = await listLibrary();
-            const data = res?.data ?? res;
-            setLibrary(Array.isArray(data) ? data : []);
-            setSaveFeedback({ count: confirmed.length });
-            setShowLibrary(true);
-            onSavedToLibrary?.(confirmed.length);
+            if (splitLayout) {
+                // P0-3.2 — ĐÂY MỚI LÀ lúc persist working set vào Library (AI tuyệt đối không tự lưu).
+                const saved = [];
+                for (const seg of confirmed) {
+                    if (String(seg.blockId ?? "").startsWith("LIB-")) { saved.push(seg); continue; } // đã lưu rồi
+                    const res = await createLibraryAction({ recordingId, label: seg.label, kind: "ACTION", startStep: seg.startStep, endStep: seg.endStep });
+                    const data = res?.data ?? res;
+                    const blockId = data?.blockId;
+                    if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
+                    saved.push({ ...seg, blockId, assertionCount: data?.recordedAssertionCount ?? 0 });
+                    onConfirmedSegment?.(blockId, seg.label); // no-op ở CodeGen (không truyền)
+                }
+                setConfirmed(saved); // cập nhật blockId thật
+                setSaveFeedback({ count: saved.length });
+                setShowLibrary(true);
+                onSavedToLibrary?.(saved.length);
+            } else {
+                // Fallback — các action đã persist ngay khi confirm; chỉ feedback (như cũ).
+                const res = await listLibrary();
+                const data = res?.data ?? res;
+                setLibrary(Array.isArray(data) ? data : []);
+                setSaveFeedback({ count: confirmed.length });
+                setShowLibrary(true);
+                onSavedToLibrary?.(confirmed.length);
+            }
         } catch (e) {
             notifyError(e?.message ?? "Không đọc được thư viện.");
         } finally {
@@ -346,26 +385,43 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 {proposals.length > 0 ? (
                     <div className="v3-act__proposals">
                         {proposals.slice(0, 3).map((proposal, idx) => {
-                            const overlapItem = confirmed.find(c => c.startStep <= proposal.endStep && c.endStep >= proposal.startStep);
-                            const blocked = Boolean(overlapItem);
+                            const st = proposalStatus(proposal, confirmed);
+                            const stepCount = Math.abs((proposal.endStep ?? 0) - (proposal.startStep ?? 0)) + 1;
                             return (
                                 <div className="v3-cond v3-cond--compact" key={`${proposal.startStep}-${proposal.endStep}-${idx}`}>
                                     <div className="v3-cond__body">
-                                        <b>Gợi ý {idx + 1}/{proposals.length} — {proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
-                                        <span className="v3-cond__meta">Bước {proposal.startStep} → {proposal.endStep}</span>
-                                        {blocked ? (
-                                            <span className="v3-cond__meta v3-warn">⚠ Trùng với thao tác đã tạo "{overlapItem.label}" — bỏ qua hoặc chọn gợi ý khác.</span>
+                                        <b>{proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
+                                        <span className="v3-cond__meta">
+                                            <span className="v3-cond__num">Gợi ý {idx + 1}/{proposals.length}</span>
+                                            <span>Bước {proposal.startStep} → {proposal.endStep} · {stepCount} thao tác</span>
+                                        </span>
+                                        {st.added ? (
+                                            <span className="v3-ok">✓ Đã thêm — quản lý trong THAO TÁC ĐÃ TẠO</span>
+                                        ) : st.blocked ? (
+                                            <span className="v3-cond__meta v3-warn">⚠ Trùng với thao tác đã tạo "{st.overlapLabel}" — bỏ qua hoặc chọn gợi ý khác.</span>
                                         ) : proposal.evidence?.length > 0 ? (
                                             <span className="v3-cond__meta">Evidence: {proposal.evidence.join(" · ")}</span>
                                         ) : null}
                                     </div>
                                     <div className="v3-cond__actions">
-                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || blocked} onClick={() => {
-                                            // AI KHÔNG tự confirm — chỉ điền Start/End/Tên vào form manual.
-                                            setStartSel(proposal.startStep); setEndSel(proposal.endStep); setName(proposal.suggestedName || "");
-                                            setProposals(prev => prev.filter(x => x !== proposal));
-                                        }}>Dùng gợi ý</button>
-                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
+                                        {splitLayout ? (
+                                            // P0-3.2 — AI proposal → working action TRỰC TIẾP (không vòng qua form manual).
+                                            <>
+                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.added || st.blocked} onClick={() => handleAddProposal(proposal)}>
+                                                    {st.added ? "Đã thêm" : "Thêm thao tác"}
+                                                </button>
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
+                                            </>
+                                        ) : (
+                                            // Fallback (drawer) — giữ "Dùng gợi ý" → populate form manual (Automation workflow cũ).
+                                            <>
+                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.blocked} onClick={() => {
+                                                    setStartSel(proposal.startStep); setEndSel(proposal.endStep); setName(proposal.suggestedName || "");
+                                                    setProposals(prev => prev.filter(x => x !== proposal));
+                                                }}>Dùng gợi ý</button>
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setProposals(prev => prev.filter(x => x !== proposal))} disabled={saving}>Bỏ</button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -374,7 +430,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 ) : null}
 
                 {/* Manual — chọn Start/End (cách duy nhất để chọn đoạn) */}
-                <div className="v3-act__manual">HOẶC TỰ CHỌN</div>
+                <div className="v3-act__manual">HOẶC TỰ TẠO</div>
                 {/* P0-3.1 — thứ tự: Tên thao tác TRƯỚC Start/End (recording readable đã cố định ở cột trái). */}
                 <label className="v3-map__label v3-act__name-field">
                     Tên thao tác
@@ -451,12 +507,12 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             </div>
                             <div className="v3-cond__actions">
                                 <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Sửa</button>
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => prev.filter(x => x !== seg))} disabled={saving}>Xóa</button>
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => removeWorkingAction(prev, seg.blockId))} disabled={saving}>Xóa</button>
                             </div>
                         </div>
                     ))}
                     <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveAllToLibrary} disabled={saving}>
-                        Lưu vào Thư viện thao tác
+                        Lưu {confirmed.length} thao tác vào Thư viện
                     </button>
                     {saveFeedback ? (
                         <div className="v3-act__save-feedback">

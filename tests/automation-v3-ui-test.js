@@ -375,7 +375,7 @@ assert.ok(actPanel.includes("Tạo thao tác mới từ bản ghi"), "fallback =
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận thao tác"), "Seg UX: manual Start/End + Xác nhận thao tác");
 assert.ok(recPrep.includes("ĐOẠN ĐANG CHỌN") && !recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "P0-3.1: ĐOẠN ĐANG CHỌN + Xác nhận thao tác");
-assert.ok(recPrep.includes("Lưu vào Thư viện thao tác"), "shared: Lưu vào Thư viện");
+assert.ok(recPrep.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút save phản ánh số lượng");
 assert.ok(recPrep.includes("THAO TÁC ĐÃ TẠO"), "P0-3: danh sách thao tác đã tạo (compact)");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
 assert.ok(actPanel.includes("V3RecordingPreparationPanel"), "fallback reuse shared RecordingPreparationPanel (không duplicate)");
@@ -455,7 +455,7 @@ assert.ok(recPrepP0.includes("v3-rec-prep__split") && recPrepP0.includes("v3-rec
 assert.ok(recPrepP0.includes("v3-rec-prep__steps"), "P0-3: cột trái steps luôn hiển thị + scroll (nguồn cố định)");
 assert.ok(recPrepP0.includes("v3-step--range") && recPrepP0.includes("isStepInRange"), "P0-3: highlight range visual (không phải control)");
 assert.ok(!recPrepP0.includes('type="checkbox"'), "P0-3: cột trái KHÔNG checkbox/click chọn step");
-assert.ok(recPrepP0.includes("AI HỖ TRỢ") && recPrepP0.includes("HOẶC TỰ CHỌN"), "P0-3: AI HỖ TRỢ trên manual — HOẶC TỰ CHỌN bên dưới");
+assert.ok(recPrepP0.includes("AI HỖ TRỢ") && recPrepP0.includes("HOẶC TỰ TẠO") && !recPrepP0.includes("HOẶC TỰ CHỌN"), "P0-3.2: AI HỖ TRỢ trên manual — HOẶC TỰ TẠO bên dưới");
 assert.ok(recPrepP0.includes("ĐOẠN ĐANG CHỌN"), "P0-3.1: khối ĐOẠN ĐANG CHỌN (summary Bước X → Y · N thao tác)");
 assert.ok(recPrepP0.includes("!splitLayout ? renderSteps(selSteps, true) : null"),
     "P0-3: split mode KHÔNG duplicate preview steps ở cột phải (steps đã hiện + highlight ở trái)");
@@ -482,5 +482,18 @@ const analyzeBody = recPrepP0.match(/const handleAnalyze = async \(\) => \{[\s\S
 assert.ok(analyzeBody.length > 0, "tìm thấy thân handleAnalyze");
 assert.ok(!analyzeBody.includes("setLocalError("), "P0-3.1: handleAnalyze KHÔNG đẩy lỗi AI vào banner đỏ full-width");
 assert.ok(recPrepP0.includes('setAiStatus({ kind: "error"') && recPrepP0.includes('setAiStatus({ kind: "empty" })'), "P0-3.1: phân biệt error vs empty qua aiStatus");
+
+// ================= P0-3.2 — RÚT GỌN FLOW AI → TẠO THAO TÁC =================
+// ---- 40. AI proposal → working action TRỰC TIẾP (không vòng qua form manual) ----
+assert.ok(recPrepP0.includes("handleAddProposal") && recPrepP0.includes("Thêm thao tác"), "P0-3.2: nút [Thêm thao tác] trên proposal");
+assert.ok(recPrepP0.includes("Đã thêm"), "P0-3.2: trạng thái proposal đã thêm (✓/disabled)");
+assert.ok(recPrepP0.includes("appendWorkingAction") && recPrepP0.includes("proposalStatus"), "P0-3.2: dùng helper workingActions (working set)");
+const addPBody = recPrepP0.match(/const handleAddProposal = proposal => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+assert.ok(addPBody.length > 0 && !addPBody.includes("setStartSel(") && !addPBody.includes("setName(") && !addPBody.includes("createLibraryAction"),
+    "P0-3.2: AI add KHÔNG populate form / KHÔNG tự persist Library");
+// ---- 41. Library gate: persist chỉ ở saveAllToLibrary (bấm Lưu N thao tác) ----
+const saveB = recPrepP0.match(/const saveAllToLibrary = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
+assert.ok(saveB.includes("createLibraryAction") && saveB.includes('startsWith("LIB-")'), "P0-3.2: Lưu → createLibraryAction từng action, không duplicate khi Lưu lần 2");
+assert.ok(recPrepP0.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút 'Lưu N thao tác vào Thư viện'");
 
 console.log("Automation V3 UI test: PASS");

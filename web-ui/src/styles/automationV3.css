@@ -949,6 +949,8 @@
 .v3-step--range { background: #eef4ff; border-color: var(--primary, #2f6fed); }
 /* AI HỖ TRỢ trên manual; HOẶC TỰ CHỌN là divider nhãn. */
 .v3-act__ai-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+/* P0-3.2 — số thứ tự proposal nhỏ (tên thao tác là thông tin chính). */
+.v3-cond__num { font-size: 11px; color: #94a3b8; }
 /* P0-3.1 — AI status compact NGAY trong section AI (không full-width red alert;
    AI là assistant tùy chọn — failure không trình bày như workflow failure). */
 .v3-act__ai-status {

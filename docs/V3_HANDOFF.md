@@ -196,6 +196,16 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0-3.2 — RÚT GỌN FLOW AI → TẠO THAO TÁC (ĐÃ IMPLEMENT 2026-08-12, không AI/Runner/backend/Automation):**
+- **Vấn đề UX:** flow cũ "Dùng gợi ý → đổ xuống form HOẶC TỰ CHỌN → Xác nhận thao tác → THAO TÁC ĐÃ TẠO → Lưu Library" khiến tester xác nhận cùng quyết định 2 lần; hơn nữa `createConfirmedAction` cũ **persist Library NGAY khi confirm** (vi phạm Library gate).
+- **Tách HAI ĐƯỜNG SONG SONG (splitLayout/CodeGen):**
+  - **FLOW AI:** proposal (tên là chính, `Gợi ý i/N` nhỏ, meta `Bước X → Y · N thao tác`, Evidence) → `[Thêm thao tác]` → `handleAddProposal` → `addWorkingAction` → **THẲNG vào THAO TÁC ĐÃ TẠO**; KHÔNG populate form, KHÔNG xóa proposal khỏi list (tester chọn tiếp), KHÔNG tự persist. Proposal đã thêm → `✓ Đã thêm` / disabled `[Đã thêm]`; xóa action khỏi working set → proposal trở lại `[Thêm thao tác]`.
+  - **FLOW THỦ CÔNG:** `HOẶC TỰ TẠO` (đổi từ HOẶC TỰ CHỌN) → Tên → Start/End → ĐOẠN ĐANG CHỌN → `[Xác nhận thao tác]` → working set (split: KHÔNG persist ngay).
+  - **Library gate:** `saveAllToLibrary` (split) giờ **persist từng working action** qua `createLibraryAction` + `onConfirmedSegment` (no-op CodeGen) + skip `LIB-*` (không duplicate khi Lưu lần 2); nút đổi thành `Lưu {N} thao tác vào Thư viện`.
+- **Helper thuần mới `web-ui/src/utils/workingActions.js`:** `appendWorkingAction` (functional-update, chống duplicate cùng range — CASE E), `removeWorkingAction` (CASE F), `proposalStatus` ({added, blocked, overlapLabel}).
+- **Fallback drawer (non-split) GIỮ NGUYÊN:** "Dùng gợi ý" → populate form → createConfirmedAction persist + bind ngay (KHÔNG phá Automation workflow).
+- **Test mới `tests/automation-v3-ai-flow-test.js`:** CASE A (add trực tiếp, form không populate, proposals khác còn), B (3 working), C (add không persist — chỉ saveAllToLibrary gọi createLibraryAction), D (manual không phá), E (duplicate chặn + overlap), F (xóa → add lại). Regression 18/18 PASS + build OK. **DỪNG — chờ tester kiểm UI thật.**
+
 **P0 — AI PROVIDER RECOVERY + TEST DESIGN AI TRACE (ĐÃ IMPLEMENT 2026-08-12):**
 - **ROOT CAUSE CODEGEN (đã trace + reproduce runtime):** `src/controllers/CodeGenController.js` **KHÔNG có import nào** (file bắt đầu bằng `export default class`). `analyzeRecording` tham chiếu `AIProviderFactory`/`AIConfig` → **ReferenceError** mỗi request → bare `catch { provider = null; }` nuốt lỗi → trả `AI_PROVIDER_UNAVAILABLE` **GIẢ** dù `ENABLE_AI=true, AI_PROVIDER=gemini, GEMINI_API_KEY configured`. Provider thực tế CHƯA BAO GIỜ được tạo. Bug sinh từ commit `b8c5a1e` (thêm analyzeRecording thiếu imports; test cũ chấp nhận UNAVAILABLE trong tập error code nên không phát hiện).
 - **FIX (tối thiểu, reuse infra — không tạo provider/config thứ hai):** thêm 2 import `AIProviderFactory` + `AIConfig` vào đầu CodeGenController.js.
