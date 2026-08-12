@@ -1,9 +1,11 @@
 /* CodeGen MVP (Giai đoạn 2) */
-
+/* P1 — CodeGen desktop: tận dụng ~90% content width khả dụng (trước đây co cụm 1000px).
+   Cha (.page) đã giới hạn max-width + padding; grid split 60/40 ở automationV3.css. */
 .codegen-page {
     display: grid;
     gap: 18px;
-    max-width: 1000px;
+    width: 100%;
+    max-width: none;
 }
 
 .codegen-page__heading {
