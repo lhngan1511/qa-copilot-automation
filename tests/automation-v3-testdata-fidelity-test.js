@@ -131,7 +131,8 @@ assert.ok(drawerClean.includes("Testcase chưa có dữ liệu kiểm thử."), 
 
 // ===== CASE I — sensitive: UI dùng type=password + isSensitiveField (không lộ value) =====
 assert.ok(drawerClean.includes('isSensitiveField(k) ? "password" : "text"'), "I: input sensitive dùng type=password");
-assert.ok(drawerClean.includes("Khôi phục dữ liệu testcase"), "I: có nút Khôi phục dữ liệu testcase");
+assert.ok(drawerClean.includes("Lưu dữ liệu"), "I: có nút [Lưu dữ liệu] primary");
+assert.ok(drawerClean.includes("Khôi phục dữ liệu testcase"), "I: có nút Khôi phục (secondary)");
 assert.ok(drawerClean.includes("persistTd") && drawerClean.includes("saveTestData(workspaceId, testCase.testCaseId"), "I: edit persist qua API (không sửa approved)");
 
 srv.close();

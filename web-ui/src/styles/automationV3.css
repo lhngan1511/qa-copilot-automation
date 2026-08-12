@@ -986,6 +986,7 @@
 .v3-info-td__head { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
 .v3-td-field { display: grid; gap: 4px; font-size: 13px; color: #475569; }
 .v3-td-field .v3-input { min-height: 32px; font-size: 13px; }
+.v3-td-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 
 /* P0 — Grouping V1: group Library (collapsed mặc định; mở 1 group → thấy actions). */
 .v3-lib-group { display: grid; gap: 4px; }

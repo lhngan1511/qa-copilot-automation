@@ -69,6 +69,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
     // Library reuse — P0: MULTI-SELECT (batch)
     const [library, setLibrary] = useState([]);
+    const [libraryLoading, setLibraryLoading] = useState(false); // P0-regression: tránh flash "Chưa có thao tác..."
     const [selectedLib, setSelectedLib] = useState([]); // blockIds theo thứ tự chọn
 
     // Lưu vào thư viện (Boundary — shared asset)
@@ -95,9 +96,12 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const refreshLibrary = useCallback(async () => {
         try {
             const data = await listLibrary(workspaceId);
-            setLibrary(Array.isArray(data) ? data : []);
+            const list = Array.isArray(data) ? data : [];
+            setLibrary(list);
+            return list;
         } catch {
             setLibrary([]);
+            return [];
         }
     }, [workspaceId]);
 
@@ -115,11 +119,17 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         (async () => {
             const seq = await refreshBinding();
             if (cancelled) return;
-            // Binding rỗng → mở luôn Library (primary); có action → list.
-            setScreen(prev => (prev === "list" ? (seq.length === 0 ? "library" : "list") : prev));
+            if (seq.length === 0 && screen === "list") {
+                // P0-regression — binding rỗng → mở Library nhưng PHẢI đợi list về
+                // (tránh "Chưa có thao tác nào..." do race async).
+                setScreen("library");
+                setLibraryLoading(true);
+                await refreshLibrary();
+                if (!cancelled) setLibraryLoading(false);
+            }
         })();
         return () => { cancelled = true; };
-    }, [refreshBinding]);
+    }, [refreshBinding, refreshLibrary]);
 
     /* ---------- Điều hướng nguồn thao tác ---------- */
 
@@ -137,11 +147,13 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setScreen("paste");
     };
 
-    const openLibrary = () => {
+    const openLibrary = async () => {
         setLocalError("");
         setSelectedLib([]);
-        refreshLibrary();
         setScreen("library");
+        setLibraryLoading(true);
+        await refreshLibrary();
+        setLibraryLoading(false);
     };
 
     /* ---------- Dán bản ghi → steps ---------- */
@@ -473,7 +485,9 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             {screen === "library" ? (
                 <div className="v3-act__library">
                     <h4 className="v3-map__h">THÊM THAO TÁC TỪ THƯ VIỆN</h4>
-                    {library.length === 0 ? (
+                    {libraryLoading ? (
+                        <p className="v3-act__note">Đang tải thư viện…</p>
+                    ) : library.length === 0 ? (
                         <p className="v3-act__note">Chưa có thao tác nào được lưu để dùng lại.</p>
                     ) : (
                         library.map(b => {

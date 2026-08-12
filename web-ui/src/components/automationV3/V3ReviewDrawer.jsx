@@ -60,6 +60,25 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         }
     };
 
+    /** P0-A UX — helper: approved values (chỉ business data từ testcase.fields). */
+    const approvedTdValues = () => {
+        const td = tdApproved;
+        const out = {};
+        if (td?.fields && typeof td.fields === "object") {
+            for (const [k, f] of Object.entries(td.fields)) out[k] = String(f && typeof f === "object" ? f.value : f ?? "");
+        } else if (td?.inputs && typeof td.inputs === "object") {
+            for (const [k, v] of Object.entries(td.inputs)) out[k] = String(v ?? "");
+        }
+        return out;
+    };
+    // Automation data đã khác approved? (để hiện [Khôi phục] chỉ khi cần)
+    const tdConfirmed = testCase?.confirmedTestData ?? null;
+    const tdHasEdited = Boolean(
+        tdConfirmed && typeof tdConfirmed === "object" &&
+        Object.keys(tdConfirmed).length > 0 &&
+        Object.entries(tdConfirmed).some(([k, v]) => approvedTdValues()[k] !== String(v ?? ""))
+    );
+
     const canGenerate = canGenerateForTestcase(testCase);
     const gateReason = generateGateReason(testCase);
     const expected = String(testCase.expectedResult ?? "").trim();
@@ -121,22 +140,25 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                                     value={draft[k] ?? ""}
                                                     disabled={tdSaving}
                                                     onChange={e => setTdDraft(d => ({ ...d, [k]: e.target.value }))}
-                                                    onBlur={() => persistTd()}
                                                 />
                                             </label>
                                         ))}
-                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
-                                            // Restore: đưa về giá trị approved (từ tdApproved.fields) rồi persist.
-                                            const td = tdApproved;
-                                            const restored = {};
-                                            if (td?.fields && typeof td.fields === "object") {
-                                                for (const [k, f] of Object.entries(td.fields)) restored[k] = String(f && typeof f === "object" ? f.value : f ?? "");
-                                            }
-                                            setTdDraft(restored);
-                                            persistTd(restored);
-                                        }}>
-                                            Khôi phục dữ liệu testcase
-                                        </button>
+                                        <div className="v3-td-actions">
+                                            {/* P0-A UX — [Lưu dữ liệu] là primary (lưu automation-specific, không sửa approved). */}
+                                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={tdSaving} onClick={() => persistTd()}>
+                                                {tdSaving ? "Đang lưu…" : "Lưu dữ liệu"}
+                                            </button>
+                                            {/* [Khôi phục] secondary — CHỈ hiện khi approved có value và automation data đã khác approved. */}
+                                            {Object.keys(approvedTdValues()).length > 0 && tdHasEdited ? (
+                                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
+                                                    const restored = approvedTdValues();
+                                                    setTdDraft(restored);
+                                                    persistTd(restored);
+                                                }}>
+                                                    Khôi phục dữ liệu testcase
+                                                </button>
+                                            ) : null}
+                                        </div>
                                     </>
                                 );
                             })()}
