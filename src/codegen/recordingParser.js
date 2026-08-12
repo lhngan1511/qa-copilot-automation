@@ -27,7 +27,8 @@ const ACTION_METHODS = {
     check: "CHECK",
     uncheck: "UNCHECK",
     goto: "GOTO",
-    dblclick: "CLICK"
+    dblclick: "CLICK",
+    hover: "HOVER"
 };
 
 /** Trích nội dung balanced trong cặp ngoặc từ openIdx. */
@@ -73,7 +74,7 @@ export function parseRecording(source) {
     const recordedValues = {};
 
     // Regex bắt đầu action (page.getBy*().method( hoặc page.goto( ) hoặc expect(
-    const re = /\b(page\d*\s*\.\s*(?:getBy[A-Za-z]+\([^)]*\)|locator\([^)]*\))\s*\.\s*(fill|click|selectOption|press|check|uncheck|dblclick)\s*\(|page\d*\s*\.\s*goto\s*\(|expect\s*\()/g;
+    const re = /\b(page\d*\s*\.\s*(?:getBy[A-Za-z]+\([^)]*\)|locator\([^)]*\))\s*\.\s*(fill|click|selectOption|press|check|uncheck|dblclick|hover)\s*\(|page\d*\s*\.\s*goto\s*\(|expect\s*\()/g;
     let m;
     let order = 0;
 
@@ -131,7 +132,7 @@ export function parseRecording(source) {
         }
 
         // ---- ACTION ----
-        const methodM = seg.match(/\.\s*(fill|click|selectOption|press|check|uncheck|dblclick)\s*\(|\.\s*(goto)\s*\(/);
+        const methodM = seg.match(/\.\s*(fill|click|selectOption|press|check|uncheck|dblclick|hover)\s*\(|\.\s*(goto)\s*\(/);
         const method = (methodM?.[1] || methodM?.[2] || "").trim();
         if (!method) continue;
         const methodIdx = start + seg.lastIndexOf(method);

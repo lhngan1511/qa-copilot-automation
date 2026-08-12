@@ -410,8 +410,8 @@ assert.ok(recPrepP0.includes("handleSourceChange"), "P0: textarea onChange qua h
 assert.ok(recPrepP0.includes("resetRecordingContext"), "P0: có reset context recording cũ");
 assert.ok(recPrepP0.includes("freshAnalysisWorkspace") && recPrepP0.includes("applyAnalysisWorkspace"),
     "P0-1: reset Phần II qua freshAnalysisWorkspace (start/end/name/proposals/edit state)");
-assert.ok(recPrepP0.includes("initializeAnalysisFromSteps(parsedSteps)"),
-    "P0-1: parse xong init LẠI hoàn toàn từ steps mới");
+assert.ok(recPrepP0.includes("initializeAnalysisFromSteps(draftSteps)"),
+    "P0-1: [Nhập xong] init LẠI hoàn toàn analysis workspace từ steps mới (draft→canonical)");
 assert.ok(recPrepP0.includes("setConfirmed([])") && recPrepP0.includes("setSaveFeedback(null)"),
     "P0: reset working actions + save feedback khi đổi recording");
 assert.ok(recPrepP0.includes("setTimeout") && recPrepP0.includes("doParse"), "P0: auto re-parse (debounce) — không cần F5");

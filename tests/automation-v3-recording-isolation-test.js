@@ -72,7 +72,7 @@ assert.equal(isStepInRange(null, 13, 15), false, "step không có order → khô
 // ---- 4. Component dùng đúng helper (static contract) ----
 const clean = panelSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 assert.ok(clean.includes('applyAnalysisWorkspace(freshAnalysisWorkspace())'), "reset dùng freshAnalysisWorkspace (toàn bộ Phần II)");
-assert.ok(clean.includes('applyAnalysisWorkspace(initializeAnalysisFromSteps(parsedSteps))'), "parse xong init LẠI từ steps mới");
+assert.ok(clean.includes('applyAnalysisWorkspace(initializeAnalysisFromSteps(draftSteps))'), "Nhập xong init LẠI từ steps mới (draft→canonical) — parse draft không init workspace");
 assert.ok(clean.includes("handleSourceChange") && clean.includes("setTimeout"), "đổi nội dung → tự parse lại (debounce, KHÔNG F5)");
 assert.ok(clean.includes("parseGen.current"), "gen guard chống async cũ (AI/confirm) đổ vào bản mới");
 

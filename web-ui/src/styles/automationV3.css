@@ -967,6 +967,10 @@
   flex-wrap: wrap;
 }
 .v3-act__ai-status--error { background: #fffaf5; border-color: #fed7aa; color: #9a3412; }
+/* P0 — DRAFT REVIEW (BẢN NHÁP PLAYWRIGHT trước [Nhập xong]). */
+.v3-draft { display: grid; gap: 10px; border: 1px dashed var(--border, #cbd5e1); border-radius: 10px; padding: 12px; background: #f8fafc; }
+.v3-draft .v3-step .v3-btn--mini { flex: 0 0 auto; }
+
 /* P0-3.3 — pagination (AI proposals + Thư viện) — compact, secondary. */
 .v3-pagination { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
 .v3-pagination .v3-btn--mini { min-height: 28px; }

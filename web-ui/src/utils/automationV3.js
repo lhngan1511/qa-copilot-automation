@@ -127,6 +127,7 @@ export const ACTION_LABEL = {
     UNCHECK: "Bỏ tích",
     SELECT: "Chọn",
     PRESS: "Phím",
+    HOVER: "Di chuột",
     ASSERT: "Kiểm tra"
 };
 

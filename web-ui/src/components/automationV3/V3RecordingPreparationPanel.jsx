@@ -6,6 +6,8 @@ import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../
 import { buildRecordingFileName } from "../../utils/recordingFile.js";
 import { paginate, clampPage } from "../../utils/pagination.js";
 import { planLibrarySave } from "../../utils/librarySync.js";
+import { semanticStepText } from "../../utils/semanticSteps.js";
+import { removeStepFromSource } from "../../utils/draftSource.js";
 
 /*
  V3RecordingPreparationPanel — SHARED (Codegen owner; fallback Automation).
@@ -47,11 +49,8 @@ const readableAssertion = a => {
 const PROPOSAL_PAGE_SIZE = 5; // P0-3.3 — pagination AI proposals (không hard-limit 3)
 const LIB_PAGE_SIZE = 10; // P0-3.3 — pagination Thư viện
 
-const STEP_LABEL = step => {
-    const act = ACTION_LABEL[step.actionType] ?? step.actionType ?? "";
-    const target = step.target || step.locator || "";
-    return `${act}${target ? ` ${target}` : ""}`.trim();
-};
+// P0 — semantic readable dùng CHUNG mọi nơi (dropdown Start/End, draft, recording, library).
+const STEP_LABEL = step => semanticStepText(step);
 
 /* P0 — Lưu bản ghi Playwright: download CHÍNH raw source hiện tại (canonical `source`).
    KHÔNG tạo scriptText/source thứ hai; KHÔNG đụng Action Library. */
@@ -76,6 +75,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // P0 — source đã parse + trạng thái parse (auto re-parse khi đổi nội dung).
     const [parsedSource, setParsedSource] = useState("");
     const [parsing, setParsing] = useState(false);
+    // P0 — DRAFT REVIEW: bản nháp chưa commit (trước [Nhập xong]); canonical = steps sau gate.
+    const [draftSteps, setDraftSteps] = useState([]);
+    const [draftAssertions, setDraftAssertions] = useState([]);
+    const [draftRecordingId, setDraftRecordingId] = useState(null);
     const parseTimer = useRef(null);
     const parseGen = useRef(0);
     // Phần I — collapsed mặc định (chỉ dùng bố cục 1 cột; split layout luôn hiển thị steps)
@@ -127,6 +130,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setRecordingId(null);
         setSteps([]);
         setAssertions([]);
+        // P0 — reset draft review (chưa commit canonical).
+        setDraftSteps([]);
+        setDraftAssertions([]);
+        setDraftRecordingId(null);
         setAnalyzing(false);
         setAiStatus(null); // P0-3.1 — thông báo AI của bản cũ không rò rỉ sang bản mới.
         // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals).
@@ -157,11 +164,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             if (gen !== parseGen.current) return; // tester đã đổi nội dung — bỏ kết quả cũ.
             const parsedSteps = Array.isArray(rec?.steps) ? rec.steps : [];
             const parsedAssertions = Array.isArray(rec?.assertions) ? rec.assertions : [];
-            setRecordingId(recId);
-            setSteps(parsedSteps);
-            setAssertions(parsedAssertions);
-            // P0-1 — initialize LẠI hoàn toàn analysis workspace Phần II từ steps MỚI.
-            applyAnalysisWorkspace(initializeAnalysisFromSteps(parsedSteps));
+            // P0 — DRAFT: chưa commit canonical (chưa setSteps) — tester review bản nháp trước.
+            setDraftRecordingId(recId);
+            setDraftSteps(parsedSteps);
+            setDraftAssertions(parsedAssertions);
             setParsedSource(src);
             if (parsedSteps.length === 0) notifyError("Bản ghi không có thao tác nào.");
         } catch (e) {
@@ -185,6 +191,31 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         clearTimeout(parseTimer.current);
         parseTimer.current = null;
         await doParse(source, parseGen.current);
+    };
+
+    /* ---------- P0 — DRAFT REVIEW: [Nhập xong] = explicit user gate ---------- */
+
+    /** Chỉ lúc này mới commit canonical recording: setSteps/assertions/recordingId +
+     *  init analysis workspace theo recording mới. AI chỉ gọi SAU gate này. */
+    const confirmDraft = () => {
+        if (parsing || draftSteps.length === 0) return;
+        setRecordingId(draftRecordingId);
+        setSteps(draftSteps);
+        setAssertions(draftAssertions);
+        applyAnalysisWorkspace(initializeAnalysisFromSteps(draftSteps));
+        setDraftSteps([]);
+        setDraftAssertions([]);
+        setDraftRecordingId(null);
+        // parsedSource đã set trong doParse — source này là canonical.
+    };
+
+    /** Xóa step khỏi Draft: rewrite raw source (xóa cả dòng, guard 1 statement/dòng) → parse lại. */
+    const canRemoveDraftStep = step => removeStepFromSource(source, step) !== null;
+    const removeDraftStep = step => {
+        if (parsing) return;
+        const next = removeStepFromSource(source, step);
+        if (next === null) return; // không an toàn — không xóa (guard)
+        handleSourceChange(next); // reset + reparse (P0-1: không F5, không giữ steps cũ)
     };
 
     // Dọn timer khi unmount (tránh setState sau khi rời màn).
@@ -405,7 +436,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 <div className={`v3-step${highlight && isStepInRange(s.order, startSel, endSel) ? " v3-step--range" : ""}`} key={s.order}>
                     <span className="v3-step__n">{s.order}</span>
                     <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                    <span className="v3-step__loc">{s.target || s.locator || "—"}</span>
+                    {/* P0 — semantic readable (dùng CHUNG Recording/Library/Draft). */}
+                    <span className="v3-step__loc">{semanticStepText(s)}</span>
                 </div>
             ))}
         </div>
@@ -674,11 +706,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     return (
         <div className="v3-rec-prep">
             {steps.length === 0 ? (
-                /* ---------- Chưa có recording — dán bản ghi (2 bố cục giống nhau) ---------- */
+                /* ---------- P0 — DRAFT REVIEW: paste/record → BẢN NHÁP → [Nhập xong] → canonical ---------- */
                 <>
                     <div className="v3-exp__row">
                         <h4 className="v3-map__h">I. BẢN GHI</h4>
-                        <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector để tạo thao tác.</span>
+                        <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector — review bản nháp trước khi Nhập xong.</span>
                     </div>
                     <textarea
                         className="v3-input"
@@ -688,9 +720,43 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         placeholder={"await page.goto('...');\nawait page.getByRole('button', { name: '...' }).click();\nawait expect(...).toBeVisible();"}
                         spellCheck={false}
                     />
-                    <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
-                        {parsing || saving ? "Đang phân tích…" : "Nhập xong"}
-                    </button>
+                    {draftSteps.length > 0 ? (
+                        /* BẢN NHÁP — chưa commit canonical; tester review/chỉnh/xóa bước thừa. */
+                        <div className="v3-draft">
+                            <h4 className="v3-map__h">BẢN NHÁP PLAYWRIGHT</h4>
+                            <p className="v3-act__note">{draftSteps.length} thao tác được phát hiện{draftAssertions.length > 0 ? ` · ${draftAssertions.length} điều kiện kiểm tra (giữ riêng)` : ""}</p>
+                            <div className="v3-steps">
+                                {draftSteps.map(s => {
+                                    const removable = canRemoveDraftStep(s);
+                                    return (
+                                        <div className="v3-step" key={s.order}>
+                                            <span className="v3-step__n">{s.order}</span>
+                                            <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
+                                            <span className="v3-step__loc">{semanticStepText(s)}</span>
+                                            <button
+                                                type="button"
+                                                className="v3-btn v3-btn--ghost v3-btn--mini"
+                                                onClick={() => removeDraftStep(s)}
+                                                disabled={parsing || !removable}
+                                                title={removable ? "Xóa bước này khỏi bản nháp" : "Không xóa được (dòng chứa nhiều lệnh)"}
+                                            >
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="v3-act__range-actions">
+                                <button type="button" className="v3-btn v3-btn--primary" onClick={confirmDraft} disabled={parsing || saving}>
+                                    {parsing ? "Đang phân tích…" : "Nhập xong"}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
+                            {parsing || saving ? "Đang phân tích…" : "Phân tích bản nháp"}
+                        </button>
+                    )}
                 </>
             ) : splitLayout ? (
                 /* ---------- P0-3 — SPLIT: trái = recording cố định · phải = tạo thao tác ---------- */
