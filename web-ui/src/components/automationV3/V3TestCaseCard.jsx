@@ -52,7 +52,9 @@ export default function V3TestCaseCard({
     else if (segments.length > 0) primary = { key: "setup", label: "Tiếp tục Automation", danger: false, disabled: recordingActive };
     else primary = { key: "setup", label: "Tạo Automation", danger: false, disabled: recordingActive };
 
-    const showMenu = status === "REVIEW_REQUIRED" || status === "APPROVED" || segments.length > 0;
+    // P0 — MỌI testcase trong workspace đều có menu `...` (không phụ thuộc
+    // status/segments/decision/generate/run): ít nhất Thiết lập + Loại khỏi workspace.
+    const showMenu = true;
     const badge = STATUS_BADGE[status] ?? ["v3-badge--nosel", "Chưa chọn"];
     const expected = String(testCase.expectedResult ?? "").trim();
 

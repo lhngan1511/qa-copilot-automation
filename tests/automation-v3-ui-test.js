@@ -107,10 +107,7 @@ const cardSource = read("components/automationV3/V3TestCaseCard.jsx");
 assert.equal((cardSource.match(/v3-badge--sel/g) ?? []).length, 1, "1 nhánh badge 'Đã chọn'");
 assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 1, "1 nhánh badge 'Chưa chọn'");
 assert.equal((cardSource.match(/v3-card__action/g) ?? []).length, 1, "card chỉ 1 slot primary action");
-assert.ok(
-    /showMenu = status === "REVIEW_REQUIRED" \|\| status === "APPROVED"/.test(cardSource),
-    "menu '…' chỉ ở REVIEW_REQUIRED/APPROVED"
-);
+assert.ok(cardSource.includes("const showMenu = true;"), "P0: menu '…' cho MỌI testcase trong workspace (không phụ thuộc status)");
 const cardClean = stripComments(cardSource);
 assert.ok(!cardClean.includes("Xem chi tiết"), "không có Xem chi tiết");
 assert.ok(!cardClean.includes("Generate") && !cardClean.includes("Export"), "card không Generate/Export");
