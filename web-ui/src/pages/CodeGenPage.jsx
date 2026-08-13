@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import V3RecordingPreparationPanel from "../components/automationV3/V3RecordingPreparationPanel.jsx";
+import V3LibraryViewer from "../components/automationV3/V3LibraryViewer.jsx";
 import {
     useCodeGenRecordings,
     useCodeGenStatus,
@@ -18,6 +19,8 @@ export default function CodeGenPage() {
     const [browser, setBrowser] = useState("chrome");    const [mode, setMode] = useState("FULL_FLOW");
     const [notice, setNotice] = useState("");
     const [focusModal, setFocusModal] = useState(null);
+    // P0 — READ-ONLY Action Library Viewer: xem thư viện KHÔNG cần record/dán/phân tích.
+    const [libraryViewerOpen, setLibraryViewerOpen] = useState(false);
     const [searchParams] = useSearchParams();
 
     // P0 Phase 1 — Codegen owner cần workspaceId (chung Action Library). Dùng active workspace từ
@@ -125,9 +128,17 @@ export default function CodeGenPage() {
                     <button className="button button--danger" type="button" disabled={!isRecording || actions.stop.isPending} onClick={handleStop}>
                         Dừng ghi
                     </button>
+                    {/* P0 — tách "Xem Action đã lưu" khỏi "Tạo Action mới": luôn bấm được,
+                        KHÔNG cần draft/recording (CASE 1). READ-ONLY viewer. */}
+                    <button className="button button--secondary" type="button" onClick={() => setLibraryViewerOpen(true)}>
+                        Xem Thư viện thao tác
+                    </button>
                 </div>
                 <p className="codegen-hint">Record hoặc dán bản ghi đều đổ vào MỘT nguồn — cắt đoạn → lưu Thư viện thao tác (shared).</p>
             </div>
+
+            {/* P0 — READ-ONLY Action Library Viewer (drawer) — mở độc lập với draft. */}
+            {libraryViewerOpen ? <V3LibraryViewer onClose={() => setLibraryViewerOpen(false)} /> : null}
 
             {/* II/III + Thư viện — shared component (global recording).
                 P0 — bọc card để padding/margin khớp layout (không dính sát mép phải như các card khác).

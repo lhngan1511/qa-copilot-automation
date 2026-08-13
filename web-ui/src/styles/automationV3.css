@@ -997,6 +997,20 @@
 .v3-td-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #64748b; cursor: pointer; user-select: none; }
 .v3-td-empty { min-height: 32px; display: flex; align-items: center; color: #94a3b8; font-size: 12px; }
 
+/* P0 — READ-ONLY Action Library Viewer (trang CodeGen) */
+.v3-drawer--wide { width: min(880px, 100vw); }
+.v3-lib-viewer { display: grid; grid-template-columns: 300px 1fr; gap: 12px; min-height: 0; }
+.v3-lib-viewer__list { border-right: 1px solid var(--border); padding-right: 10px; overflow: auto; }
+.v3-lib-viewer__search { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+.v3-lib-viewer__search .v3-input { flex: 1; min-height: 32px; font-size: 13px; }
+.v3-lib-viewer__item { display: block; width: 100%; text-align: left; padding: 6px 8px; border-radius: 6px; border: none; background: none; cursor: pointer; font-size: 13px; }
+.v3-lib-viewer__item:hover { background: rgba(37, 99, 235, .06); }
+.v3-lib-viewer__item--on { background: rgba(37, 99, 235, .12); }
+.v3-lib-viewer__item .v3-act__note { display: block; font-size: 11px; }
+.v3-lib-viewer__detail { overflow: auto; padding-left: 4px; }
+.v3-lib-viewer__detail .v3-info-row { font-size: 13px; }
+.v3-lib-viewer__value { display: block; margin-top: 2px; font-size: 12px; color: #0f766e; }
+
 /* P0-D1 (B) — popover Đổi workspace + modal Quản lý workspace. */
 .v3-ws-panel__switch { position: relative; }
 .v3-ws-popover {
