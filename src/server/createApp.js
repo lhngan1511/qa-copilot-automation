@@ -172,6 +172,7 @@ export default function createApp({
         controller: resolvedController,
         requirementUploadService,
         codeGenManager,
+        v3ApplicationService,
         publicDirectory: resolvedPublicDirectory,
         indexFile,
         indexExists: fs.existsSync(indexFile)

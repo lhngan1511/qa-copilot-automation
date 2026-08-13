@@ -166,6 +166,28 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** Lấy toàn bộ trạng thái workspace (DTO gọn cho API). */
+    /** P0-D (C) — Danh sách workspace (sort updatedAt DESC; không lộ raw ID làm primary). */
+    listWorkspaces() {
+        return (this.workspace?.list?.() ?? [])
+            .slice()
+            .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))
+            .map(w => ({
+                workspaceId: w.workspaceId,
+                module: w.module ?? "",
+                source: w.source ?? "NEW",
+                selectedCount: w.selectedCount ?? 0,
+                createdAt: w.createdAt ?? null,
+                updatedAt: w.updatedAt ?? null
+            }));
+    }
+
+    /** P0-D (C) — Xóa workspace (confirm phía UI). KHÔNG cascade Action Library/approved/generated. */
+    deleteWorkspace({ workspaceId }) {
+        const removed = this.workspace?.remove?.(workspaceId) ?? false;
+        if (!removed) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
+        return { workspaceId, removed: true };
+    }
+
     getWorkspace(workspaceId) {
         const ws = this.workspace.get(workspaceId);
         if (!ws) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
@@ -862,6 +884,9 @@ export default class AutomationWorkspaceApplicationService {
         if (!lib) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác trong thư viện.");
         if (lib.status !== "CONFIRMED") fail(V3_ERRORS.BLOCK_NOT_CONFIRMED, "Thao tác thư viện chưa được xác nhận.");
         const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
+        // P0-D (B) — bind Library action ĐẦU TIÊN là mốc thể hiện ý định làm automation:
+        // UNDECIDED -> AUTOMATED (giống bindBlock 5C-0). Generate/Run KHÔNG hạ decision.
+        this.workspace.setAutomationDecision(workspaceId, testCaseId, "AUTOMATED");
         return this.bindingDto(workspaceId, testCaseId, binding);
     }
 
@@ -1267,8 +1292,9 @@ export default class AutomationWorkspaceApplicationService {
         }
         if (!this.runner) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner chưa sẵn sàng trong môi trường này.");
         const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId });
-        // Persist kết quả run.
-        const status = result?.status === "PASS" ? "PASS" : (result?.status === "FAIL" ? "FAIL" : result?.status ?? "ERROR");
+        // P0-D (B) — runStatus enum: NOT_RUN | PASSED | FAILED (+ DIAGNOSTIC/ERROR khi chưa chạy được).
+        const raw = result?.status ?? "ERROR";
+        const status = raw === "PASS" ? "PASSED" : (raw === "FAIL" ? "FAILED" : raw);
         this.workspace.transition(workspaceId, testCaseId, {
             runStatus: status,
             lastRun: {

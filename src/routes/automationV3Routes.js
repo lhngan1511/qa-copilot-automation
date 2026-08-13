@@ -54,6 +54,12 @@ export default function createAutomationV3Routes({ applicationService = null } =
             sourceFile: req.body?.sourceFile
         })));
 
+    // P0-D (C) — danh sách workspace (newest first) + xóa (không cascade shared assets).
+    router.get("/workspaces", handle(applicationService, (svc) => svc.listWorkspaces()));
+
+    router.delete("/workspaces/:workspaceId", handle(applicationService, (svc, req) =>
+        svc.deleteWorkspace({ workspaceId: req.params.workspaceId })));
+
     router.get("/workspaces/:workspaceId", handle(applicationService, (svc, req) =>
         svc.getWorkspace(req.params.workspaceId)));
 

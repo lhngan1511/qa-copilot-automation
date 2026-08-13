@@ -13,6 +13,16 @@ function jsonHeaders() {
     return { "Content-Type": "application/json" };
 }
 
+/** GET /workspaces — danh sách workspace (sort updatedAt DESC). */
+export function listWorkspaces() {
+    return apiClient.get(`${BASE}/workspaces`);
+}
+
+/** DELETE /workspaces/:workspaceId — xóa workspace (confirm UI; không cascade shared assets). */
+export function deleteWorkspace(workspaceId) {
+    return apiClient.delete(`${BASE}/workspaces/${encodeURIComponent(workspaceId)}`);
+}
+
 /** POST /workspaces — tạo/mở workspace từ approved testcase. */
 export function createWorkspace({ approvedTestCases = [], module = "", source = "NEW" } = {}) {
     return apiClient.post(`${BASE}/workspaces`, {

@@ -109,8 +109,8 @@ assert.ok(!groupScreen.includes("b.stepCount"), "1: màn chọn group KHÔNG ren
 const expSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ExpectedResultTab.jsx"), "utf8");
 const expClean = expSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 assert.ok(expClean.includes("c.actionLabel"), "3: UI hiển thị nguồn Action (actionLabel)");
-assert.ok(expClean.includes("Chưa có điều kiện xác nhận phù hợp."), "5: message không assertion");
-assert.ok(expClean.includes("Bổ sung điều kiện kiểm tra") || expClean.includes("+ Bổ sung điều kiện"), "5: có [+ Bổ sung điều kiện xác nhận]");
+assert.ok(expClean.includes("Chưa có điều kiện kiểm tra phù hợp."), "5: message không assertion (P0-D nhãn mới)");
+assert.ok(expClean.includes("+ Thêm điều kiện kiểm tra"), "5: có [+ Thêm điều kiện kiểm tra] (P0-D)");
 assert.ok(expClean.includes("segmentSummary?.total"), "3: candidates refresh khi selected actions đổi (dep segmentSummary.total)");
 
 console.log("Automation V3 P0-B Library Picker + Assertion Evidence test: PASS");

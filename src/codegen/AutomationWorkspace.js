@@ -135,6 +135,15 @@ export default class AutomationWorkspace {
     }
 
     /** Chọn / bỏ chọn một testcase trong workspace. */
+    /** P0-D (C) — Xóa workspace (chỉ state automation; KHÔNG đụng Action Library / approved / generated). */
+    remove(workspaceId) {
+        const idx = this.workspaces.findIndex(w => w.workspaceId === workspaceId);
+        if (idx === -1) return false;
+        this.workspaces.splice(idx, 1);
+        this.persist();
+        return true;
+    }
+
     setSelected(workspaceId, testCaseId, selected) {
         const ws = this.get(workspaceId);
         if (!ws) return null;

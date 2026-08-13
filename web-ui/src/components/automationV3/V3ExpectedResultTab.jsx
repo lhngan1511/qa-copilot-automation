@@ -326,9 +326,9 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             {/* ---------- 6C.2 — Điều kiện tìm thấy trong bản ghi (recorded candidates) ---------- */}
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Điều kiện tìm thấy trong bản ghi</h4>
+                    <h4 className="v3-exp__h">Gợi ý từ thao tác đã chọn</h4>
                     {recordedCandidates.length === 0 ? (
-                        <span className="v3-exp__note">Chưa có điều kiện xác nhận phù hợp.</span>
+                        <span className="v3-exp__note">Chưa có điều kiện kiểm tra phù hợp.</span>
                     ) : null}
                 </div>
                 {recordedCandidates.map((c, i) => {
@@ -349,7 +349,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                         </div>
                         <div className="v3-cond__actions">
                             <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => confirmRecordedCandidate(c)} disabled={saving || alreadyAdded}>
-                                {alreadyAdded ? "Đã thêm" : "Xác nhận"}
+                                {alreadyAdded ? "Đã sử dụng" : "Sử dụng"}
                             </button>
                             <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => dismissRecordedCandidate(c)} disabled={saving || alreadyAdded}>
                                 Bỏ qua
@@ -362,14 +362,14 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
 
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Đề xuất điều kiện kiểm tra</h4>
+                    <h4 className="v3-exp__h">Gợi ý từ kết quả mong đợi</h4>
                     <button
                         type="button"
-                        className="v3-btn v3-btn--secondary v3-btn--mini"
+                        className="v3-btn v3-btn--ghost v3-btn--mini"
                         onClick={handleSuggest}
                         disabled={suggesting || saving}
                     >
-                        {suggesting ? "Đang đề xuất…" : "Đề xuất điều kiện xác nhận"}
+                        {suggesting ? "Đang đề xuất…" : "AI đề xuất thêm"}
                     </button>
                 </div>
 
@@ -409,9 +409,9 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             {/* ---------- Điều kiện kiểm tra ---------- */}
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Điều kiện kiểm tra</h4>
+                    <h4 className="v3-exp__h">Điều kiện đã chọn</h4>
                     <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startAdd} disabled={saving}>
-                        + Bổ sung điều kiện kiểm tra
+                        + Thêm điều kiện kiểm tra
                     </button>
                 </div>
 

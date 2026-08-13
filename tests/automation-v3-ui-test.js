@@ -275,14 +275,14 @@ assert.ok(drawerClean2.includes("canGenerateForTestcase"), "drawer dùng gate Ge
 // ---- 21. Tab expected: đúng flow chốt (xem/sửa → đề xuất chủ động → áp dụng → xác nhận) ----
 const expTab = stripComments(read("components/automationV3/V3ExpectedResultTab.jsx"));
 assert.ok(expTab.includes("Chỉnh sửa kết quả mong đợi"), "sửa Expected Result");
-assert.ok(expTab.includes("Đề xuất điều kiện xác nhận"), "nút đề xuất chủ động (không tự bung)");
+assert.ok(expTab.includes("AI đề xuất thêm"), "P0-D: nút AI đề xuất thêm (secondary, không tự bung)");
 assert.ok(expTab.includes("Áp dụng"), "Áp dụng đề xuất");
-assert.ok(expTab.includes("Xác nhận"), "Xác nhận điều kiện");
-assert.ok(expTab.includes("+ Bổ sung điều kiện kiểm tra"), "bổ sung tay");
+assert.ok(expTab.includes("Xác nhận") || expTab.includes("Sử dụng"), "Xác nhận/Sử dụng điều kiện");
+assert.ok(expTab.includes("+ Thêm điều kiện kiểm tra"), "P0-D: bổ sung tay");
 assert.ok(expTab.includes("Chưa có gì để đề xuất"), "gợi ý nhẹ khi không tạo được candidate (không heuristic mạnh)");
 assert.ok(expTab.includes("Cần ít nhất 1 điều kiện được xác nhận"), "nhắc gate assertion");
 assert.ok(expTab.includes("quay về Nháp"), "sửa điều kiện → Nháp");
-assert.ok(!/\bAI\b|aiSuggest/i.test(expTab), "tab không dùng AI ở 5C");
+assert.ok(!/aiSuggest|aiMapping/i.test(expTab), "tab không AI tự map/đề xuất ngầm (AI chỉ là nút chủ động đã duyệt)");
 assert.ok(!expTab.includes("Xóa trống → quay về bản gốc đã duyệt + hiện warning"), "không còn warning heuristic cũ");
 
 // ---- 22. Card: primary "Điều kiện xác nhận" khi có segment CONFIRMED; không Generate trên card ----
@@ -322,6 +322,7 @@ assert.ok(pageClean2.includes("Workspace gần đây"), "có bộ chọn workspa
 assert.ok(pageClean2.includes("Bạn sắp chuyển sang workspace mới"), "confirm khi tạo workspace mới có dữ liệu");
 assert.ok(pageClean2.includes("handleNewWorkspaceClick"), "nút Tạo workspace mới đi qua confirm handler");
 assert.ok(pageClean2.includes("recentWorkspaces") && pageClean2.includes("switchWorkspace"), "recent + switch workspace");
+assert.ok(pageClean2.includes("v3-ws-panel") && pageClean2.includes("Workspace hiện tại") && pageClean2.includes("delete_workspace"), "P0-D: workspace panel + delete confirm");
 assert.ok(pageClean2.includes("shortWorkspaceId"), "short id chỉ dùng hiển thị phụ");
 
 assert.ok(pageClean2.includes("handleGenerate"), "page có handler Generate");

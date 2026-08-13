@@ -80,7 +80,7 @@ fs.rmSync(tempRoot, { recursive: true, force: true });
 // Static — UI: lọc client-side + "Đã thêm" disabled
 const tabSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ExpectedResultTab.jsx"), "utf8");
 const clean = tabSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-assert.ok(clean.includes("alreadyAdded") && clean.includes('{alreadyAdded ? "Đã thêm" : "Xác nhận"}'), "UI: candidate đã thêm -> nút 'Đã thêm' disabled");
+assert.ok(clean.includes("alreadyAdded") && clean.includes('{alreadyAdded ? "Đã sử dụng" : "Sử dụng"}'), "UI: candidate đã thêm -> nút 'Đã sử dụng' disabled (P0-D)");
 assert.ok(clean.includes('!assertions.some(a => a.status !== "REJECTED"'), "UI: lọc client-side theo assertions");
 
 console.log("Automation V3 Candidate Duplicate Fix (P0-C runtime bug) test: PASS");

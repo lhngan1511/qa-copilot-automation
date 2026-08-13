@@ -17,7 +17,9 @@ import {
     deleteRecording,
     setAutomationDecision,
     generateTestcase,
-    runTestcase
+    runTestcase,
+    listWorkspaces,
+    deleteWorkspace
 } from "../api/automationV3Api.js";
 
 /*
@@ -60,6 +62,15 @@ function persistRecentWorkspaces(list) {
     }
 }
 
+/** P0-D (C) — hiển thị thời gian ngắn "12/08 16:20" (không raw ISO). */
+export function formatUpdatedAt(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /** Rút gọn id cho hiển thị phụ (debug/danh sách gần đây) — KHÔNG làm UX chính. */
 export function shortWorkspaceId(id) {
     return String(id ?? "").replace(/^WS-/, "WS-").slice(0, 18);
@@ -69,6 +80,9 @@ export default function AutomationV3Page() {
     const [workspace, setWorkspace] = useState(null);
     const [displayMap, setDisplayMap] = useState(() => readDisplayMap());
     const [recentWorkspaces, setRecentWorkspaces] = useState(() => readRecentWorkspaces());
+    // P0-D (C) — danh sách workspace từ API (newest first) + menu ⋯ của từng workspace.
+    const [workspaceList, setWorkspaceList] = useState([]);
+    const [wsMenuId, setWsMenuId] = useState(null);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -88,9 +102,20 @@ export default function AutomationV3Page() {
     const [mappingPanel, setMappingPanel] = useState(null); // { recordingId, initialTestCaseId }
     const [pendingTestCaseId, setPendingTestCaseId] = useState(null);
 
+    /** P0-D (C) — tải danh sách workspace (newest first). */
+    const refreshWorkspaceList = async () => {
+        try {
+            const data = await listWorkspaces();
+            setWorkspaceList(Array.isArray(data) ? data : []);
+        } catch {
+            /* giữ list cũ */
+        }
+    };
+
     useEffect(() => {
         let cancelled = false;
         const savedId = window.localStorage.getItem(STORAGE_KEY);
+        refreshWorkspaceList();
         if (!savedId) {
             setCreating(true);
             return;
@@ -147,7 +172,9 @@ export default function AutomationV3Page() {
             setMappingPanel(null);
             setDrawerGenerateResult(null);
             setDrawerRunResult(null);
-            setNotice("Đã chuyển về workspace đã lưu.");
+            setWsMenuId(null);
+            await refreshWorkspaceList();
+            setNotice(`Đã mở workspace "${data?.module || "Workspace"}".`);
         } catch (e) {
             setError(e?.message ?? "Không mở được workspace.");
         } finally {
@@ -425,6 +452,18 @@ export default function AutomationV3Page() {
         }
     };
 
+    /** P0-D (C) — xóa workspace: confirm → API → refresh; xóa current → chọn gần nhất hoặc empty. */
+    const confirmDeleteWorkspace = w => {
+        setWsMenuId(null);
+        setConfirm({
+            kind: "delete_workspace",
+            title: `Xóa workspace "${w.module || "Workspace"}"?`,
+            message: "Dữ liệu automation của workspace này sẽ bị xóa. Action Library, approved testcase và file đã sinh KHÔNG bị ảnh hưởng.",
+            testCase: null,
+            workspaceId: w.workspaceId
+        });
+    };
+
     const handleConfirm = async () => {
         if (!confirm) return;
         setBusy(true);
@@ -449,6 +488,28 @@ export default function AutomationV3Page() {
             } else if (confirm.kind === "new_workspace") {
                 // P0 lifecycle — user đã xác nhận chủ động tạo workspace mới.
                 setCreating(true);
+            } else if (confirm.kind === "delete_workspace") {
+                const wsId = confirm.workspaceId;
+                const isCurrent = wsId === workspace?.workspaceId;
+                await deleteWorkspace(wsId);
+                await refreshWorkspaceList();
+                if (isCurrent) {
+                    // Chọn workspace gần nhất còn lại (newest first) — UI nói rõ đã chuyển.
+                    const next = (workspaceList ?? []).filter(w => w.workspaceId !== wsId)[0] ?? null;
+                    if (next) {
+                        const data = await getWorkspace(next.workspaceId);
+                        setWorkspace({ workspaceId: next.workspaceId, items: Array.isArray(data.items) ? data.items : [] });
+                        window.localStorage.setItem(STORAGE_KEY, next.workspaceId);
+                        setNotice(`Đã xóa workspace cũ và chuyển sang "${next.module || "Workspace"}".`);
+                    } else {
+                        window.localStorage.removeItem(STORAGE_KEY);
+                        setWorkspace(null);
+                        setCreating(true);
+                        setNotice("Đã xóa workspace. Tạo workspace mới để bắt đầu.");
+                    }
+                } else {
+                    setNotice("Đã xóa workspace.");
+                }
             }
             setConfirm(null);
         } catch (e) {
@@ -471,26 +532,50 @@ export default function AutomationV3Page() {
                 </div>
                 {workspace ? (
                     <div className="v3-page__head-actions">
-                        {recentWorkspaces.length > 0 ? (
-                            <select
-                                className="v3-input v3-ws-switch"
-                                value={workspace.workspaceId}
-                                onChange={e => switchWorkspace(e.target.value)}
-                                aria-label="Workspace gần đây"
-                                title="Workspace gần đây — chọn để quay lại"
-                            >
-                                <option value={workspace.workspaceId}>
-                                    {meta.module || "Workspace"} · {meta.count} testcase (hiện tại)
-                                </option>
-                                {recentWorkspaces
-                                    .filter(w => w.id !== workspace.workspaceId)
-                                    .map(w => (
-                                        <option key={w.id} value={w.id}>
-                                            {w.module || "Workspace"} · {w.count ?? "?"} testcase · {shortWorkspaceId(w.id)}
-                                        </option>
+                        {/* P0-D (C) — Workspace hiện tại + gần đây (không raw WS-ID primary; newest first). */}
+                        <div className="v3-ws-panel">
+                            <div className="v3-ws-panel__current">
+                                <span className="v3-ws-panel__label">Workspace hiện tại</span>
+                                <b>{meta.module || "Workspace"}</b>
+                                <span className="v3-ws-panel__meta">
+                                    {meta.count} testcase · Cập nhật {formatUpdatedAt(workspaceList.find(w => w.workspaceId === workspace.workspaceId)?.updatedAt)}
+                                </span>
+                            </div>
+                            {workspaceList.filter(w => w.workspaceId !== workspace.workspaceId).length > 0 ? (
+                                <div className="v3-ws-panel__recent">
+                                    <span className="v3-ws-panel__label">Workspace gần đây</span>
+                                    {workspaceList.filter(w => w.workspaceId !== workspace.workspaceId).map(w => (
+                                        <div className="v3-ws-panel__item" key={w.workspaceId}>
+                                            <button
+                                                type="button"
+                                                className="v3-ws-panel__item-main"
+                                                onClick={() => switchWorkspace(w.workspaceId)}
+                                                disabled={recordingActive}
+                                            >
+                                                <b>{w.module || "Workspace"}</b>
+                                                <span>{w.selectedCount} testcase · Cập nhật {formatUpdatedAt(w.updatedAt)}</span>
+                                            </button>
+                                            <span className="v3-ws-panel__menu">
+                                                <button
+                                                    type="button"
+                                                    className="v3-btn v3-btn--mini"
+                                                    aria-label="Menu workspace"
+                                                    onClick={() => setWsMenuId(wsMenuId === w.workspaceId ? null : w.workspaceId)}
+                                                >
+                                                    ⋯
+                                                </button>
+                                                {wsMenuId === w.workspaceId ? (
+                                                    <span className="v3-ws-panel__pop">
+                                                        <button type="button" className="v3-ws-panel__pop-btn" onClick={() => switchWorkspace(w.workspaceId)} disabled={recordingActive}>Mở</button>
+                                                        <button type="button" className="v3-ws-panel__pop-btn v3-ws-panel__danger" onClick={() => confirmDeleteWorkspace(w)}>Xóa</button>
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                        </div>
                                     ))}
-                            </select>
-                        ) : null}
+                                </div>
+                            ) : null}
+                        </div>
                         <button
                             type="button"
                             className="v3-btn v3-btn--secondary"
@@ -591,9 +676,11 @@ export default function AutomationV3Page() {
                 message={confirm?.message ?? ""}
                 confirmLabel={confirm?.kind === "delete"
                     ? "Xóa recording"
-                    : confirm?.kind === "new_workspace"
-                        ? "Tạo workspace mới"
-                        : "Từ chối recording"}
+                    : confirm?.kind === "delete_workspace"
+                        ? "Xóa workspace"
+                        : confirm?.kind === "new_workspace"
+                            ? "Tạo workspace mới"
+                            : "Từ chối recording"}
                 danger={confirm?.kind === "delete"}
                 busy={busy}
                 onCancel={() => setConfirm(null)}

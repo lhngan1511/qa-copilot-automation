@@ -93,7 +93,7 @@ const gen2 = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/T
 assert.equal(gen2.status, 200, "generate lại OK");
 const runOk = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/run`, {});
 assert.notEqual(runOk.body?.errorCode, "STALE_GENERATED", "6: sau generate lại không còn stale");
-assert.ok(["PASS", "FAIL", "DIAGNOSTIC", "ERROR"].includes(runOk.body?.runStatus) || runOk.status === 200 || runOk.body?.errorCode, "6: run trả kết quả (PASS/FAIL hoặc diagnostic rõ)");
+assert.ok(["PASSED", "FAILED", "DIAGNOSTIC", "ERROR"].includes(runOk.body?.runStatus) || runOk.status === 200 || runOk.body?.errorCode, "6: run trả kết quả (PASSED/FAILED hoặc diagnostic rõ)");
 
 srv.close();
 fs.rmSync(tempRoot, { recursive: true, force: true });
