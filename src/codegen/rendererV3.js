@@ -381,15 +381,27 @@ export function renderV3Spec({
     if (unresolved.length > 0) {
         // UNRESOLVED (chưa xác định data source/intent) → CHẶN Generate, yêu cầu review.
         // Bound + thiếu data giữ code TESTDATA_BINDING_REQUIRED (compat contract cũ).
+        // P0 422-LIFECYCLE — response structured: unresolvedFields [{field, mapped}] để UI/API
+        // biết CHÍNH XÁC field nào gây block (không bắt tester đoán).
         validation.spec.bindingValid = false;
         const hasBound = unresolved.some(u => u.bound);
-        const fields = [...new Set(unresolved.map(u => u.field))].map(f => JSON.stringify(f)).join(", ");
+        const uniqueFields = [...new Set(unresolved.map(u => u.field))];
+        const unresolvedFields = uniqueFields.map(f => {
+            const u = unresolved.find(x => x.field === f);
+            return { field: f, mapped: Boolean(u?.bound) };
+        });
+        const fields = uniqueFields.map(f => {
+            const u = unresolved.find(x => x.field === f);
+            // Input chưa map business field (technical target) — nói rõ, không để tester đoán.
+            return u && !u.bound ? `${JSON.stringify(f)} (input chưa map business field)` : JSON.stringify(f);
+        }).join(", ");
         return {
             ok: false,
             errorCode: hasBound ? RENDERER_ERRORS.TESTDATA_BINDING_REQUIRED : RENDERER_ERRORS.TESTDATA_UNRESOLVED,
             validation,
             metadata,
             runtimeEnv,
+            unresolvedFields,
             reason: hasBound
                 ? `Thiếu dữ liệu: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data.`
                 : `Chưa xác định dữ liệu cho: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data trước khi Sinh.`

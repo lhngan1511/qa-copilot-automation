@@ -1246,6 +1246,11 @@ export default class AutomationWorkspaceApplicationService {
             : {};
         // P0 — canonical binding { stepTarget: businessField } (tester-owned; không AI tự quyết).
         this.workspace.saveTestData(workspaceId, testCaseId, normalized, bindings);
+        // P0 422-LIFECYCLE (fix) — Test Data thay đổi → RECOMPUTE derived state NGAY tại save
+        // (auto-bind + heal confirmed). Trước đây chỉ bind/re-add Action (qua getWorkspace) làm
+        // việc này — bất đối xứng: save data xong rồi Generate vẫn có thể thấy binding cũ/thiếu
+        // → 422 TESTDATA_UNRESOLVED dù tester đã nhập đủ. Tester KHÔNG phải remove/re-add Action.
+        this.autoBindTestData(workspaceId, testCaseId);
         return this.toItem(this.workspace.getTestCase(workspaceId, testCaseId), workspaceId);
     }
 
@@ -1455,6 +1460,10 @@ export default class AutomationWorkspaceApplicationService {
             const error = new Error(result?.reason ?? "Generate thất bại.");
             error.code = code;
             error.statusCode = status;
+            // P0 422-LIFECYCLE — structured: danh sách field gây block (UI/API không đoán).
+            if (Array.isArray(result?.unresolvedFields)) {
+                error.details = { unresolvedFields: result.unresolvedFields };
+            }
             throw error;
         }
         return {

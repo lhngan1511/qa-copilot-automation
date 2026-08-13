@@ -47,6 +47,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         }
         // P0 TC001 — draft entries {value, intent}: approved non-empty = VALUE (business);
         // approved ""/null = UNRESOLVED (chưa intent — KHÔNG tự EMPTY); confirmed override.
+        // P0 422-LIFECYCLE — giữ MỌI confirmed key (kể cả không nằm trong approved) khi save:
+        // trước đây key ngoài approved bị drop khỏi draft -> save làm MẤT data đã xác nhận.
         const merged = {};
         const isLoginTc = isLoginTestCase(testCase?.title, testCase?.module);
         for (const [k, v] of entries) {
@@ -57,7 +59,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         const confirmed = testCase?.confirmedTestData ?? null;
         if (confirmed && typeof confirmed === "object") {
             for (const [k, v] of Object.entries(confirmed)) {
-                if (!Object.prototype.hasOwnProperty.call(merged, k)) continue;
+                if (isSetupField(k) && !isLoginTc) continue; // credential legacy — ẩn (trừ testcase Login)
+                if (!Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = { value: "", intent: "" };
                 merged[k] = fieldEntry(v);
             }
         }
@@ -66,11 +69,14 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [testCase?.testCaseId]);
 
-    const persistTd = async next => {
+    const persistTd = async (next, bindingsOverride) => {
         if (tdSaving) return;
         setTdSaving(true);
         try {
-            await saveTestData(workspaceId, testCase.testCaseId, next ?? tdDraft ?? {}, tdBindings ?? {});
+            // P0 422-LIFECYCLE — drawer KHÔNG còn UI sửa binding (P0 simplify bỏ select):
+            // KHÔNG gửi tdBindings (snapshot lúc MỞ drawer — có thể cũ) để tránh ghi đè binding
+            // canonical backend. bindingsOverride chỉ dùng khi CHỦ ĐỘNG muốn đổi (VD Khôi phục).
+            await saveTestData(workspaceId, testCase.testCaseId, next ?? tdDraft ?? {}, bindingsOverride ?? null);
             onChanged?.();
         } catch (e) {
             onError?.(e?.message ?? "Không lưu được dữ liệu kiểm thử.");
@@ -256,7 +262,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                                     }
                                                     setTdDraft(restored);
                                                     setTdBindings({});
-                                                    persistTd(restored);
+                                                    persistTd(restored, {});
                                                 }}>
                                                     Khôi phục dữ liệu testcase
                                                 </button>
