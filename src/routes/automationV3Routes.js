@@ -63,6 +63,16 @@ export default function createAutomationV3Routes({ applicationService = null } =
     router.get("/workspaces/:workspaceId", handle(applicationService, (svc, req) =>
         svc.getWorkspace(req.params.workspaceId)));
 
+    // P0 (D/E) — loại testcase khỏi workspace / danh sách approved chưa có / thêm lại.
+    router.delete("/workspaces/:workspaceId/testcases/:testCaseId", handle(applicationService, (svc, req) =>
+        svc.removeTestCaseFromWorkspace({ workspaceId: req.params.workspaceId, testCaseId: req.params.testCaseId })));
+
+    router.get("/workspaces/:workspaceId/testcases/available", handle(applicationService, (svc, req) =>
+        svc.listAvailableTestcases({ workspaceId: req.params.workspaceId })));
+
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/add", handle(applicationService, (svc, req) =>
+        svc.addTestCaseToWorkspace({ workspaceId: req.params.workspaceId, testCaseId: req.params.testCaseId })));
+
     router.post("/workspaces/:workspaceId/testcases/:testCaseId/select", handle(applicationService, (svc, req) =>
         svc.selectTestCase({ workspaceId: req.params.workspaceId, testCaseId: req.params.testCaseId })));
 

@@ -19,7 +19,10 @@ import {
     generateTestcase,
     runTestcase,
     listWorkspaces,
-    deleteWorkspace
+    deleteWorkspace,
+    removeTestCaseFromWorkspace,
+    listAvailableTestcases,
+    addTestCaseToWorkspace
 } from "../api/automationV3Api.js";
 
 /*
@@ -87,6 +90,9 @@ export default function AutomationV3Page() {
     const [wsPopoverOpen, setWsPopoverOpen] = useState(false);
     const [wsManagerOpen, setWsManagerOpen] = useState(false);
     const [wsSearch, setWsSearch] = useState("");
+    // P0 (D/E) — loại testcase khỏi workspace + [+ Thêm testcase].
+    const [addTcOpen, setAddTcOpen] = useState(false);
+    const [availableTcs, setAvailableTcs] = useState([]);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -127,7 +133,7 @@ export default function AutomationV3Page() {
         getWorkspace(savedId)
             .then(data => {
                 if (cancelled) return;
-                setWorkspace({ workspaceId: savedId, items: Array.isArray(data.items) ? data.items : [] });
+                setWorkspace({ workspaceId: savedId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
             })
             .catch(() => {
                 if (cancelled) return;
@@ -170,7 +176,7 @@ export default function AutomationV3Page() {
         setBusy(true);
         try {
             const data = await getWorkspace(wsId);
-            setWorkspace({ workspaceId: wsId, items: Array.isArray(data.items) ? data.items : [] });
+            setWorkspace({ workspaceId: wsId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
             window.localStorage.setItem(STORAGE_KEY, wsId);
             setDrawerTestCaseId(null);
             setMappingPanel(null);
@@ -245,7 +251,7 @@ export default function AutomationV3Page() {
                     return next;
                 });
             }
-            setWorkspace({ workspaceId: created.workspaceId, items: created.items ?? [] });
+            setWorkspace({ workspaceId: created.workspaceId, items: created.items ?? [], approvedTotal: created.approvedCount ?? null });
             window.localStorage.setItem(STORAGE_KEY, created.workspaceId);
             const map = {};
             for (const tc of result.approved ?? []) {
@@ -385,7 +391,7 @@ export default function AutomationV3Page() {
         if (!workspace?.workspaceId) return;
         try {
             const data = await getWorkspace(workspace.workspaceId);
-            setWorkspace({ workspaceId: workspace.workspaceId, items: Array.isArray(data.items) ? data.items : [] });
+            setWorkspace({ workspaceId: workspace.workspaceId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? workspace.approvedTotal ?? null });
         } catch {
             /* giữ trạng thái cũ nếu tải lỗi */
         }
@@ -428,6 +434,13 @@ export default function AutomationV3Page() {
                 kind: "reject",
                 title: `Từ chối recording ${testCase.testCaseId}?`,
                 message: "Recording này sẽ bị đánh dấu từ chối và cần ghi lại.",
+                testCase
+            });
+        } else if (action === "remove_from_workspace") {
+            setConfirm({
+                kind: "remove_testcase",
+                title: `Loại ${testCase.testCaseId} khỏi Automation Workspace?`,
+                message: "Testcase sẽ không còn hiển thị trong workspace này. Không ảnh hưởng: Testcase đã duyệt · Action Library dùng chung.",
                 testCase
             });
         } else if (action === "record_again" || action === "setup") {
@@ -494,6 +507,10 @@ export default function AutomationV3Page() {
             } else if (confirm.kind === "new_workspace") {
                 // P0 lifecycle — user đã xác nhận chủ động tạo workspace mới.
                 setCreating(true);
+            } else if (confirm.kind === "remove_testcase") {
+                await removeTestCaseFromWorkspace(workspace.workspaceId, confirm.testCase.testCaseId);
+                await refreshWorkspace();
+                setNotice(`Đã loại ${confirm.testCase.testCaseId} khỏi workspace.`);
             } else if (confirm.kind === "delete_workspace") {
                 const wsId = confirm.workspaceId;
                 const isCurrent = wsId === workspace?.workspaceId;
@@ -504,7 +521,7 @@ export default function AutomationV3Page() {
                     const next = (workspaceList ?? []).filter(w => w.workspaceId !== wsId)[0] ?? null;
                     if (next) {
                         const data = await getWorkspace(next.workspaceId);
-                        setWorkspace({ workspaceId: next.workspaceId, items: Array.isArray(data.items) ? data.items : [] });
+                        setWorkspace({ workspaceId: next.workspaceId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
                         window.localStorage.setItem(STORAGE_KEY, next.workspaceId);
                         setNotice(`Đã xóa workspace cũ và chuyển sang "${next.module || "Workspace"}".`);
                     } else {
@@ -647,8 +664,43 @@ export default function AutomationV3Page() {
                 <section className="v3-section" aria-label="Chọn testcase">
                     <div className="v3-section__title">
                         <h2>Testcase đã duyệt</h2>
-                        <span className="v3-section__hint">Chỉ hiển thị reviewStatus = APPROVED</span>
+                        <span className="v3-section__hint">
+                            Testcase trong workspace: {meta.count} / {workspace?.approvedTotal ?? meta.count}
+                        </span>
+                        <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={async () => {
+                            setAddTcOpen(v => !v);
+                            if (!addTcOpen) {
+                                try { const d = await listAvailableTestcases(workspace.workspaceId); setAvailableTcs(Array.isArray(d) ? d : []); } catch { setAvailableTcs([]); }
+                            }
+                        }} disabled={recordingActive}>
+                            + Thêm testcase
+                        </button>
                     </div>
+                    {addTcOpen ? (
+                        <div className="v3-addtc">
+                            <p className="v3-act__note">Approved testcase chưa có trong workspace (thêm lại ở trạng thái mới):</p>
+                            {availableTcs.length === 0 ? (
+                                <p className="v3-act__note">Tất cả testcase đã có trong workspace.</p>
+                            ) : (
+                                availableTcs.map(tc => (
+                                    <div className="v3-ws-panel__item" key={tc.testCaseId}>
+                                        <div className="v3-ws-panel__item-main">
+                                            <b>{tc.testCaseId} — {tc.title}</b>
+                                            <span>{tc.module || ""} · {tc.type || ""}</span>
+                                        </div>
+                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={async () => {
+                                            try {
+                                                await addTestCaseToWorkspace(workspace.workspaceId, tc.testCaseId);
+                                                await refreshWorkspace();
+                                                setAvailableTcs(prev => prev.filter(x => x.testCaseId !== tc.testCaseId));
+                                                setNotice(`Đã thêm ${tc.testCaseId} vào workspace.`);
+                                            } catch (e) { setError(e?.message ?? "Không thêm được testcase."); }
+                                        }}>Thêm</button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    ) : null}
                     <V3TestCaseList
                         testCases={enrichedItems}
                         selectedIds={selectedIds}
@@ -718,9 +770,11 @@ export default function AutomationV3Page() {
                     ? "Xóa recording"
                     : confirm?.kind === "delete_workspace"
                         ? "Xóa workspace"
-                        : confirm?.kind === "new_workspace"
-                            ? "Tạo workspace mới"
-                            : "Từ chối recording"}
+                        : confirm?.kind === "remove_testcase"
+                            ? "Loại khỏi workspace"
+                            : confirm?.kind === "new_workspace"
+                                ? "Tạo workspace mới"
+                                : "Từ chối recording"}
                 danger={confirm?.kind === "delete"}
                 busy={busy}
                 onCancel={() => setConfirm(null)}

@@ -148,6 +148,9 @@ export default function V3TestCaseCard({
                                         Đánh dấu chỉ kiểm thử thủ công
                                     </div>
                                 )}
+                                <div className="danger" role="button" tabIndex={0} onClick={() => onMenuAction?.("remove_from_workspace", testCase)}>
+                                    Loại khỏi workspace
+                                </div>
                                 {testCase.recordingId ? (
                                     <>
                                         <div role="button" tabIndex={0} onClick={() => onMenuAction?.("delete", testCase)}>

@@ -102,19 +102,23 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
             // P0 — canonical binding: step.target -> businessField (tester-owned/evidence).
             // Có binding -> lookup theo businessField (testData["Từ khóa tìm kiếm"]);
             // không binding -> target (technical key, fallback recorded theo contract).
-            const businessField = (testDataBindings && testDataBindings[target]) || target;
+            const rawBinding = testDataBindings && String(testDataBindings[target] ?? "").trim();
+            const hasBinding = Boolean(rawBinding);
+            const businessField = hasBinding ? rawBinding : target;
             const resolved = resolveTestValue({
                 purpose: purposeMap[businessField],
                 savedDrawerValue: confirmedTestData?.[businessField],
                 approvedJsonValue: pickApprovedValue(approvedTestData, businessField),
-                recordedCodeGenValue: step?.recordedValue,
+                // P0 — CÓ binding => KHÔNG fallback recorded (business value thiếu -> báo lỗi rõ);
+                // không binding => recorded là fallback theo contract.
+                recordedCodeGenValue: hasBinding ? undefined : step?.recordedValue,
                 envValue: undefined
             });
             if (resolved.source === TESTDATA_SOURCES.MISSING || resolved.value == null) {
-                diagnostics.push({ code: "TESTDATA_BINDING_REQUIRED", field: target });
+                diagnostics.push({ code: "TESTDATA_BINDING_REQUIRED", field: businessField });
                 return { line: null, runtimeEnv, diagnostics };
             }
-            if (String(purposeMap[target] ?? "").toUpperCase() === "EMPTY") {
+            if (String(purposeMap[businessField] ?? "").toUpperCase() === "EMPTY") {
                 return { line: null, runtimeEnv, diagnostics }; // EMPTY -> không điền
             }
             const envKey = envKeyFor(businessField);

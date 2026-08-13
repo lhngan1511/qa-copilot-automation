@@ -4,6 +4,7 @@ import { canGenerateForTestcase, generateGateReason } from "../../utils/automati
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 import { isSensitiveField } from "../../utils/sensitive.js";
+import { isSetupField, isLoginTestCase } from "../../utils/setupFields.js";
 
 /*
  V3ReviewDrawer — Drawer (6C + 6C.1: TESTCASE luôn là context chính).
@@ -44,9 +45,14 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
             for (const [k, v] of Object.entries(td)) entries.push([k, v]);
         }
         const merged = {};
-        for (const [k, v] of entries) merged[k] = String(v ?? "");
-        // KEY-FIX — thêm các field của selected actions (step.target) dù approved không có key đó.
-        for (const [k, v] of Object.entries(actionInputs())) if (!Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = String(v ?? "");
+        const isLoginTc = isLoginTestCase(testCase?.title, testCase?.module);
+        for (const [k, v] of entries) {
+            if (isSetupField(k) && !isLoginTc) continue; // setup approved field -> ẩn (trừ testcase Login)
+            merged[k] = String(v ?? "");
+        }
+        // KEY-FIX — thêm các field của selected actions (step.target) dù approved không có key đó
+        // (loại setup inputs env-bound).
+        for (const [k, v] of Object.entries(businessActionInputs())) if (!Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = String(v ?? "");
         // Ưu tiên confirmedTestData (tester đã edit) khi có.
         const confirmed = testCase?.confirmedTestData ?? null;
         if (confirmed && typeof confirmed === "object") {
@@ -89,6 +95,27 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                 const f = String(inp?.field ?? "").trim();
                 if (f && !Object.prototype.hasOwnProperty.call(out, f)) out[f] = String(inp?.recordedValue ?? "");
             }
+        }
+        return out;
+    };
+    /** P0 (C) — setup inputs (Login env-bound LOGIN_*) KHÔNG xuất hiện trong business Test Data. */
+    const businessActionInputs = () => {
+        const all = actionInputs();
+        const out = {};
+        for (const [k, v] of Object.entries(all)) {
+            if (isSetupField(k)) continue; // setup (Login) — dùng shared env, không là business data
+            out[k] = v;
+        }
+        return out;
+    };
+    /** P0 (C) — approved fields: ẩn credential (Tài khoản/Mật khẩu/Mã xác nhận) TRỪ KHI testcase test Login. */
+    const approvedBusinessValues = () => {
+        const all = approvedTdValues();
+        const out = {};
+        const loginTc = isLoginTestCase(testCase?.title, testCase?.module);
+        for (const [k, v] of Object.entries(all)) {
+            if (isSetupField(k) && !loginTc) continue;
+            out[k] = v;
         }
         return out;
     };
@@ -152,10 +179,10 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                             {(() => {
                                 const draft = tdDraft ?? {};
                                 const bindings = { ...(testCase?.testDataBindings ?? {}), ...(tdBindings ?? {}) };
-                                const actionKeys = Object.keys(actionInputs());
+                                const actionKeys = Object.keys(businessActionInputs());
                                 const mappedTargets = new Set(Object.keys(bindings));
-                                // Business fields = approved keys + (target đã map → businessField).
-                                const businessKeys = Object.keys(approvedTdValues());
+                                // Business fields = approved keys (đã lọc setup) + (target đã map → businessField).
+                                const businessKeys = Object.keys(approvedBusinessValues());
                                 for (const t of actionKeys) if (mappedTargets.has(t) && !businessKeys.includes(bindings[t])) businessKeys.push(bindings[t]);
                                 // Action inputs CHƯA map → hiển thị như technical (để tester map hoặc fallback).
                                 const unmappedInputs = actionKeys.filter(t => !mappedTargets.has(t));
@@ -168,7 +195,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                         {businessKeys.map(k => {
                                             // Value của business field: confirmed > approved; hint recorded của input đã map.
                                             const boundTarget = actionKeys.find(t => bindings[t] === k);
-                                            const rec = boundTarget ? actionInputs()[boundTarget] : null;
+                                            const rec = boundTarget ? businessActionInputs()[boundTarget] : null;
                                             const recHint = rec != null && rec !== "" && rec !== draft[k] ? ` · giá trị trong bản ghi: ${isSensitiveField(k) ? "••••" : rec}` : "";
                                             return (
                                             <label className="v3-td-field" key={k}>
@@ -199,14 +226,14 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                                     <option value="">— chọn input của thao tác (nếu có) —</option>
                                                     {actionKeys
                                                         .filter(t => t === boundTarget || !mappedTargets.has(t))
-                                                        .map(t => <option key={t} value={t}>{t}{actionInputs()[t] ? ` (bản ghi: ${isSensitiveField(t) ? "••••" : actionInputs()[t]})` : ""}</option>)}
+                                                        .map(t => <option key={t} value={t}>{t}{businessActionInputs()[t] ? ` (bản ghi: ${isSensitiveField(t) ? "••••" : businessActionInputs()[t]})` : ""}</option>)}
                                                 </select>
                                             </label>
                                             );
                                         })}
                                         {unmappedInputs.map(k => (
                                             <label className="v3-td-field" key={k}>
-                                                <span>{k}<span className="v3-exp__note"> · kỹ thuật (chưa map business field) — bản ghi: {isSensitiveField(k) ? "••••" : actionInputs()[k] || "—"}</span></span>
+                                                <span>{k}<span className="v3-exp__note"> · kỹ thuật (chưa map business field) — bản ghi: {isSensitiveField(k) ? "••••" : businessActionInputs()[k] || "—"}</span></span>
                                                 <input
                                                     className="v3-input"
                                                     type={isSensitiveField(k) ? "password" : "text"}
@@ -224,8 +251,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                             {/* [Khôi phục] secondary — CHỈ hiện khi approved có value và automation data đã khác approved. */}
                                             {Object.keys(approvedTdValues()).length > 0 && tdHasEdited ? (
                                                 <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
-                                                    const restored = { ...approvedTdValues() };
-                                                    for (const k of Object.keys(actionInputs())) if (!Object.prototype.hasOwnProperty.call(restored, k)) restored[k] = "";
+                                                    const restored = { ...approvedBusinessValues() };
+                                                    for (const k of Object.keys(businessActionInputs())) if (!Object.prototype.hasOwnProperty.call(restored, k)) restored[k] = "";
                                                     setTdDraft(restored);
                                                     setTdBindings({});
                                                     persistTd(restored);
@@ -255,12 +282,12 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 const appr = testCase?.testData?.fields ?? null;
                                 const bindings = testCase?.testDataBindings ?? {};
                                 const map = {};
-                                // Action input chưa map → technical (fallback recorded).
-                                for (const [k, f] of Object.entries(actionInputs())) {
+                                // Action input chưa map → technical (fallback recorded); bỏ setup inputs.
+                                for (const [k, f] of Object.entries(businessActionInputs())) {
                                     const bf = bindings[k] || k;
                                     if (!Object.prototype.hasOwnProperty.call(map, bf)) map[bf] = String(f ?? "");
                                 }
-                                if (appr && typeof appr === "object") for (const [k, f] of Object.entries(appr)) map[k] = String(f && typeof f === "object" ? f.value : f ?? "");
+                                for (const [k, f] of Object.entries(approvedBusinessValues())) map[k] = String(f ?? "");
                                 if (conf && typeof conf === "object") for (const [k, v] of Object.entries(conf)) map[k] = String(v ?? "");
                                 const entries = Object.entries(map).filter(([, v]) => v !== "");
                                 if (entries.length === 0) return <p className="v3-act__note">Testcase chưa có dữ liệu kiểm thử.</p>;

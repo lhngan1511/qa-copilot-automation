@@ -36,6 +36,21 @@ export function getWorkspace(workspaceId) {
     return apiClient.get(`${BASE}/workspaces/${encodeURIComponent(workspaceId)}`);
 }
 
+/** P0 (D) — Loại testcase khỏi workspace (approved/library/recording không đổi). */
+export function removeTestCaseFromWorkspace(workspaceId, testCaseId) {
+    return apiClient.delete(`${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}`);
+}
+
+/** P0 (E) — Approved testcase CHƯA có trong workspace (cho [+ Thêm testcase]). */
+export function listAvailableTestcases(workspaceId) {
+    return apiClient.get(`${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/available`);
+}
+
+/** P0 (E) — Thêm lại testcase (trạng thái mới, không phục hồi automation state cũ). */
+export function addTestCaseToWorkspace(workspaceId, testCaseId) {
+    return apiClient.post(`${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/add`, { headers: jsonHeaders(), body: "{}" });
+}
+
 /** POST .../testcases/:testCaseId/select */
 export function selectTestCase(workspaceId, testCaseId) {
     return apiClient.post(

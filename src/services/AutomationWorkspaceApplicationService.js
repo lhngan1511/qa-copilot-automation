@@ -157,7 +157,9 @@ export default class AutomationWorkspaceApplicationService {
             expectedResult: String(tc?.expectedResult ?? tc?.expected ?? "").trim()
         }));
         const ws = this.workspace.create({ mode, module: module || testCases[0]?.module || "", testCases });
+        const approvedTotal = (ws?.approvedTestCaseSnapshot ?? []).length;
         return {
+            approvedTotal,
             workspaceId: ws.workspaceId,
             status: mode,
             approvedCount: testCases.length,
@@ -182,6 +184,33 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** P0-D (C) — Xóa workspace (confirm phía UI). KHÔNG cascade Action Library/approved/generated. */
+    /** P0 (D) — Loại testcase khỏi workspace (approved/library/recording/generated không đổi). */
+    removeTestCaseFromWorkspace({ workspaceId, testCaseId }) {
+        this.ensureWorkspace(workspaceId);
+        const removed = this.workspace?.removeTestCase?.(workspaceId, testCaseId) ?? false;
+        if (!removed) fail(V3_ERRORS.TESTCASE_NOT_FOUND, `Không tìm thấy testcase ${testCaseId} trong workspace.`);
+        return { workspaceId, testCaseId, removed: true };
+    }
+
+    /** P0 (E) — Approved testcase CHƯA có trong workspace (để [+ Thêm testcase]). */
+    listAvailableTestcases({ workspaceId }) {
+        this.ensureWorkspace(workspaceId);
+        const ws = this.workspace.get(workspaceId);
+        const snap = ws?.approvedTestCaseSnapshot ?? [];
+        const selected = new Set((ws?.selectedTestCases ?? []).map(tc => tc.testCaseId));
+        return snap
+            .filter(tc => !selected.has(tc.id))
+            .map(tc => ({ testCaseId: tc.id, title: tc.title, module: tc.module, type: tc.type }));
+    }
+
+    /** P0 (E) — Thêm lại testcase (trạng thái MỚI, không phục hồi automation state cũ). */
+    addTestCaseToWorkspace({ workspaceId, testCaseId }) {
+        this.ensureWorkspace(workspaceId);
+        const entry = this.workspace?.addTestCase?.(workspaceId, testCaseId) ?? null;
+        if (!entry) fail(V3_ERRORS.INVALID_REQUEST, `Không thêm được testcase ${testCaseId} (đã có hoặc không trong snapshot).`);
+        return this.toItem(entry, workspaceId);
+    }
+
     deleteWorkspace({ workspaceId }) {
         const removed = this.workspace?.remove?.(workspaceId) ?? false;
         if (!removed) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
@@ -191,7 +220,9 @@ export default class AutomationWorkspaceApplicationService {
     getWorkspace(workspaceId) {
         const ws = this.workspace.get(workspaceId);
         if (!ws) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
+        const approvedTotal = (ws?.approvedTestCaseSnapshot ?? []).length;
         return {
+            approvedTotal,
             workspaceId: ws.workspaceId,
             module: ws.module,
             source: ws.source,

@@ -75,6 +75,16 @@ export default class AutomationWorkspace {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             selectedTestCases: (Array.isArray(testCases) ? testCases : []).map(tc => this.initTestCase(tc)),
+            // P0 (D/E) — snapshot approved testcase (để "Loại khỏi workspace" rồi "+ Thêm testcase" lại
+            // được; KHÔNG sửa approved-testcases.json).
+            approvedTestCaseSnapshot: (Array.isArray(testCases) ? testCases : []).map(tc => ({
+                id: String(tc?.id ?? tc?.testcaseId ?? "").trim(),
+                title: String(tc?.title ?? tc?.scenario ?? "").trim(),
+                module: String(tc?.module ?? "").trim(),
+                type: String(tc?.type ?? "").trim(),
+                testData: tc?.testData ?? null,
+                expectedResult: String(tc?.expectedResult ?? tc?.expected ?? "").trim()
+            })),
             // 6B — ActionBlock library (canonical reusable automation artifact, snapshot steps).
             actionBlocks: []
         };
@@ -144,6 +154,32 @@ export default class AutomationWorkspace {
         this.workspaces.splice(idx, 1);
         this.persist();
         return true;
+    }
+
+    /** P0 (D) — Loại testcase khỏi workspace (chỉ xóa entry; approved/library/recording/generated giữ nguyên). */
+    removeTestCase(workspaceId, testCaseId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return false;
+        const before = ws.selectedTestCases.length;
+        ws.selectedTestCases = (ws.selectedTestCases ?? []).filter(tc => tc.testCaseId !== testCaseId);
+        if (ws.selectedTestCases.length === before) return false;
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return true;
+    }
+
+    /** P0 (E) — Thêm lại testcase từ snapshot approved (trạng thái MỚI, không phục hồi automation cũ). */
+    addTestCase(workspaceId, testCaseId) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        if ((ws.selectedTestCases ?? []).some(tc => tc.testCaseId === testCaseId)) return null;
+        const snap = (ws.approvedTestCaseSnapshot ?? []).find(tc => tc.id === testCaseId);
+        if (!snap) return null;
+        const entry = this.initTestCase(snap);
+        ws.selectedTestCases.push(entry);
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry;
     }
 
     setSelected(workspaceId, testCaseId, selected) {
