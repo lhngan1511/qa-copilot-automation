@@ -1052,12 +1052,13 @@ export default class AutomationWorkspaceApplicationService {
     /** Tester sửa Expected Result (working copy trong workspace — KHÔNG sửa approved). Rỗng → về bản gốc. */
     /** P0-A — Lưu Test Data tester edit cho lần automation (persist trong workspace,
      *  KHÔNG ghi ngược approved-testcases.json). Shape: { "<field>": "<value>" }. */
-    saveTestData({ workspaceId, testCaseId, testData = null }) {
+    saveTestData({ workspaceId, testCaseId, testData = null, bindings = null }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const normalized = testData && typeof testData === "object"
             ? Object.fromEntries(Object.entries(testData).map(([k, v]) => [k, String(v ?? "")]))
             : {};
-        this.workspace.saveTestData(workspaceId, testCaseId, normalized);
+        // P0 — canonical binding { stepTarget: businessField } (tester-owned; không AI tự quyết).
+        this.workspace.saveTestData(workspaceId, testCaseId, normalized, bindings);
         return this.toItem(this.workspace.getTestCase(workspaceId, testCaseId), workspaceId);
     }
 
@@ -1252,6 +1253,7 @@ export default class AutomationWorkspaceApplicationService {
                 testCaseId,
                 approvedTestData,
                 confirmedTestData: confirmedData,
+                testDataBindings: entry.testDataBindings ?? {},
                 confirmedAssertions,
                 segments: blocksPayload
             });
@@ -1409,6 +1411,7 @@ export default class AutomationWorkspaceApplicationService {
             // và confirmedTestData (tester edit cho lần automation — persist riêng, KHÔNG sửa approved).
             testData: entry.approvedTestData ?? null,
             confirmedTestData: entry.confirmedTestData ?? null,
+            testDataBindings: entry.testDataBindings ?? {},
             recordingSummary: rec
                 ? { status: rec.status, recordingId: rec.recordingId, version: rec.recordingVersion, hash: rec.recordingHash, approvedBy: rec.approvedBy, approvedAt: rec.approvedAt }
                 : { status: "NOT_RECORDED", recordingId: null, version: null, hash: null, approvedBy: null, approvedAt: null },

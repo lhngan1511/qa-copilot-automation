@@ -45,7 +45,7 @@ export default class GenerateService {
      * @param {object} o.setupRecordingId?  nếu có, dùng recording SETUP này (mặc định: SETUP segments của các recording liên quan)
      * @param {Array}  o.segments?          refs [{segmentId, recordingId, orderInTestCase}] từ Workspace (5C-0)
      */
-    generate({ workspaceId, testCaseId, approvedTestData = {}, confirmedTestData = {}, confirmedAssertions = [], setupRecordingId = null, segments = null }) {
+    generate({ workspaceId, testCaseId, approvedTestData = {}, confirmedTestData = {}, testDataBindings = {}, confirmedAssertions = [], setupRecordingId = null, segments = null }) {
         const ws = this.workspace?.get(workspaceId);
         if (!ws) {
             return { ok: false, errorCode: GENERATE_ERRORS.WORKSPACE_NOT_FOUND, reason: "Không tìm thấy workspace." };
@@ -73,6 +73,7 @@ export default class GenerateService {
                 testcaseRecording: resolved.mainRecording,
                 setupRecording: null, // block SETUP nằm trong sequence như tester sắp (không tự reorder)
                 confirmedTestData,
+                testDataBindings,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: resolved.mainRecording.approvedBy ?? null,
@@ -90,6 +91,7 @@ export default class GenerateService {
                 testcaseRecording: resolved.mainRecording,
                 setupRecording: null, // steps SETUP đã ghép sẵn trong mainRecording.steps
                 confirmedTestData,
+                testDataBindings,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: resolved.mainRecording.approvedBy ?? null,
@@ -120,6 +122,7 @@ export default class GenerateService {
                 testcaseRecording: raw,
                 setupRecording,
                 confirmedTestData,
+                testDataBindings,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: raw.approvedBy ?? null,

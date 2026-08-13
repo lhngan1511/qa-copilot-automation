@@ -176,7 +176,8 @@ export default function createAutomationV3Routes({ applicationService = null } =
         svc.saveTestData({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
-            testData: req.body?.testData ?? {}
+            testData: req.body?.testData ?? {},
+            bindings: req.body?.bindings ?? null
         })));
 
     router.patch("/workspaces/:workspaceId/testcases/:testCaseId/expected-result", handle(applicationService, (svc, req) =>

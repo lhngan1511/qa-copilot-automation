@@ -79,7 +79,7 @@ function pickApprovedValue(approvedTestData, target) {
  *  P0-A — testDataMap: map target → value (từ approved/confirmed testcase data).
  *  Khi có mapping evidence → `fill(testData["<target>"])` (dễ sửa về sau);
  *  KHÔNG có (recorded/fallback) → inline như cũ. KHÔNG invent mapping. */
-export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {}, testDataMap = null } = {}) {
+export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {}, testDataMap = null, testDataBindings = null } = {}) {
     const diagnostics = [];
     const runtimeEnv = {};
     const action = String(step?.actionType ?? "").toUpperCase();
@@ -99,10 +99,14 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
         }
         case "FILL": {
             const target = String(step?.target ?? "");
+            // P0 — canonical binding: step.target -> businessField (tester-owned/evidence).
+            // Có binding -> lookup theo businessField (testData["Từ khóa tìm kiếm"]);
+            // không binding -> target (technical key, fallback recorded theo contract).
+            const businessField = (testDataBindings && testDataBindings[target]) || target;
             const resolved = resolveTestValue({
-                purpose: purposeMap[target],
-                savedDrawerValue: confirmedTestData?.[target],
-                approvedJsonValue: pickApprovedValue(approvedTestData, target),
+                purpose: purposeMap[businessField],
+                savedDrawerValue: confirmedTestData?.[businessField],
+                approvedJsonValue: pickApprovedValue(approvedTestData, businessField),
                 recordedCodeGenValue: step?.recordedValue,
                 envValue: undefined
             });
@@ -113,14 +117,14 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
             if (String(purposeMap[target] ?? "").toUpperCase() === "EMPTY") {
                 return { line: null, runtimeEnv, diagnostics }; // EMPTY -> không điền
             }
-            const envKey = envKeyFor(target);
+            const envKey = envKeyFor(businessField);
             if (envKey) {
                 runtimeEnv[envKey] = { value: resolved.value, source: resolved.source };
                 return { line: `  await ${loc}.fill(process.env.${envKey} ?? "");`, runtimeEnv, diagnostics };
             }
-            // P0-A — testcase-confirmed data (approved/confirmed) đi qua testData object.
-            if (testDataMap && Object.prototype.hasOwnProperty.call(testDataMap, target)) {
-                return { line: `  await ${loc}.fill(testData[${JSON.stringify(target)}]);`, runtimeEnv, diagnostics };
+            // P0-A — testcase-confirmed data (approved/confirmed) đi qua testData object (key = businessField).
+            if (testDataMap && Object.prototype.hasOwnProperty.call(testDataMap, businessField)) {
+                return { line: `  await ${loc}.fill(testData[${JSON.stringify(businessField)}]);`, runtimeEnv, diagnostics };
             }
             return { line: `  await ${loc}.fill(${JSON.stringify(resolved.value)});`, runtimeEnv, diagnostics };
         }
@@ -171,6 +175,7 @@ export function renderV3Spec({
     confirmedTestData = {},
     confirmedAssertions = [],
     approvedTestData = {},
+    testDataBindings = {},
     approvedBy = null,
     approvedAt = null
 }) {
@@ -226,19 +231,20 @@ export function renderV3Spec({
         for (const step of rec?.steps ?? []) {
             if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
             const target = String(step?.target ?? "").trim();
-            if (!target || Object.prototype.hasOwnProperty.call(testDataMap, target)) continue;
-            // P0-A — sensitive field KHÔNG đưa vào testData (không expose value); renderStep
-            // xử lý qua envKeyFor → process.env.TESTDATA_* (an toàn).
-            if (isSensitiveField(target)) continue;
+            if (!target) continue;
+            // P0 — canonical binding: key trong testData = businessField (không duplicate technical key).
+            const businessField = (testDataBindings && testDataBindings[target]) || target;
+            if (Object.prototype.hasOwnProperty.call(testDataMap, businessField)) continue;
+            if (isSensitiveField(businessField)) continue;
             const resolved = resolveTestValue({
-                purpose: purposeMap[target],
-                savedDrawerValue: confirmedTestData?.[target],
-                approvedJsonValue: pickApprovedValue(approvedTestData, target),
+                purpose: purposeMap[businessField],
+                savedDrawerValue: confirmedTestData?.[businessField],
+                approvedJsonValue: pickApprovedValue(approvedTestData, businessField),
                 recordedCodeGenValue: step?.recordedValue,
                 envValue: undefined
             });
             if (resolved.source === TESTDATA_SOURCES.APPROVED_JSON || resolved.source === TESTDATA_SOURCES.USER_CONFIRMED) {
-                testDataMap[target] = resolved.value;
+                testDataMap[businessField] = resolved.value;
             }
         }
     };
@@ -248,7 +254,7 @@ export function renderV3Spec({
     const renderRecording = rec => {
         const lines = [];
         for (const step of rec?.steps ?? []) {
-            const r = renderStep(step, { purposeMap, confirmedTestData, approvedTestData, testDataMap });
+            const r = renderStep(step, { purposeMap, confirmedTestData, approvedTestData, testDataMap, testDataBindings });
             if (r.line) lines.push(r.line);
             for (const [k, v] of Object.entries(r.runtimeEnv || {})) runtimeEnv[k] = v;
             for (const d of r.diagnostics || []) if (d.code === "TESTDATA_BINDING_REQUIRED") bindingDiag.push(d.field);

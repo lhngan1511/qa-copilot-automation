@@ -155,10 +155,10 @@ export function reorderTestCaseSegments(workspaceId, testCaseId, segmentIds) {
 
 /** PATCH .../testcases/:testCaseId/test-data — lưu Test Data tester edit cho automation
  *  (persist workspace; KHÔNG sửa approved testcase). Shape { "<field>": "<value>" }. */
-export function saveTestData(workspaceId, testCaseId, testData) {
+export function saveTestData(workspaceId, testCaseId, testData, bindings = null) {
     return apiClient.patch(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/test-data`,
-        { headers: jsonHeaders(), body: JSON.stringify({ testData }) }
+        { headers: jsonHeaders(), body: JSON.stringify({ testData, bindings }) }
     );
 }
 

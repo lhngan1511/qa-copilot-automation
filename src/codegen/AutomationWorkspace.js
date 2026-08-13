@@ -114,6 +114,8 @@ export default class AutomationWorkspace {
             // 6B — TestCaseAutomationBinding (CANONICAL): sequence các ActionBlock theo THỨ TỰ tester xác nhận.
             binding: { sequence: [] }, // [{ blockId, order }]
             // 5C — Expected Result: bản gốc từ approved (chỉ đọc) + bản làm việc do tester sửa (workspace).
+            // P0 — canonical Test Data binding: { "<step.target>": "<businessField>" } (tester-owned/evidence).
+            testDataBindings: {},
             expectedResult: String(tc?.expectedResult ?? "").trim(),
             expectedResultEdited: null
         };
@@ -193,7 +195,7 @@ export default class AutomationWorkspace {
     }
 
     /** Lưu confirmedTestData của tester (dữ liệu đã xác nhận) — lưu workspace, không sửa approved. */
-    saveTestData(workspaceId, testCaseId, confirmedTestData) {
+    saveTestData(workspaceId, testCaseId, confirmedTestData, testDataBindings) {
         const ws = this.get(workspaceId);
         if (!ws) return null;
         const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
@@ -201,6 +203,16 @@ export default class AutomationWorkspace {
         entry.confirmedTestData = confirmedTestData && typeof confirmedTestData === "object"
             ? confirmedTestData
             : (entry.confirmedTestData ?? null);
+        // P0 — canonical binding: { stepTarget: businessField } (tester-owned, persist reload giữ).
+        if (testDataBindings && typeof testDataBindings === "object") {
+            const clean = {};
+            for (const [k, v] of Object.entries(testDataBindings)) {
+                const t = String(k ?? "").trim();
+                const b = String(v ?? "").trim();
+                if (t && b) clean[t] = b;
+            }
+            entry.testDataBindings = clean;
+        }
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return entry;
