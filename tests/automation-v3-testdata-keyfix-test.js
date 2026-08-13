@@ -63,11 +63,11 @@ const segInputs = item.segments.flatMap(s => s.inputs ?? []);
 assert.ok(segInputs.some(i => i.field === "text search"), "1: segment.inputs chứa field 'text search' (key renderer lookup)");
 assert.equal(segInputs.find(i => i.field === "text search").recordedValue, "Bộ", "1: recordedValue của FILL là 'Bộ'");
 
-// 2. Test Data editor union: approved key 'Giá trị tìm kiếm' VÀ action input 'text search' đều hiển thị (static)
+// 2. Test Data editor: dùng actionInputs (qua businessActionInputs) + KHÔNG lộ technical/hint recorded (static)
 const drawerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ReviewDrawer.jsx"), "utf8");
 const dClean = drawerSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-assert.ok(dClean.includes("actionInputs()") && dClean.includes("seg.inputs"), "2: editor dùng actionInputs (union approved + action inputs)");
-assert.ok(dClean.includes("giá trị trong bản ghi"), "2: editor hiển thị hint giá trị trong bản ghi");
+assert.ok(dClean.includes("businessActionInputs()") && dClean.includes("seg.inputs"), "2: editor dùng actionInputs (để biết technical target — không hiển thị)");
+assert.ok(!dClean.includes("giá trị trong bản ghi"), "2: KHÔNG hiện hint recorded value (kỹ thuật) trong editor");
 
 // 3. AUTO-BIND: 1 business field + 1 input (non-setup) -> binding tự động 'text search'->'Giá trị tìm kiếm'.
 const item0 = (await req("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC008");

@@ -112,7 +112,8 @@ const dClean = drawerSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/
 assert.ok(dClean.includes("tdBindings"), "F: binding state giữ (backend)");
 assert.ok(!dClean.includes("chọn input của thao tác") && !dClean.includes("kỹ thuật (chưa map business field)"), "F: KHÔNG lộ select/technical cho tester");
 assert.ok(dClean.includes("DỮ LIỆU TESTCASE") && dClean.includes("DỮ LIỆU CHUẨN BỊ"), "P0: run tab chia DỮ LIỆU TESTCASE / DỮ LIỆU CHUẨN BỊ");
-assert.ok(dClean.includes("Cấu hình môi trường") && dClean.includes("Thiếu dữ liệu chạy"), "P0: prep status env/missing");
+const viewSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "utils", "testDataView.js"), "utf8");
+assert.ok(viewSource.includes("Cấu hình môi trường") && viewSource.includes("Thiếu dữ liệu chạy"), "P0: prep status env/missing (util render-level)");
 assert.ok(dClean.includes("testCase?.testDataBindings"), "F: dùng canonical binding từ DTO");
 
 srv.close();

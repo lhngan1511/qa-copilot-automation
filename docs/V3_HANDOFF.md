@@ -1,6 +1,6 @@
 # HANDOFF — V3 Record by Testcase (Bản chuyển giao cho session/chat mới)
 
-> Cập nhật lần cuối: 2026-08-10 · Viết để một chat/session HOÀN TOÀN MỚI có thể tiếp tục
+> Cập nhật lần cuối: 2026-08-13 · Viết để một chat/session HOÀN TOÀN MỚI có thể tiếp tục
 > **đúng, không lệch nội dung**. Đây là nguồn duy nhất cần đọc trước khi làm tiếp.
 
 ---
@@ -202,6 +202,16 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - **C — Setup/Login:** không đưa credentials vào business Test Data (isSetupField lọc cả approved + action inputs, trừ testcase test Login); Login script vẫn `process.env.LOGIN_*`.
 - **6 — Tab Chạy thử chia rõ:** `DỮ LIỆU TESTCASE` (business only, confirmed>approved) · `DỮ LIỆU CHUẨN BỊ` (per selected action: `✓ Cấu hình môi trường` khi setup env / `✓ Sẵn sàng` khi có value / `⚠ Thiếu dữ liệu chạy` khi input non-setup rỗng) · THAO TÁC · KẾT QUẢ ĐÃ CHỌN · PLAYWRIGHT. Không liệt kê credentials/technical target. Generate chặn khi thiếu dữ liệu (renderer 422 như cũ — binding + value thiếu không fallback recorded).
 - **Tests:** binding-test thêm auto-bind assert (unique) + CASE D chuyển TC009 không data (không auto-bind → fallback recorded); keyfix-test cập nhật (auto-bind → sửa business field); setup-remove-test static (bỏ select/technical; DỮ LIỆU CHUẨN BỊ env/missing). Regression 39/39 PASS + build OK. **DỪNG — chờ tester Run TC008 thật (search 'cai'; Login LOGIN_*).**
+
+**P0 REGRESSION — TEST DATA UX VẪN HIỆN TECHNICAL/LOGIN DATA TRÊN UI THẬT (ĐÃ FIX 2026-08-13):**
+- **Báo cáo tester (UI thật):** TAB THÔNG TIN hiện "text search · giá trị trong bản ghi: Bộ" + input riêng "cai"; TAB CHẠY THỬ hiện "text search = cai", "Tài khoản = admin", "Mật khẩu = REDACTED", "Mã xác nhận = 125896". KHÔNG khớp b62495a.
+- **ROOT CAUSE (đã trace từng lớp, không đoán):**
+  1. **Bundle serve cũ:** `public/` (server static) commit cuối là `9d5f2c4` — TRƯỚC cả Test Data UI. Mọi checkout/pull KHÔNG có bundle mới → máy tester serve UI build cũ (c153c56..f75430f) → đúng các chuỗi tester báo. **Fix: commit bundle build mới vào repo** (pull = UI đúng).
+  2. **Self-binding 'text search'->'text search' (b62495a):** `autoBindTestData` đưa confirmed keys (legacy keyed theo step.target) vào `fieldNames` → normalize khớp chính target → binding target→chính nó → info tab `businessKeys` push `bindings[t]` → row "text search" hiện (kèm hint recorded). **Fix: fieldNames business-only** (bỏ setup env-bound — thêm `.toLowerCase()` vì regex không flag i, "Tài khoản" hoa T từng lọt — + bỏ technical target); **HEAL xóa self-binding** khi load/generate.
+  3. **Tab Chạy thử merge confirmedTestData RAW:** `DỮ LIỆU TESTCASE` merge mọi key confirmed (target + credential từ các phiên cũ). **Fix: projection business-only** qua util `web-ui/src/utils/testDataView.js` (`runTestcaseDataRows`: bỏ setup trừ testcase Login; target chưa binding thật → ẩn; binding thật → chiếu sang business field; self-binding = không binding).
+  4. **Hint '· giá trị trong bản ghi: X'** phơi recorded value kỹ thuật → **BỎ HẲN khỏi editor** (expected UI: label + input).
+- **HEAL dữ liệu cũ (deterministic, chạy trong `autoBindTestData` — getWorkspace/generate):** xóa binding self-referential; migrate confirmed keyed theo target → business field khi CÓ binding thật (`conf["text search"]="cai"` → `conf["Từ khóa tìm kiếm"]="cai"`, xóa key cũ) → giá trị tester sửa ('cai') tới được FILL, không fallback recorded 'Bộ'. Credentials legacy KHÔNG bị tự xóa (chỉ ẩn khỏi UI).
+- **Tests:** mới `automation-v3-p0-regression-ux-test.js` — (B) heal sau load: self-binding bị xóa + auto-bind unique + migrate confirmed; (C) generate dùng 'cai' không 'Bộ'; (E) **render-level**: gọi thẳng `testDataView` (ĐÚNG nguồn DOM render): info keys/run rows KHÔNG chứa "text search"/"Tài khoản"/"Mật khẩu"/"Mã xác nhận"; prep Đăng nhập → "✓ Cấu hình môi trường", Mở chức năng/Tìm kiếm → "✓ Sẵn sàng", thiếu → "⚠ Thiếu dữ liệu chạy"; login testcase vẫn hiện credentials; (F) static hết chuỗi cũ. Cập nhật keyfix-test (bỏ assert hint), setup-remove/binding-test (prep status giờ ở util). **V3 suite 41/41 PASS + build OK + bundle mới commit.**
 
 **P0 — REMOVE TESTCASE MENU + WORKSPACE COUNT (ĐÃ FIX 2026-08-12):**
 - **Root cause 1 (menu):** `showMenu = status REVIEW_REQUIRED/APPROVED || segments.length > 0` → TC001 (có segments) có menu; TC002/003 chưa automation không có. **Fix:** `const showMenu = true` — MỌI testcase trong workspace có menu `...` (ít nhất Thiết lập / Đánh dấu thủ công / Loại khỏi workspace), không phụ thuộc decision/actions/generate/run.

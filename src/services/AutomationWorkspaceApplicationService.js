@@ -243,20 +243,49 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** P0 — AUTO-BIND evidence: action input (step.target) -> business field khi tên khớp
-     *  (normalize). KHÔNG đoán khi không khớp. Tester không phải quản lý locator name. */
+     *  (normalize). KHÔNG đoán khi không khớp. Tester không phải quản lý locator name.
+     *
+     *  P0 REGRESSION — business-only: fieldNames CHỈ chứa business field name
+     *  (bỏ setup env-bound + bỏ technical target). Legacy confirmedTestData có thể
+     *  chứa key = step.target ('text search') — nếu đưa vào fieldNames, normalize khớp
+     *  chính target -> self-binding 'text search'->'text search' -> UI lộ technical row.
+     *
+     *  HEAL (self-healing dữ liệu cũ, deterministic):
+     *   - Xóa binding self-referential (target == businessField — kỹ thuật, không business);
+     *   - confirmedTestData keyed theo target (trước binding canonical) -> migrate giá trị
+     *     sang business field khi CÓ binding thật (giữ lựa chọn tester, không mất 'cai'). */
     autoBindTestData(workspaceId, testCaseId) {
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         if (!entry) return;
         const seq = (entry?.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
-        // Business field names từ approved (fields/inputs) + confirmed (chỉ business — KHÔNG setup env).
+        const setupRe = /tài khoản|username|account|mật khẩu|password|mã xác nhận|captcha/;
+        // Technical targets của selected actions (FILL) — phân biệt với business field name.
+        const targets = new Set();
+        for (const ref of seq) {
+            const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
+            if (!block) continue;
+            for (const step of block.steps ?? []) {
+                if (String(step.actionType ?? "").toUpperCase() !== "FILL") continue;
+                const target = String(step.target ?? "").trim();
+                if (target) targets.add(target);
+            }
+        }
+        // Business field names: approved (fields/inputs) + confirmed — KHÔNG setup env, KHÔNG target.
         const approved = entry.approvedTestData ?? {};
         const fieldNames = new Set();
-        if (approved.fields && typeof approved.fields === "object") for (const k of Object.keys(approved.fields)) fieldNames.add(k);
-        if (approved.inputs && typeof approved.inputs === "object") for (const k of Object.keys(approved.inputs)) fieldNames.add(k);
-        for (const k of Object.keys(entry.confirmedTestData ?? {})) fieldNames.add(k);
+        if (approved.fields && typeof approved.fields === "object") for (const k of Object.keys(approved.fields)) if (!setupRe.test(k.toLowerCase())) fieldNames.add(k);
+        if (approved.inputs && typeof approved.inputs === "object") for (const k of Object.keys(approved.inputs)) if (!setupRe.test(k.toLowerCase())) fieldNames.add(k);
+        for (const k of Object.keys(entry.confirmedTestData ?? {})) {
+            if (setupRe.test(k.toLowerCase()) || targets.has(k)) continue;
+            fieldNames.add(k);
+        }
         const bindings = { ...(entry.testDataBindings ?? {}) };
+        let changed = false;
+        // HEAL — bỏ binding self-referential (target == businessField) — kỹ thuật, không business.
+        for (const [t, bf] of Object.entries(bindings)) {
+            if (String(bf) === t) { delete bindings[t]; changed = true; }
+        }
         // Thu thập input chưa map (bỏ setup env-bound — Login dùng LOGIN_*, không auto-map).
-        const setupRe = /tài khoản|username|account|mật khẩu|password|mã xác nhận|captcha/;
         const pending = [];
         for (const ref of seq) {
             const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
@@ -268,7 +297,6 @@ export default class AutomationWorkspaceApplicationService {
                 pending.push(target);
             }
         }
-        let changed = false;
         for (const target of pending) {
             const nt = normalizeFieldName(target);
             let matched = null;
@@ -280,8 +308,19 @@ export default class AutomationWorkspaceApplicationService {
             if (!matched && pending.length === 1 && fieldNames.size === 1) matched = [...fieldNames][0];
             if (matched) { bindings[target] = matched; changed = true; }
         }
+        // HEAL — confirmed legacy keyed theo step.target -> business field khi có binding thật.
+        const conf = entry.confirmedTestData ?? {};
+        for (const [t, bf] of Object.entries(bindings)) {
+            if (t === bf) continue;
+            if (Object.prototype.hasOwnProperty.call(conf, t) && !Object.prototype.hasOwnProperty.call(conf, bf)) {
+                conf[bf] = conf[t];
+                delete conf[t];
+                changed = true;
+            }
+        }
         if (changed) {
             entry.testDataBindings = bindings;
+            entry.confirmedTestData = conf;
             const ws = this.workspace.get(workspaceId);
             if (ws) ws.updatedAt = new Date().toISOString();
             this.workspace.persist();
