@@ -52,6 +52,37 @@ export function runTestcaseDataRows({ approvedBusinessValues = {}, confirmedTest
         .map(([k, v]) => ({ key: k, value: String(v) }));
 }
 
+/** Canonical — businessField cho 1 action input (MIRROR backend resolveBusinessFieldForFill;
+ *  cùng rule để DỮ LIỆU CHUẨN BỊ khớp generate):
+ *  1. setup env-bound → chính nó (LOGIN_* — không map);
+ *  2. có binding → binding;
+ *  3. target ∈ approved keys (approved định nghĩa business) và có data → chính nó;
+ *  4. ĐÚNG 1 business field (non-setup, khác target) có data → field đó (recorded không thắng);
+ *  5. legacy confirmed keyed theo target → chính nó;
+ *  6. còn lại → chính nó. */
+export function canonicalBusinessFieldForInput(field, { bindings = {}, confirmedTestData = null, approvedFields = null }) {
+    const f = String(field ?? "").trim();
+    if (!f || isSetupField(f)) return f;
+    if (bindings[f]) return bindings[f];
+    const appr = approvedFields && typeof approvedFields === "object" ? approvedFields : {};
+    const conf = confirmedTestData && typeof confirmedTestData === "object" ? confirmedTestData : {};
+    const apprVal = appr[f];
+    const apprRaw = apprVal != null && typeof apprVal === "object" ? apprVal.value : apprVal;
+    if (Object.prototype.hasOwnProperty.call(appr, f) &&
+        ((apprRaw != null && String(apprRaw).trim() !== "") || (conf[f] != null && String(conf[f]).trim() !== ""))) return f;
+    const candidates = new Set();
+    const consider = (k, v) => {
+        const name = String(k ?? "").trim();
+        if (!name || name === f || isSetupField(name)) return;
+        const val = v == null ? "" : String(v && typeof v === "object" ? (v.value ?? "") : v).trim();
+        if (val !== "") candidates.add(name);
+    };
+    for (const [k, v] of Object.entries(appr)) consider(k, v);
+    for (const [k, v] of Object.entries(conf)) consider(k, v);
+    if (candidates.size === 1) return [...candidates][0];
+    return f;
+}
+
 /** DỮ LIỆU CHUẨN BỊ (tab Chạy thử): trạng thái chuẩn bị của 1 action
  *  (setup env / sẵn sàng / thiếu dữ liệu chạy). */
 export function actionPrepStatus({ inputs = [], bindings = {}, confirmedTestData = null, approvedFields = null }) {
@@ -66,7 +97,7 @@ export function actionPrepStatus({ inputs = [], bindings = {}, confirmedTestData
         if (!f) continue;
         if (isSetupField(f)) continue; // setup env — không cần value (Login dùng LOGIN_*)
         allSetup = false;
-        const bf = bindings[f] || f;
+        const bf = canonicalBusinessFieldForInput(f, { bindings, confirmedTestData: conf, approvedFields: appr });
         const bizVal = (conf && conf[bf] != null && String(conf[bf]).trim() !== "")
             ? String(conf[bf])
             : (appr && appr[bf] && typeof appr[bf] === "object" && String(appr[bf]?.value ?? "").trim() !== "" ? String(appr[bf].value) : null);

@@ -75,6 +75,83 @@ function pickApprovedValue(approvedTestData, target) {
     return direct;
 }
 
+/** Có data (non-empty) tại key trong confirmed (dạng {key: value})? */
+function hasDataAt(confirmedTestData, key) {
+    const v = confirmedTestData?.[key];
+    return v !== undefined && v !== null && String(v).trim() !== "";
+}
+
+/** Có data (non-empty) tại key trong approved (fields/inputs/direct)? */
+function hasApprovedDataAt(approvedTestData, key) {
+    if (!approvedTestData || typeof approvedTestData !== "object") return false;
+    if (approvedTestData.fields && typeof approvedTestData.fields === "object") {
+        const f = approvedTestData.fields[key];
+        const v = f && typeof f === "object" ? f.value : f;
+        if (v !== undefined && v !== null && String(v).trim() !== "") return true;
+    }
+    if (approvedTestData.inputs && typeof approvedTestData.inputs === "object") {
+        const v = approvedTestData.inputs[key];
+        if (v !== undefined && v !== null && String(v).trim() !== "") return true;
+    }
+    const direct = approvedTestData[key];
+    const dv = direct != null && typeof direct === "object" ? direct.value : direct;
+    return dv !== undefined && dv !== null && String(dv).trim() !== "";
+}
+
+/**
+ * P0 RUNTIME FIX (canonical) — businessField cho 1 FILL target. Deterministic, KHÔNG đoán:
+ *   1. Setup env-bound (LOGIN_*)  → target (giữ `process.env.LOGIN_*` path — KHÔNG bao giờ
+ *      map input Login sang business field khác).
+ *   2. Có binding canonical      → binding (tester-owned/evidence).
+ *   3. Target ∈ approved keys (approved ĐỊNH NGHĨA business field, VD 'Mã đơn vị tính')
+ *      và có data (approved/confirmed) → target.
+ *   4. ĐÚNG 1 business field (non-setup, KHÁC target) có data (confirmed/approved)
+ *      → business field đó. (Bất biến: recorded KHÔNG được thắng current business data —
+ *      kể cả khi auto-bind chưa kịp tạo binding — nhưng chỉ khi KHÔNG mơ hồ.)
+ *   5. Confirmed có data theo chính target (legacy keyfix — không có business field khác)
+ *      → target.
+ *   6. Còn lại → target (contract: recorded fallback chỉ khi không có testcase data).
+ */
+export function resolveBusinessFieldForFill(target, { testDataBindings = {}, confirmedTestData = {}, approvedTestData = {} } = {}) {
+    const t = String(target ?? "").trim();
+    if (!t) return t;
+    if (envKeyFor(t)) return t; // setup env-bound — LOGIN_*, không phải business data
+    const rawBinding = testDataBindings && String(testDataBindings[t] ?? "").trim();
+    if (rawBinding) return rawBinding;
+    const conf = confirmedTestData && typeof confirmedTestData === "object" ? confirmedTestData : {};
+    const approved = approvedTestData && typeof approvedTestData === "object" ? approvedTestData : {};
+    // Approved keys = định nghĩa business field names.
+    const approvedKeys = new Set();
+    if (approved.fields && typeof approved.fields === "object") for (const k of Object.keys(approved.fields)) approvedKeys.add(k);
+    if (approved.inputs && typeof approved.inputs === "object") for (const k of Object.keys(approved.inputs)) approvedKeys.add(k);
+    for (const k of Object.keys(approved)) if (k !== "fields" && k !== "inputs" && k !== "requirement") approvedKeys.add(k);
+    // Rule 3 — target LÀ business field (approved định nghĩa) và có data.
+    if (approvedKeys.has(t) && (hasApprovedDataAt(approved, t) || hasDataAt(conf, t))) return t;
+    // Rule 4 — unique business candidate (non-setup, non-empty data, KHÁC target).
+    const candidates = new Set();
+    const consider = (k, v) => {
+        const name = String(k ?? "").trim();
+        if (!name || name === t || envKeyFor(name)) return;
+        const val = v == null ? "" : (typeof v === "object" ? (v?.value ?? "") : v);
+        if (String(val).trim() !== "") candidates.add(name);
+    };
+    for (const [k, v] of Object.entries(conf)) consider(k, v);
+    if (approved.fields && typeof approved.fields === "object") {
+        for (const [k, f] of Object.entries(approved.fields)) consider(k, f);
+    }
+    if (approved.inputs && typeof approved.inputs === "object") {
+        for (const [k, v] of Object.entries(approved.inputs)) consider(k, v);
+    }
+    for (const [k, v] of Object.entries(approved)) {
+        if (k === "fields" || k === "inputs" || k === "requirement") continue; // meta
+        consider(k, v);
+    }
+    if (candidates.size === 1) return [...candidates][0];
+    // Rule 5 — legacy confirmed keyed theo target (keyfix).
+    if (hasDataAt(conf, t)) return t;
+    return t;
+}
+
 /** Render MỘT step — stateless: step → { line?, runtimeEnv?, diagnostics? }.
  *  P0-A — testDataMap: map target → value (từ approved/confirmed testcase data).
  *  Khi có mapping evidence → `fill(testData["<target>"])` (dễ sửa về sau);
@@ -99,12 +176,13 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
         }
         case "FILL": {
             const target = String(step?.target ?? "");
-            // P0 — canonical binding: step.target -> businessField (tester-owned/evidence).
-            // Có binding -> lookup theo businessField (testData["Từ khóa tìm kiếm"]);
-            // không binding -> target (technical key, fallback recorded theo contract).
+            // P0 RUNTIME FIX — canonical resolution: binding > unique business field (có data)
+            // > target (legacy keyfix) > recorded fallback. Recorded KHÔNG được thắng business data.
             const rawBinding = testDataBindings && String(testDataBindings[target] ?? "").trim();
             const hasBinding = Boolean(rawBinding);
-            const businessField = hasBinding ? rawBinding : target;
+            const businessField = hasBinding
+                ? rawBinding
+                : resolveBusinessFieldForFill(target, { testDataBindings, confirmedTestData, approvedTestData });
             const resolved = resolveTestValue({
                 purpose: purposeMap[businessField],
                 savedDrawerValue: confirmedTestData?.[businessField],
@@ -236,8 +314,9 @@ export function renderV3Spec({
             if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
             const target = String(step?.target ?? "").trim();
             if (!target) continue;
-            // P0 — canonical binding: key trong testData = businessField (không duplicate technical key).
-            const businessField = (testDataBindings && testDataBindings[target]) || target;
+            // P0 RUNTIME FIX — canonical resolution (cùng rule với renderStep):
+            // binding > unique business field (có data) > target (legacy keyfix).
+            const businessField = resolveBusinessFieldForFill(target, { testDataBindings, confirmedTestData, approvedTestData });
             if (Object.prototype.hasOwnProperty.call(testDataMap, businessField)) continue;
             if (isSensitiveField(businessField)) continue;
             const resolved = resolveTestValue({

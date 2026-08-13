@@ -273,11 +273,20 @@ export default class AutomationWorkspaceApplicationService {
         // Business field names: approved (fields/inputs) + confirmed — KHÔNG setup env, KHÔNG target.
         const approved = entry.approvedTestData ?? {};
         const fieldNames = new Set();
-        if (approved.fields && typeof approved.fields === "object") for (const k of Object.keys(approved.fields)) if (!setupRe.test(k.toLowerCase())) fieldNames.add(k);
-        if (approved.inputs && typeof approved.inputs === "object") for (const k of Object.keys(approved.inputs)) if (!setupRe.test(k.toLowerCase())) fieldNames.add(k);
-        for (const k of Object.keys(entry.confirmedTestData ?? {})) {
-            if (setupRe.test(k.toLowerCase()) || targets.has(k)) continue;
+        // Business fields CÓ DATA (non-setup, non-empty) — unique rule dùng cái này (canonical:
+        // không đoán theo số field tổng; chỉ cần ĐÚNG 1 business field có giá trị thật).
+        const businessFieldsWithData = new Set();
+        const considerBusiness = (k, raw) => {
+            if (setupRe.test(String(k ?? "").toLowerCase()) || targets.has(k)) return;
+            const v = raw == null ? "" : String(raw && typeof raw === "object" ? (raw.value ?? "") : raw).trim();
             fieldNames.add(k);
+            if (v !== "") businessFieldsWithData.add(k);
+        };
+        if (approved.fields && typeof approved.fields === "object") for (const [k, f] of Object.entries(approved.fields)) considerBusiness(k, f);
+        if (approved.inputs && typeof approved.inputs === "object") for (const [k, v] of Object.entries(approved.inputs)) considerBusiness(k, v);
+        for (const [k, v] of Object.entries(entry.confirmedTestData ?? {})) {
+            if (setupRe.test(k.toLowerCase()) || targets.has(k)) continue;
+            considerBusiness(k, v);
         }
         const bindings = { ...(entry.testDataBindings ?? {}) };
         let changed = false;
@@ -286,17 +295,24 @@ export default class AutomationWorkspaceApplicationService {
             if (String(bf) === t) { delete bindings[t]; changed = true; }
         }
         // Thu thập input chưa map (bỏ setup env-bound — Login dùng LOGIN_*, không auto-map).
-        const pending = [];
-        for (const ref of seq) {
-            const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
-            if (!block) continue;
-            for (const step of block.steps ?? []) {
-                if (String(step.actionType ?? "").toUpperCase() !== "FILL") continue;
-                const target = String(step.target ?? "").trim();
-                if (!target || bindings[target] || setupRe.test(target.toLowerCase())) continue;
-                pending.push(target);
-            }
-        }
+        // P0 RUNTIME FIX — dedupe: recording noise có thể FILL CÙNG input 2 lần ('text search'
+        // 'Bộ' rồi 'text search' '...') — KHÔNG tính là 2 input (unique rule phải chạy được).
+        const pending = [...new Set(
+            (() => {
+                const list = [];
+                for (const ref of seq) {
+                    const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
+                    if (!block) continue;
+                    for (const step of block.steps ?? []) {
+                        if (String(step.actionType ?? "").toUpperCase() !== "FILL") continue;
+                        const target = String(step.target ?? "").trim();
+                        if (!target || bindings[target] || setupRe.test(target.toLowerCase())) continue;
+                        list.push(target);
+                    }
+                }
+                return list;
+            })()
+        )];
         for (const target of pending) {
             const nt = normalizeFieldName(target);
             let matched = null;
@@ -304,8 +320,9 @@ export default class AutomationWorkspaceApplicationService {
                 const nf = normalizeFieldName(f);
                 if (nf && (nf === nt || nf.includes(nt) || nt.includes(nf))) { matched = f; break; }
             }
-            // Unique: CHỈ 1 input chưa map (non-setup) và CHỈ 1 business field -> auto-map.
-            if (!matched && pending.length === 1 && fieldNames.size === 1) matched = [...fieldNames][0];
+            // Unique: CHỈ 1 input chưa map (non-setup, đã dedupe) và CHỈ 1 business field CÓ DATA
+            // -> auto-map (không đoán: dữ liệu thật đơn trị; recorded không được thắng business data).
+            if (!matched && pending.length === 1 && businessFieldsWithData.size === 1) matched = [...businessFieldsWithData][0];
             if (matched) { bindings[target] = matched; changed = true; }
         }
         // HEAL — confirmed legacy keyed theo step.target -> business field khi có binding thật.
