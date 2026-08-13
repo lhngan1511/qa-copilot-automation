@@ -50,10 +50,13 @@ export function pickLatestApproved(recordings) {
 
 /** Map field credential/sensitive → runtime env key. */
 export function envKeyFor(target) {
+    // P0-C runtime bug — Login là REUSABLE/setup Action: credential từ SHARED runtime config
+    // (LOGIN_USERNAME / LOGIN_PASSWORD / LOGIN_CAPTCHA), KHÔNG phải TESTDATA_* (không tồn tại
+    // trong runtime). KHÔNG copy credentials vào business Test Data của testcase.
     const t = String(target ?? "").toLowerCase();
-    if (/tài khoản|username/.test(t)) return "TESTDATA_USERNAME";
-    if (/mật khẩu|password/.test(t)) return "TESTDATA_PASSWORD";
-    if (/mã xác nhận|captcha/.test(t)) return "TESTDATA_CAPTCHA";
+    if (/tài khoản|username|account/.test(t)) return "LOGIN_USERNAME";
+    if (/mật khẩu|password/.test(t)) return "LOGIN_PASSWORD";
+    if (/mã xác nhận|captcha/.test(t)) return "LOGIN_CAPTCHA";
     return null;
 }
 
@@ -125,7 +128,13 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
         case "CHECK": return { line: `  await ${loc}.check();`, runtimeEnv, diagnostics };
         case "UNCHECK": return { line: `  await ${loc}.uncheck();`, runtimeEnv, diagnostics };
         case "SELECT": return { line: `  await ${loc}.selectOption(${JSON.stringify(String(step?.recordedValue ?? ""))});`, runtimeEnv, diagnostics };
-        case "PRESS": return { line: `  await ${loc}.press(${JSON.stringify(String(step?.recordedValue ?? "Enter"))});`, runtimeEnv, diagnostics };
+        case "PRESS": {
+            // P0-C — guard dữ liệu cũ: block persist trước fix có thể chứa "REDACTED"
+            // (redact sai cho PRESS) → fallback "Enter" (an toàn, không crash Unknown key).
+            const key = String(step?.recordedValue ?? "Enter");
+            const safe = key === "REDACTED" ? "Enter" : key;
+            return { line: `  await ${loc}.press(${JSON.stringify(safe)});`, runtimeEnv, diagnostics };
+        }
         case "ASSERT": return { line: null, runtimeEnv, diagnostics }; // assertion xử lý riêng từ confirmedAssertions
         default:
             diagnostics.push({ code: "UNKNOWN_ACTION", action });

@@ -155,8 +155,10 @@ export function parseRecording(source) {
             else if (actionType === "GOTO") { valueKind = "URL"; recordedValue = argText.trim(); }
             else { valueKind = "EXPR"; recordedValue = argText.trim(); }
         }
-        // Đánh dấu sensitive + redact nếu field nhạy cảm.
-        if (isSensitiveField(target) && recordedValue != null && valueKind === "LITERAL") {
+        // P0-C runtime bug — redact sensitive CHỈ khi action mang VALUE thật (FILL).
+        // PRESS/SELECT chứa keyboard command (Tab/Enter/ArrowDown...) — KHÔNG phải secret,
+        // không được biến thành "REDACTED" (gây press("REDACTED") khi generate).
+        if (actionType === "FILL" && isSensitiveField(target) && recordedValue != null && valueKind === "LITERAL") {
             sensitive = true;
         }
 

@@ -196,6 +196,12 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
 - `expect()` không tính là action: stepCount chỉ actions; recordedAssertionCount riêng.
 - Test mới `tests/automation-v3-recorded-assertion-test.js` (A parser · B whole · C partial + trailing · D snapshot · E candidate source/status · F confirm→Generate · G ignore · H no-expect · I multiple · J count). Regression 12/12 PASS + build OK.
 
+**P0-C RUNTIME BUG — GENERATED LOGIN SCRIPT (credential + press redaction, ĐÃ FIX 2026-08-12):**
+- **Bug 1 (fill rỗng):** `rendererV3.envKeyFor` sinh `TESTDATA_USERNAME/PASSWORD/CAPTCHA` nhưng shared runtime config thật là `LOGIN_USERNAME/LOGIN_PASSWORD/LOGIN_CAPTCHA` → `fill(process.env.TESTDATA_PASSWORD ?? "")` luôn rỗng. **Fix:** envKeyFor → `LOGIN_*` (Login = REUSABLE/setup Action; KHÔNG copy credentials vào business Test Data TC001). Testcase đang TEST Login mới override (contract riêng).
+- **Bug 2 (press("REDACTED")):** `recordingParser` đặt `sensitive=true` cho MỌI actionType (kể cả PRESS) khi target nhạy cảm + literal → `press("Tab")` thành `recordedValue="REDACTED"` → generated `press("REDACTED")` → Playwright "Unknown key". **Fix:** chỉ redact khi `actionType === "FILL"` (value thật); PRESS/SELECT giữ key command (`Tab`/`Enter`/...). **Guard dữ liệu cũ:** block đã persist "REDACTED" trước fix → renderer PRESS fallback `"Enter"` (an toàn, không crash).
+- **Bug 3 (steps lặp):** trace — parser regex exec 1 match/step, renderer map 1:1 → **KHÔNG duplicate do hệ thống**; lặp fill/press = recording gốc lặp (case A — giữ, báo tester). Test chứng minh 4 step fill/press x2 giữ nguyên thứ tự.
+- **Test mới `automation-v3-login-credential-test.js`:** envKeyFor LOGIN_* (3 fields + business không bị map); FILL password → REDACTED + `fill(process.env.LOGIN_PASSWORD ?? "")` không plaintext; PRESS Tab → `press("Tab")` không REDACTED; legacy REDACTED → `press("Enter")`; parser không duplicate. Cập nhật api-test + renderer-test (TESTDATA_* → LOGIN_*). Regression 33/33 PASS + build OK. **DỪNG — chờ tester Generate + Run thật lại.**
+
 **P0-C — AUTOMATION RESULT + CHECK CONDITION + TEST RUN (ĐÃ IMPLEMENT 2026-08-12, không batch/Excel/CI):**
 - **Terminology:** đổi toàn bộ "Điều kiện xác nhận" → "Điều kiện kiểm tra" (UI + utils + CSS); phân biệt "Điều kiện kiểm tra tìm thấy" (candidate) / "đã chọn" (confirmed).
 - **Duplicate condition:** `saveDraftAssertion` chặn trùng theo **identity `matcher|locator|expected`** (KHÔNG dedupe theo label) → 400 `ASSERTION_DUPLICATE` + message "Điều kiện kiểm tra này đã được thêm." (fail() đúng status).

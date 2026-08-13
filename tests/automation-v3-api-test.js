@@ -223,7 +223,7 @@ async function main() {
     assert.ok(fs.existsSync(gen.body.outputPath), "file tồn tại");
     assert.ok(gen.body.metadata?.recording?.id, "metadata recording");
     assert.ok(Array.isArray(gen.body.runtimeEnvKeys), "runtimeEnvKeys array");
-    assert.ok(gen.body.runtimeEnvKeys.includes("TESTDATA_USERNAME"), "runtimeEnvKeys username");
+    assert.ok(gen.body.runtimeEnvKeys.includes("LOGIN_USERNAME"), "runtimeEnvKeys username (shared LOGIN_*)");
     assert.equal(gen.body.validation.spec.bindingValid, true, "binding valid");
     assert.equal(gen.body.validation.spec.syntaxValid, true, "syntax valid");
 
