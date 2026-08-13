@@ -119,6 +119,20 @@ function newBlockId() {
     return `BLK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** P0 — normalize tên field để so khớp evidence (bỏ dấu tiếng Việt + lower + strip ký tự đặc biệt). */
+function normalizeFieldName(name) {
+    const map = {
+        "àáạảãâầấậẩẫăằắặẳẵ": "a", "èéẹẻẽêềếệểễ": "e", "ìíịỉĩ": "i",
+        "òóọỏõôồốộổỗơờớợởỡ": "o", "ùúụủũưừứựửữ": "u", "ỳýỵỷỹ": "y",
+        "đ": "d"
+    };
+    let t = String(name ?? "").toLowerCase();
+    for (const [src, dst] of Object.entries(map)) {
+        for (const ch of src) t = t.split(ch).join(dst);
+    }
+    return t.replace(/[^a-z0-9]+/g, "").trim();
+}
+
 export default class AutomationWorkspaceApplicationService {
     constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null, runner = null } = {}) {
         this.workspace = workspace;       // AutomationWorkspace
@@ -228,6 +242,53 @@ export default class AutomationWorkspaceApplicationService {
         return this.toItem(entry, workspaceId);
     }
 
+    /** P0 — AUTO-BIND evidence: action input (step.target) -> business field khi tên khớp
+     *  (normalize). KHÔNG đoán khi không khớp. Tester không phải quản lý locator name. */
+    autoBindTestData(workspaceId, testCaseId) {
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        if (!entry) return;
+        const seq = (entry?.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Business field names từ approved (fields/inputs) + confirmed (chỉ business — KHÔNG setup env).
+        const approved = entry.approvedTestData ?? {};
+        const fieldNames = new Set();
+        if (approved.fields && typeof approved.fields === "object") for (const k of Object.keys(approved.fields)) fieldNames.add(k);
+        if (approved.inputs && typeof approved.inputs === "object") for (const k of Object.keys(approved.inputs)) fieldNames.add(k);
+        for (const k of Object.keys(entry.confirmedTestData ?? {})) fieldNames.add(k);
+        const bindings = { ...(entry.testDataBindings ?? {}) };
+        // Thu thập input chưa map (bỏ setup env-bound — Login dùng LOGIN_*, không auto-map).
+        const setupRe = /tài khoản|username|account|mật khẩu|password|mã xác nhận|captcha/;
+        const pending = [];
+        for (const ref of seq) {
+            const block = this.resolveBlock(workspaceId, ref.blockId) ?? null;
+            if (!block) continue;
+            for (const step of block.steps ?? []) {
+                if (String(step.actionType ?? "").toUpperCase() !== "FILL") continue;
+                const target = String(step.target ?? "").trim();
+                if (!target || bindings[target] || setupRe.test(target.toLowerCase())) continue;
+                pending.push(target);
+            }
+        }
+        let changed = false;
+        for (const target of pending) {
+            const nt = normalizeFieldName(target);
+            let matched = null;
+            for (const f of fieldNames) {
+                const nf = normalizeFieldName(f);
+                if (nf && (nf === nt || nf.includes(nt) || nt.includes(nf))) { matched = f; break; }
+            }
+            // Unique: CHỈ 1 input chưa map (non-setup) và CHỈ 1 business field -> auto-map.
+            if (!matched && pending.length === 1 && fieldNames.size === 1) matched = [...fieldNames][0];
+            if (matched) { bindings[target] = matched; changed = true; }
+        }
+        if (changed) {
+            entry.testDataBindings = bindings;
+            const ws = this.workspace.get(workspaceId);
+            if (ws) ws.updatedAt = new Date().toISOString();
+            this.workspace.persist();
+        }
+        return bindings;
+    }
+
     deleteWorkspace({ workspaceId }) {
         const removed = this.workspace?.remove?.(workspaceId) ?? false;
         if (!removed) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
@@ -240,6 +301,8 @@ export default class AutomationWorkspaceApplicationService {
         // P0 — M = tổng approved có thể quản lý: snapshot (workspace mới) hoặc
         // selectedCount (workspace cũ thiếu snapshot) — không bao giờ 0 khi có testcase.
         const approvedTotal = (ws?.approvedTestCaseSnapshot ?? []).length || (ws?.selectedTestCases ?? []).length;
+        // P0 — auto-bind evidence trước khi build DTO (editor/run hiển thị theo business field).
+        for (const e of ws?.selectedTestCases ?? []) this.autoBindTestData(workspaceId, e.testCaseId);
         return {
             approvedTotal,
             workspaceId: ws.workspaceId,
@@ -1285,6 +1348,8 @@ export default class AutomationWorkspaceApplicationService {
             }
         }
         // Assertion phải có TESTER_CONFIRMED.
+        // P0 — auto-bind evidence trước generate (binding mới từ tên khớp được dùng).
+        this.autoBindTestData(workspaceId, testCaseId);
         const confirmedAssertions = (entry.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED");
         if (confirmedAssertions.length === 0) {
             fail(V3_ERRORS.ASSERTION_CONFIRMATION_REQUIRED, "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.");

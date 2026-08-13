@@ -139,7 +139,8 @@ const drawerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "
 const dClean = drawerSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 assert.ok(dClean.includes("businessActionInputs()") && dClean.includes("isSetupField(k)"), "CASE5: setup inputs bị lọc khỏi business Test Data");
 assert.ok(dClean.includes("approvedBusinessValues()") && dClean.includes("isLoginTestCase"), "CASE7: approved credentials ẩn trừ testcase Login (isLoginTestCase)");
-assert.ok(dClean.includes("mappedTargets") && dClean.includes("unmappedInputs"), "CASE4: technical đã map ẩn; chưa map hiện nhãn kỹ thuật");
+assert.ok(!dClean.includes("chọn input của thao tác") && !dClean.includes("kỹ thuật (chưa map business field)"), "CASE4: bỏ select/technical khỏi tester UI");
+assert.ok(dClean.includes("DỮ LIỆU CHUẨN BỊ") && dClean.includes("Cấu hình môi trường") && dClean.includes("Thiếu dữ liệu chạy"), "P0: run tab DỮ LIỆU CHUẨN BỊ (env/ready/missing)");
 const pageSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "pages", "AutomationV3Page.jsx"), "utf8");
 assert.ok(pageSource.includes("Loại khỏi workspace") === false || pageSource.includes("removeTestCaseFromWorkspace"), "CASE8: page dùng API remove");
 assert.ok(pageSource.includes("+ Thêm testcase") && pageSource.includes("listAvailableTestcases"), "CASE11: UI có [+ Thêm testcase] + available list");

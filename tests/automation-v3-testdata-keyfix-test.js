@@ -69,21 +69,24 @@ const dClean = drawerSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/
 assert.ok(dClean.includes("actionInputs()") && dClean.includes("seg.inputs"), "2: editor dùng actionInputs (union approved + action inputs)");
 assert.ok(dClean.includes("giá trị trong bản ghi"), "2: editor hiển thị hint giá trị trong bản ghi");
 
-// 3. Tester sửa ĐÚNG key 'text search' = 'cai' → save → generate → fill dùng 'cai' (KHÔNG 'Bộ')
-const patched = await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC008/test-data`, { testData: { "text search": "cai" } });
+// 3. AUTO-BIND: 1 business field + 1 input (non-setup) -> binding tự động 'text search'->'Giá trị tìm kiếm'.
+const item0 = (await req("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC008");
+assert.deepEqual(item0.testDataBindings, { "text search": "Giá trị tìm kiếm" }, "3a: auto-bind unique (không cần tester select)");
+// Tester sửa BUSINESS field 'Giá trị tìm kiếm' = 'cai' → generate → fill dùng 'cai' (KHÔNG 'Bộ')
+const patched = await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC008/test-data`, { testData: { "Giá trị tìm kiếm": "cai" } });
 assert.equal(patched.status, 200, "3: PATCH test-data theo key 'text search' OK");
 const gen = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC008/generate`, {});
 assert.equal(gen.status, 200, "3: generate 200");
 const code = gen.body?.code ?? "";
-assert.ok(code.includes('fill(testData["text search"])'), "3: spec fill qua testData[\"text search\"]");
-assert.ok(code.includes('"text search": "cai"'), "3: const testData chứa \"text search\": \"cai\" (giá trị tester sửa đúng key)");
-assert.ok(!code.includes('fill("Bộ")') && !code.includes('fill("Bo")'), "3: KHÔNG dùng recorded 'Bộ' nữa");
+assert.ok(code.includes('fill(testData["Giá trị tìm kiếm"])'), "3: spec fill qua testData[\"Giá trị tìm kiếm\"]");
+assert.ok(code.includes('"Giá trị tìm kiếm": "cai"'), "3: const testData chứa business field = cai");
+assert.ok(!code.includes('"text search"') && !code.includes('fill("Bo")'), "3: KHÔNG technical key / recorded Bo");
 
-// 4. Không sửa 'text search' → approved key 'Giá trị tìm kiếm' không khớp target → recorded fallback (cũ) — nhưng editor hint đã cảnh báo.
-const patched2 = await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC008/test-data`, { testData: {} });
+// 4. Xóa edit (testData {}) → approved 'Giá trị tìm kiếm'='Bo' + binding → dùng approved (không recorded khác).
+const patched2 = await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC008/test-data`, { testData: {}, bindings: { "text search": "Giá trị tìm kiếm" } });
 const gen2 = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC008/generate`, {});
 const code2 = gen2.body?.code ?? "";
-assert.ok(code2.includes('fill("Bộ")'), "4: không sửa key khớp -> fallback recorded 'Bộ' (hành vi cũ, hint hiển thị)");
+assert.ok(code2.includes('"Giá trị tìm kiếm": "Bo"'), "4: không edit -> approved Bo (business field, không technical)");
 
 srv.close();
 fs.rmSync(tempRoot, { recursive: true, force: true });
