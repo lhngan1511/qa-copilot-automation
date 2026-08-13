@@ -1065,6 +1065,14 @@ export default class AutomationWorkspaceApplicationService {
         const seq = (entry?.binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         const candidates = [];
         const seen = new Set();
+        // P0-C runtime bug — candidate da duoc them (ton tai trong automationAssertions,
+        // khong REJECTED) KHONG duoc tra lai -> tranh 400 ASSERTION_DUPLICATE khi
+        // tester bam [Xac nhan] lan 2.
+        const existing = new Set(
+            (entry?.automationAssertions ?? [])
+                .filter(a => a.status !== "REJECTED")
+                .map(a => `${String(a.matcher ?? "").trim()}|${String(a.locator ?? "").trim()}|${String(a.expected ?? "")}`)
+        );
         for (const ref of seq) {
             // P0-B — resolveBlock (workspace + LIB-* fallback): selected action từ Action Library
             // cũng phải đóng góp recordedAssertions làm evidence (trước đây bỏ sót LIB blocks).
@@ -1074,6 +1082,8 @@ export default class AutomationWorkspaceApplicationService {
                 const key = `${a.matcher}|${a.locator}`;
                 if (seen.has(key)) continue;
                 seen.add(key);
+                const identity = `${String(a.matcher ?? "").trim()}|${String(a.locator ?? "").trim()}|${String(a.expected ?? this.recordedAssertionTarget(a) ?? "")}`;
+                if (existing.has(identity)) continue; // da them -> khong hien lai
                 candidates.push({
                     id: `RC-${block.blockId}-${a.order}`,
                     type: this.recordedAssertionType(a),

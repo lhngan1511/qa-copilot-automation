@@ -81,14 +81,21 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 const data = await suggestAssertions(workspaceId, testCase.testCaseId);
                 if (cancelled) return;
                 const all = Array.isArray(data.recordedCandidates) ? data.recordedCandidates : [];
-                const fresh = all.filter(c => !dismissedCandidates.has(c.id));
+                const fresh = all
+                    .filter(c => !dismissedCandidates.has(c.id))
+                    // P0-C runtime bug — candidate da ton tai trong assertions (khong REJECTED)
+                    // -> khong hien lai (tranh bam Xac nhan lan 2 -> 400 ASSERTION_DUPLICATE).
+                    .filter(c => !assertions.some(a => a.status !== "REJECTED"
+                        && String(a.matcher ?? "") === String(c.matcher ?? "")
+                        && String(a.locator ?? "") === String(c.locator ?? "")
+                        && String(a.expected ?? "") === String(c.expected ?? "")));
                 setRecordedCandidates(fresh);
             } catch {
                 /* giữ rỗng — không chặn tab */
             }
         })();
         return () => { cancelled = true; };
-    }, [workspaceId, testCase.testCaseId, dismissedCandidates, testCase?.segmentSummary?.total]);
+    }, [workspaceId, testCase.testCaseId, dismissedCandidates, testCase?.segmentSummary?.total, assertions]);
 
     const confirmedCount = useMemo(() => assertions.filter(a => a.status === "TESTER_CONFIRMED").length, [assertions]);
     const draftCount = useMemo(() => assertions.filter(a => a.status === "DRAFT").length, [assertions]);
@@ -324,7 +331,13 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                         <span className="v3-exp__note">Chưa có điều kiện xác nhận phù hợp.</span>
                     ) : null}
                 </div>
-                {recordedCandidates.map((c, i) => (
+                {recordedCandidates.map((c, i) => {
+                    // Defensive: candidate da them (stale) -> "Đã thêm" disabled.
+                    const alreadyAdded = assertions.some(a => a.status !== "REJECTED"
+                        && String(a.matcher ?? "") === String(c.matcher ?? "")
+                        && String(a.locator ?? "") === String(c.locator ?? "")
+                        && String(a.expected ?? "") === String(c.expected ?? ""));
+                    return (
                     <div className="v3-cond" key={c.id}>
                         <div className="v3-cond__body">
                             <b>{i + 1}. {c.target} {c.matcher === "toBeHidden" ? "không hiển thị" : "hiển thị"}</b>
@@ -335,15 +348,16 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                             </div>
                         </div>
                         <div className="v3-cond__actions">
-                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => confirmRecordedCandidate(c)} disabled={saving}>
-                                Xác nhận
+                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => confirmRecordedCandidate(c)} disabled={saving || alreadyAdded}>
+                                {alreadyAdded ? "Đã thêm" : "Xác nhận"}
                             </button>
-                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => dismissRecordedCandidate(c)} disabled={saving}>
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => dismissRecordedCandidate(c)} disabled={saving || alreadyAdded}>
                                 Bỏ qua
                             </button>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="v3-exp__block">
