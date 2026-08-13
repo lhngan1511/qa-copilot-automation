@@ -1385,7 +1385,13 @@ export default class AutomationWorkspaceApplicationService {
                 status: b.status,
                 label: b.label ?? null,
                 scope: b.scope ?? "PRIVATE",
-                recordedAssertionCount: (b.recordedAssertions ?? []).length
+                recordedAssertionCount: (b.recordedAssertions ?? []).length,
+                // KEY-FIX — inputs từ selected action: FILL steps → { field: target, recordedValue }.
+                // Đây là key CHÍNH XÁC renderer sẽ lookup (step.target = accessible name từ locator);
+                // Test Data editor phải dùng các key này để giá trị tester sửa thực sự tới được FILL.
+                inputs: (b.steps ?? [])
+                    .filter(s => String(s.actionType ?? "").toUpperCase() === "FILL" && String(s.target ?? "").trim())
+                    .map(s => ({ field: String(s.target).trim(), recordedValue: s.recordedValue ?? "" }))
             };
         }).filter(Boolean);
         return {

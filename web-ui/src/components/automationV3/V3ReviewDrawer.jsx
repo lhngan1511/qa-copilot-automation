@@ -43,6 +43,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         }
         const merged = {};
         for (const [k, v] of entries) merged[k] = String(v ?? "");
+        // KEY-FIX — thêm các field của selected actions (step.target) dù approved không có key đó.
+        for (const [k, v] of Object.entries(actionInputs())) if (!Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = String(v ?? "");
         // Ưu tiên confirmedTestData (tester đã edit) khi có.
         const confirmed = testCase?.confirmedTestData ?? null;
         if (confirmed && typeof confirmed === "object") {
@@ -73,6 +75,17 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
             for (const [k, f] of Object.entries(td.fields)) out[k] = String(f && typeof f === "object" ? f.value : f ?? "");
         } else if (td?.inputs && typeof td.inputs === "object") {
             for (const [k, v] of Object.entries(td.inputs)) out[k] = String(v ?? "");
+        }
+        return out;
+    };
+    /** KEY-FIX — inputs từ selected actions: key CHÍNH XÁC renderer lookup (step.target). */
+    const actionInputs = () => {
+        const out = {};
+        for (const seg of testCase?.segments ?? []) {
+            for (const inp of seg.inputs ?? []) {
+                const f = String(inp?.field ?? "").trim();
+                if (f && !Object.prototype.hasOwnProperty.call(out, f)) out[f] = String(inp?.recordedValue ?? "");
+            }
         }
         return out;
     };
@@ -141,9 +154,13 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 }
                                 return (
                                     <>
-                                        {keys.map(k => (
+                                        {keys.map(k => {
+                                            // KEY-FIX — hint giá trị trong bản ghi (khi approved/confirmed khác recorded).
+                                            const rec = actionInputs()[k];
+                                            const recHint = rec != null && rec !== "" && rec !== draft[k] ? ` · giá trị trong bản ghi: ${isSensitiveField(k) ? "••••" : rec}` : "";
+                                            return (
                                             <label className="v3-td-field" key={k}>
-                                                <span>{k}</span>
+                                                <span>{k}{recHint ? <span className="v3-exp__note">{recHint}</span> : null}</span>
                                                 <input
                                                     className="v3-input"
                                                     type={isSensitiveField(k) ? "password" : "text"}
@@ -152,7 +169,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                                     onChange={e => setTdDraft(d => ({ ...d, [k]: e.target.value }))}
                                                 />
                                             </label>
-                                        ))}
+                                            );
+                                        })}
                                         <div className="v3-td-actions">
                                             {/* P0-A UX — [Lưu dữ liệu] là primary (lưu automation-specific, không sửa approved). */}
                                             <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={tdSaving} onClick={() => persistTd()}>
@@ -161,7 +179,9 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                             {/* [Khôi phục] secondary — CHỈ hiện khi approved có value và automation data đã khác approved. */}
                                             {Object.keys(approvedTdValues()).length > 0 && tdHasEdited ? (
                                                 <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
-                                                    const restored = approvedTdValues();
+                                                    // Restore: approved cho mọi key (action inputs không có approved -> rỗng).
+                                                    const restored = { ...approvedTdValues() };
+                                                    for (const k of Object.keys(actionInputs())) if (!Object.prototype.hasOwnProperty.call(restored, k)) restored[k] = "";
                                                     setTdDraft(restored);
                                                     persistTd(restored);
                                                 }}>
@@ -185,11 +205,14 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         <div className="v3-exp__block">
                             <h4 className="v3-exp__h">Test Data hiện tại</h4>
                             {(() => {
+                                // KEY-FIX — union: confirmed > approved > action inputs (key = step.target).
                                 const conf = testCase?.confirmedTestData ?? null;
                                 const appr = testCase?.testData?.fields ?? null;
-                                const entries = [];
-                                if (conf && typeof conf === "object") for (const [k, v] of Object.entries(conf)) entries.push([k, v]);
-                                else if (appr && typeof appr === "object") for (const [k, f] of Object.entries(appr)) entries.push([k, f && typeof f === "object" ? f.value : f]);
+                                const map = {};
+                                for (const [k, f] of Object.entries(actionInputs())) map[k] = String(f ?? "");
+                                if (appr && typeof appr === "object") for (const [k, f] of Object.entries(appr)) map[k] = String(f && typeof f === "object" ? f.value : f ?? "");
+                                if (conf && typeof conf === "object") for (const [k, v] of Object.entries(conf)) map[k] = String(v ?? "");
+                                const entries = Object.entries(map).filter(([, v]) => v !== "");
                                 if (entries.length === 0) return <p className="v3-act__note">Testcase chưa có dữ liệu kiểm thử.</p>;
                                 return entries.map(([k, v]) => <div className="v3-info-row" key={k}><span>{k}</span><b>{String(v ?? "—")}</b></div>);
                             })()}
