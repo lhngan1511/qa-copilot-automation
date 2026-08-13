@@ -83,6 +83,10 @@ export default function AutomationV3Page() {
     // P0-D (C) — danh sách workspace từ API (newest first) + menu ⋯ của từng workspace.
     const [workspaceList, setWorkspaceList] = useState([]);
     const [wsMenuId, setWsMenuId] = useState(null);
+    // P0-D1 (B) — popover [Đổi workspace] + modal [Xem tất cả workspace].
+    const [wsPopoverOpen, setWsPopoverOpen] = useState(false);
+    const [wsManagerOpen, setWsManagerOpen] = useState(false);
+    const [wsSearch, setWsSearch] = useState("");
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -173,6 +177,8 @@ export default function AutomationV3Page() {
             setDrawerGenerateResult(null);
             setDrawerRunResult(null);
             setWsMenuId(null);
+            setWsPopoverOpen(false);
+            setWsManagerOpen(false);
             await refreshWorkspaceList();
             setNotice(`Đã mở workspace "${data?.module || "Workspace"}".`);
         } catch (e) {
@@ -458,7 +464,7 @@ export default function AutomationV3Page() {
         setConfirm({
             kind: "delete_workspace",
             title: `Xóa workspace "${w.module || "Workspace"}"?`,
-            message: "Dữ liệu automation của workspace này sẽ bị xóa. Action Library, approved testcase và file đã sinh KHÔNG bị ảnh hưởng.",
+            message: "Toàn bộ cấu hình automation thuộc workspace này sẽ bị xóa. Không ảnh hưởng: Testcase đã duyệt · Action Library dùng chung. Generated Playwright artifact KHÔNG cascade delete trong P0.",
             testCase: null,
             workspaceId: w.workspaceId
         });
@@ -532,7 +538,8 @@ export default function AutomationV3Page() {
                 </div>
                 {workspace ? (
                     <div className="v3-page__head-actions">
-                        {/* P0-D (C) — Workspace hiện tại + gần đây (không raw WS-ID primary; newest first). */}
+                        {/* P0-D1 (B) — chỉ hiển thị workspace HIỆN TẠI trên main page (không render lịch sử).
+                            [Đổi workspace ▾] mở popover recent; [Xem tất cả workspace] mở modal quản lý. */}
                         <div className="v3-ws-panel">
                             <div className="v3-ws-panel__current">
                                 <span className="v3-ws-panel__label">Workspace hiện tại</span>
@@ -541,40 +548,38 @@ export default function AutomationV3Page() {
                                     {meta.count} testcase · Cập nhật {formatUpdatedAt(workspaceList.find(w => w.workspaceId === workspace.workspaceId)?.updatedAt)}
                                 </span>
                             </div>
-                            {workspaceList.filter(w => w.workspaceId !== workspace.workspaceId).length > 0 ? (
-                                <div className="v3-ws-panel__recent">
-                                    <span className="v3-ws-panel__label">Workspace gần đây</span>
-                                    {workspaceList.filter(w => w.workspaceId !== workspace.workspaceId).map(w => (
-                                        <div className="v3-ws-panel__item" key={w.workspaceId}>
-                                            <button
-                                                type="button"
-                                                className="v3-ws-panel__item-main"
-                                                onClick={() => switchWorkspace(w.workspaceId)}
-                                                disabled={recordingActive}
-                                            >
-                                                <b>{w.module || "Workspace"}</b>
-                                                <span>{w.selectedCount} testcase · Cập nhật {formatUpdatedAt(w.updatedAt)}</span>
-                                            </button>
-                                            <span className="v3-ws-panel__menu">
-                                                <button
-                                                    type="button"
-                                                    className="v3-btn v3-btn--mini"
-                                                    aria-label="Menu workspace"
-                                                    onClick={() => setWsMenuId(wsMenuId === w.workspaceId ? null : w.workspaceId)}
-                                                >
-                                                    ⋯
+                            <div className="v3-ws-panel__switch">
+                                <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setWsPopoverOpen(v => !v)} disabled={recordingActive}>
+                                    Đổi workspace ▾
+                                </button>
+                                {wsPopoverOpen ? (
+                                    <div className="v3-ws-popover">
+                                        <span className="v3-ws-panel__label">Workspace gần đây</span>
+                                        {workspaceList.filter(w => w.workspaceId !== workspace.workspaceId).slice(0, 5).map(w => (
+                                            <div className="v3-ws-panel__item" key={w.workspaceId}>
+                                                <button type="button" className="v3-ws-panel__item-main" onClick={() => { setWsPopoverOpen(false); switchWorkspace(w.workspaceId); }} disabled={recordingActive}>
+                                                    <b>{w.module || "Workspace"}</b>
+                                                    <span>{w.selectedCount} testcase · Cập nhật {formatUpdatedAt(w.updatedAt)}</span>
                                                 </button>
-                                                {wsMenuId === w.workspaceId ? (
-                                                    <span className="v3-ws-panel__pop">
-                                                        <button type="button" className="v3-ws-panel__pop-btn" onClick={() => switchWorkspace(w.workspaceId)} disabled={recordingActive}>Mở</button>
-                                                        <button type="button" className="v3-ws-panel__pop-btn v3-ws-panel__danger" onClick={() => confirmDeleteWorkspace(w)}>Xóa</button>
-                                                    </span>
-                                                ) : null}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : null}
+                                                <span className="v3-ws-panel__menu">
+                                                    <button type="button" className="v3-btn v3-btn--mini" aria-label="Menu workspace" onClick={() => setWsMenuId(wsMenuId === w.workspaceId ? null : w.workspaceId)}>
+                                                        ⋯
+                                                    </button>
+                                                    {wsMenuId === w.workspaceId ? (
+                                                        <span className="v3-ws-panel__pop">
+                                                            <button type="button" className="v3-ws-panel__pop-btn" onClick={() => { setWsPopoverOpen(false); switchWorkspace(w.workspaceId); }} disabled={recordingActive}>Mở</button>
+                                                            <button type="button" className="v3-ws-panel__pop-btn v3-ws-panel__danger" onClick={() => confirmDeleteWorkspace(w)}>Xóa</button>
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                            </div>
+                                        ))}
+                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setWsPopoverOpen(false); setWsManagerOpen(true); }}>
+                                            Xem tất cả workspace
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
                         </div>
                         <button
                             type="button"
@@ -668,6 +673,41 @@ export default function AutomationV3Page() {
                     runResult={drawerRunResult}
                     onChanged={refreshWorkspace}
                 />
+            ) : null}
+
+            {/* P0-D1 (B) — modal QUẢN LÝ WORKSPACE: search + full list + Mở/Xóa. */}
+            {wsManagerOpen ? (
+                <div className="v3-overlay" role="dialog" aria-modal="true" aria-label="Quản lý workspace">
+                    <div className="v3-dialog v3-dialog--wide">
+                        <h4>Quản lý workspace</h4>
+                        <input
+                            className="v3-input"
+                            value={wsSearch}
+                            onChange={e => setWsSearch(e.target.value)}
+                            placeholder="Tìm workspace theo tên…"
+                        />
+                        <div className="v3-ws-manager__list">
+                            {workspaceList
+                                .filter(w => !wsSearch.trim() || String(w.module ?? "").toLowerCase().includes(wsSearch.trim().toLowerCase()))
+                                .map(w => (
+                                    <div className="v3-ws-panel__item" key={w.workspaceId}>
+                                        <button type="button" className="v3-ws-panel__item-main" onClick={() => { setWsManagerOpen(false); switchWorkspace(w.workspaceId); }} disabled={recordingActive}>
+                                            <b>{w.module || "Workspace"}{w.workspaceId === workspace.workspaceId ? " (hiện tại)" : ""}</b>
+                                            <span>{w.selectedCount} testcase · Cập nhật {formatUpdatedAt(w.updatedAt)}</span>
+                                        </button>
+                                        <span className="v3-ws-panel__menu">
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setWsManagerOpen(false); switchWorkspace(w.workspaceId); }} disabled={recordingActive}>Mở</button>
+                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini v3-ws-panel__danger" onClick={() => confirmDeleteWorkspace(w)}>Xóa</button>
+                                        </span>
+                                    </div>
+                                ))}
+                            {workspaceList.length === 0 ? <p className="v3-act__note">Chưa có workspace nào.</p> : null}
+                        </div>
+                        <div className="v3-dialog__actions">
+                            <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setWsManagerOpen(false)}>Đóng</button>
+                        </div>
+                    </div>
+                </div>
             ) : null}
 
             <V3ConfirmDialog

@@ -21,6 +21,11 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
     const [tab, setTab] = useState(initialTab);
     // P0-A — Test Data editor: bản nháp local; save qua API (persist workspace, không sửa approved).
     const [tdDraft, setTdDraft] = useState(null); // { "<field>": "<value>" }
+
+    // P0-D1 — Generate SUCCESS → tự chuyển sang tab Chạy thử (không đóng drawer).
+    useEffect(() => {
+        if (generateResult?.ok) setTab("run");
+    }, [generateResult]);
     const [tdSaving, setTdSaving] = useState(false);
     const tdApproved = testCase?.testData ?? null;
 
@@ -196,12 +201,12 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 testCase.segments.map(s => <div className="v3-info-row" key={s.segmentId}><span>{s.orderInTestCase}.</span><b>{s.label ?? s.segmentId}</b></div>)
                             ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
                         </div>
-                        {/* Điều kiện kiểm tra đã xác nhận */}
+                        {/* P0-D1 — Kết quả đã chọn */}
                         <div className="v3-exp__block">
-                            <h4 className="v3-exp__h">Điều kiện kiểm tra đã xác nhận</h4>
+                            <h4 className="v3-exp__h">Kết quả đã chọn</h4>
                             {testCase?.assertionStatus?.confirmed > 0 ? (
-                                <span className="v3-ok">✓ {testCase.assertionStatus.confirmed} điều kiện đã xác nhận</span>
-                            ) : <p className="v3-act__note">Chưa có điều kiện kiểm tra được xác nhận.</p>}
+                                <span className="v3-ok">✓ {testCase.assertionStatus.confirmed} kết quả đã chọn</span>
+                            ) : <p className="v3-act__note">Chưa có kết quả dự kiến được chọn.</p>}
                         </div>
                         {/* Generated source */}
                         <div className="v3-exp__block">
@@ -245,23 +250,21 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         ) : null}
                     </div>
                 ) : (
-                    <V3ExpectedResultTab workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
+                    <V3ExpectedResultTab
+                        workspaceId={workspaceId}
+                        testCase={testCase}
+                        onChanged={onChanged}
+                        onError={onError}
+                        onGenerate={onGenerate}
+                        canGenerate={canGenerate}
+                        gateReason={gateReason}
+                        generateResult={generateResult}
+                    />
                 )}
             </div>
 
             <div className="v3-drawer__footer">
                 <button type="button" className="v3-btn v3-btn--ghost" onClick={onClose}>Đóng</button>
-                {tab === "expected" ? (
-                    <button
-                        type="button"
-                        className="v3-btn v3-btn--primary"
-                        disabled={!canGenerate}
-                        title={gateReason ?? undefined}
-                        onClick={() => onGenerate?.(testCase)}
-                    >
-                        Sinh automation
-                    </button>
-                ) : null}
             </div>
         </div>
     );

@@ -148,11 +148,14 @@ fs.rmSync(tempRoot, { recursive: true, force: true });
 // ===== Static — A: Expected Result tab nhãn/nút =====
 const tabSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ExpectedResultTab.jsx"), "utf8");
 const tClean = tabSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-assert.ok(tClean.includes("Gợi ý từ thao tác đã chọn"), "A: nhãn 'Gợi ý từ thao tác đã chọn'");
-assert.ok(tClean.includes("Điều kiện đã chọn"), "A: nhãn 'Điều kiện đã chọn'");
+assert.ok(tClean.includes("Phát hiện từ thao tác đã chọn"), "P0-D1 A: nhãn 'Phát hiện từ thao tác đã chọn'");
+assert.ok(tClean.includes("KẾT QUẢ DỰ KIẾN") && tClean.includes("KẾT QUẢ ĐÃ CHỌN"), "P0-D1 A: KẾT QUẢ DỰ KIẾN / KẾT QUẢ ĐÃ CHỌN");
+assert.ok(tClean.includes("+ Thêm kết quả dự kiến") && tClean.includes("Nhập thủ công") && tClean.includes("Dùng AI phân tích"), "P0-D1 A: menu + Thêm kết quả dự kiến (thủ công/AI)");
 assert.ok(tClean.includes('{alreadyAdded ? "Đã sử dụng" : "Sử dụng"}'), "A: nút [Sử dụng] / [Đã sử dụng]");
-assert.ok(tClean.includes("AI đề xuất thêm"), "A: [AI đề xuất thêm] (secondary)");
-assert.ok(!tClean.includes("Điều kiện tìm thấy trong bản ghi"), "A: bỏ heading cũ");
+assert.ok(tClean.includes("Sinh automation") && tClean.includes("Cần ít nhất 1 kết quả dự kiến được chọn"), "P0-D1 A: nút Sinh trong tab + message gate");
+assert.ok(tClean.includes("✓ {a.matcher === \"toBeHidden\" ? \"Không hiển thị\" : \"Hiển thị\"}"), "P0-D1 A: card readable ✓ Hiển thị \"expected\"");
+assert.ok(tClean.includes("Dùng AI phân tích"), "A: AI phân tích (secondary, trong menu + Thêm kết quả dự kiến)");
+assert.ok(!tClean.includes("Điều kiện tìm thấy trong bản ghi") && !tClean.includes("AI đề xuất thêm"), "A: bỏ heading/nút cũ");
 assert.ok(!tClean.includes("Đề xuất điều kiện xác nhận"), "A: bỏ nút cũ");
 
 // ===== Static — C: UI workspace panel =====
@@ -161,6 +164,11 @@ const pClean = pageSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/
 assert.ok(pClean.includes("v3-ws-panel") && pClean.includes("Workspace hiện tại") && pClean.includes("Workspace gần đây"), "C: panel hiện tại + gần đây");
 assert.ok(pClean.includes("confirmDeleteWorkspace") && pClean.includes("delete_workspace"), "C: xóa workspace có confirm");
 assert.ok(pClean.includes("listWorkspaces") && pClean.includes("deleteWorkspace"), "C: page dùng API list/delete");
+// CASE 9/10 — main page không render toàn bộ history; popover + manager.
+const drawerSrc = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ReviewDrawer.jsx"), "utf8");
+assert.ok(drawerSrc.includes("if (generateResult?.ok) setTab(\"run\")"), "CASE6: generate success -> tự chuyển tab Chạy thử");
+assert.ok(pClean.includes("Đổi workspace ▾") && pClean.includes("v3-ws-popover") && pClean.includes("wsManagerOpen"), "CASE9/10: popover Đổi workspace + manager modal");
+assert.ok(!pClean.includes("v3-ws-panel__recent"), "CASE9: main page KHÔNG render toàn bộ history trực tiếp");
 assert.ok(!pClean.includes('v3-ws-switch') || true, "C: bỏ dropdown cũ (panel thay thế)");
 
 console.log("Automation V3 P0-D Lifecycle + Workspace UX (CASE 1-10) test: PASS");

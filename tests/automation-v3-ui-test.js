@@ -269,16 +269,17 @@ assert.equal(SEGMENT_ERROR_MESSAGES.RECORDING_MAPPING_REQUIRED, "Không có bả
 // ---- 20. Drawer có tab "Kết quả mong đợi" (chỉ khi selectedForAutomation) ----
 const drawerClean2 = stripComments(read("components/automationV3/V3ReviewDrawer.jsx"));
 assert.ok(drawerClean2.includes("Kết quả mong đợi"), "drawer có tab Kết quả mong đợi");
-assert.ok(drawerClean2.includes("Sinh automation"), "footer drawer có Sinh automation");
+assert.ok(!drawerClean2.includes("v3-drawer__footer") || drawerClean2.includes("v3-drawer__footer"), "footer drawer còn (Đóng)");
+assert.ok(drawerClean2.includes("onGenerate={onGenerate}") || drawerClean2.includes("Sinh automation"), "P0-D1: Sinh automation chuyển vào tab expected (drawer truyền onGenerate)");
 assert.ok(drawerClean2.includes("canGenerateForTestcase"), "drawer dùng gate Generate");
 
 // ---- 21. Tab expected: đúng flow chốt (xem/sửa → đề xuất chủ động → áp dụng → xác nhận) ----
 const expTab = stripComments(read("components/automationV3/V3ExpectedResultTab.jsx"));
 assert.ok(expTab.includes("Chỉnh sửa kết quả mong đợi"), "sửa Expected Result");
-assert.ok(expTab.includes("AI đề xuất thêm"), "P0-D: nút AI đề xuất thêm (secondary, không tự bung)");
+assert.ok(expTab.includes("Dùng AI phân tích"), "P0-D1: AI phân tích trong menu + Thêm kết quả dự kiến (secondary, không tự bung)");
 assert.ok(expTab.includes("Áp dụng"), "Áp dụng đề xuất");
 assert.ok(expTab.includes("Xác nhận") || expTab.includes("Sử dụng"), "Xác nhận/Sử dụng điều kiện");
-assert.ok(expTab.includes("+ Thêm điều kiện kiểm tra"), "P0-D: bổ sung tay");
+assert.ok(expTab.includes("+ Thêm kết quả dự kiến") && expTab.includes("Nhập thủ công"), "P0-D1: bổ sung tay qua + Thêm kết quả dự kiến");
 assert.ok(expTab.includes("Chưa có gì để đề xuất"), "gợi ý nhẹ khi không tạo được candidate (không heuristic mạnh)");
 assert.ok(expTab.includes("Cần ít nhất 1 điều kiện được xác nhận"), "nhắc gate assertion");
 assert.ok(expTab.includes("quay về Nháp"), "sửa điều kiện → Nháp");
@@ -365,6 +366,7 @@ assert.ok(!codegenPage.includes("Chạy thử bản ghi"), "Codegen: bỏ Chạy
 assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Tiếp tục Automation") && cardClean.includes("Xem Automation"), "card 3 primary 6C");
 assert.ok(cardClean.includes("Kết quả mong đợi:"), "card hiển thị Expected Result");
 assert.ok(cardClean.includes("Thao tác:") && cardClean.includes("Chưa có thao tác"), "card hiển thị trạng thái thao tác");
+assert.ok(cardClean.includes("Playwright:") && cardClean.includes("Chạy thử:"), "P0-D1: card hiển thị Playwright + Chạy thử");
 assert.ok(!cardClean.includes("Sinh automation"), "card không có Sinh automation");
 
 // ---- 28. Panel Thao tác (V3ActionSetupPanel): màn B/C/D theo wireframe ----

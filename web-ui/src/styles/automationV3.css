@@ -994,6 +994,17 @@
 .v3-td-field .v3-input { min-height: 32px; font-size: 13px; }
 .v3-td-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 
+/* P0-D1 (B) — popover Đổi workspace + modal Quản lý workspace. */
+.v3-ws-panel__switch { position: relative; }
+.v3-ws-popover {
+  position: absolute; right: 0; top: 40px; z-index: 20;
+  display: grid; gap: 4px; min-width: 280px; max-width: 340px;
+  background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(16,24,40,.16); padding: 8px;
+}
+.v3-dialog--wide { max-width: 520px; }
+.v3-ws-manager__list { display: grid; gap: 6px; max-height: 320px; overflow: auto; }
+
 /* P0-D (C) — Workspace panel: hiện tại + gần đây (không raw WS-ID primary). */
 .v3-ws-panel { display: grid; gap: 6px; min-width: 280px; max-width: 380px; }
 .v3-ws-panel__label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }

@@ -33,7 +33,7 @@ import {
 
 const EMPTY_FORM = { type: "TEXT_VISIBLE", target: "", locator: "", expected: "", matcher: "toBeVisible" };
 
-export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, onError }) {
+export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, onError, onGenerate = null, canGenerate = true, gateReason = null, generateResult = null }) {
     const [assertions, setAssertions] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -51,6 +51,8 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
     const [dismissedCandidates, setDismissedCandidates] = useState(() => new Set()); // bỏ qua (session)
 
     // Form điều kiện (thêm tay / sửa)
+    // P0-D1 — menu [+ Thêm kết quả dự kiến]: Nhập thủ công | Dùng AI phân tích.
+    const [addResultOpen, setAddResultOpen] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [editingId, setEditingId] = useState(null);
@@ -287,7 +289,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
 
             {/* ---------- Expected Result ---------- */}
             <div className="v3-exp__block">
-                <h4 className="v3-exp__h">Kết quả mong đợi (nghiệp vụ)</h4>
+                <h4 className="v3-exp__h">Kết quả mong đợi (từ Testcase đã duyệt)</h4>
                 {!editingExpected ? (
                     <>
                         <div className="v3-exp__value">{expectedResult || "(trống)"}</div>
@@ -326,9 +328,9 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             {/* ---------- 6C.2 — Điều kiện tìm thấy trong bản ghi (recorded candidates) ---------- */}
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Gợi ý từ thao tác đã chọn</h4>
+                    <h4 className="v3-exp__h">Phát hiện từ thao tác đã chọn</h4>
                     {recordedCandidates.length === 0 ? (
-                        <span className="v3-exp__note">Chưa có điều kiện kiểm tra phù hợp.</span>
+                        <span className="v3-exp__note">Chưa có kết quả dự kiến từ thao tác đã chọn.</span>
                     ) : null}
                 </div>
                 {recordedCandidates.map((c, i) => {
@@ -362,15 +364,23 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
 
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Gợi ý từ kết quả mong đợi</h4>
-                    <button
-                        type="button"
-                        className="v3-btn v3-btn--ghost v3-btn--mini"
-                        onClick={handleSuggest}
-                        disabled={suggesting || saving}
-                    >
-                        {suggesting ? "Đang đề xuất…" : "AI đề xuất thêm"}
-                    </button>
+                    <h4 className="v3-exp__h">KẾT QUẢ DỰ KIẾN</h4>
+                    <span className="v3-exp__note">Phát hiện từ thao tác đã chọn (tự động) · thêm thủ công hoặc AI bên dưới.</span>
+                    <div className="v3-td-actions">
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setAddResultOpen(v => !v)} disabled={saving}>
+                            + Thêm kết quả dự kiến
+                        </button>
+                        {addResultOpen ? (
+                            <span className="v3-td-actions">
+                                <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setAddResultOpen(false); startAdd(); }} disabled={saving}>
+                                    Nhập thủ công
+                                </button>
+                                <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setAddResultOpen(false); handleSuggest(); }} disabled={suggesting || saving}>
+                                    {suggesting ? "Đang phân tích…" : "Dùng AI phân tích"}
+                                </button>
+                            </span>
+                        ) : null}
+                    </div>
                 </div>
 
                 {suggestedAt && suggestions.length === 0 ? (
@@ -409,10 +419,8 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
             {/* ---------- Điều kiện kiểm tra ---------- */}
             <div className="v3-exp__block">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">Điều kiện đã chọn</h4>
-                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startAdd} disabled={saving}>
-                        + Thêm điều kiện kiểm tra
-                    </button>
+                    <h4 className="v3-exp__h">KẾT QUẢ ĐÃ CHỌN</h4>
+                    <span className="v3-exp__note">Các kết quả thực sự được dùng để sinh Playwright.</span>
                 </div>
 
                 {assertions.length === 0 ? (
@@ -421,14 +429,14 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                     assertions.map(a => (
                         <div className="v3-cond" key={a.id}>
                             <div className="v3-cond__body">
-                                <b>{assertionTypeLabel(a.type)}</b>
+                                {/* P0-D1 — tester-facing: ✓ Hiển thị/Không hiển thị "<expected>" (technical ẩn trong Xem kỹ thuật). */}
+                                <b>✓ {a.matcher === "toBeHidden" ? "Không hiển thị" : "Hiển thị"} "{a.expected ?? a.target ?? ""}"</b>
                                 <span className={`v3-badge ${a.status === "TESTER_CONFIRMED" ? "v3-badge--ok" : a.status === "DRAFT" ? "v3-badge--review" : "v3-badge--nosel"}`}>
                                     {assertionStatusLabel(a.status)}
                                 </span>
                                 <div className="v3-cond__meta">
-                                    {a.target ? <span>Đối tượng: {a.target}</span> : null}
-                                    {a.expected != null && a.expected !== "" ? <span>Giá trị: {a.expected}</span> : null}
-                                    {a.matcher ? <span>{matcherLabel(a.matcher)}</span> : null}
+                                    {a.source === "RECORDED" ? <span>Nguồn: Thao tác đã chọn</span> : null}
+                                    <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.locator || a.target || a.matcher}</code></details>
                                 </div>
                             </div>
                             <div className="v3-cond__actions">
@@ -452,6 +460,27 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                         </div>
                     ))
                 )}
+
+                {/* P0-D1 — Sinh automation cuối section KẾT QUẢ ĐÃ CHỌN (không ở footer). */}
+                <div className="v3-exp__actions" style={{ marginTop: 8 }}>
+                    <button
+                        type="button"
+                        className="v3-btn v3-btn--primary"
+                        disabled={!canGenerate}
+                        title={canGenerate ? undefined : (gateReason ?? "Cần ít nhất 1 kết quả dự kiến được chọn để sinh automation.")}
+                        onClick={() => onGenerate?.(testCase)}
+                    >
+                        Sinh automation
+                    </button>
+                    {!canGenerate ? (
+                        <span className="v3-exp__note">{gateReason ?? "Cần ít nhất 1 kết quả dự kiến được chọn để sinh automation."}</span>
+                    ) : null}
+                </div>
+                {generateResult && !generateResult.ok ? (
+                    <div className="v3-banner v3-banner--error" role="alert">
+                        {generateResult.error ?? "Không sinh được automation."}
+                    </div>
+                ) : null}
 
                 {showForm ? (
                     <div className="v3-cond-form">

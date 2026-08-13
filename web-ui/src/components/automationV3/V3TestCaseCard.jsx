@@ -97,8 +97,15 @@ export default function V3TestCaseCard({
                     ) : null}
                     <div className="v3-card__row v3-card__row--muted">
                         {segments.length > 0
-                            ? `Thao tác: ${segSummary.confirmed === segSummary.total ? "✓" : "⚠"} ${segSummary.confirmed}/${segSummary.total} đã xác nhận`
+                            ? `Thao tác: ${segSummary.confirmed === segSummary.total ? "✓" : "⚠"} ${segSummary.confirmed}/${segSummary.total}`
                             : "Chưa có thao tác"}
+                    </div>
+                    {/* P0-D1 — card phản ánh state thật: Playwright + Chạy thử */}
+                    <div className="v3-card__row v3-card__row--muted">
+                        Playwright: {testCase.generateStatus === "GENERATED" ? "Đã sinh" : "Chưa sinh"}
+                    </div>
+                    <div className="v3-card__row v3-card__row--muted">
+                        Chạy thử: {testCase.runStatus === "PASSED" ? "✓ Passed" : testCase.runStatus === "FAILED" ? "✕ Failed" : "Chưa chạy"}
                     </div>
                     {primary ? (
                         <div className="v3-card__action">
