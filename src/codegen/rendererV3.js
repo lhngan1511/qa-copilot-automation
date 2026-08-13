@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
-import { resolveTestValue, TESTDATA_SOURCES } from "../automation/ai/testDataBinding.js";
 import { isSensitiveField } from "./recordingParser.js";
 import { hashRecording } from "./CurrentRecordingSession.js";
 
@@ -37,6 +36,9 @@ export const RENDERER_ERRORS = {
     RECORDING_APPROVAL_REQUIRED: "RECORDING_APPROVAL_REQUIRED",
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
+    // P0 TC001 — UNRESOLVED: chưa xác định data source/intent cho input → chặn Generate
+    // (KHÔNG âm thầm dùng recorded literal — recorded chỉ là RECORDED_SAMPLE/evidence).
+    TESTDATA_UNRESOLVED: "TESTDATA_UNRESOLVED",
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED"
 };
 
@@ -105,14 +107,15 @@ function hasApprovedDataAt(approvedTestData, key) {
  *   2. Có binding canonical      → binding (tester-owned/evidence).
  *   3. Target ∈ approved keys (approved ĐỊNH NGHĨA business field, VD 'Mã đơn vị tính')
  *      và có data (approved/confirmed) → target.
- *   4. ĐÚNG 1 business field (non-setup, KHÁC target) có data (confirmed/approved)
- *      → business field đó. (Bất biến: recorded KHÔNG được thắng current business data —
- *      kể cả khi auto-bind chưa kịp tạo binding — nhưng chỉ khi KHÔNG mơ hồ.)
+ *   4. [CHỈ single-input] ĐÚNG 1 business field (non-setup, KHÁC target) có data
+ *      → business field đó. P0 TC001: heuristic KHÔNG áp dụng cho multi-input
+ *      (không được map nhiều unresolved input vào 1 field — VD Mã→Kg, Ghi chú→Kg).
  *   5. Confirmed có data theo chính target (legacy keyfix — không có business field khác)
  *      → target.
- *   6. Còn lại → target (contract: recorded fallback chỉ khi không có testcase data).
+ *   6. Còn lại → target (sẽ thành UNRESOLVED → chặn Generate, KHÔNG fallback recorded).
+ * @param {boolean} singleInput — testcase chỉ có ĐÚNG 1 non-setup FILL target.
  */
-export function resolveBusinessFieldForFill(target, { testDataBindings = {}, confirmedTestData = {}, approvedTestData = {} } = {}) {
+export function resolveBusinessFieldForFill(target, { testDataBindings = {}, confirmedTestData = {}, approvedTestData = {} } = {}, singleInput = false) {
     const t = String(target ?? "").trim();
     if (!t) return t;
     if (envKeyFor(t)) return t; // setup env-bound — LOGIN_*, không phải business data
@@ -127,36 +130,89 @@ export function resolveBusinessFieldForFill(target, { testDataBindings = {}, con
     for (const k of Object.keys(approved)) if (k !== "fields" && k !== "inputs" && k !== "requirement") approvedKeys.add(k);
     // Rule 3 — target LÀ business field (approved định nghĩa) và có data.
     if (approvedKeys.has(t) && (hasApprovedDataAt(approved, t) || hasDataAt(conf, t))) return t;
-    // Rule 4 — unique business candidate (non-setup, non-empty data, KHÁC target).
-    const candidates = new Set();
-    const consider = (k, v) => {
-        const name = String(k ?? "").trim();
-        if (!name || name === t || envKeyFor(name)) return;
-        const val = v == null ? "" : (typeof v === "object" ? (v?.value ?? "") : v);
-        if (String(val).trim() !== "") candidates.add(name);
-    };
-    for (const [k, v] of Object.entries(conf)) consider(k, v);
-    if (approved.fields && typeof approved.fields === "object") {
-        for (const [k, f] of Object.entries(approved.fields)) consider(k, f);
+    // Rule 4 — unique business candidate (CHỈ single-input — P0 TC001 cấm multi-input).
+    if (singleInput) {
+        const candidates = new Set();
+        const consider = (k, v) => {
+            const name = String(k ?? "").trim();
+            if (!name || name === t || envKeyFor(name)) return;
+            const val = v == null ? "" : (typeof v === "object" ? (v?.value ?? "") : v);
+            if (String(val).trim() !== "") candidates.add(name);
+        };
+        for (const [k, v] of Object.entries(conf)) consider(k, v);
+        if (approved.fields && typeof approved.fields === "object") {
+            for (const [k, f] of Object.entries(approved.fields)) consider(k, f);
+        }
+        if (approved.inputs && typeof approved.inputs === "object") {
+            for (const [k, v] of Object.entries(approved.inputs)) consider(k, v);
+        }
+        for (const [k, v] of Object.entries(approved)) {
+            if (k === "fields" || k === "inputs" || k === "requirement") continue; // meta
+            consider(k, v);
+        }
+        if (candidates.size === 1) return [...candidates][0];
     }
-    if (approved.inputs && typeof approved.inputs === "object") {
-        for (const [k, v] of Object.entries(approved.inputs)) consider(k, v);
-    }
-    for (const [k, v] of Object.entries(approved)) {
-        if (k === "fields" || k === "inputs" || k === "requirement") continue; // meta
-        consider(k, v);
-    }
-    if (candidates.size === 1) return [...candidates][0];
     // Rule 5 — legacy confirmed keyed theo target (keyfix).
     if (hasDataAt(conf, t)) return t;
     return t;
+}
+
+/** Đọc entry confirmed theo shape cũ (string) hoặc mới ({value, intent}). */
+function confirmedEntry(entry) {
+    if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+        return {
+            value: entry.value === undefined || entry.value === null ? "" : String(entry.value),
+            intent: String(entry.intent ?? "").toUpperCase() === "EMPTY" ? "EMPTY" : "VALUE"
+        };
+    }
+    const v = entry === undefined || entry === null ? "" : String(entry);
+    // P0 TC001 backward compat: string cũ non-empty = VALUE; "" cũ KHÔNG tự động EMPTY
+    // (không explicit intent → UNRESOLVED / review required).
+    return { value: v, intent: v.trim() !== "" ? "VALUE" : "" };
+}
+
+/**
+ * P0 TC001 — canonical FILL status (model tối thiểu VALUE/EMPTY/UNRESOLVED + SETUP/RECORDED_SAMPLE).
+ * Deterministic, không đoán:
+ *   - SETUP       → input env-bound (LOGIN_*) — dùng env, không cần testcase data.
+ *   - VALUE       → tester/business value đã xác nhận → fill.
+ *   - EMPTY       → tester xác nhận để trống (confirmed intent EMPTY | approved purpose EMPTY)
+ *                   → SKIP fill, TUYỆT ĐỐI không fallback recorded.
+ *   - UNRESOLVED  → chưa xác định data source/intent → CHẶN Generate (không âm thầm dùng
+ *                   recorded literal — recorded chỉ là RECORDED_SAMPLE/evidence).
+ * @returns {{status:string, businessField:string, value:(string|null), source:(string|null), bound:boolean}}
+ */
+export function resolveFillStatus({ target, testDataBindings = {}, confirmedTestData = {}, approvedTestData = {}, purposeMap = {}, singleInput = false } = {}) {
+    const t = String(target ?? "").trim();
+    if (!t) return { status: "SKIP", businessField: "", value: null, source: null, bound: false };
+    if (envKeyFor(t)) return { status: "SETUP", businessField: t, value: null, source: "SETUP_ENV", bound: false };
+    const rawBinding = testDataBindings && String(testDataBindings[t] ?? "").trim();
+    const businessField = rawBinding
+        ? rawBinding
+        : resolveBusinessFieldForFill(t, { testDataBindings, confirmedTestData, approvedTestData }, singleInput);
+    const confEntry = confirmedEntry(confirmedTestData?.[businessField]);
+    const purpose = String(purposeMap?.[businessField] ?? "").toUpperCase();
+    // EMPTY — intent tester (confirmed) hoặc purpose approved.
+    if (confEntry.intent === "EMPTY" || purpose === "EMPTY") {
+        return { status: "EMPTY", businessField, value: null, source: "TESTCASE_EMPTY", bound: Boolean(rawBinding) };
+    }
+    // VALUE — confirmed (USER_CONFIRMED) > approved (APPROVED_JSON).
+    if (confEntry.intent === "VALUE" && confEntry.value.trim() !== "") {
+        return { status: "VALUE", businessField, value: confEntry.value, source: "USER_CONFIRMED", bound: Boolean(rawBinding) };
+    }
+    const apprVal = pickApprovedValue(approvedTestData, businessField);
+    if (apprVal !== undefined && apprVal !== null && String(apprVal).trim() !== "") {
+        return { status: "VALUE", businessField, value: String(apprVal), source: "APPROVED_JSON", bound: Boolean(rawBinding) };
+    }
+    // UNRESOLVED — chưa xác định: "" cũ / null / missing KHÔNG fallback recorded.
+    return { status: "UNRESOLVED", businessField, value: null, source: null, bound: Boolean(rawBinding) };
 }
 
 /** Render MỘT step — stateless: step → { line?, runtimeEnv?, diagnostics? }.
  *  P0-A — testDataMap: map target → value (từ approved/confirmed testcase data).
  *  Khi có mapping evidence → `fill(testData["<target>"])` (dễ sửa về sau);
  *  KHÔNG có (recorded/fallback) → inline như cũ. KHÔNG invent mapping. */
-export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {}, testDataMap = null, testDataBindings = null } = {}) {
+export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, approvedTestData = {}, testDataMap = null, testDataBindings = null, fillStatus = null } = {}) {
     const diagnostics = [];
     const runtimeEnv = {};
     const action = String(step?.actionType ?? "").toUpperCase();
@@ -176,39 +232,34 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
         }
         case "FILL": {
             const target = String(step?.target ?? "");
-            // P0 RUNTIME FIX — canonical resolution: binding > unique business field (có data)
-            // > target (legacy keyfix) > recorded fallback. Recorded KHÔNG được thắng business data.
-            const rawBinding = testDataBindings && String(testDataBindings[target] ?? "").trim();
-            const hasBinding = Boolean(rawBinding);
-            const businessField = hasBinding
-                ? rawBinding
-                : resolveBusinessFieldForFill(target, { testDataBindings, confirmedTestData, approvedTestData });
-            const resolved = resolveTestValue({
-                purpose: purposeMap[businessField],
-                savedDrawerValue: confirmedTestData?.[businessField],
-                approvedJsonValue: pickApprovedValue(approvedTestData, businessField),
-                // P0 — CÓ binding => KHÔNG fallback recorded (business value thiếu -> báo lỗi rõ);
-                // không binding => recorded là fallback theo contract.
-                recordedCodeGenValue: hasBinding ? undefined : step?.recordedValue,
-                envValue: undefined
+            // P0 TC001 — canonical FILL status (VALUE/EMPTY/UNRESOLVED/SETUP).
+            // fillStatus từ renderV3Spec pre-pass (có singleInput); standalone renderStep
+            // tự resolve với singleInput=false (an toàn: không heuristic multi-input).
+            const fs = fillStatus ?? resolveFillStatus({
+                target,
+                testDataBindings,
+                confirmedTestData,
+                approvedTestData,
+                purposeMap,
+                singleInput: false
             });
-            if (resolved.source === TESTDATA_SOURCES.MISSING || resolved.value == null) {
-                diagnostics.push({ code: "TESTDATA_BINDING_REQUIRED", field: businessField });
-                return { line: null, runtimeEnv, diagnostics };
+            if (fs.status === "SKIP" || fs.status === "EMPTY") {
+                return { line: null, runtimeEnv, diagnostics }; // EMPTY — xác nhận để trống, KHÔNG fallback recorded
             }
-            if (String(purposeMap[businessField] ?? "").toUpperCase() === "EMPTY") {
-                return { line: null, runtimeEnv, diagnostics }; // EMPTY -> không điền
-            }
-            const envKey = envKeyFor(businessField);
-            if (envKey) {
-                runtimeEnv[envKey] = { value: resolved.value, source: resolved.source };
+            if (fs.status === "SETUP") {
+                const envKey = envKeyFor(fs.businessField);
+                runtimeEnv[envKey] = { value: null, source: "SETUP_ENV" };
                 return { line: `  await ${loc}.fill(process.env.${envKey} ?? "");`, runtimeEnv, diagnostics };
             }
-            // P0-A — testcase-confirmed data (approved/confirmed) đi qua testData object (key = businessField).
-            if (testDataMap && Object.prototype.hasOwnProperty.call(testDataMap, businessField)) {
-                return { line: `  await ${loc}.fill(testData[${JSON.stringify(businessField)}]);`, runtimeEnv, diagnostics };
+            if (fs.status !== "VALUE") {
+                diagnostics.push({ code: "TESTDATA_UNRESOLVED", field: fs.businessField });
+                return { line: null, runtimeEnv, diagnostics };
             }
-            return { line: `  await ${loc}.fill(${JSON.stringify(resolved.value)});`, runtimeEnv, diagnostics };
+            // P0-A — testcase-confirmed data (approved/confirmed) đi qua testData object (key = businessField).
+            if (testDataMap && Object.prototype.hasOwnProperty.call(testDataMap, fs.businessField)) {
+                return { line: `  await ${loc}.fill(testData[${JSON.stringify(fs.businessField)}]);`, runtimeEnv, diagnostics };
+            }
+            return { line: `  await ${loc}.fill(${JSON.stringify(fs.value)});`, runtimeEnv, diagnostics };
         }
         case "CLICK": return { line: `  await ${loc}.click();`, runtimeEnv, diagnostics };
         case "CHECK": return { line: `  await ${loc}.check();`, runtimeEnv, diagnostics };
@@ -304,31 +355,59 @@ export function renderV3Spec({
     const purposeMap = {};
     for (const [k, f] of Object.entries(approvedTestData?.fields ?? {})) purposeMap[k] = f?.purpose ?? "VALID";
     const runtimeEnv = {};
-    const bindingDiag = [];
 
-    // P0-A — xây testDataMap: field có value từ APPROVED_JSON/USER_CONFIRMED (testcase data)
-    // → đưa vào const testData; recorded chỉ là fallback (inline, không vào map).
+    // P0 TC001 — canonical FILL semantics (VALUE/EMPTY/UNRESOLVED/SETUP).
+    // Pre-pass: resolve status cho TỪNG FILL target (một nguồn sự thật cho cả collectTestData,
+    // renderStep và chặn Generate). Recorded literal = RECORDED_SAMPLE — KHÔNG bao giờ là
+    // runtime value nếu chưa được tester xác nhận (VALUE) hoặc để trống (EMPTY).
+    const allSteps = [...(setupRecording?.steps ?? []), ...(testcaseRecording?.steps ?? [])];
+    const fillTargets = new Set(
+        allSteps
+            .filter(s => String(s?.actionType ?? "").toUpperCase() === "FILL")
+            .map(s => String(s?.target ?? "").trim())
+            .filter(t => t && !envKeyFor(t)) // bỏ setup env-bound
+    );
+    const singleInput = fillTargets.size === 1;
+    const fillStatuses = new Map();
+    const unresolved = [];
+    for (const step of allSteps) {
+        if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
+        const target = String(step?.target ?? "").trim();
+        if (!target || fillStatuses.has(target)) continue;
+        const fs = resolveFillStatus({ target, testDataBindings, confirmedTestData, approvedTestData, purposeMap, singleInput });
+        fillStatuses.set(target, fs);
+        if (fs.status === "UNRESOLVED") unresolved.push({ field: fs.businessField, bound: fs.bound });
+    }
+    if (unresolved.length > 0) {
+        // UNRESOLVED (chưa xác định data source/intent) → CHẶN Generate, yêu cầu review.
+        // Bound + thiếu data giữ code TESTDATA_BINDING_REQUIRED (compat contract cũ).
+        validation.spec.bindingValid = false;
+        const hasBound = unresolved.some(u => u.bound);
+        const fields = [...new Set(unresolved.map(u => u.field))].map(f => JSON.stringify(f)).join(", ");
+        return {
+            ok: false,
+            errorCode: hasBound ? RENDERER_ERRORS.TESTDATA_BINDING_REQUIRED : RENDERER_ERRORS.TESTDATA_UNRESOLVED,
+            validation,
+            metadata,
+            runtimeEnv,
+            reason: hasBound
+                ? `Thiếu dữ liệu: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data.`
+                : `Chưa xác định dữ liệu cho: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data trước khi Sinh.`
+        };
+    }
+    validation.spec.bindingValid = true;
+
+    // P0-A — xây testDataMap: CHỈ VALUE (APPROVED_JSON/USER_CONFIRMED) đi vào const testData.
     const testDataMap = {};
     const collectTestData = rec => {
         for (const step of rec?.steps ?? []) {
             if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
             const target = String(step?.target ?? "").trim();
-            if (!target) continue;
-            // P0 RUNTIME FIX — canonical resolution (cùng rule với renderStep):
-            // binding > unique business field (có data) > target (legacy keyfix).
-            const businessField = resolveBusinessFieldForFill(target, { testDataBindings, confirmedTestData, approvedTestData });
-            if (Object.prototype.hasOwnProperty.call(testDataMap, businessField)) continue;
-            if (isSensitiveField(businessField)) continue;
-            const resolved = resolveTestValue({
-                purpose: purposeMap[businessField],
-                savedDrawerValue: confirmedTestData?.[businessField],
-                approvedJsonValue: pickApprovedValue(approvedTestData, businessField),
-                recordedCodeGenValue: step?.recordedValue,
-                envValue: undefined
-            });
-            if (resolved.source === TESTDATA_SOURCES.APPROVED_JSON || resolved.source === TESTDATA_SOURCES.USER_CONFIRMED) {
-                testDataMap[businessField] = resolved.value;
-            }
+            const fs = target ? fillStatuses.get(target) : null;
+            if (!fs || fs.status !== "VALUE") continue;
+            if (Object.prototype.hasOwnProperty.call(testDataMap, fs.businessField)) continue;
+            if (isSensitiveField(fs.businessField)) continue;
+            testDataMap[fs.businessField] = fs.value;
         }
     };
     if (setupRecording) collectTestData(setupRecording);
@@ -337,10 +416,18 @@ export function renderV3Spec({
     const renderRecording = rec => {
         const lines = [];
         for (const step of rec?.steps ?? []) {
-            const r = renderStep(step, { purposeMap, confirmedTestData, approvedTestData, testDataMap, testDataBindings });
+            const r = renderStep(step, {
+                purposeMap,
+                confirmedTestData,
+                approvedTestData,
+                testDataMap,
+                testDataBindings,
+                fillStatus: String(step?.actionType ?? "").toUpperCase() === "FILL"
+                    ? fillStatuses.get(String(step?.target ?? "").trim()) ?? null
+                    : null
+            });
             if (r.line) lines.push(r.line);
             for (const [k, v] of Object.entries(r.runtimeEnv || {})) runtimeEnv[k] = v;
-            for (const d of r.diagnostics || []) if (d.code === "TESTDATA_BINDING_REQUIRED") bindingDiag.push(d.field);
         }
         return lines;
     };
@@ -348,12 +435,6 @@ export function renderV3Spec({
     const lines = [];
     if (setupRecording) lines.push(...renderRecording(setupRecording));
     lines.push(...renderRecording(testcaseRecording));
-
-    if (bindingDiag.length > 0) {
-        validation.spec.bindingValid = false;
-        return { ok: false, errorCode: RENDERER_ERRORS.TESTDATA_BINDING_REQUIRED, validation, metadata, runtimeEnv, reason: `Thiếu dữ liệu: ${bindingDiag.join(", ")}` };
-    }
-    validation.spec.bindingValid = true;
 
     // 5. Ghép spec.
     const title = `${testCaseId} - ${testCase?.title || "Automation"}`;

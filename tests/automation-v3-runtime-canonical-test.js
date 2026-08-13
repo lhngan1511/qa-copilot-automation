@@ -179,7 +179,8 @@ const r4c = renderV3Spec({
 });
 assert.ok(r4c.code.includes('"text search": "cai"') && r4c.code.includes('fill(testData["text search"])'), "CASE4c: legacy target-keyed vẫn chạy (không business field)");
 
-// 4d — KHÔNG data → recorded fallback (contract cho phép).
+// 4d — P0 TC001: KHÔNG data (null/empty/missing, không explicit EMPTY) → UNRESOLVED → CHẶN Generate
+// (recorded literal chỉ là RECORDED_SAMPLE — không fallback âm thầm).
 const r4d = renderV3Spec({
     testCase: { id: "TC009", title: "Không dữ liệu" },
     testcaseRecording: rec([FILL_SEARCH, CLICK]),
@@ -188,7 +189,20 @@ const r4d = renderV3Spec({
     testDataBindings: {},
     confirmedAssertions: confirmedAssertionsArr
 });
-assert.ok(r4d.code.includes('fill("Bộ")') && !r4d.code.includes("const testData"), "CASE4d: không data -> recorded fallback (contract)");
+assert.equal(r4d.ok, false, "CASE4d: không data -> generate bị chặn");
+assert.equal(r4d.errorCode, "TESTDATA_UNRESOLVED", "CASE4d: errorCode TESTDATA_UNRESOLVED");
+assert.ok(String(r4d.reason ?? "").includes("Chưa xác định dữ liệu"), "CASE4d: message yêu cầu review");
+// 4d2 — explicit EMPTY (tester xác nhận để trống) → SKIP fill, không BBC, không block.
+const r4d2 = renderV3Spec({
+    testCase: { id: "TC009", title: "Để trống" },
+    testcaseRecording: rec([FILL_SEARCH, CLICK]),
+    confirmedTestData: { "text search": { value: "", intent: "EMPTY" } },
+    approvedTestData: null,
+    testDataBindings: {},
+    confirmedAssertions: confirmedAssertionsArr
+});
+assert.equal(r4d2.ok, true, "CASE4d2: EMPTY intent -> generate OK");
+assert.ok(!r4d2.code.includes("fill(\"Bộ\")") && !r4d2.code.includes(".fill("), "CASE4d2: KHÔNG fill recorded — SKIP fill");
 
 // 4e — target LÀ business field (approved định nghĩa) — dùng thẳng, không đoán sang field khác.
 const r4e = renderV3Spec({
@@ -201,7 +215,8 @@ const r4e = renderV3Spec({
 });
 assert.ok(r4e.code.includes('"Mã đơn vị tính": "DVT001"') && r4e.code.includes('fill(testData["Mã đơn vị tính"])'), "CASE4e: target là business field -> dùng thẳng (không map sang Tên đơn vị tính)");
 
-// 4f — mơ hồ (2 business field có data, không binding) → KHÔNG đoán: recorded fallback.
+// 4f — P0 TC001: mơ hồ (2 business field có data, không binding, target không ∈ approved)
+// → KHÔNG đoán (cấm heuristic multi-input) → UNRESOLVED → chặn Generate (không recorded).
 const r4f = renderV3Spec({
     testCase: { id: "TC008", title: "Tìm kiếm" },
     testcaseRecording: rec([FILL_SEARCH, CLICK]),
@@ -210,30 +225,35 @@ const r4f = renderV3Spec({
     testDataBindings: {},
     confirmedAssertions: confirmedAssertionsArr
 });
-assert.ok(r4f.code.includes('fill("Bộ")'), "CASE4f: mơ hồ -> không đoán, recorded fallback (contract)");
+assert.equal(r4f.ok, false, "CASE4f: mơ hồ -> không đoán -> chặn");
+assert.equal(r4f.errorCode, "TESTDATA_UNRESOLVED", "CASE4f: UNRESOLVED (không fallback recorded Bộ)");
 
-// 4g — resolveBusinessFieldForFill unit (6 rule).
+// 4g — resolveBusinessFieldForFill unit (6 rule). P0 TC001: rule 4 (unique business field)
+// CHỈ áp dụng khi singleInput=true (testcase ĐÚNG 1 non-setup FILL target).
 const ctx = (over = {}) => ({ testDataBindings: {}, confirmedTestData: {}, approvedTestData: {}, ...over });
 assert.equal(resolveBusinessFieldForFill("Tài khoản", ctx()), "Tài khoản", "4g1: setup env-bound giữ target");
 assert.equal(resolveBusinessFieldForFill("text search", ctx({ testDataBindings: { "text search": "Từ khóa tìm kiếm" } })), "Từ khóa tìm kiếm", "4g2: binding thắng");
 assert.equal(resolveBusinessFieldForFill("Mã đơn vị tính", ctx({ approvedTestData: { fields: { "Mã đơn vị tính": { value: "DVT001" } } } })), "Mã đơn vị tính", "4g3: target ∈ approved -> target");
-assert.equal(resolveBusinessFieldForFill("text search", ctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedTestData: approvedData })), "Từ khóa tìm kiếm", "4g4: unique business field có data -> business");
+assert.equal(resolveBusinessFieldForFill("text search", ctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedTestData: approvedData }), true), "Từ khóa tìm kiếm", "4g4: single-input + unique business field -> business");
+assert.equal(resolveBusinessFieldForFill("text search", ctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedTestData: approvedData })), "text search", "4g4b: multi-input (default) -> KHÔNG heuristic -> target");
 assert.equal(resolveBusinessFieldForFill("text search", ctx({ confirmedTestData: { "text search": "cai" } })), "text search", "4g5: legacy target-keyed (không business field) -> target");
 assert.equal(resolveBusinessFieldForFill("text search", ctx({ approvedTestData: { fields: { A: { value: "1" }, B: { value: "2" } } } })), "text search", "4g6: mơ hồ -> target (không đoán)");
-assert.equal(resolveBusinessFieldForFill("text search", ctx()), "text search", "4g7: không data -> target (recorded fallback)");
+assert.equal(resolveBusinessFieldForFill("text search", ctx()), "text search", "4g7: không data -> target (sẽ thành UNRESOLVED ở renderV3Spec)");
 
 // ===== CASE 5 — frontend mirror (render-level): prep status dùng canonical, khớp generate =====
 const { canonicalBusinessFieldForInput, actionPrepStatus } = await import("../web-ui/src/utils/testDataView.js");
 const fctx = (over = {}) => ({ bindings: {}, confirmedTestData: null, approvedFields: null, ...over });
 assert.equal(canonicalBusinessFieldForInput("Tài khoản", fctx()), "Tài khoản", "CASE5a: setup giữ target");
 assert.equal(canonicalBusinessFieldForInput("text search", fctx({ bindings: { "text search": "Từ khóa tìm kiếm" } })), "Từ khóa tìm kiếm", "CASE5b: binding thắng");
-assert.equal(canonicalBusinessFieldForInput("text search", fctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedFields: { "Từ khóa tìm kiếm": { value: "Bản" } } })), "Từ khóa tìm kiếm", "CASE5c: unique business data -> business (mirror)");
+assert.equal(canonicalBusinessFieldForInput("text search", fctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedFields: { "Từ khóa tìm kiếm": { value: "Bản" } }, singleInput: true })), "Từ khóa tìm kiếm", "CASE5c: single-input + unique business data -> business (mirror)");
+assert.equal(canonicalBusinessFieldForInput("text search", fctx({ confirmedTestData: { "Từ khóa tìm kiếm": "Bản" }, approvedFields: { "Từ khóa tìm kiếm": { value: "Bản" } } })), "text search", "CASE5c2: multi-input -> KHÔNG heuristic (mirror)");
 const prep = actionPrepStatus({
     inputs: [{ field: "text search", recordedValue: "Bộ" }],
     bindings: {},
     confirmedTestData: { "Từ khóa tìm kiếm": "Bản" },
-    approvedFields: { "Từ khóa tìm kiếm": { value: "Bản" } }
+    approvedFields: { "Từ khóa tìm kiếm": { value: "Bản" } },
+    singleInput: true
 });
-assert.deepEqual(prep, { status: "ok", text: "✓ Sẵn sàng" }, "CASE5d: prep status Sẵn sàng (business data tồn tại — không lệch generate)");
+assert.deepEqual(prep, { status: "ok", text: "✓ Sẵn sàng" }, "CASE5d: prep status Sẵn sàng (single-input, business data tồn tại — không lệch generate)");
 
 console.log("Automation V3 Runtime Canonical (recorded không thắng business data) test: PASS");

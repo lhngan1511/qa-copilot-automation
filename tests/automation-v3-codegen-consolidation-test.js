@@ -109,7 +109,7 @@ async function main() {
     const d = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/assertions`,
         { type: "TEXT_VISIBLE", target: "Thành công", locator: "page.getByText('Thành công')", expected: "Thành công", matcher: "toBeVisible", source: "TESTER_INPUT", status: "TESTER_CONFIRMED" });
     assert.equal(d.body.status, "TESTER_CONFIRMED", "assertion confirmed");
-    const gen = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, { confirmedTestData: {} });
+    const gen = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, { confirmedTestData: { "Mã": "KG", "Tên": "Kilôgam", "Tìm kiếm": "KG" } });
     assert.equal(gen.status, 200, "generate TC Sửa PASS");
     const code = fs.readFileSync(gen.body.outputPath, "utf8");
     assert.ok(code.indexOf("name: 'Sửa'") > code.indexOf("name: 'Tìm kiếm'"), "Search trước Edit");

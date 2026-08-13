@@ -142,7 +142,7 @@ assert.ok(dClean.includes("approvedBusinessValues()") && dClean.includes("isLogi
 assert.ok(!dClean.includes("chọn input của thao tác") && !dClean.includes("kỹ thuật (chưa map business field)"), "CASE4: bỏ select/technical khỏi tester UI");
 assert.ok(dClean.includes("DỮ LIỆU CHUẨN BỊ"), "P0: run tab DỮ LIỆU CHUẨN BỊ");
 const viewSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "utils", "testDataView.js"), "utf8");
-assert.ok(viewSource.includes("Cấu hình môi trường") && viewSource.includes("Thiếu dữ liệu chạy"), "P0: prep status env/missing (util render-level)");
+assert.ok(viewSource.includes("Cấu hình môi trường") && viewSource.includes("Cần review trước khi sinh"), "P0: prep status env/review (util render-level)");
 const pageSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "pages", "AutomationV3Page.jsx"), "utf8");
 assert.ok(pageSource.includes("Loại khỏi workspace") === false || pageSource.includes("removeTestCaseFromWorkspace"), "CASE8: page dùng API remove");
 assert.ok(pageSource.includes("+ Thêm testcase") && pageSource.includes("listAvailableTestcases"), "CASE11: UI có [+ Thêm testcase] + available list");

@@ -5,7 +5,7 @@ import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 import { isSensitiveField } from "../../utils/sensitive.js";
 import { isSetupField, isLoginTestCase } from "../../utils/setupFields.js";
-import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus } from "../../utils/testDataView.js";
+import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus, fieldEntry } from "../../utils/testDataView.js";
 
 /*
  V3ReviewDrawer — Drawer (6C + 6C.1: TESTCASE luôn là context chính).
@@ -45,18 +45,21 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         } else {
             for (const [k, v] of Object.entries(td)) entries.push([k, v]);
         }
+        // P0 TC001 — draft entries {value, intent}: approved non-empty = VALUE (business);
+        // approved ""/null = UNRESOLVED (chưa intent — KHÔNG tự EMPTY); confirmed override.
         const merged = {};
         const isLoginTc = isLoginTestCase(testCase?.title, testCase?.module);
         for (const [k, v] of entries) {
             if (isSetupField(k) && !isLoginTc) continue; // setup approved field -> ẩn (trừ testcase Login)
-            merged[k] = String(v ?? "");
+            const sv = v === undefined || v === null ? "" : String(v);
+            merged[k] = { value: sv, intent: sv.trim() !== "" ? "VALUE" : "" };
         }
-        // P0 REGRESSION — draft CHỈ business fields (KHÔNG merge technical target vào draft:
-        // trước đây target key được persist sang confirmedTestData mỗi lần Lưu — rác kỹ thuật).
-        // Ưu tiên confirmedTestData (tester đã edit) khi có.
         const confirmed = testCase?.confirmedTestData ?? null;
         if (confirmed && typeof confirmed === "object") {
-            for (const [k, v] of Object.entries(confirmed)) if (Object.prototype.hasOwnProperty.call(merged, k)) merged[k] = String(v ?? "");
+            for (const [k, v] of Object.entries(confirmed)) {
+                if (!Object.prototype.hasOwnProperty.call(merged, k)) continue;
+                merged[k] = fieldEntry(v);
+            }
         }
         setTdDraft(merged);
         setTdBindings(testCase?.testDataBindings ?? {});
@@ -120,11 +123,17 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         return out;
     };
     // Automation data đã khác approved? (để hiện [Khôi phục] chỉ khi cần)
+    // P0 TC001 — so sánh theo {value, intent} (entry object hoặc string cũ).
     const tdConfirmed = testCase?.confirmedTestData ?? null;
     const tdHasEdited = Boolean(
         tdConfirmed && typeof tdConfirmed === "object" &&
         Object.keys(tdConfirmed).length > 0 &&
-        Object.entries(tdConfirmed).some(([k, v]) => approvedTdValues()[k] !== String(v ?? ""))
+        Object.entries(tdConfirmed).some(([k, v]) => {
+            const e = fieldEntry(v);
+            const apprV = approvedTdValues()[k];
+            const apprEntry = { value: apprV ?? "", intent: apprV != null && String(apprV).trim() !== "" ? "VALUE" : "" };
+            return e.value !== apprEntry.value || e.intent !== apprEntry.intent;
+        })
     );
 
     const canGenerate = canGenerateForTestcase(testCase);
@@ -193,18 +202,45 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 }
                                 return (
                                     <>
-                                        {businessKeys.map(k => (
-                                            <label className="v3-td-field" key={k}>
-                                                <span>{k}</span>
-                                                <input
-                                                    className="v3-input"
-                                                    type={isSensitiveField(k) ? "password" : "text"}
-                                                    value={draft[k] ?? ""}
-                                                    disabled={tdSaving}
-                                                    onChange={e => setTdDraft(d => ({ ...d, [k]: e.target.value }))}
-                                                />
-                                            </label>
-                                        ))}
+                                        {businessKeys.map(k => {
+                                            // P0 TC001 — entry {value, intent}: VALUE (nhập) / EMPTY (Để trống) /
+                                            // UNRESOLVED (chưa intent — cần review trước khi Sinh).
+                                            const entry = draft[k] ?? { value: "", intent: "" };
+                                            const isEmpty = entry.intent === "EMPTY";
+                                            const isUnresolved = !isEmpty && String(entry.value ?? "").trim() === "";
+                                            return (
+                                                <div className="v3-td-field" key={k}>
+                                                    <span>
+                                                        {k}
+                                                        {isUnresolved ? <span className="v3-exp__note v3-warn"> ⚠ cần review</span> : null}
+                                                    </span>
+                                                    {isEmpty ? (
+                                                        <div className="v3-td-empty"><em>Không nhập (để trống)</em></div>
+                                                    ) : (
+                                                        <input
+                                                            className="v3-input"
+                                                            type={isSensitiveField(k) ? "password" : "text"}
+                                                            value={entry.value ?? ""}
+                                                            disabled={tdSaving}
+                                                            onChange={e => setTdDraft(d => ({ ...d, [k]: { value: e.target.value, intent: "VALUE" } }))}
+                                                        />
+                                                    )}
+                                                    <label className="v3-td-toggle">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isEmpty}
+                                                            disabled={tdSaving}
+                                                            onChange={e => setTdDraft(d => ({
+                                                                ...d,
+                                                                [k]: e.target.checked
+                                                                    ? { value: "", intent: "EMPTY" }
+                                                                    : { value: d?.[k]?.value ?? "", intent: "VALUE" }
+                                                            }))}
+                                                        /> <span>Để trống</span>
+                                                    </label>
+                                                </div>
+                                            );
+                                        })}
                                         <div className="v3-td-actions">
                                             {/* P0-A UX — [Lưu dữ liệu] là primary (lưu automation-specific, không sửa approved). */}
                                             <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={tdSaving} onClick={() => persistTd()}>
@@ -213,7 +249,11 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                             {/* [Khôi phục] secondary — CHỈ hiện khi approved có value và automation data đã khác approved. */}
                                             {Object.keys(approvedTdValues()).length > 0 && tdHasEdited ? (
                                                 <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={tdSaving} onClick={() => {
-                                                    const restored = { ...approvedBusinessValues() };
+                                                    const restored = {};
+                                                    for (const [k, v] of Object.entries(approvedBusinessValues())) {
+                                                        const sv = String(v ?? "");
+                                                        restored[k] = { value: sv, intent: sv.trim() !== "" ? "VALUE" : "" };
+                                                    }
                                                     setTdDraft(restored);
                                                     setTdBindings({});
                                                     persistTd(restored);
@@ -234,19 +274,28 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                 ) : tab === "run" ? (
                     <div className="v3-run-tab">
                         <h4 className="v3-map__h">Chạy thử</h4>
-                        {/* P0 REGRESSION — DỮ LIỆU TESTCASE (chỉ business fields; không technical/setup). */}
+                        {/* P0 REGRESSION — DỮ LIỆU TESTCASE (chỉ business fields; không technical/setup).
+                            P0 TC001 — state VALUE/EMPTY/UNRESOLVED: EMPTY hiện "—", UNRESOLVED "⚠ Cần review". */}
                         <div className="v3-exp__block">
                             <h4 className="v3-exp__h">DỮ LIỆU TESTCASE</h4>
                             {(() => {
+                                const approvedPurpose = {};
+                                for (const [k, f] of Object.entries(testCase?.testData?.fields ?? {})) approvedPurpose[k] = f?.purpose ?? "";
                                 const rows = runTestcaseDataRows({
                                     approvedBusinessValues: approvedBusinessValues(),
+                                    approvedPurpose,
                                     confirmedTestData: testCase?.confirmedTestData ?? null,
                                     bindings: { ...(testCase?.testDataBindings ?? {}) },
                                     actionInputs: businessActionInputs(),
                                     loginTestCase: isLoginTestCase(testCase?.title, testCase?.module)
                                 });
                                 if (rows.length === 0) return <p className="v3-act__note">Testcase chưa có dữ liệu kiểm thử.</p>;
-                                return rows.map(({ key, value }) => <div className="v3-info-row" key={key}><span>{key}</span><b>{value}</b></div>);
+                                return rows.map(({ key, value, state }) => (
+                                    <div className="v3-info-row" key={key}>
+                                        <span>{key}</span>
+                                        <b className={state === "UNRESOLVED" ? "v3-warn" : state === "EMPTY" ? "v3-act__note" : ""}>{value}</b>
+                                    </div>
+                                ));
                             })()}
                         </div>
 
@@ -255,11 +304,14 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                             <h4 className="v3-exp__h">DỮ LIỆU CHUẨN BỊ</h4>
                             {testCase?.segments?.length > 0 ? (
                                 testCase.segments.map(seg => {
+                                    // P0 TC001 — singleInput: heuristic unique-business-field chỉ khi ĐÚNG 1 input.
+                                    const actionInputs = businessActionInputs();
                                     const prep = actionPrepStatus({
                                         inputs: seg?.inputs ?? [],
                                         bindings: { ...(testCase?.testDataBindings ?? {}) },
                                         confirmedTestData: testCase?.confirmedTestData ?? null,
-                                        approvedFields: testCase?.testData?.fields ?? null
+                                        approvedFields: testCase?.testData?.fields ?? null,
+                                        singleInput: Object.keys(actionInputs).length === 1
                                     });
                                     return (
                                         <div className="v3-info-row" key={seg.segmentId}>

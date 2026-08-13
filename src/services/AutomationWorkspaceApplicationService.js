@@ -34,6 +34,8 @@ export const V3_ERRORS = {
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
     ASSERTION_DUPLICATE: "ASSERTION_DUPLICATE",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
+    // P0 TC001 — UNRESOLVED: input chưa xác định data source/intent → chặn Generate.
+    TESTDATA_UNRESOLVED: "TESTDATA_UNRESOLVED",
     GENERATE_FAILED: "GENERATE_FAILED",
     NOT_GENERATED: "NOT_GENERATED",
     STALE_GENERATED: "STALE_GENERATED",
@@ -69,6 +71,7 @@ const STATUS_BY_CODE = {
     STALE_GENERATED: 409,
     RUNNER_NOT_AVAILABLE: 503,
     TESTDATA_BINDING_REQUIRED: 422,
+    TESTDATA_UNRESOLVED: 422,
     GENERATE_FAILED: 500,
     INVALID_STATE_TRANSITION: 409,
     INVALID_REQUEST: 400,
@@ -98,6 +101,7 @@ const RENDERER_TO_V3 = {
     RECORDING_APPROVAL_REQUIRED: "RECORDING_APPROVAL_REQUIRED",
     RECORDING_CHANGED_AFTER_APPROVAL: "RECORDING_CHANGED_AFTER_APPROVAL",
     TESTDATA_BINDING_REQUIRED: "TESTDATA_BINDING_REQUIRED",
+    TESTDATA_UNRESOLVED: "TESTDATA_UNRESOLVED",
     ASSERTION_CONFIRMATION_REQUIRED: "ASSERTION_CONFIRMATION_REQUIRED",
     ASSERTION_DUPLICATE: "ASSERTION_DUPLICATE",
     RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
@@ -270,14 +274,17 @@ export default class AutomationWorkspaceApplicationService {
                 if (target) targets.add(target);
             }
         }
-        // Business field names: approved (fields/inputs) + confirmed — KHÔNG setup env, KHÔNG target.
+        // Business field names: approved (fields/inputs) + confirmed — KHÔNG setup env.
+        // P0 TC001 (fix lỗ hổng D): approved keys LUÔN là business (tester-authored) — kể cả
+        // khi trùng technical target (TC001: 'Mã đơn vị tính' vừa là field vừa là locator name).
+        // Chỉ CONFIRMED keys bị loại khi trùng target (legacy confirmed keyed theo step.target).
         const approved = entry.approvedTestData ?? {};
         const fieldNames = new Set();
         // Business fields CÓ DATA (non-setup, non-empty) — unique rule dùng cái này (canonical:
         // không đoán theo số field tổng; chỉ cần ĐÚNG 1 business field có giá trị thật).
         const businessFieldsWithData = new Set();
         const considerBusiness = (k, raw) => {
-            if (setupRe.test(String(k ?? "").toLowerCase()) || targets.has(k)) return;
+            if (setupRe.test(String(k ?? "").toLowerCase())) return;
             const v = raw == null ? "" : String(raw && typeof raw === "object" ? (raw.value ?? "") : raw).trim();
             fieldNames.add(k);
             if (v !== "") businessFieldsWithData.add(k);
@@ -323,7 +330,9 @@ export default class AutomationWorkspaceApplicationService {
             // Unique: CHỈ 1 input chưa map (non-setup, đã dedupe) và CHỈ 1 business field CÓ DATA
             // -> auto-map (không đoán: dữ liệu thật đơn trị; recorded không được thắng business data).
             if (!matched && pending.length === 1 && businessFieldsWithData.size === 1) matched = [...businessFieldsWithData][0];
-            if (matched) { bindings[target] = matched; changed = true; }
+            // P0 TC001 — KHÔNG tạo self-binding (target == businessField): binding tự thân vô nghĩa,
+            // resolution field đã xử lý; tránh binding kỹ thuật làm nhiễu UI.
+            if (matched && matched !== target) { bindings[target] = matched; changed = true; }
         }
         // HEAL — confirmed legacy keyed theo step.target -> business field khi có binding thật.
         const conf = entry.confirmedTestData ?? {};
@@ -1223,8 +1232,17 @@ export default class AutomationWorkspaceApplicationService {
      *  KHÔNG ghi ngược approved-testcases.json). Shape: { "<field>": "<value>" }. */
     saveTestData({ workspaceId, testCaseId, testData = null, bindings = null }) {
         this.ensureTestCase(workspaceId, testCaseId);
+        // P0 TC001 — canonical semantics: entry có thể là string cũ (non-empty = VALUE; "" = UNRESOLVED)
+        // hoặc object { value, intent } (intent: "VALUE" | "EMPTY" — EMPTY = xác nhận để trống).
         const normalized = testData && typeof testData === "object"
-            ? Object.fromEntries(Object.entries(testData).map(([k, v]) => [k, String(v ?? "")]))
+            ? Object.fromEntries(Object.entries(testData).map(([k, v]) => {
+                if (v && typeof v === "object" && !Array.isArray(v)) {
+                    const value = v.value === undefined || v.value === null ? "" : String(v.value);
+                    const intent = String(v.intent ?? "").toUpperCase() === "EMPTY" ? "EMPTY" : "VALUE";
+                    return [k, { value, intent }];
+                }
+                return [k, String(v ?? "")];
+            }))
             : {};
         // P0 — canonical binding { stepTarget: businessField } (tester-owned; không AI tự quyết).
         this.workspace.saveTestData(workspaceId, testCaseId, normalized, bindings);

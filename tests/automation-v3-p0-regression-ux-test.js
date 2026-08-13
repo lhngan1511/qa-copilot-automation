@@ -148,7 +148,7 @@ assert.ok(!rowKeys.some(k => ["text search", "Tài khoản", "Mật khẩu", "M�
 
 // Fixture binding THẬT (sau heal) — confirmed legacy vẫn phải ra business row
 const healedRows = runTestcaseDataRows({ ...legacyFixture, bindings: { "text search": "Từ khóa tìm kiếm" } });
-assert.deepEqual(healedRows, [{ key: "Từ khóa tìm kiếm", value: "cai" }], "E5: binding thật + confirmed legacy -> đúng 1 row business 'Từ khóa tìm kiếm'='cai'");
+assert.deepEqual(healedRows, [{ key: "Từ khóa tìm kiếm", value: "cai", state: "VALUE" }], "E5: binding thật + confirmed legacy -> đúng 1 row business 'Từ khóa tìm kiếm'='cai' (VALUE)");
 
 // Fixture login testcase — credentials LÀ business (nghiệp vụ test Login)
 const loginRows = runTestcaseDataRows({ ...legacyFixture, loginTestCase: true, approvedBusinessValues: { "Tài khoản": "admin", "Mật khẩu": "secret" } });
@@ -162,7 +162,7 @@ assert.deepEqual(prepOpen, { status: "ok", text: "✓ Sẵn sàng" }, "E8: Mở 
 const prepSearch = actionPrepStatus({ inputs: [{ field: "text search", recordedValue: "Bộ" }], bindings: { "text search": "Từ khóa tìm kiếm" }, confirmedTestData: { "Từ khóa tìm kiếm": "cai" }, approvedFields: null });
 assert.deepEqual(prepSearch, { status: "ok", text: "✓ Sẵn sàng" }, "E9: Tìm kiếm có data -> ✓ Sẵn sàng");
 const prepSearchMissing = actionPrepStatus({ inputs: [{ field: "text search", recordedValue: "" }], bindings: { "text search": "Từ khóa tìm kiếm" }, confirmedTestData: {}, approvedFields: null });
-assert.deepEqual(prepSearchMissing, { status: "missing", text: "⚠ Thiếu dữ liệu chạy" }, "E10: Tìm kiếm thiếu data -> ⚠ Thiếu dữ liệu chạy");
+assert.deepEqual(prepSearchMissing, { status: "missing", text: "⚠ Cần review trước khi sinh" }, "E10: Tìm kiếm UNRESOLVED -> ⚠ Cần review trước khi sinh");
 
 // ===== F — STATIC render source: không còn chuỗi cũ / có chuỗi P0 =====
 const drawerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ReviewDrawer.jsx"), "utf8");

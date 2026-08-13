@@ -73,9 +73,9 @@ function main() {
     assert.equal(result.validation.spec.assertionValid, true);
     assert.equal(result.validation.spec.bindingValid, true);
     // runtimeEnv có nguồn
-    assert.equal(result.runtimeEnv.LOGIN_USERNAME.value, "admin");
-    assert.equal(result.runtimeEnv.LOGIN_USERNAME.source, "APPROVED_JSON");
-    assert.equal(result.runtimeEnv.LOGIN_PASSWORD.source, "APPROVED_JSON");
+    assert.equal(result.runtimeEnv.LOGIN_USERNAME.value, null);
+    assert.equal(result.runtimeEnv.LOGIN_USERNAME.source, "SETUP_ENV");
+    assert.equal(result.runtimeEnv.LOGIN_PASSWORD.source, "SETUP_ENV");
     // code đúng
     assert.ok(result.code.startsWith("import { test, expect } from '@playwright/test';"));
     assert.ok(result.code.includes('test("TC001 - Đăng nhập thành công"'));
@@ -85,7 +85,9 @@ function main() {
     // renderStep stateless: step → {line, runtimeEnv, diagnostics}
     const st = renderStep({ actionType: "FILL", locator: "getByRole('textbox', { name: 'Tài khoản' }).", target: "Tài khoản", recordedValue: "admin" }, { purposeMap: {}, confirmedTestData: {}, approvedTestData: { fields: { "Tài khoản": { value: "admin", purpose: "VALID" } } } });
     assert.equal(st.line, "  await page.getByRole('textbox', { name: 'Tài khoản' }).fill(process.env.LOGIN_USERNAME ?? \"\");");
-    assert.equal(st.runtimeEnv.LOGIN_USERNAME.value, "admin");
+    // P0 TC001 — setup env: giá trị credential KHÔNG lộ từ testcase data (đến từ runtime config).
+    assert.equal(st.runtimeEnv.LOGIN_USERNAME.source, "SETUP_ENV");
+    assert.equal(st.runtimeEnv.LOGIN_USERNAME.value, null);
     assert.deepEqual(st.diagnostics, [], "không lỗi");
 
     // Hash đổi sau approval → reject.

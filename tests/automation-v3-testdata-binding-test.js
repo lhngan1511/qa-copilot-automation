@@ -89,7 +89,9 @@ await new Promise(r => srv.close(r));
 const item = (await req("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC008");
 assert.deepEqual(item.testDataBindings, { "text search": "Từ khóa tìm kiếm" }, "C: binding persist sau reload");
 
-// D — KHÔNG có business field (testData null) -> không auto-bind -> fallback recorded theo contract
+// D — KHÔNG có business field (testData null) -> không auto-bind -> UNRESOLVED
+// P0 TC001: recorded literal chỉ là RECORDED_SAMPLE — KHÔNG fallback âm thầm; Generate bị chặn
+// (tester phải xác nhận VALUE hoặc EMPTY).
 await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/select`);
 await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/library/blocks`, { blockId: lib.body.data.blockId });
 await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/assertions`, {
@@ -99,8 +101,15 @@ await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/assertio
 const itemD = (await req("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC009");
 assert.deepEqual(itemD.testDataBindings, {}, "D: không business field -> không auto-bind (không đoán)");
 const genD = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/generate`, {});
-const codeD = genD.body?.code ?? "";
-assert.ok(codeD.includes('fill("Bộ")'), "D: không binding -> fallback recorded Bộ (contract, không đoán)");
+assert.equal(genD.status, 422, "D: không data -> UNRESOLVED chặn Generate (không fallback recorded Bộ)");
+assert.equal(genD.body?.errorCode, "TESTDATA_UNRESOLVED", "D: errorCode TESTDATA_UNRESOLVED");
+assert.ok(String(genD.body?.message ?? "").includes("Chưa xác định dữ liệu"), "D: message yêu cầu review trước khi Sinh");
+// Sau khi tester xác nhận VALUE (recorded sample thành VALUE) -> generate được.
+const saveD = await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC009/test-data`, { testData: { "text search": "Bộ" } });
+assert.equal(saveD.status, 200, "D: confirm recorded sample thành VALUE");
+const genD2 = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC009/generate`, {});
+assert.equal(genD2.status, 200, "D: sau khi confirm VALUE -> generate 200");
+assert.ok((genD2.body?.code ?? "").includes('fill(testData["text search"])'), "D: fill qua testData (VALUE tester xác nhận)");
 
 // E — Login env: binding không ảnh hưởng LOGIN_* (target username không binding -> envKeyFor)
 const { envKeyFor } = await import("../src/codegen/rendererV3.js");
@@ -113,7 +122,7 @@ assert.ok(dClean.includes("tdBindings"), "F: binding state giữ (backend)");
 assert.ok(!dClean.includes("chọn input của thao tác") && !dClean.includes("kỹ thuật (chưa map business field)"), "F: KHÔNG lộ select/technical cho tester");
 assert.ok(dClean.includes("DỮ LIỆU TESTCASE") && dClean.includes("DỮ LIỆU CHUẨN BỊ"), "P0: run tab chia DỮ LIỆU TESTCASE / DỮ LIỆU CHUẨN BỊ");
 const viewSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "utils", "testDataView.js"), "utf8");
-assert.ok(viewSource.includes("Cấu hình môi trường") && viewSource.includes("Thiếu dữ liệu chạy"), "P0: prep status env/missing (util render-level)");
+assert.ok(viewSource.includes("Cấu hình môi trường") && viewSource.includes("Cần review trước khi sinh"), "P0: prep status env/review (util render-level)");
 assert.ok(dClean.includes("testCase?.testDataBindings"), "F: dùng canonical binding từ DTO");
 
 srv.close();

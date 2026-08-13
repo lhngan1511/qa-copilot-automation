@@ -164,7 +164,8 @@ async function main() {
     const c1 = sugI.body.recordedCandidates[0];
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/assertions`,
         { type: c1.type, target: c1.target, locator: c1.locator, expected: c1.expected, matcher: c1.matcher, source: "RECORDED", status: "TESTER_CONFIRMED" });
-    const genI = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/generate`, { confirmedTestData: {} });
+    // P0 TC001 — input 'Tìm kiếm' cần data (VALUE) trước Generate (không fallback recorded).
+    const genI = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${widI}/testcases/TC001/generate`, { confirmedTestData: { "Tìm kiếm": "ABC" } });
     const codeI = fs.readFileSync(genI.body.outputPath, "utf8");
     const c2 = sugI.body.recordedCandidates[1];
     assert.ok(codeI.includes(c1.target), "I: candidate đã xác nhận vào spec");

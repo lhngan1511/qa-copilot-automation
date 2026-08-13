@@ -234,7 +234,7 @@ async function main() {
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/stop`, { recordingId: recLegacy, source: SRC });
     await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/recordings/${recLegacy}/approve`, { approvedBy: "tester" });
     await addConfirmedAssertion(baseUrl, wid, "TC004");
-    const genLegacy = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC004/generate`, { confirmedTestData: {} });
+    const genLegacy = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid}/testcases/TC004/generate`, { confirmedTestData: { "Tên đơn vị tính": "Kg" } });
     assert.equal(genLegacy.status, 200, "legacy generate 200 (tương thích ngược)");
 
     await closeServer(server);

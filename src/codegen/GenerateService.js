@@ -170,7 +170,7 @@ export default class GenerateService {
         });
         const assertions = (entry?.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED")
             .map(a => `${a.matcher}|${a.locator ?? ""}|${a.expected ?? ""}`).sort();
-        const data = Object.entries(entry?.confirmedTestData ?? {}).map(([k, v]) => `${k}=${v}`).sort();
+        const data = Object.entries(entry?.confirmedTestData ?? {}).map(([k, v]) => `${k}=${JSON.stringify(v)}`).sort();
         return JSON.stringify({ seq: labels, assertions, data });
     }
 

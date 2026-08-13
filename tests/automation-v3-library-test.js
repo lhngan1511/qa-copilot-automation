@@ -118,7 +118,7 @@ async function main() {
 
     // ===== Generate TC Sửa =====
     await addAssertion(baseUrl, wid1, "TC001");
-    const gen = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/generate`, { confirmedTestData: {} });
+    const gen = await req(baseUrl, "POST", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/generate`, { confirmedTestData: { "Mã": "KG", "Tên": "Kilôgam", "Tìm kiếm": "KG" } });
     assert.equal(gen.status, 200, "generate TC Sửa PASS");
     const code = fs.readFileSync(gen.body.outputPath, "utf8");
     assert.ok(code.indexOf("name: 'Sửa'") > code.indexOf("name: 'Tìm kiếm'"), "spec: Search trước Edit");
