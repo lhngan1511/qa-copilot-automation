@@ -94,6 +94,20 @@ const runPass = await req("POST", `/api/automation-v3/workspaces/${wid1}/testcas
 assert.equal(runPass.status, 200, "CASE4: run 200");
 assert.equal(runPass.body?.runStatus, "PASSED", "CASE4: runStatus PASSED");
 assert.equal(runPass.body?.passed, true, "CASE4: passed true");
+
+// ===== CASE 4b — P0 RUNTIME FIX: runner THẬT trả "PASSED"/"FAILED" (Playwright convention) =====
+// (Bug thật: runner trả "PASSED" nhưng service check === "PASS" -> passed=false -> UI hiện
+// "LỖI" dù chạy PASS. Service phải normalize CẢ HAI convention.)
+svc.runner = { runFile: async () => ({ status: "PASSED", durationMs: 10, errorMessage: null, diagnostic: null }) };
+const runPassed = await req("POST", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/run`, {});
+assert.equal(runPassed.body?.runStatus, "PASSED", "CASE4b: runner thật PASSED -> runStatus PASSED");
+assert.equal(runPassed.body?.passed, true, "CASE4b: passed TRUE (không còn 'LỖI' trên UI)");
+svc.runner = { runFile: async () => ({ status: "FAILED", durationMs: 10, errorMessage: "Lỗi thật", diagnostic: null }) };
+const runFailed = await req("POST", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/run`, {});
+assert.equal(runFailed.body?.runStatus, "FAILED", "CASE4b: runner thật FAILED -> runStatus FAILED");
+assert.equal(runFailed.body?.passed, false, "CASE4b: passed false");
+assert.ok(String(runFailed.body?.error ?? "").includes("Lỗi thật"), "CASE4b: có lỗi ngắn");
+
 svc.runner = { runFile: async () => ({ status: "FAIL", durationMs: 10, errorMessage: "Lỗi nghiệp vụ", diagnostic: null }) };
 const runFail = await req("POST", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/run`, {});
 assert.equal(runFail.body?.runStatus, "FAILED", "CASE5: runStatus FAILED");

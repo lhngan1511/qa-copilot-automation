@@ -1466,14 +1466,17 @@ export default class AutomationWorkspaceApplicationService {
         if (!this.runner) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner chưa sẵn sàng trong môi trường này.");
         const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId });
         // P0-D (B) — runStatus enum: NOT_RUN | PASSED | FAILED (+ DIAGNOSTIC/ERROR khi chưa chạy được).
-        const raw = result?.status ?? "ERROR";
-        const status = raw === "PASS" ? "PASSED" : (raw === "FAIL" ? "FAILED" : raw);
+        // P0 RUNTIME FIX — runner thật trả status "PASSED"/"FAILED" (Playwright convention);
+        // stub/test cũ trả "PASS"/"FAIL" — normalize CẢ HAI để `passed` luôn đúng.
+        const raw = String(result?.status ?? "ERROR").toUpperCase();
+        const passed = raw === "PASS" || raw === "PASSED";
+        const status = passed ? "PASSED" : (raw === "FAIL" || raw === "FAILED" ? "FAILED" : raw);
         this.workspace.transition(workspaceId, testCaseId, {
             runStatus: status,
             lastRun: {
                 at: new Date().toISOString(),
                 status,
-                passed: result?.status === "PASS",
+                passed,
                 error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
                 durationMs: result?.durationMs ?? null
             }
@@ -1481,7 +1484,7 @@ export default class AutomationWorkspaceApplicationService {
         return {
             testCaseId,
             runStatus: status,
-            passed: result?.status === "PASS",
+            passed,
             error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
             durationMs: result?.durationMs ?? null,
             filePath: entry.generatedFile

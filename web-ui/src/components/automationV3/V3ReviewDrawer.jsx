@@ -317,12 +317,20 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 </>
                             )}
                         </div>
-                        {/* Kết quả run */}
+                        {/* Kết quả run — P0 RUNTIME FIX: PASS khi ok + passed (hoặc runStatus PASSED —
+                            runner thật trả "PASSED"); luôn có chi tiết (error hoặc status + duration). */}
                         {runResult ? (
-                            <div className={`v3-run-result ${runResult.ok && runResult.passed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
-                                <strong>{runResult.ok && runResult.passed ? "PASS" : runResult.error ? "FAIL" : "LỖI"}</strong>
-                                {runResult.error ? <span>{String(runResult.error)}</span> : null}
-                            </div>
+                            (() => {
+                                const runPassed = Boolean(runResult.ok && (runResult.passed || runResult.runStatus === "PASSED"));
+                                return (
+                                    <div className={`v3-run-result ${runPassed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
+                                        <strong>{runPassed ? "PASS" : runResult.error ? "FAIL" : "LỖI"}</strong>
+                                        {runResult.error ? <span>{String(runResult.error)}</span> : runResult.runStatus ? (
+                                            <span className="v3-act__note">{runResult.runStatus}{runResult.durationMs ? ` · ${(runResult.durationMs / 1000).toFixed(1)}s` : ""}</span>
+                                        ) : null}
+                                    </div>
+                                );
+                            })()
                         ) : null}
                     </div>
                 ) : (
