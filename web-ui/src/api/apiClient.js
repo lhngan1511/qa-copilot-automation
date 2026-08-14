@@ -64,11 +64,17 @@ async function request(
     const payload = await parseResponse(response);
 
     if (!response.ok || payload?.success === false) {
+        // P0 — 2 shape error response tồn tại song song:
+        //   V3 (automationV3Routes.sendError): { success:false, errorCode, message, details }
+        //   cũ (AutomationController/CodeGenController): { success:false, data, error:{ code, message, details } }
+        // Trước đây apiClient CHỈ đọc payload.error.* → V3 bị nuốt hết (message fallback
+        // "Yêu cầu thất bại (422).", mất errorCode + details.unresolvedFields). Parse cả 2.
+        const err = payload?.error && typeof payload.error === "object" ? payload.error : {};
         throw new ApiError({
             status: response.status,
-            code: payload?.error?.code || "REQUEST_FAILED",
-            message: payload?.error?.message || `Yêu cầu thất bại (${response.status}).`,
-            details: payload?.error?.details ?? null
+            code: err?.code ?? payload?.errorCode ?? "REQUEST_FAILED",
+            message: err?.message ?? payload?.message ?? `Yêu cầu thất bại (${response.status}).`,
+            details: err?.details ?? payload?.details ?? null
         });
     }
 

@@ -101,6 +101,15 @@ const uf = genUnresolved.body?.details?.unresolvedFields ?? [];
 assert.ok(Array.isArray(uf) && uf.some(x => x.field === "Mã đơn vị tính") && uf.some(x => x.field === "Ghi chú"), "R12: details.unresolvedFields structured [{field, mapped}]");
 assert.ok(uf.every(x => typeof x.mapped === "boolean"), "R12: mỗi entry có mapped flag");
 
+// ===== R12b — FRONTEND không nuốt error detail: apiClient phải parse CẢ 2 shape error =
+// V3 sendError: {success:false, errorCode, message, details} (top-level) — trước đây apiClient
+// chỉ đọc payload.error.* (shape cũ) -> UI hiện "Yêu cầu thất bại (422)." và mất details.
+const apiClientSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "api", "apiClient.js"), "utf8");
+assert.ok(apiClientSource.includes("payload?.errorCode"), "R12b: apiClient đọc errorCode top-level (shape V3)");
+assert.ok(apiClientSource.includes("payload?.message"), "R12b: apiClient đọc message top-level");
+assert.ok(apiClientSource.includes("payload?.details"), "R12b: apiClient giữ details top-level (unresolvedFields)");
+assert.ok(apiClientSource.includes("err?.code ?? payload?.errorCode"), "R12b: ưu tiên error.code bọc, fallback errorCode top-level");
+
 // ===== R4 — resolve: xác nhận field -> save -> Generate NGAY (không re-add) =====
 const saveFull = await req("PATCH", `/api/automation-v3/workspaces/${tc1.wid}/testcases/TC001/test-data`, {
     testData: {
