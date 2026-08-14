@@ -158,6 +158,40 @@ assert.ok(!(genEx.body?.code ?? "").includes("TextInput"), "A6: step TextInput k
 const libList = (await req2("GET", "/api/codegen/library")).body?.data ?? [];
 assert.ok(libList.find(b => b.blockId === themBlockId).steps.some(s => s.target === "TextInput"), "A6: Action Library gốc vẫn chứa TextInput");
 
+// ===== A13 — P0 EMPTY-FIX: save qua drawer path (draft rebuild từ confirmed) KHÔNG mất EMPTY =====
+// Kịch bản thật: review-section lưu EMPTY Mã -> drawer mở lại (testCase mới) -> draft rebuild
+// (Mã {value:"",intent:"EMPTY"}) -> tester sửa field khác -> [Lưu dữ liệu] gửi full draft
+// -> confirmed Mã PHẢI giữ EMPTY (trước đây draft state cũ intent "" ghi đè mất EMPTY).
+const drawerDraft = {}; // mô phỏng drawer rebuild: approved keys + confirmed (fieldEntry object)
+const approvedA13 = { "Mã đơn vị tính": { value: "" }, "Tên đơn vị tính": { value: "Kg" }, "Ghi chú": { value: "" } };
+for (const [k, f] of Object.entries(approvedA13)) {
+    const sv = String(f?.value ?? "");
+    drawerDraft[k] = { value: sv, intent: sv.trim() !== "" ? "VALUE" : "" };
+}
+const itemA13 = (await req2("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC001");
+for (const [k, v] of Object.entries(itemA13.confirmedTestData ?? {})) {
+    const e = v && typeof v === "object" && !Array.isArray(v)
+        ? { value: v.value === undefined || v.value === null ? "" : String(v.value), intent: String(v.intent ?? "").toUpperCase() === "EMPTY" ? "EMPTY" : "VALUE" }
+        : { value: v == null ? "" : String(v), intent: String(v ?? "").trim() !== "" ? "VALUE" : "" };
+    drawerDraft[k] = e;
+}
+// drawer path: Lưu dữ liệu (gửi full draft, KHÔNG bindings — như persistTd hiện tại)
+const drawerSave = await req2("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC001/test-data`, { testData: drawerDraft });
+assert.equal(drawerSave.status, 200, "A13: drawer save 200");
+const itemA13b = (await req2("GET", `/api/automation-v3/workspaces/${wid}`)).body.items.find(x => x.testCaseId === "TC001");
+assert.equal(itemA13b.confirmedTestData["Mã đơn vị tính"]?.intent, "EMPTY", "A13: EMPTY giữ sau drawer save (draft rebuild từ confirmed)");
+assert.equal(itemA13b.confirmedTestData["Ghi chú"]?.intent, "EMPTY", "A13: Ghi chú EMPTY giữ");
+// static: drawer useEffect dep là testCase (object), không chỉ testCaseId
+const drawerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3ReviewDrawer.jsx"), "utf8");
+assert.ok(drawerSource.includes("}, [testCase]);"), "A13: drawer draft sync dep = [testCase] (rebuild khi testCase mới)");
+
+// ===== A14 — duplicate step CÙNG field (TextInput + Mã cùng map Mã) EMPTY đồng nhất: cả 2 skip =====
+// (Đã map TextInput->Mã + Mã EMPTY; step Mã đơn vị tính (target trùng field) cũng EMPTY qua confirmed)
+const genA14 = await req2("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, {});
+assert.equal(genA14.status, 200, "A14: generate 200");
+const codeA14 = genA14.body?.code ?? "";
+assert.ok(!codeA14.includes('fill("BBC")') && !codeA14.includes('fill(testData["Mã đơn vị tính"])'), "A14: CẢ 2 step (TextInput + Mã) cùng EMPTY -> không fill Mã/BBC");
+
 // ===== A9 — TC008 parameterized =====
 const SRC_TC8 = `await page.goto('http://x/danh-muc');
 await page.getByRole('textbox', { name: 'text search' }).fill('Bộ');

@@ -67,8 +67,12 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         }
         setTdDraft(merged);
         setTdBindings(testCase?.testDataBindings ?? {});
+        // P0 EMPTY-FIX — dep phải là testCase (object), KHÔNG chỉ testCaseId: sau khi vùng
+        // "Cần bạn xác nhận" lưu EMPTY/VALUE (onChanged → refreshWorkspace → testCase mới),
+        // draft phải REBUILD từ confirmed mới. Trước đây dep=[testCaseId] → draft state giữ
+        // cũ (intent "") → [Lưu dữ liệu] ghi đè mất EMPTY → Generate lại fill/block.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [testCase?.testCaseId]);
+    }, [testCase]);
 
     const persistTd = async (next, bindingsOverride) => {
         if (tdSaving) return;
