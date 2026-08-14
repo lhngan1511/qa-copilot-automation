@@ -997,21 +997,36 @@
 .v3-td-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #64748b; cursor: pointer; user-select: none; }
 .v3-td-empty { min-height: 32px; display: flex; align-items: center; color: #94a3b8; font-size: 12px; }
 
-/* P0 — READ-ONLY Action Library Viewer (trang CodeGen) */
-.v3-drawer--wide { width: min(880px, 100vw); }
-.v3-lib-viewer { display: grid; grid-template-columns: 300px 1fr; gap: 12px; min-height: 0; }
-.v3-lib-viewer__list { border-right: 1px solid var(--border); padding-right: 10px; overflow: auto; }
-.v3-lib-viewer__search { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
-.v3-lib-viewer__search .v3-input { flex: 1; min-height: 32px; font-size: 13px; }
-.v3-lib-viewer__item { display: block; width: 100%; text-align: left; padding: 6px 8px; border-radius: 6px; border: none; background: none; cursor: pointer; font-size: 13px; }
+/* P0 — READ-ONLY Action Library Viewer (trang CodeGen) — wireframe large modal 2 cột */
+.v3-lib-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 60; display: grid; place-items: center; padding: 3vh 2vw; }
+.v3-lib-modal { width: min(90vw, 1400px); max-height: 88vh; background: var(--surface); border-radius: 14px; box-shadow: 0 24px 64px rgba(16, 24, 40, .28); display: flex; flex-direction: column; overflow: hidden; }
+.v3-lib-modal__header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: grid; gap: 8px; }
+.v3-lib-modal__title-row { display: flex; justify-content: space-between; align-items: center; }
+.v3-lib-modal__sub { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: #64748b; }
+.v3-lib-modal__search { display: flex; gap: 8px; align-items: center; }
+.v3-lib-modal__search .v3-input { flex: 1; max-width: 360px; min-height: 32px; font-size: 13px; }
+.v3-lib-modal__body { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px 1fr; gap: 0; }
+@media (max-width: 900px) { .v3-lib-modal__body { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; } }
+.v3-lib-modal__list { border-right: 1px solid var(--border); overflow: auto; padding: 10px; }
+.v3-lib-modal__group-body { display: grid; gap: 2px; padding-left: 10px; border-left: 1px solid var(--border); margin-left: 6px; }
+.v3-lib-group__head { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; padding: 8px 10px; border-radius: 6px; border: none; background: rgba(100, 116, 139, .08); cursor: pointer; font-size: 13px; }
+.v3-lib-group__head:hover { background: rgba(100, 116, 139, .14); }
+.v3-lib-group__count { color: #64748b; font-size: 12px; }
+.v3-lib-viewer__item { display: block; width: 100%; text-align: left; padding: 7px 10px; border-radius: 6px; border: none; background: none; cursor: pointer; font-size: 13px; }
 .v3-lib-viewer__item:hover { background: rgba(37, 99, 235, .06); }
-.v3-lib-viewer__item--on { background: rgba(37, 99, 235, .12); }
+.v3-lib-viewer__item--on { background: rgba(37, 99, 235, .12); box-shadow: inset 3px 0 0 rgba(37, 99, 235, .55); }
 .v3-lib-viewer__item .v3-act__note { display: block; font-size: 11px; }
-.v3-lib-viewer__detail { overflow: auto; padding-left: 4px; }
-.v3-lib-viewer__detail .v3-info-row { font-size: 13px; }
-.v3-lib-viewer__value { display: block; margin-top: 2px; font-size: 12px; color: #0f766e; }
+.v3-lib-modal__detail { overflow: auto; padding: 14px 18px; display: grid; gap: 10px; align-content: start; }
+.v3-lib-modal__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.v3-lib-modal__chip { font-size: 12px; background: rgba(37, 99, 235, .08); color: #1e40af; border-radius: 999px; padding: 2px 10px; }
+.v3-lib-modal__detail .v3-info-row { font-size: 13px; }
+.v3-step__main { display: flex; gap: 8px; align-items: baseline; }
+/* Recorded value — mono block, tint, border-left accent, JSON quoted — đọc rõ ngay */
+.v3-lib-viewer__value { display: block; margin: 4px 0 2px 24px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; color: #0f766e; background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 0 6px 6px 0; padding: 4px 8px; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; overflow: auto; }
+/* Technical collapse — KHÔNG wrap từng ký tự */
+.v3-lib-modal__detail .v3-exp__stmt, .v3-step-review .v3-exp__stmt { white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; overflow: auto; max-height: 160px; display: block; }
 
-/* P0 — CẦN XÁC NHẬN THAO TÁC (step decision review) */
+/* P0 — Cần bạn xác nhận (step decision review) */
 .v3-step-review { border: 1px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
 .v3-step-review__item { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 8px 10px; display: grid; gap: 8px; }
 .v3-step-review__item--excluded { opacity: .75; }
