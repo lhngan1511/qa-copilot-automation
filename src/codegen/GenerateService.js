@@ -171,7 +171,10 @@ export default class GenerateService {
         const labels = seq.map(ref => {
             const b = this.workspace?.getActionBlock?.(workspaceId, ref.blockId)
                 ?? (String(ref.blockId ?? "").startsWith("LIB-") ? this.actionLibrary?.get(ref.blockId) ?? null : null);
-            return b?.label ?? ref.blockId;
+            // P0 EDIT — content dependency: label + version + hash (steps/assertions/range).
+            // Action bị chỉnh sửa (updateBlock: steps đổi -> version++ + hash mới) => fingerprint
+            // đổi => testcase stale => bắt Generate lại. KHÔNG chỉ dựa label.
+            return `${b?.label ?? ref.blockId}|v${b?.version ?? 1}|${b?.hash ?? ""}`;
         });
         const assertions = (entry?.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED")
             .map(a => `${a.matcher}|${a.locator ?? ""}|${a.expected ?? ""}`).sort();

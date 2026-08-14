@@ -20,6 +20,9 @@ export default class CodeGenController {
                 label: b.label ?? null,
                 kind: b.kind,
                 groupName: b.groupName ?? null,
+                // P0 EDIT — version + hash (content dependency cho fingerprint/stale UI).
+                version: b.version ?? 1,
+                hash: b.hash ?? null,
                 stepCount: (b.steps ?? []).length,
                 // P0 — kèm steps/assertions sanitized để UI "[Xem]" expand readable (không render một cục text).
                 steps: (b.steps ?? []).map(s => ({
@@ -91,11 +94,54 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const { blockId } = req.params ?? {};
+            // P0 EDIT/DELETE — guard: Action đang được testcase dùng KHÔNG được xóa (xóa làm
+            // binding resolve null -> testcase generate 422 SEGMENT_MAPPING_INVALID / mất action).
+            const usage = typeof this.usageFn === "function" ? (this.usageFn() ?? new Map()) : new Map();
+            const used = usage.get(blockId) ?? 0;
+            if (used > 0) {
+                return this.fail(res, new Error(`Action này đang được sử dụng bởi ${used} testcase. Hãy bỏ Action khỏi các testcase đang dùng trước.`), 409, "LIBRARY_IN_USE", `Action đang dùng bởi ${used} testcase.`);
+            }
             const removed = this.actionLibrary.removeBlock(blockId);
             if (!removed) return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong thư viện.");
             return res.status(200).json({ success: true, data: { blockId, removed: true }, error: null });
         } catch (error) {
             return this.fail(res, error, 500, "LIBRARY_DELETE_FAILED", "Không xóa được thao tác thư viện.");
+        }
+    }
+
+    /** P0 EDIT — Action Library composition (KHÔNG raw Playwright): đổi tên / Chức năng /
+     *  include-exclude step (steps mới). Content change → updateBlock re-snapshot + version++
+     *  + hash mới; tester chủ động → confirmBlock (CONFIRMED). Testcase đang dùng Action sẽ
+     *  stale (fingerprint có hash/version) → bắt Generate lại. */
+    async updateLibraryAction(req, res) {
+        try {
+            if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
+            const { blockId } = req.params ?? {};
+            const { label, groupName, steps } = req.body ?? {};
+            if (!this.actionLibrary.get(blockId)) {
+                return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong thư viện.");
+            }
+            const patch = {};
+            if (label !== undefined) patch.label = label;
+            if (groupName !== undefined) patch.groupName = groupName;
+            if (steps !== undefined) {
+                if (!Array.isArray(steps)) return this.fail(res, new Error("steps phải là mảng."), 400, "INVALID_REQUEST", "Danh sách bước không hợp lệ.");
+                // Chỉ nhận steps hiện có (snapshot copy) — không raw script.
+                patch.steps = steps.map(s => ({ ...s }));
+            }
+            let updated;
+            try {
+                updated = this.actionLibrary.updateBlock(blockId, patch);
+            } catch (e) {
+                return this.fail(res, e, 400, e.code ?? "LIBRARY_UPDATE_FAILED", e.message ?? "Không cập nhật được thao tác.");
+            }
+            if (!updated) return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong thư viện.");
+            // Tester chủ động save composition -> xác nhận (CONFIRMED). Content change đã version++.
+            this.actionLibrary.confirmBlock(blockId);
+            const final = this.actionLibrary.get(blockId);
+            return res.status(200).json({ success: true, data: final, error: null });
+        } catch (error) {
+            return this.fail(res, error, 500, "LIBRARY_UPDATE_FAILED", "Không cập nhật được thao tác thư viện.");
         }
     }
 

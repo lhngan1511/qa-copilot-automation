@@ -25,6 +25,8 @@ export default function createCodeGenRoutes({
     router.post("/library", (req, res) => controller.createLibraryAction(req, res));
     router.post("/library/rename-group", (req, res) => controller.renameLibraryGroup(req, res));
     router.delete("/library/:blockId", (req, res) => controller.deleteLibraryAction(req, res));
+    // P0 EDIT — Action Library composition (rename / group / include-exclude step).
+    router.patch("/library/:blockId", (req, res) => controller.updateLibraryAction(req, res));
     router.post("/analyze", (req, res) => controller.analyzeRecording(req, res));
     router.post("/recordings", (req, res) => controller.createRecording(req, res));
     router.get("/status", (req, res) => controller.status(req, res));

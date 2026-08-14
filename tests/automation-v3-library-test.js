@@ -144,8 +144,15 @@ async function main() {
     assert.equal(bindAfterReload.body.sequence[0].blockId, libMap["Tìm kiếm"], "reload: binding trỏ Library block còn dùng được");
 
     // ===== P0 — Xóa khỏi Library (UI confirm; backend xóa qua codegen DELETE) =====
+    // P0 EDIT/DELETE guard — đang được testcase dùng → BLOCK 409 (không phá workspace).
+    const delUsed = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
+    assert.equal(delUsed.status, 409, "delete khi đang dùng → 409 LIBRARY_IN_USE");
+    assert.equal(delUsed.body?.error?.code ?? delUsed.body?.errorCode, "LIBRARY_IN_USE", "errorCode LIBRARY_IN_USE");
+    // Unbind trước (TC001 dùng 2 lần + TC002) → xóa được.
+    await req(base2, "DELETE", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/binding/blocks/${encodeURIComponent(libMap["Tìm kiếm"])}`);
+    await req(base2, "DELETE", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding/blocks/${encodeURIComponent(libMap["Tìm kiếm"])}`);
     const del = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
-    assert.equal(del.status, 200, "delete library block 200");
+    assert.equal(del.status, 200, "delete library block 200 (sau unbind)");
     const libAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/library`);
     assert.equal(libAfterDelete.body.length, 3, "library còn 3 sau khi xóa Tìm kiếm");
     const del404 = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
@@ -153,10 +160,9 @@ async function main() {
     // Binding trỏ block đã xóa → resolveBlock null → sequence lọc item (không crash).
     const bindAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding`);
     assert.ok(!bindAfterDelete.body.sequence.some(x => x.blockId === libMap["Tìm kiếm"]), "binding không còn item đã xóa (unresolved bị lọc)");
-    // Generate testcase còn binding trỏ block đã xóa → chặn rõ ràng (422, không crash, không bịa spec).
-    const genMissing = await req(base2, "POST", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/generate`, {});
-    assert.equal(genMissing.status, 422, "generate với block đã xóa → 422 SEGMENT_MAPPING_INVALID (gate rõ ràng)");
-    assert.ok(String(genMissing.body?.message ?? "").includes("đoạn thao tác"), "message nói rõ thiếu đoạn thao tác");
+    // P0 EDIT/DELETE guard — block không xóa được khi còn binding (409), nên trường hợp
+    // "binding trỏ block đã xóa" không xảy ra qua API; data file thủ công vẫn bị chặn ở
+    // generate (resolveBlock null → SEGMENT_MAPPING_INVALID) — không crash.
     await closeServer(srv2);
 
     fs.rmSync(tempRoot, { recursive: true, force: true });

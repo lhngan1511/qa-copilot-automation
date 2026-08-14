@@ -122,9 +122,9 @@ assert.ok(pageSource.includes("V3LibraryViewer"), "CASE1: page dùng viewer comp
 assert.ok(!pageSource.includes("Xem Thư viện thao tác") === false || true, "CASE1: nút không gated bởi draft");
 const viewerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3LibraryViewer.jsx"), "utf8");
 assert.ok(viewerSource.includes("Thư viện chưa có thao tác nào"), "CASE6: viewer có empty state rõ");
-assert.ok(viewerSource.includes("Giá trị bản ghi:"), "CASE4: viewer render recorded value");
+assert.ok(viewerSource.includes("JSON.stringify(s.recordedValue)"), "CASE4: viewer render recorded value (grid cột Giá trị bản ghi)");
 assert.ok(viewerSource.includes("listLibrary") && viewerSource.includes("groupLibraryActions"), "REUSE: viewer dùng listLibrary + groupLibraryActions (không endpoint/component mới)");
-assert.ok(!viewerSource.includes("deleteLibraryAction") && !viewerSource.includes("renameLibraryGroup"), "READ-ONLY: viewer KHÔNG chứa delete/rename");
+assert.ok(viewerSource.includes("updateLibraryAction") && viewerSource.includes("deleteLibraryAction"), "EDIT/DELETE: viewer dùng update/delete API shared (có kiểm soát: confirm + used warning)");
 
 // ===== PHẦN B — wireframe large modal 2 cột =====
 assert.ok(viewerSource.includes("v3-lib-overlay") && viewerSource.includes("v3-lib-modal"), "B2: container overlay + modal (không còn drawer hẹp)");
@@ -132,8 +132,8 @@ assert.ok(!viewerSource.includes("v3-drawer--wide"), "B2: KHÔNG còn class draw
 assert.ok(viewerSource.includes("Escape") && viewerSource.includes("onClose"), "B2: đóng bằng Escape");
 assert.ok(viewerSource.includes("v3-lib-modal__list") && viewerSource.includes("v3-lib-modal__detail"), "B3: 2 cột trái (Chức năng/Action) + phải (Detail)");
 assert.ok(viewerSource.includes("Xem kỹ thuật") && viewerSource.includes("<details"), "B6: technical collapse mặc định");
-assert.ok(viewerSource.includes("v3-lib-viewer__value"), "B5: recorded value block riêng (mono/tint)");
-assert.ok(viewerSource.includes("Giá trị bản ghi: {JSON.stringify(s.recordedValue)}"), "B5: recorded value JSON quoted");
+assert.ok(viewerSource.includes("v3-lib-step__val"), "B5: recorded value cột riêng (mono/tint grid)");
+assert.ok(viewerSource.includes("JSON.stringify(s.recordedValue)"), "B5: recorded value JSON quoted");
 assert.ok(viewerSource.includes("••••"), "B5: sensitive mask giữ nguyên");
 const cssSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "styles", "automationV3.css"), "utf8");
 assert.ok(cssSource.includes(".v3-lib-overlay") && cssSource.includes("place-items: center"), "B2: CSS overlay centered");

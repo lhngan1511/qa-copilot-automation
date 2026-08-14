@@ -156,9 +156,17 @@ export async function listLibrary() {
     return apiClient.get("/codegen/library");
 }
 
-/** P0 — xóa thao tác khỏi Library (UI đã confirm — block có thể đang được testcase dùng). */
+/** P0 — xóa thao tác khỏi Library (UI đã confirm — backend chặn khi đang được testcase dùng). */
 export async function deleteLibraryAction(blockId) {
     return apiClient.delete(`/codegen/library/${encodeURIComponent(blockId)}`);
+}
+
+/** P0 EDIT — Action Library composition: rename / đổi Chức năng / include-exclude step. */
+export async function updateLibraryAction(blockId, { label, groupName, steps } = {}) {
+    return apiClient.patch(`/codegen/library/${encodeURIComponent(blockId)}`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, groupName, steps })
+    });
 }
 
 /** P0 — Rename group trong Library (persist; "Chưa phân loại"/null = group chưa phân loại). */
