@@ -1,40 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { listLibrary, updateLibraryAction, deleteLibraryAction } from "../../api/codeGenApi.js";
 import { groupLibraryActions } from "../../utils/libraryGroups.js";
 import { libraryStepDetail, readableAssertion } from "../../utils/libraryViewer.js";
-import { ACTION_LABEL } from "../../utils/automationV3.js";
 
 /*
- V3LibraryViewer — READ-ONLY + EDIT/DELETE Action Library Viewer (theo wireframe
- docs/V3_LIBRARY_VIEWER_WIREFRAME.md — large modal/workspace overlay).
+ V3LibraryViewer — Action Library Viewer (VIEW + EDIT/DELETE) — UI regression fix 2026-08-14.
 
- Container: .v3-lib-overlay → .v3-lib-modal (min(90vw,1400px), max-height 88vh).
- Đóng: ✕ / Escape / click ngoài.
+ CONTRACT (sau trace — root cause: error/notice là grid child thứ 3 của .v3-lib-modal__body
+ làm CSS Grid auto-placement phá bố cục 2 cột; modal height content-driven):
+   - Body LUÔN chỉ có ĐÚNG 2 grid children: tree pane + detail pane.
+     Success/error/loading nằm ở STATUS ROW trong HEADER (không phải grid child body).
+   - Modal height ỔN ĐỊNH (88vh) — không co/giãn theo content.
+   - Tree (340px) và Detail scroll RIÊNG; detail min-width:0 (không horizontal overflow).
+   - VIEW và EDIT dùng CÙNG step grid 5 cột (STT|Loại|Thao tác|Giá trị bản ghi|Kỹ thuật).
+     Edit chỉ thêm checkbox "Sử dụng bước này" trong cell STT — KHÔNG đổi cấu trúc row.
+   - Save: PATCH → refresh → re-select SAME blockId → exit edit → detail vẫn cột phải;
+     success nhỏ ở status row, tự biến mất (3s).
+   - Delete: confirm inline; backend chặn used>0 (409 LIBRARY_IN_USE) — UI disable khi used.
 
- 2 cột: trái 340px (Chức năng → Actions: search + group + count + selected)
-        phải 1fr (Action Detail).
-
- PHẦN A — STEP GRID 5 cột (CSS grid):
-   STT | Loại | Thao tác (1fr) | Giá trị bản ghi | Technical (collapse)
-   - STT/Loại width cố định; mô tả 1fr; recorded value ổn định + ellipsis (title=full);
-   - sensitive mask "••••"; technical "▸ Xem kỹ thuật" collapse; không wrap từng ký tự;
-   - responsive: dưới 900px chuyển 1 cột (grid template đơn giản).
-
- PHẦN B/C — Action header [Chỉnh sửa][Xóa] + warning used; edit composition:
-   rename / đổi Chức năng / include-exclude step (KHÔNG raw Playwright). Lưu → PATCH
-   /codegen/library/:id (updateBlock + confirm: content change → version++ + hash mới →
-   fingerprint testcase đang dùng đổi → stale → bắt Generate lại).
-
- PHẦN D — Delete: backend chặn khi usedByTestCases > 0 (409 LIBRARY_IN_USE); UI hiện
-   warning + disable. unused → confirm inline → DELETE.
-
- Reuse: GET/PATCH/DELETE /codegen/library (shared Action Library — CodeGen + Automation),
- groupLibraryActions, libraryStepDetail, readableAssertion.
+ Không đổi backend contract (delete guard/updateBlock/version/hash/fingerprint).
 */
 
 export default function V3LibraryViewer({ onClose }) {
     const [library, setLibrary] = useState(null);
-    const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [expandedGroup, setExpandedGroup] = useState(null);
     const [selectedId, setSelectedId] = useState(null);
@@ -42,21 +30,27 @@ export default function V3LibraryViewer({ onClose }) {
     const [editing, setEditing] = useState(false);
     const [editLabel, setEditLabel] = useState("");
     const [editGroup, setEditGroup] = useState("");
-    const [editStepsOn, setEditStepsOn] = useState([]); // orders được include
+    const [editStepsOn, setEditStepsOn] = useState([]);
     const [editBusy, setEditBusy] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-    const [notice, setNotice] = useState("");
+    const [status, setStatus] = useState(null); // {kind:"ok"|"err", text}
+    const statusTimer = useRef(null);
+
+    const showStatus = (kind, text, autoClear = true) => {
+        setStatus({ kind, text });
+        if (statusTimer.current) clearTimeout(statusTimer.current);
+        if (autoClear) statusTimer.current = setTimeout(() => setStatus(null), 3000);
+    };
 
     const refresh = async () => {
         setLoading(true);
-        setError("");
         try {
             const res = await listLibrary();
             const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
             setLibrary(data);
             if (data.length === 0) setSelectedId(null);
         } catch (e) {
-            setError(e?.message ?? "Không đọc được thư viện thao tác.");
+            showStatus("err", e?.message ?? "Không đọc được thư viện thao tác.");
         } finally {
             setLoading(false);
         }
@@ -79,9 +73,18 @@ export default function V3LibraryViewer({ onClose }) {
 
     const groups = useMemo(() => groupLibraryActions(filtered), [filtered]);
     const totalActions = (library ?? []).length;
+    // selected theo blockId — giữ qua refresh (re-select SAME blockId sau save).
     const selected = useMemo(() => (library ?? []).find(b => b.blockId === selectedId) ?? null, [library, selectedId]);
     const selectedSteps = useMemo(() => (selected?.steps ?? []).map(libraryStepDetail), [selected]);
     const usedCount = selected?.usedByTestCases ?? 0;
+
+    const selectAction = b => {
+        setSelectedId(b.blockId);
+        setEditing(false);
+        setDeleteConfirmId(null);
+        setStatus(null);
+        setExpandedGroup(expandedGroup ?? null);
+    };
 
     const startEdit = () => {
         if (!selected) return;
@@ -89,24 +92,26 @@ export default function V3LibraryViewer({ onClose }) {
         setEditLabel(selected.label ?? "");
         setEditGroup(selected.groupName ?? "");
         setEditStepsOn((selected.steps ?? []).map(s => s.order));
-        setNotice("");
+        setStatus(null);
     };
-    const cancelEdit = () => { setEditing(false); setNotice(""); };
+    const cancelEdit = () => { setEditing(false); setStatus(null); };
 
     const saveEdit = async () => {
         if (!selected) return;
         setEditBusy(true);
-        setError("");
         try {
             const keptSteps = (selected.steps ?? []).filter(s => editStepsOn.includes(s.order));
             await updateLibraryAction(selected.blockId, { label: editLabel, groupName: editGroup, steps: keptSteps });
-            setNotice(keptSteps.length !== (selected.steps ?? []).length
-                ? "Đã lưu. Testcase đang dùng Action này cần Sinh lại (nội dung thay đổi)."
-                : "Đã lưu thay đổi.");
-            setEditing(false);
+            // Refresh rồi RE-SELECT cùng blockId — detail vẫn cột phải; edit=false.
             await refresh();
+            setSelectedId(selected.blockId);
+            setEditing(false);
+            setDeleteConfirmId(null);
+            showStatus("ok", keptSteps.length !== (selected.steps ?? []).length
+                ? "✓ Đã lưu — testcase đang dùng Action cần Sinh lại"
+                : "✓ Đã lưu thay đổi");
         } catch (e) {
-            setError(e?.message ?? "Không lưu được thay đổi.");
+            showStatus("err", e?.message ?? "Không lưu được thay đổi.");
         } finally {
             setEditBusy(false);
         }
@@ -115,15 +120,15 @@ export default function V3LibraryViewer({ onClose }) {
     const doDelete = async () => {
         if (!selected) return;
         setEditBusy(true);
-        setError("");
         try {
             await deleteLibraryAction(selected.blockId);
-            setNotice("Đã xóa thao tác khỏi Thư viện.");
-            setDeleteConfirmId(null);
             setSelectedId(null);
+            setDeleteConfirmId(null);
+            setEditing(false);
             await refresh();
+            showStatus("ok", "✓ Đã xóa thao tác khỏi Thư viện.");
         } catch (e) {
-            setError(e?.message ?? "Không xóa được thao tác.");
+            showStatus("err", e?.message ?? "Không xóa được thao tác.");
         } finally {
             setEditBusy(false);
         }
@@ -131,9 +136,35 @@ export default function V3LibraryViewer({ onClose }) {
 
     const handleBackdrop = e => { if (e.target === e.currentTarget) onClose?.(); };
 
+    // DÙNG CHUNG cho VIEW và EDIT — grid 5 cột; edit thêm checkbox trong cell STT.
+    const renderStepRow = (s, withCheckbox) => (
+        <div className="v3-lib-modal__step" key={s.order}>
+            <span className="v3-lib-step__n">
+                {withCheckbox ? (
+                    <label className="v3-lib-step__use" title="Sử dụng bước này">
+                        <input type="checkbox" checked={editStepsOn.includes(s.order)} disabled={editBusy}
+                            onChange={e => setEditStepsOn(list => e.target.checked ? [...list, s.order] : list.filter(o => o !== s.order))} />
+                        <span>{s.order}</span>
+                    </label>
+                ) : s.order}
+            </span>
+            <span className="v3-lib-step__type">{s.actionLabel}</span>
+            <span className="v3-lib-step__desc" title={s.semantic}>{s.semantic}</span>
+            <span className="v3-lib-step__val" title={s.hasRecordedValue ? s.recordedValue : ""}>
+                {s.hasRecordedValue ? JSON.stringify(s.recordedValue) : "—"}{s.recordedValue === "••••" ? " (nhạy cảm)" : ""}
+            </span>
+            <span className="v3-lib-step__tech">
+                <details className="v3-act__tech"><summary>Xem kỹ thuật</summary>
+                    <code className="v3-exp__stmt">{s.locator || "—"}{s.target ? `\ntarget: ${s.target}` : ""}</code>
+                </details>
+            </span>
+        </div>
+    );
+
     return (
         <div className="v3-lib-overlay" onClick={handleBackdrop}>
             <div className="v3-lib-modal" role="dialog" aria-modal="true" aria-label="Thư viện thao tác">
+                {/* HEADER — fixed; status row nằm ở đây (KHÔNG phải grid child của body) */}
                 <div className="v3-lib-modal__header">
                     <div className="v3-lib-modal__title-row">
                         <b>THƯ VIỆN THAO TÁC</b>
@@ -147,18 +178,21 @@ export default function V3LibraryViewer({ onClose }) {
                         <input className="v3-input" type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm thao tác (tên / chức năng)…" />
                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={refresh} disabled={loading} title="Làm mới">{loading ? "…" : "⟳"}</button>
                     </div>
+                    {/* Status row — toast/banner nhỏ trong header (không phá body grid) */}
+                    {status ? (
+                        <div className={`v3-lib-modal__status v3-lib-modal__status--${status.kind}`}>{status.text}</div>
+                    ) : null}
                 </div>
 
+                {/* BODY — LUÔN chỉ 2 grid children: tree + detail */}
                 <div className="v3-lib-modal__body">
-                    {error ? <p className="v3-act__note v3-warn">{error}</p> : null}
-                    {notice ? <p className="v3-act__note v3-ok">{notice}</p> : null}
-
                     {library === null ? (
-                        <p className="v3-act__note">{loading ? "Đang tải thư viện…" : "Đang tải…"}</p>
+                        <div className="v3-lib-modal__empty">{loading ? "Đang tải thư viện…" : "Đang tải…"}</div>
                     ) : library.length === 0 ? (
-                        <p className="v3-act__note">Thư viện chưa có thao tác nào. Hãy record hoặc dán bản ghi Playwright rồi lưu thao tác đầu tiên.</p>
+                        <div className="v3-lib-modal__empty">Thư viện chưa có thao tác nào. Hãy record hoặc dán bản ghi Playwright rồi lưu thao tác đầu tiên.</div>
                     ) : (
                         <>
+                            {/* TREE PANE (fixed 340px, scroll riêng) */}
                             <div className="v3-lib-modal__list">
                                 {groups.length === 0 ? (
                                     <p className="v3-act__note">Không tìm thấy thao tác khớp "{search}".</p>
@@ -177,7 +211,7 @@ export default function V3LibraryViewer({ onClose }) {
                                                     {g.items.map(b => (
                                                         <button type="button"
                                                             className={`v3-lib-viewer__item${selectedId === b.blockId ? " v3-lib-viewer__item--on" : ""}`}
-                                                            key={b.blockId} onClick={() => { setSelectedId(b.blockId); setEditing(false); setDeleteConfirmId(null); setNotice(""); }}>
+                                                            key={b.blockId} onClick={() => selectAction(b)}>
                                                             <b>{b.label}</b>
                                                             <span className="v3-act__note">{b.stepCount} bước · dùng bởi {b.usedByTestCases ?? 0}</span>
                                                         </button>
@@ -189,29 +223,54 @@ export default function V3LibraryViewer({ onClose }) {
                                 })}
                             </div>
 
+                            {/* DETAIL PANE (flexible, scroll riêng, min-width:0) */}
                             <div className="v3-lib-modal__detail">
                                 {selected ? (
                                     <>
                                         <div className="v3-lib-modal__detail-head">
-                                            <div>
-                                                <h4 className="v3-map__h">{selected.label}</h4>
-                                                <div className="v3-lib-modal__chips">
-                                                    <span className="v3-lib-modal__chip">Chức năng: {selected.groupName || "Chưa phân loại"}</span>
-                                                    <span className="v3-lib-modal__chip">{selected.stepCount} bước</span>
-                                                    <span className="v3-lib-modal__chip">{selected.recordedAssertionCount} điều kiện</span>
-                                                    <span className="v3-lib-modal__chip">dùng bởi {selected.usedByTestCases ?? 0} testcase</span>
+                                            {editing ? (
+                                                /* EDIT HEADER — inputs thay chips; metadata/steps vẫn đúng vị trí cũ */
+                                                <div className="v3-lib-modal__edit-head">
+                                                    <div className="v3-lib-modal__edit-row">
+                                                        <label className="v3-act__note">Tên Action</label>
+                                                        <input className="v3-input" value={editLabel} onChange={e => setEditLabel(e.target.value)} disabled={editBusy} />
+                                                    </div>
+                                                    <div className="v3-lib-modal__edit-row">
+                                                        <label className="v3-act__note">Chức năng</label>
+                                                        <input className="v3-input" value={editGroup} onChange={e => setEditGroup(e.target.value)} disabled={editBusy} placeholder="Chưa phân loại" />
+                                                    </div>
+                                                    <div className="v3-lib-modal__edit-row v3-act__note">
+                                                        {selected.stepCount} bước · {selected.recordedAssertionCount} điều kiện · dùng bởi {selected.usedByTestCases ?? 0} testcase
+                                                        {usedCount > 0 ? " · ⚠ đang được dùng — nội dung đổi → testcase cần Sinh lại" : ""}
+                                                    </div>
+                                                    <div className="v3-step-review__actions">
+                                                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={editBusy || !editLabel.trim()} onClick={saveEdit}>
+                                                            {editBusy ? "Đang lưu…" : "Lưu thay đổi"}
+                                                        </button>
+                                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={editBusy} onClick={cancelEdit}>Hủy</button>
+                                                    </div>
                                                 </div>
-                                                <div className="v3-info-row"><span>Nguồn</span><b>Bản ghi {selected.sourceRecordingId ?? "—"}{selected.sourceRange ? ` · Bước ${selected.sourceRange.startStep} → ${selected.sourceRange.endStep}` : ""}</b></div>
-                                                {usedCount > 0 ? <p className="v3-act__note v3-warn">⚠ Action này đang được dùng bởi {usedCount} testcase.</p> : null}
-                                            </div>
-                                            <div className="v3-lib-modal__detail-actions">
-                                                {!editing ? (
-                                                    <>
+                                            ) : (
+                                                <>
+                                                    <div>
+                                                        <h4 className="v3-map__h">{selected.label}</h4>
+                                                        <div className="v3-lib-modal__chips">
+                                                            <span className="v3-lib-modal__chip">Chức năng: {selected.groupName || "Chưa phân loại"}</span>
+                                                            <span className="v3-lib-modal__chip">{selected.stepCount} bước</span>
+                                                            <span className="v3-lib-modal__chip">{selected.recordedAssertionCount} điều kiện</span>
+                                                            <span className="v3-lib-modal__chip">dùng bởi {selected.usedByTestCases ?? 0} testcase</span>
+                                                        </div>
+                                                        <div className="v3-info-row"><span>Nguồn</span><b>Bản ghi {selected.sourceRecordingId ?? "—"}{selected.sourceRange ? ` · Bước ${selected.sourceRange.startStep} → ${selected.sourceRange.endStep}` : ""}</b></div>
+                                                        {usedCount > 0 ? <p className="v3-act__note v3-warn">⚠ Action này đang được dùng bởi {usedCount} testcase.</p> : null}
+                                                    </div>
+                                                    <div className="v3-lib-modal__detail-actions">
                                                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startEdit}>Chỉnh sửa</button>
-                                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={usedCount > 0 || editBusy} title={usedCount > 0 ? "Đang được testcase dùng — không xóa được" : ""} onClick={() => setDeleteConfirmId(selected.blockId)}>Xóa</button>
-                                                    </>
-                                                ) : null}
-                                            </div>
+                                                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={usedCount > 0 || editBusy}
+                                                            title={usedCount > 0 ? "Đang được testcase dùng — không xóa được" : ""}
+                                                            onClick={() => setDeleteConfirmId(selected.blockId)}>Xóa</button>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
 
                                         {deleteConfirmId === selected.blockId ? (
@@ -224,70 +283,28 @@ export default function V3LibraryViewer({ onClose }) {
                                             </div>
                                         ) : null}
 
-                                        {editing ? (
-                                            <div className="v3-lib-modal__edit">
-                                                <div className="v3-lib-modal__edit-row">
-                                                    <label className="v3-act__note">Tên Action</label>
-                                                    <input className="v3-input" value={editLabel} onChange={e => setEditLabel(e.target.value)} disabled={editBusy} />
-                                                </div>
-                                                <div className="v3-lib-modal__edit-row">
-                                                    <label className="v3-act__note">Chức năng</label>
-                                                    <input className="v3-input" value={editGroup} onChange={e => setEditGroup(e.target.value)} disabled={editBusy} placeholder="Chưa phân loại" />
-                                                </div>
-                                                <div className="v3-lib-modal__edit-row">
-                                                    <span className="v3-act__note">Bước (bỏ chọn = loại khỏi Action — ảnh hưởng testcase đang dùng, cần Sinh lại)</span>
-                                                    {(selected.steps ?? []).map(s => (
-                                                        <label className="v3-lib-modal__edit-step" key={s.order}>
-                                                            <input type="checkbox" checked={editStepsOn.includes(s.order)} disabled={editBusy}
-                                                                onChange={e => setEditStepsOn(list => e.target.checked ? [...list, s.order] : list.filter(o => o !== s.order))} />
-                                                            <span className="v3-step__n">Bước {s.order}</span>
-                                                            <span className="v3-step__act">{ACTION_LABEL[s.actionType] ?? s.actionType}</span>
-                                                            <span className="v3-step__loc">{s.target || s.locator || ""}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                                <div className="v3-step-review__actions">
-                                                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={editBusy || !editLabel.trim()} onClick={saveEdit}>{editBusy ? "Đang lưu…" : "Lưu"}</button>
-                                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={editBusy} onClick={cancelEdit}>Hủy</button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="v3-lib-modal__steps-head">
-                                                    <span className="v3-lib-step__n">STT</span>
-                                                    <span className="v3-lib-step__type">Loại</span>
-                                                    <span className="v3-lib-step__desc">Thao tác</span>
-                                                    <span className="v3-lib-step__val">Giá trị bản ghi</span>
-                                                    <span className="v3-lib-step__tech">Technical</span>
-                                                </div>
-                                                {selectedSteps.map(s => (
-                                                    <div className="v3-lib-modal__step" key={s.order}>
-                                                        <span className="v3-lib-step__n">{s.order}</span>
-                                                        <span className="v3-lib-step__type">{s.actionLabel}</span>
-                                                        <span className="v3-lib-step__desc">{s.semantic}</span>
-                                                        <span className="v3-lib-step__val" title={s.hasRecordedValue ? s.recordedValue : ""}>
-                                                            {s.hasRecordedValue ? JSON.stringify(s.recordedValue) : "—"}{s.recordedValue === "••••" ? " (nhạy cảm)" : ""}
-                                                        </span>
-                                                        <span className="v3-lib-step__tech">
-                                                            <details className="v3-act__tech"><summary>Xem kỹ thuật</summary>
-                                                                <code className="v3-exp__stmt">{s.locator || "—"}{s.target ? `\ntarget: ${s.target}` : ""}</code>
-                                                            </details>
-                                                        </span>
+                                        {/* STEP GRID — CÙNG structure cho VIEW và EDIT (5 cột) */}
+                                        <div className="v3-lib-modal__steps-head">
+                                            <span className="v3-lib-step__n">{editing ? "Dùng" : "STT"}</span>
+                                            <span className="v3-lib-step__type">Loại</span>
+                                            <span className="v3-lib-step__desc">Thao tác</span>
+                                            <span className="v3-lib-step__val">Giá trị bản ghi</span>
+                                            <span className="v3-lib-step__tech">Kỹ thuật</span>
+                                        </div>
+                                        {selectedSteps.map(s => renderStepRow(s, editing))}
+                                        {editing ? <p className="v3-act__note">Bỏ chọn "Dùng" = loại bước khỏi Action (ảnh hưởng testcase đang dùng — cần Sinh lại).</p> : null}
+
+                                        {(selected.recordedAssertions ?? []).length > 0 ? (
+                                            <div className="v3-act__verif">
+                                                <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
+                                                {(selected.recordedAssertions ?? []).map((a, j) => (
+                                                    <div key={j} className="v3-cond v3-cond--compact">
+                                                        <b>✓ {readableAssertion(a)}</b>
+                                                        <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
                                                     </div>
                                                 ))}
-                                                {(selected.recordedAssertions ?? []).length > 0 ? (
-                                                    <div className="v3-act__verif">
-                                                        <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
-                                                        {(selected.recordedAssertions ?? []).map((a, j) => (
-                                                            <div key={j} className="v3-cond v3-cond--compact">
-                                                                <b>✓ {readableAssertion(a)}</b>
-                                                                <details className="v3-act__tech"><summary>Xem kỹ thuật</summary><code className="v3-exp__stmt">{a.statement || a.matcher}</code></details>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : null}
-                                            </>
-                                        )}
+                                            </div>
+                                        ) : null}
                                         <p className="v3-act__note">Sửa/xóa tác động shared Action Library (CodeGen + Automation dùng chung).</p>
                                     </>
                                 ) : (

@@ -261,6 +261,21 @@ Chi tiết + quyết định đã duyệt: `docs/DESIGN_RECORD_MAPPING.md` (mụ
   - 422 → response structured: `details.unresolvedFields = [{field, mapped}]` + message liệt kê field + annotate `(input chưa map business field)` cho technical target chưa map (tester không phải đoán).
 - **Vì sao remove/re-add từng "chữa" lỗi:** re-add chạy lại lifecycle bind (`bindLibraryBlock` → `refreshWorkspace` → `getWorkspace` → `autoBindTestData`) — tức là RECOMPUTE derived state từ data hiện tại — mà path save KHÔNG làm. Sau fix, save tự recompute → tương đương.
 - **422 HỢP LỆ sau fix (giữ nguyên):** field thực sự chưa tester quyết định (UNRESOLVED — không VALUE/EMPTY) → vẫn 422 `TESTDATA_UNRESOLVED`; binding + thiếu data → 422 `TESTDATA_BINDING_REQUIRED`. `VALUE/EMPTY/UNRESOLVED/RECORDED_SAMPLE` giữ nguyên; KHÔNG fallback recorded.
+**P0 UI REGRESSION — ACTION LIBRARY VIEWER: layout vỡ sau Edit/Save (ĐÃ FIX 2026-08-14, UI-only):**
+- **Báo cáo tester:** sau "Chỉnh sửa" hiển thị step khác View; sau "Lưu thay đổi" modal vỡ — vùng xanh "Đã lưu thay đổi" rất lớn, cây chiếm vùng bất thường, detail bị đẩy xuống, mất 2 cột, modal co/giãn theo content.
+- **ROOT CAUSE (trace code thật):**
+  1. `.v3-lib-modal__body` là **CSS grid 2 cột** nhưng JSX render `error`/`notice` làm **grid child #1/#2** → auto-placement: notice chiếm 1 cell (vùng xanh lớn), list sang cell khác, detail bị đẩy row 2 → vỡ hoàn toàn sau Save (setNotice). (A4/A2/A3)
+  2. Modal chỉ `max-height:88vh` → **height content-driven** (co/giãn khi đổi action/expand/save). (A5)
+  3. Edit mode dùng grid 4 cột riêng `.v3-lib-modal__edit-step` — khác View (5 cột). (A1/A7)
+  4. Detail thiếu `min-width:0` → nguy cơ horizontal overflow. (H)
+- **FIX (contract — KHÔNG đụng backend):**
+  - Body LUÔN chỉ **2 grid children** (tree + detail); error/notice/loading chuyển thành **status row trong HEADER** (`v3-lib-modal__status` — toast nhỏ, tự biến mất 3s) — không phải grid child body.
+  - Modal **height ỔN ĐỊNH `88vh`** (+92vh mobile); header fixed; body flex-1 min-height:0; tree 340px + detail `minmax(0,1fr)` scroll riêng; detail `min-width:0`.
+  - **View/Edit dùng CÙNG step grid 5 cột** (`renderStepRow` chung): edit chỉ thêm checkbox "Dùng" trong cell STT (nhãn cột đổi "STT"→"Dùng") — KHÔNG đổi cấu trúc row/width.
+  - Edit header = inputs Tên/Chức năng + [Hủy][Lưu thay đổi] ngay trong detail pane (không dựng screen riêng); metadata/step grid giữ vị trí cũ.
+  - Save: PATCH → refresh → **re-select SAME blockId** → edit=false → detail vẫn cột phải; success nhỏ ở status row.
+- **Tests:** mới `automation-v3-library-viewer-layout-test.js` (J1-J14: body chỉ 2 children; status ở header không phải grid child; renderStepRow chung; không còn edit-step; save giữ blockId; height 88vh cố định; tree/detail overflow riêng; detail min-width 0; sensitive mask; technical collapsed). Cập nhật library-edit/viewer test (grid `minmax(0,1fr)`). **V3+CodeGen suite 58/58 PASS + build OK + bundle mới commit.**
+
 **P0 — ACTION LIBRARY VIEWER: STEP GRID + EDIT/DELETE có kiểm soát (ĐÃ IMPLEMENT 2026-08-14):**
 - **PHẦN A — step layout grid 5 cột** (`STT | Loại | Thao tác(1fr) | Giá trị bản ghi | Technical`): STT/Loại width cố định, mô tả 1fr, recorded value cột riêng mono/tint + ellipsis (title=full), sensitive "••••", technical `▸ Xem kỹ thuật` collapse (pre-wrap/break-word/scroll — không wrap từng ký tự), responsive ≤1100px/≤900px.
 - **PHẦN B/C — header `[Chỉnh sửa][Xóa]`** + chips meta (Tên, Chức năng, N bước, N điều kiện, dùng bởi) + warning `⚠ Action này đang được dùng bởi N testcase`. **Edit composition** (KHÔNG raw Playwright): rename / đổi Chức năng / include-exclude step → PATCH `/api/codegen/library/:id` (`updateLibraryAction` controller → `ActionLibrary.updateBlock` + `confirmBlock`; content change → version++ + hash mới). Shared Library duy nhất (CodeGen + Automation).

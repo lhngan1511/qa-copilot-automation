@@ -138,7 +138,7 @@ assert.ok(viewerSource.includes("••••"), "B5: sensitive mask giữ nguy�
 const cssSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "styles", "automationV3.css"), "utf8");
 assert.ok(cssSource.includes(".v3-lib-overlay") && cssSource.includes("place-items: center"), "B2: CSS overlay centered");
 assert.ok(cssSource.includes("min(90vw, 1400px)") && cssSource.includes("88vh"), "B2: modal min(90vw,1400px) + max-height 88vh");
-assert.ok(cssSource.includes("grid-template-columns: 340px 1fr"), "B3: cột trái 340px + phải 1fr (≥55%)");
+assert.ok(cssSource.includes("grid-template-columns: 340px minmax(0, 1fr)"), "B3: cột trái 340px + phải 1fr (≥55%)");
 assert.ok(cssSource.includes("white-space: pre-wrap") && cssSource.includes("overflow-wrap: break-word") && cssSource.includes("word-break: normal") && cssSource.includes("max-height: 160px"), "B4: technical không wrap từng ký tự (pre-wrap/break-word/scroll)");
 assert.ok(!cssSource.includes(".v3-drawer--wide"), "B2: CSS cũ drawer đã bỏ");
 

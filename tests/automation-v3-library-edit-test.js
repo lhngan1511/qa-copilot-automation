@@ -151,7 +151,7 @@ assert.ok(viewerSource.includes("Chỉnh sửa") && viewerSource.includes("Xóa"
 assert.ok(viewerSource.includes("Action này đang được dùng bởi") || viewerSource.includes("đang được dùng bởi"), "A7: warning used");
 assert.ok(viewerSource.includes("updateLibraryAction") && viewerSource.includes("deleteLibraryAction"), "REUSE: edit/delete qua API shared");
 const cssSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "styles", "automationV3.css"), "utf8");
-assert.ok(cssSource.includes("grid-template-columns: 44px 84px 1fr 150px 120px"), "A1: grid 5 cột width cố định STT/Loại + 1fr mô tả");
+assert.ok(cssSource.includes("grid-template-columns: 44px 84px minmax(0, 1fr) 150px 120px"), "A1: grid 5 cột width cố định STT/Loại + 1fr mô tả");
 assert.ok(cssSource.includes("text-overflow: ellipsis"), "A2: long value truncate");
 assert.ok(cssSource.includes("@media (max-width: 900px)"), "A1: responsive mobile/tablet");
 
