@@ -182,7 +182,7 @@ function confirmedEntry(entry) {
  *                   recorded literal — recorded chỉ là RECORDED_SAMPLE/evidence).
  * @returns {{status:string, businessField:string, value:(string|null), source:(string|null), bound:boolean}}
  */
-export function resolveFillStatus({ target, testDataBindings = {}, confirmedTestData = {}, approvedTestData = {}, purposeMap = {}, singleInput = false } = {}) {
+export function resolveFillStatus({ target, testDataBindings = {}, confirmedTestData = {}, approvedTestData = {}, purposeMap = {}, singleInput = false, stepDecision = null } = {}) {
     const t = String(target ?? "").trim();
     if (!t) return { status: "SKIP", businessField: "", value: null, source: null, bound: false };
     if (envKeyFor(t)) return { status: "SETUP", businessField: t, value: null, source: "SETUP_ENV", bound: false };
@@ -195,6 +195,22 @@ export function resolveFillStatus({ target, testDataBindings = {}, confirmedTest
     // EMPTY — intent tester (confirmed) hoặc purpose approved.
     if (confEntry.intent === "EMPTY" || purpose === "EMPTY") {
         return { status: "EMPTY", businessField, value: null, source: "TESTCASE_EMPTY", bound: Boolean(rawBinding) };
+    }
+    // P0 — STEP DECISION INCLUDE: tester đã GIỮ step + xác nhận data cho chính step này
+    // (workspace/testcase scope — KHÔNG map business field, KHÔNG fallback recorded).
+    // Ưu tiên SAU EMPTY (intent để trống thắng) nhưng TRƯỚC VALUE confirmed/approved
+    // (quyết định tester cho step là cao nhất cho input này).
+    if (stepDecision?.status === "INCLUDE") {
+        const dIntent = String(stepDecision.intent ?? "").toUpperCase();
+        if (dIntent === "EMPTY") {
+            return { status: "EMPTY", businessField, value: null, source: "STEP_DECISION", bound: Boolean(rawBinding) };
+        }
+        const dVal = String(stepDecision.value ?? "").trim();
+        if (dVal !== "") {
+            return { status: "VALUE", businessField, value: String(stepDecision.value), source: "STEP_DECISION", bound: Boolean(rawBinding) };
+        }
+        // INCLUDE nhưng chưa xác nhận data → vẫn UNRESOLVED (Generate block — không âm thầm dùng recorded).
+        return { status: "UNRESOLVED", businessField, value: null, source: null, bound: Boolean(rawBinding) };
     }
     // VALUE — confirmed (USER_CONFIRMED) > approved (APPROVED_JSON).
     if (confEntry.intent === "VALUE" && confEntry.value.trim() !== "") {
@@ -309,6 +325,8 @@ export function renderV3Spec({
     confirmedAssertions = [],
     approvedTestData = {},
     testDataBindings = {},
+    // P0 — STEP DECISION (workspace/testcase scope): { "<blockId>:<stepOrder>": {status,...} }
+    stepDecisions = {},
     approvedBy = null,
     approvedAt = null
 }) {
@@ -360,7 +378,22 @@ export function renderV3Spec({
     // Pre-pass: resolve status cho TỪNG FILL target (một nguồn sự thật cho cả collectTestData,
     // renderStep và chặn Generate). Recorded literal = RECORDED_SAMPLE — KHÔNG bao giờ là
     // runtime value nếu chưa được tester xác nhận (VALUE) hoặc để trống (EMPTY).
-    const allSteps = [...(setupRecording?.steps ?? []), ...(testcaseRecording?.steps ?? [])];
+    // P0 — STEP DECISION lookup: identity "<blockId>:<stepOrder>" (blockId từ resolveBlockFlow
+    // annotate _blockId; order từ snapshot). Guard: chỉ áp dụng khi step THẬT khớp locator +
+    // actionType (block đổi sau này → decision cũ không áp dụng → REVIEW_REQUIRED lại).
+    const decisionFor = step => {
+        const bid = step?._blockId ?? step?.blockId;
+        if (!bid || !Number.isInteger(step?.order)) return null;
+        const d = stepDecisions?.[`${bid}:${step.order}`] ?? null;
+        if (!d) return null;
+        if (d.locator && String(step.locator ?? "") !== d.locator) return null;
+        if (d.actionType && String(step.actionType ?? "") !== d.actionType) return null;
+        return d;
+    };
+    // Steps effective: EXCLUDE decision → bỏ step KHỎI testcase/workspace hiện tại
+    // (deterministic; KHÔNG mutate Action Library — renderer chỉ consume model).
+    const allSteps = [...(setupRecording?.steps ?? []), ...(testcaseRecording?.steps ?? [])]
+        .filter(s => decisionFor(s)?.status !== "EXCLUDE");
     const fillTargets = new Set(
         allSteps
             .filter(s => String(s?.actionType ?? "").toUpperCase() === "FILL")
@@ -374,7 +407,7 @@ export function renderV3Spec({
         if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
         const target = String(step?.target ?? "").trim();
         if (!target || fillStatuses.has(target)) continue;
-        const fs = resolveFillStatus({ target, testDataBindings, confirmedTestData, approvedTestData, purposeMap, singleInput });
+        const fs = resolveFillStatus({ target, testDataBindings, confirmedTestData, approvedTestData, purposeMap, singleInput, stepDecision: decisionFor(step) });
         fillStatuses.set(target, fs);
         if (fs.status === "UNRESOLVED") unresolved.push({ field: fs.businessField, bound: fs.bound });
     }
@@ -414,6 +447,9 @@ export function renderV3Spec({
     const collectTestData = rec => {
         for (const step of rec?.steps ?? []) {
             if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
+            // P0 — STEP DECISION INCLUDE: value xác nhận cho step (technical) → render INLINE
+            // (không đưa technical key vào const testData — testData chỉ business fields).
+            if (decisionFor(step)?.status === "INCLUDE") continue;
             const target = String(step?.target ?? "").trim();
             const fs = target ? fillStatuses.get(target) : null;
             if (!fs || fs.status !== "VALUE") continue;
@@ -428,6 +464,8 @@ export function renderV3Spec({
     const renderRecording = rec => {
         const lines = [];
         for (const step of rec?.steps ?? []) {
+            // P0 — STEP DECISION EXCLUDE: bỏ step khỏi spec testcase hiện tại.
+            if (decisionFor(step)?.status === "EXCLUDE") continue;
             const r = renderStep(step, {
                 purposeMap,
                 confirmedTestData,

@@ -54,6 +54,8 @@ export default class GenerateService {
         if (!entry) {
             return { ok: false, errorCode: GENERATE_ERRORS.TESTCASE_NOT_FOUND, reason: "Không tìm thấy testcase trong workspace." };
         }
+        // P0 — STEP DECISION (workspace/testcase scope): { "<blockId>:<stepOrder>": {status,...} }
+        const stepDecisions = entry.stepDecisions ?? {};
         // Testcase snapshot (approved) — từ entry workspace + approvedTestData truyền vào.
         const testCase = {
             id: entry.testCaseId,
@@ -74,6 +76,7 @@ export default class GenerateService {
                 setupRecording: null, // block SETUP nằm trong sequence như tester sắp (không tự reorder)
                 confirmedTestData,
                 testDataBindings,
+                stepDecisions,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: resolved.mainRecording.approvedBy ?? null,
@@ -92,6 +95,7 @@ export default class GenerateService {
                 setupRecording: null, // steps SETUP đã ghép sẵn trong mainRecording.steps
                 confirmedTestData,
                 testDataBindings,
+                stepDecisions,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: resolved.mainRecording.approvedBy ?? null,
@@ -123,6 +127,7 @@ export default class GenerateService {
                 setupRecording,
                 confirmedTestData,
                 testDataBindings,
+                stepDecisions,
                 confirmedAssertions,
                 approvedTestData,
                 approvedBy: raw.approvedBy ?? null,
@@ -171,7 +176,10 @@ export default class GenerateService {
         const assertions = (entry?.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED")
             .map(a => `${a.matcher}|${a.locator ?? ""}|${a.expected ?? ""}`).sort();
         const data = Object.entries(entry?.confirmedTestData ?? {}).map(([k, v]) => `${k}=${JSON.stringify(v)}`).sort();
-        return JSON.stringify({ seq: labels, assertions, data });
+        // P0 — STEP DECISION: đổi decision/data => stale (bắt Generate lại).
+        const decisions = Object.entries(entry?.stepDecisions ?? {})
+            .map(([k, v]) => `${k}:${v.status}:${JSON.stringify(v.value)}:${v.intent}`).sort();
+        return JSON.stringify({ seq: labels, assertions, data, decisions });
     }
 
     resolveBlockFlow({ workspaceId, testCaseId, segments }) {
@@ -191,7 +199,9 @@ export default class GenerateService {
             if (block.status !== "CONFIRMED") {
                 return { ok: false, errorCode: GENERATE_ERRORS.SEGMENT_NOT_CONFIRMED, reason: "Bản ghi thao tác chưa được xác nhận." };
             }
-            steps.push(...(block.steps ?? []).map(s => ({ ...s }))); // snapshot — copy
+            // P0 — STEP DECISION identity: annotate _blockId (blockId ổn định LIB/PRIVATE) để
+            // renderer tra stepDecisions["<blockId>:<stepOrder>"]. Snapshot copy — không mutate block.
+            steps.push(...(block.steps ?? []).map(s => ({ ...s, _blockId: block.blockId })));
             traceSegments.push({
                 segmentId: block.blockId,
                 recordingId: block.sourceRecordingId ?? null,

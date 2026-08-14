@@ -190,6 +190,18 @@ export default function createAutomationV3Routes({ applicationService = null } =
             bindings: req.body?.bindings ?? null
         })));
 
+    // P0 — CẦN XÁC NHẬN THAO TÁC: tester quyết định step (INCLUDE + data / EXCLUDE / REVIEW_REQUIRED).
+    router.patch("/workspaces/:workspaceId/testcases/:testCaseId/step-decisions", handle(applicationService, (svc, req) =>
+        svc.saveStepDecision({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockId: req.body?.blockId,
+            stepOrder: req.body?.stepOrder,
+            decision: req.body?.decision,
+            value: req.body?.value,
+            intent: req.body?.intent
+        })));
+
     router.patch("/workspaces/:workspaceId/testcases/:testCaseId/expected-result", handle(applicationService, (svc, req) =>
         svc.updateExpectedResult({
             workspaceId: req.params.workspaceId,

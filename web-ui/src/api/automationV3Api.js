@@ -354,6 +354,14 @@ export function runTestcase(workspaceId, testCaseId, env = {}) {
     );
 }
 
+/** P0 — CẦN XÁC NHẬN THAO TÁC: quyết định step (INCLUDE + data / EXCLUDE / REVIEW_REQUIRED). */
+export function saveStepDecision(workspaceId, testCaseId, { blockId, stepOrder, decision, value = "", intent = "" } = {}) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/step-decisions`,
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId, stepOrder, decision, value, intent }) }
+    );
+}
+
 export function generateTestcase(workspaceId, testCaseId, confirmedTestData = {}) {
     return apiClient.post(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/generate`,

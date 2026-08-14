@@ -1011,6 +1011,17 @@
 .v3-lib-viewer__detail .v3-info-row { font-size: 13px; }
 .v3-lib-viewer__value { display: block; margin-top: 2px; font-size: 12px; color: #0f766e; }
 
+/* P0 — CẦN XÁC NHẬN THAO TÁC (step decision review) */
+.v3-step-review { border: 1px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
+.v3-step-review__item { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 8px 10px; display: grid; gap: 8px; }
+.v3-step-review__item--excluded { opacity: .75; }
+.v3-step-review__item--included { border-color: #bbf7d0; }
+.v3-step-review__head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.v3-step-review__head > div:first-child { display: grid; gap: 2px; }
+.v3-step-review__state { white-space: nowrap; font-size: 12px; }
+.v3-step-review__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.v3-step-review__edit { display: grid; gap: 6px; }
+
 /* P0-D1 (B) — popover Đổi workspace + modal Quản lý workspace. */
 .v3-ws-panel__switch { position: relative; }
 .v3-ws-popover {

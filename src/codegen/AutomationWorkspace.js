@@ -231,8 +231,7 @@ export default class AutomationWorkspace {
     }
 
     /** Lưu confirmedTestData của tester (dữ liệu đã xác nhận) — lưu workspace, không sửa approved. */
-    saveTestData(workspaceId, testCaseId, confirmedTestData, testDataBindings) {
-        const ws = this.get(workspaceId);
+    saveTestData(workspaceId, testCaseId, confirmedTestData, testDataBindings) {        const ws = this.get(workspaceId);
         if (!ws) return null;
         const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
         if (!entry) return null;
@@ -254,7 +253,41 @@ export default class AutomationWorkspace {
         return entry;
     }
 
-    /* ================= 5C-0 — Record Mapping (segment ↔ testcase, tester-owned) ================= */
+    /**
+     * P0 — STEP DECISION (workspace/testcase scope, KHÔNG mutate Action Library).
+     * Tester quyết định cho 1 step của selected Action (technical unresolved input…):
+     *   INCLUDE  → giữ step; kèm data { value, intent } (VALUE/EMPTY) nếu step cần data.
+     *   EXCLUDE  → bỏ step KHỎI testcase/workspace hiện tại khi Generate (deterministic).
+     *   (xóa decision = REVIEW_REQUIRED — chưa quyết → Generate block).
+     * Identity: `${blockId}:${stepOrder}` — blockId ổn định (LIB shared/PRIVATE persist);
+     * stepOrder ổn định vì block.steps là SNAPSHOT. Lưu locator+actionType làm guard
+     * (chỉ áp dụng khi step thật khớp — tránh lệch nếu block đổi sau này).
+     */
+    saveStepDecision(workspaceId, testCaseId, { blockId, stepOrder, status = null, value = "", intent = "", locator = "", actionType = "" } = {}) {
+        const ws = this.get(workspaceId);
+        if (!ws) return null;
+        const entry = (ws.selectedTestCases ?? []).find(tc => tc.testCaseId === testCaseId);
+        if (!entry) return null;
+        const key = `${String(blockId ?? "")}:${Number.isInteger(stepOrder) ? stepOrder : ""}`;
+        const decisions = { ...(entry.stepDecisions ?? {}) };
+        if (status === "INCLUDE" || status === "EXCLUDE") {
+            decisions[key] = {
+                status,
+                value: String(value ?? ""),
+                intent: String(intent ?? "").toUpperCase() === "EMPTY" ? "EMPTY" : (status === "INCLUDE" ? "VALUE" : ""),
+                locator: String(locator ?? ""),
+                actionType: String(actionType ?? ""),
+                updatedAt: new Date().toISOString()
+            };
+        } else {
+            delete decisions[key]; // REVIEW_REQUIRED / hoàn tác
+        }
+        entry.stepDecisions = decisions;
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return entry.stepDecisions[key] ?? null;
+    }
+
 
     /** Tester đặt trạng thái tự động hóa: UNDECIDED | MANUAL_ONLY | AUTOMATED. */
     setAutomationDecision(workspaceId, testCaseId, decision) {

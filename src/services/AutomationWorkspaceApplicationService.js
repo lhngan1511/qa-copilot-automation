@@ -1254,6 +1254,37 @@ export default class AutomationWorkspaceApplicationService {
         return this.toItem(this.workspace.getTestCase(workspaceId, testCaseId), workspaceId);
     }
 
+    /** P0 — STEP DECISION: tester quyết định step (INCLUDE + data / EXCLUDE / REVIEW_REQUIRED).
+     *  Chỉ áp dụng workspace/testcase hiện tại — KHÔNG mutate Action Library. Guard: lấy
+     *  locator/actionType từ block step THẬT (không tin client). */
+    saveStepDecision({ workspaceId, testCaseId, blockId, stepOrder, decision, value, intent }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const status = String(decision ?? "").toUpperCase();
+        if (!["INCLUDE", "EXCLUDE", "REVIEW_REQUIRED"].includes(status)) {
+            fail(V3_ERRORS.INVALID_REQUEST, "Quyết định không hợp lệ (INCLUDE | EXCLUDE | REVIEW_REQUIRED).");
+        }
+        const block = this.resolveBlock(workspaceId, String(blockId ?? ""));
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        const step = (block.steps ?? []).find(s => s.order === Number(stepOrder));
+        if (!step) fail(V3_ERRORS.INVALID_REQUEST, `Không tìm thấy bước ${stepOrder} trong thao tác '${block.label ?? blockId}'.`);
+        let normValue = "";
+        let normIntent = "";
+        if (status === "INCLUDE") {
+            normValue = value === undefined || value === null ? "" : String(value);
+            normIntent = String(intent ?? "").toUpperCase() === "EMPTY" ? "EMPTY" : "VALUE";
+        }
+        this.workspace.saveStepDecision(workspaceId, testCaseId, {
+            blockId: String(blockId),
+            stepOrder: Number(stepOrder),
+            status: status === "REVIEW_REQUIRED" ? null : status,
+            value: normValue,
+            intent: normIntent,
+            locator: String(step.locator ?? ""),
+            actionType: String(step.actionType ?? "")
+        });
+        return this.toItem(this.workspace.getTestCase(workspaceId, testCaseId), workspaceId);
+    }
+
     updateExpectedResult({ workspaceId, testCaseId, expectedResult }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const entry = this.workspace.saveExpectedResult(workspaceId, testCaseId, expectedResult);
@@ -1594,7 +1625,10 @@ export default class AutomationWorkspaceApplicationService {
                 // Test Data editor phải dùng các key này để giá trị tester sửa thực sự tới được FILL.
                 inputs: (b.steps ?? [])
                     .filter(s => String(s.actionType ?? "").toUpperCase() === "FILL" && String(s.target ?? "").trim())
-                    .map(s => ({ field: String(s.target).trim(), recordedValue: s.recordedValue ?? "" }))
+                    .map(s => ({ field: String(s.target).trim(), recordedValue: s.recordedValue ?? "" })),
+                // P0 — CẦN XÁC NHẬN THAO TÁC: steps sanitized để UI review area hiển thị
+                // (locator/target/recorded sample của TỪNG step — không cần endpoint mới).
+                steps: (b.steps ?? []).map(s => this.sanitizeStep(s))
             };
         }).filter(Boolean);
         return {
@@ -1613,6 +1647,8 @@ export default class AutomationWorkspaceApplicationService {
             testData: entry.approvedTestData ?? null,
             confirmedTestData: entry.confirmedTestData ?? null,
             testDataBindings: entry.testDataBindings ?? {},
+            // P0 — STEP DECISION (workspace/testcase scope): { "<blockId>:<stepOrder>": { status, value, intent, locator, actionType } }
+            stepDecisions: entry.stepDecisions ?? {},
             recordingSummary: rec
                 ? { status: rec.status, recordingId: rec.recordingId, version: rec.recordingVersion, hash: rec.recordingHash, approvedBy: rec.approvedBy, approvedAt: rec.approvedAt }
                 : { status: "NOT_RECORDED", recordingId: null, version: null, hash: null, approvedBy: null, approvedAt: null },

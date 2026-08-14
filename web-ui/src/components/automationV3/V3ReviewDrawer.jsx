@@ -3,6 +3,7 @@ import { saveTestData } from "../../api/automationV3Api.js";
 import { canGenerateForTestcase, generateGateReason } from "../../utils/automationV3.js";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
+import V3StepReviewSection from "./V3StepReviewSection.jsx";
 import { isSensitiveField } from "../../utils/sensitive.js";
 import { isSetupField, isLoginTestCase } from "../../utils/setupFields.js";
 import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus, fieldEntry } from "../../utils/testDataView.js";
@@ -276,7 +277,12 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         {expected ? <div className="v3-info-row"><span>Kết quả mong đợi</span><b>{expected}</b></div> : null}
                     </div>
                 ) : tab === "actions" ? (
-                    <V3ActionSetupPanel workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
+                    <>
+                        {/* P0 — CẦN XÁC NHẬN THAO TÁC: vùng RIÊNG (không trộn business Test Data);
+                            chỉ hiện khi có unresolved FILL target không map business field. */}
+                        <V3StepReviewSection workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
+                        <V3ActionSetupPanel workspaceId={workspaceId} testCase={testCase} onChanged={onChanged} onError={onError} />
+                    </>
                 ) : tab === "run" ? (
                     <div className="v3-run-tab">
                         <h4 className="v3-map__h">Chạy thử</h4>
