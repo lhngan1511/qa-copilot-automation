@@ -10,7 +10,7 @@
  KHÔNG hiển thị thuật ngữ ActionBlock/Binding/Segment.
 */
 
-import { decisionLabel } from "../../utils/automationV3.js";
+import { decisionLabel, automationDisplayStatus } from "../../utils/automationV3.js";
 
 const STATUS_BADGE = {
     SELECTED: ["v3-badge--sel", "Đã chọn"],
@@ -103,6 +103,10 @@ export default function V3TestCaseCard({
                             : "Chưa có thao tác"}
                     </div>
                     {/* P0-D1 — card phản ánh state thật: Playwright + Chạy thử */}
+                    {/* P0 UI STATE — label tổng dùng CHUNG helper với drawer (cùng contract). */}
+                    <div className="v3-card__row v3-card__row--muted">
+                        Automation: {automationDisplayStatus(testCase)}
+                    </div>
                     <div className="v3-card__row v3-card__row--muted">
                         Playwright: {testCase.generateStatus === "GENERATED" ? "Đã sinh" : "Chưa sinh"}
                     </div>

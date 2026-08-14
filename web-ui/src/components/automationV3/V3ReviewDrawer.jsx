@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveTestData } from "../../api/automationV3Api.js";
-import { canGenerateForTestcase, generateGateReason } from "../../utils/automationV3.js";
+import { canGenerateForTestcase, generateGateReason, automationDisplayStatus } from "../../utils/automationV3.js";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 import V3StepReviewSection from "./V3StepReviewSection.jsx";
@@ -159,7 +159,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                     <b>{testCase.testCaseId} · {testCase.title}</b>
                     <div className="v3-drawer__sub">
                         {expected ? <span>Kết quả mong đợi: {expected.length > 70 ? `${expected.slice(0, 70)}…` : expected}</span> : null}
-                        <span>Automation: {segCount > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</span>
+                        <span>Automation: {automationDisplayStatus(testCase)}</span>
                     </div>
                 </div>
                 <button type="button" className="v3-drawer__close" onClick={onClose} aria-label="Đóng">✕</button>
@@ -277,7 +277,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 );
                             })()}
                         </div>
-                        <div className="v3-info-row"><span>Automation</span><b>{segCount > 0 ? "Đang thiết lập" : "Chưa thiết lập"}</b></div>
+                        <div className="v3-info-row"><span>Automation</span><b>{automationDisplayStatus(testCase)}</b></div>
                         {expected ? <div className="v3-info-row"><span>Kết quả mong đợi</span><b>{expected}</b></div> : null}
                     </div>
                 ) : tab === "actions" ? (
@@ -324,6 +324,9 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                     const actionInputs = businessActionInputs();
                                     const prep = actionPrepStatus({
                                         inputs: seg?.inputs ?? [],
+                                        steps: seg?.steps ?? null,
+                                        segmentId: seg?.segmentId ?? null,
+                                        stepDecisions: testCase?.stepDecisions ?? null,
                                         bindings: { ...(testCase?.testDataBindings ?? {}) },
                                         confirmedTestData: testCase?.confirmedTestData ?? null,
                                         approvedFields: testCase?.testData?.fields ?? null,

@@ -124,18 +124,31 @@ export function canonicalBusinessFieldForInput(field, { bindings = {}, confirmed
 }
 
 /** DỮ LIỆU CHUẨN BỊ (tab Chạy thử): trạng thái chuẩn bị của 1 action
- *  (setup env / sẵn sàng / cần review trước khi sinh). */
-export function actionPrepStatus({ inputs = [], bindings = {}, confirmedTestData = null, approvedFields = null, singleInput = false }) {
-    const noData = inputs.length === 0;
-    if (noData) return { status: "ok", text: "✓ Sẵn sàng" };
+ *  (setup env / sẵn sàng / cần review trước khi sinh).
+ *  P0 UI STATE — nhận segment.steps (có order) + segmentId + stepDecisions để:
+ *   - SKIP step đã EXCLUDE (stepDecisions[`${segmentId}:${order}`].status === "EXCLUDE")
+ *     → không còn "Cần review" do step đã loại khỏi testcase;
+ *   - technical mapped + resolved (binding → confirmed VALUE/EMPTY) → READY.
+ *  Fallback: nếu không có steps → duyệt inputs (không skip EXCLUDE được). */
+export function actionPrepStatus({ inputs = [], steps = null, segmentId = null, stepDecisions = null, bindings = {}, confirmedTestData = null, approvedFields = null, singleInput = false }) {
     const conf = confirmedTestData ?? null;
     const appr = approvedFields ?? null;
+    // Nguồn duyệt: steps (có order → match decision) hoặc fallback inputs.
+    const list = Array.isArray(steps) && steps.length > 0
+        ? steps.filter(s => String(s?.actionType ?? "").toUpperCase() === "FILL").map(s => ({ field: s.target, order: s.order }))
+        : inputs.map(i => ({ field: i?.field, order: null }));
+    if (list.length === 0) return { status: "ok", text: "✓ Sẵn sàng" };
     let allSetup = true;
-    for (const inp of inputs) {
+    for (const inp of list) {
         const f = String(inp?.field ?? "").trim();
         if (!f) continue;
         if (isSetupField(f)) continue; // setup env — không cần value (Login dùng LOGIN_*)
         allSetup = false;
+        // P0 UI STATE — step đã EXCLUDE (workspace/testcase scope): không tính readiness.
+        if (segmentId && Number.isInteger(inp.order)) {
+            const d = stepDecisions?.[`${segmentId}:${inp.order}`];
+            if (d?.status === "EXCLUDE") continue;
+        }
         const bf = canonicalBusinessFieldForInput(f, { bindings, confirmedTestData: conf, approvedFields: appr, singleInput });
         const entry = fieldEntry(conf?.[bf]);
         const purpose = String(appr?.[bf]?.purpose ?? "").toUpperCase();

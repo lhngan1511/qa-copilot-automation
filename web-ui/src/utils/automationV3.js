@@ -294,3 +294,23 @@ export function generateGateReason(testCase) {
     if ((testCase.assertionStatus?.confirmed ?? 0) === 0) return "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.";
     return null;
 }
+
+/**
+ * P0 UI STATE — Automation lifecycle display (canonical, dùng CHUNG card + drawer).
+ *   UNDECIDED + chưa action        → "Chưa thiết lập"
+ *   AUTOMATED (hoặc có action) + chưa generated → "Đang thiết lập"
+ *   generated + NOT_RUN            → "Đã sinh automation"
+ *   generated + PASSED             → "Automation sẵn sàng"
+ *   generated + FAILED             → "Có automation · Chạy thử thất bại"
+ * KHÔNG cho "Đang thiết lập" khi Playwright đã sinh / Run đã Passed.
+ */
+export function automationDisplayStatus(testCase) {
+    if (!testCase) return "Chưa thiết lập";
+    const generated = testCase.generateStatus === "GENERATED";
+    const run = testCase.runStatus;
+    if (generated && run === "PASSED") return "Automation sẵn sàng";
+    if (generated && run === "FAILED") return "Có automation · Chạy thử thất bại";
+    if (generated) return "Đã sinh automation";
+    if (testCase.automationDecision === "AUTOMATED" || (testCase.segmentSummary?.total ?? 0) > 0) return "Đang thiết lập";
+    return "Chưa thiết lập";
+}
