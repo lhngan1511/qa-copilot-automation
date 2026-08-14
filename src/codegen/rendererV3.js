@@ -196,22 +196,12 @@ export function resolveFillStatus({ target, testDataBindings = {}, confirmedTest
     if (confEntry.intent === "EMPTY" || purpose === "EMPTY") {
         return { status: "EMPTY", businessField, value: null, source: "TESTCASE_EMPTY", bound: Boolean(rawBinding) };
     }
-    // P0 — STEP DECISION INCLUDE: tester đã GIỮ step + xác nhận data cho chính step này
-    // (workspace/testcase scope — KHÔNG map business field, KHÔNG fallback recorded).
-    // Ưu tiên SAU EMPTY (intent để trống thắng) nhưng TRƯỚC VALUE confirmed/approved
-    // (quyết định tester cho step là cao nhất cho input này).
-    if (stepDecision?.status === "INCLUDE") {
-        const dIntent = String(stepDecision.intent ?? "").toUpperCase();
-        if (dIntent === "EMPTY") {
-            return { status: "EMPTY", businessField, value: null, source: "STEP_DECISION", bound: Boolean(rawBinding) };
-        }
-        const dVal = String(stepDecision.value ?? "").trim();
-        if (dVal !== "") {
-            return { status: "VALUE", businessField, value: String(stepDecision.value), source: "STEP_DECISION", bound: Boolean(rawBinding) };
-        }
-        // INCLUDE nhưng chưa xác nhận data → vẫn UNRESOLVED (Generate block — không âm thầm dùng recorded).
-        return { status: "UNRESOLVED", businessField, value: null, source: null, bound: Boolean(rawBinding) };
-    }
+    // P0 LEGACY-INCLUDE-FIX — stepDecisions từ kiến trúc mới CHỈ có ý nghĩa EXCLUDE (filter ở
+    // renderV3Spec) / REVIEW_REQUIRED. INCLUDE + value là LEGACY (UI pre-6b76241) và KHÔNG bao
+    // giờ được dùng làm nguồn Test Data: canonical runtime data = confirmedTestData →
+    // approvedTestData (EMPTY tuyệt đối). Legacy INCLUDE sẽ bị HEAL xóa khi load/recompute;
+    // ở đây chỉ cần KHÔNG đọc value/intent của nó (rơi tiếp xuống USER_CONFIRMED/APPROVED/
+    // UNRESOLVED như step không có decision).
     // VALUE — confirmed (USER_CONFIRMED) > approved (APPROVED_JSON).
     if (confEntry.intent === "VALUE" && confEntry.value.trim() !== "") {
         return { status: "VALUE", businessField, value: confEntry.value, source: "USER_CONFIRMED", bound: Boolean(rawBinding) };
@@ -447,9 +437,9 @@ export function renderV3Spec({
     const collectTestData = rec => {
         for (const step of rec?.steps ?? []) {
             if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
-            // P0 — STEP DECISION INCLUDE: value xác nhận cho step (technical) → render INLINE
-            // (không đưa technical key vào const testData — testData chỉ business fields).
-            if (decisionFor(step)?.status === "INCLUDE") continue;
+            // P0 LEGACY-INCLUDE-FIX — KHÔNG skip step vì legacy INCLUDE: mọi FILL step đều
+            // đóng góp canonical value (confirmed/approved) vào testDataMap; legacy INCLUDE
+            // không còn là nguồn dữ liệu (bị HEAL xóa; resolveFillStatus không đọc nó).
             const target = String(step?.target ?? "").trim();
             const fs = target ? fillStatuses.get(target) : null;
             if (!fs || fs.status !== "VALUE") continue;

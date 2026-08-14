@@ -260,6 +260,6 @@ assert.equal(resolveFillStatus({ ...base }).status, "UNRESOLVED", "U1: chưa quy
 assert.equal(resolveFillStatus({ ...base, testDataBindings: { "TextInput": "Mã đơn vị tính" }, confirmedTestData: { "Mã đơn vị tính": { value: "M1", intent: "VALUE" } } }).status, "VALUE", "U2: mapping + VALUE -> VALUE");
 assert.equal(resolveFillStatus({ ...base, testDataBindings: { "TextInput": "Mã đơn vị tính" }, confirmedTestData: { "Mã đơn vị tính": { value: "", intent: "EMPTY" } } }).status, "EMPTY", "U3: mapping + EMPTY -> EMPTY");
 assert.equal(resolveFillStatus({ ...base, testDataBindings: { "TextInput": "Mã đơn vị tính" } }).status, "UNRESOLVED", "U4: mapping chưa data -> UNRESOLVED");
-assert.equal(resolveFillStatus({ ...base, stepDecision: { status: "INCLUDE", value: "ABC", intent: "VALUE" } }).status, "VALUE", "U5: INCLUDE (backend cũ) vẫn hoạt động");
+assert.equal(resolveFillStatus({ ...base, stepDecision: { status: "INCLUDE", value: "ABC", intent: "VALUE" } }).status, "UNRESOLVED", "U5: legacy INCLUDE KHÔNG còn là nguồn data (canonical wins)");
 
 console.log("Automation V3 Step Review (XÁC ĐỊNH FIELD -> VALUE) test: PASS");

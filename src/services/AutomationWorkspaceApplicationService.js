@@ -344,9 +344,21 @@ export default class AutomationWorkspaceApplicationService {
                 changed = true;
             }
         }
+        // P0 LEGACY-INCLUDE-FIX — HEAL deterministic: stepDecisions từ kiến trúc mới CHỈ có
+        // Ý NGHĨA EXCLUDE / REVIEW_REQUIRED. Xóa MỌI entry status === "INCLUDE" (UI pre-6b76241
+        // từng viết INCLUDE + value — KHÔNG bao giờ được dùng làm nguồn Test Data).
+        // TUYỆT ĐỐI giữ EXCLUDE. Chạy khi load/recompute (getWorkspace/generate/saveTestData).
+        const decisions = entry.stepDecisions ?? {};
+        for (const [k, d] of Object.entries(decisions)) {
+            if (d?.status === "INCLUDE") {
+                delete decisions[k];
+                changed = true;
+            }
+        }
         if (changed) {
             entry.testDataBindings = bindings;
             entry.confirmedTestData = conf;
+            entry.stepDecisions = decisions;
             const ws = this.workspace.get(workspaceId);
             if (ws) ws.updatedAt = new Date().toISOString();
             this.workspace.persist();
