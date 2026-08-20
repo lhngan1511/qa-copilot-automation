@@ -1,5 +1,6 @@
 import TestStepNormalizer from "../normalizers/TestStepNormalizer.js";
 import testerFacingText from "../utils/TesterFacingText.js";
+import { sanitizeUserFacingText } from "../utils/FunctionDisplayName.js";
 import { resolveExecutionReadiness } from "../utils/TestDataReadiness.js";
 
 const FINAL_TYPES = new Set([
@@ -324,9 +325,11 @@ export default class ProductionTestCaseQualityGate {
 
     cleanTesterFacingContent(testCase) {
         const clean = value =>
-            testerFacingText(value)
-                .replace(/\b(?:condition|source|ruleId)\s*:\s*/gi, "")
-                .trim();
+            sanitizeUserFacingText(
+                testerFacingText(value)
+                    .replace(/\b(?:condition|source|ruleId)\s*:\s*/gi, "")
+                    .trim()
+            );
         ["title", "scenario", "testScenario", "objective", "testObjective", "expectedResult"].forEach(
             field => {
                 if (typeof testCase[field] === "string") testCase[field] = clean(testCase[field]);

@@ -1,5 +1,6 @@
 import RecommendedScenario from "../models/RecommendedScenario.js";
 import CoreCatalogScenarioBuilder from "./CoreCatalogScenarioBuilder.js";
+import { domainName } from "../utils/FunctionDisplayName.js";
 
 class ScenarioRecommendationEngine {
     constructor({ catalogBuilder = new CoreCatalogScenarioBuilder() } = {}) {
@@ -1192,9 +1193,7 @@ class ScenarioRecommendationEngine {
     */
 
     extractModuleFromFeature(featureName) {
-        return this.normalizeText(featureName)
-            .replace(/^(thêm|sửa|xóa|xoá|tìm kiếm|tìm|cập nhật|chỉnh sửa|quản lý)\s+/i, "")
-            .trim();
+        return domainName(featureName, this.normalizeText(featureName));
     }
 
     /*

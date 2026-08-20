@@ -1,3 +1,5 @@
+import { domainName, localizedFunctionName, sanitizeUserFacingText } from "../utils/FunctionDisplayName.js";
+
 export default class ExpectedResultBuilder {
     build({ testCase = {}, scenario = {}, testData = {}, existing = "" } = {}) {
         if (
@@ -7,13 +9,13 @@ export default class ExpectedResultBuilder {
             this.text(existing) &&
             !this.isGeneric(existing)
         ) {
-            return this.text(existing);
+            return sanitizeUserFacingText(this.text(existing));
         }
         let classification = String(
             testCase.ruleClassification ?? scenario.ruleClassification ?? ""
         ).toUpperCase();
         if (!classification && this.text(existing) && !this.isGeneric(existing)) {
-            return this.text(existing);
+            return sanitizeUserFacingText(this.text(existing));
         }
         const operation = this.operation(testCase, scenario);
         const entity = this.entity(testCase.feature ?? testCase.function ?? scenario.feature);
@@ -30,24 +32,20 @@ export default class ExpectedResultBuilder {
         const record = testData.record ?? identifier?.value ?? entity;
 
         if (classification === "REQUIRED") {
-            const functionName = this.lowerFirst(
-                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
-            );
+            const functionName = this.functionPhrase(testCase, scenario);
             return `Hệ thống không cho phép hoàn tất ${functionName} khi ${
                 targetField || "trường bắt buộc"
             } để trống.`;
         }
         if (classification === "DUPLICATE") {
-            return `Hệ thống không cho phép hoàn tất ${this.lowerFirst(
-                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
-            )} khi ${targetField || identifier?.name || "giá trị định danh"}${
-                this.withValue(targetValue ?? identifier?.value)
-            } đã tồn tại.`;
+            return `Hệ thống không cho phép hoàn tất ${this.functionPhrase(testCase, scenario)} khi ${
+                targetField || identifier?.name || "giá trị định danh"
+            }${this.withValue(targetValue ?? identifier?.value)} đã tồn tại.`;
         }
         if (["INVALID_OPTION", "INVALID_REFERENCE"].includes(classification)) {
-            return `Hệ thống không cho phép hoàn tất ${this.lowerFirst(
-                this.text(testCase.feature ?? testCase.function ?? scenario.feature) || "thao tác"
-            )} khi ${targetField || "giá trị lựa chọn"} không thuộc danh sách cho phép.`;
+            return `Hệ thống không cho phép hoàn tất ${this.functionPhrase(testCase, scenario)} khi ${
+                targetField || "giá trị lựa chọn"
+            } không thuộc danh sách cho phép.`;
         }
         if (classification === "BOUNDARY_UNKNOWN") {
             return `Hệ thống không lưu dữ liệu khi ${this.lowerFirst(
@@ -231,11 +229,13 @@ export default class ExpectedResultBuilder {
         return "thao tác được yêu cầu";
     }
 
+    functionPhrase(testCase, scenario) {
+        const feature = this.text(testCase.feature ?? testCase.function ?? scenario.feature);
+        return this.lowerFirst(localizedFunctionName(feature, this.operation(testCase, scenario)) || "thao tác");
+    }
+
     entity(feature) {
-        const value = this.text(feature)
-            .replace(/^(thêm mới|tạo mới|thêm|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
-            .trim();
-        return this.lowerFirst(value || "dữ liệu");
+        return this.lowerFirst(domainName(feature, "dữ liệu"));
     }
 
     withValue(value) {

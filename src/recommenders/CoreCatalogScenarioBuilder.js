@@ -1,3 +1,5 @@
+import { domainName, localizedFunctionName } from "../utils/FunctionDisplayName.js";
+
 /**
  * Bổ sung các tình huống catalog tối thiểu mà tester luôn kỳ vọng
  * khi requirement có Tìm kiếm / Thêm mới:
@@ -121,8 +123,9 @@ export default class CoreCatalogScenarioBuilder {
     }
 
     searchSteps(fn, dataState) {
+        const screen = this.functionLabel(fn, "SEARCH");
         return [
-            { order: 1, action: `Mở màn hình ${fn.name}`, target: fn.name },
+            { order: 1, action: `Mở màn hình ${screen}`, target: fn.name },
             {
                 order: 2,
                 action: "Nhập từ khóa tìm kiếm",
@@ -134,9 +137,10 @@ export default class CoreCatalogScenarioBuilder {
     }
 
     createSteps(fn, emptyCode, codeField = this.codeField(fn)) {
+        const screen = this.functionLabel(fn, "CREATE");
         const steps = [
-            { order: 1, action: `Mở màn hình ${fn.name}`, target: fn.name },
-            { order: 2, action: `Chọn chức năng ${fn.name}`, target: fn.name }
+            { order: 1, action: `Mở màn hình ${screen}`, target: fn.name },
+            { order: 2, action: `Chọn chức năng ${screen}`, target: fn.name }
         ];
         if (emptyCode) {
             steps.push({
@@ -257,11 +261,11 @@ export default class CoreCatalogScenarioBuilder {
     }
 
     entity(fn) {
-        const name = this.text(fn?.name).replace(
-            /^(thêm mới|tạo mới|thêm|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i,
-            ""
-        );
-        return name || "dữ liệu";
+        return domainName(fn?.name, "dữ liệu");
+    }
+
+    functionLabel(fn, operation) {
+        return localizedFunctionName(fn?.name, operation || this.operation(fn));
     }
 
     hasCatalog(scenarios, key) {

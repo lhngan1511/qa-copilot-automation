@@ -1,3 +1,5 @@
+import { domainName, localizedFunctionName, sanitizeUserFacingText } from "../utils/FunctionDisplayName.js";
+
 export default class TestDesignContentNormalizer {
     normalizeTitle(source = {}) {
         const title = this.stripTraceabilityPrefix(
@@ -80,7 +82,7 @@ export default class TestDesignContentNormalizer {
             this.comparable(title) !== this.comparable(feature) &&
             !this.isGenericTitle(title)
         ) {
-            return title;
+            return sanitizeUserFacingText(title);
         }
         if (type === "POSITIVE") {
             if (operation === "CREATE") return `Thêm mới ${entity} thành công với dữ liệu hợp lệ`;
@@ -249,18 +251,16 @@ export default class TestDesignContentNormalizer {
     }
 
     operationPhrase(operation, feature) {
-        if (operation === "CREATE") return this.lowerFirst(feature || "thêm mới dữ liệu");
-        if (operation === "UPDATE") return this.lowerFirst(feature || "cập nhật dữ liệu");
-        if (operation === "DELETE") return this.lowerFirst(feature || "xóa dữ liệu");
-        if (operation === "SEARCH") return this.lowerFirst(feature || "tìm kiếm dữ liệu");
-        return this.lowerFirst(feature || "thực hiện chức năng");
+        const localized = localizedFunctionName(feature, operation);
+        if (operation === "CREATE") return this.lowerFirst(localized || "thêm dữ liệu");
+        if (operation === "UPDATE") return this.lowerFirst(localized || "cập nhật dữ liệu");
+        if (operation === "DELETE") return this.lowerFirst(localized || "xóa dữ liệu");
+        if (operation === "SEARCH") return this.lowerFirst(localized || "tìm kiếm dữ liệu");
+        return this.lowerFirst(sanitizeUserFacingText(feature) || "thực hiện chức năng");
     }
 
     entity(feature) {
-        const entity = this.cleanText(feature)
-            .replace(/^(thêm mới|tạo mới|thêm|sửa|cập nhật|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i, "")
-            .trim();
-        return this.lowerFirst(entity || "dữ liệu");
+        return this.lowerFirst(domainName(feature, "dữ liệu"));
     }
 
     detectAction(normalized) {

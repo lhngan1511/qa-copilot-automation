@@ -1,3 +1,5 @@
+import { domainName, localizedFunctionName, sanitizeUserFacingText } from "../utils/FunctionDisplayName.js";
+
 export default class TestStepNormalizer {
     normalize(steps, context = {}) {
         const parsed = this.parseSteps(steps);
@@ -20,7 +22,7 @@ export default class TestStepNormalizer {
         }
 
         return normalized.map((step, index) => {
-            const result = { order: index + 1, action: step.action };
+            const result = { order: index + 1, action: sanitizeUserFacingText(step.action) };
             if (this.hasValue(step.target)) result.target = this.clone(step.target);
             if (this.hasValue(step.value)) result.value = this.clone(step.value);
             if (this.hasValue(step.expected)) result.expected = this.clone(step.expected);
@@ -536,19 +538,13 @@ export default class TestStepNormalizer {
     }
 
     feature(context) {
-        return this.clean(context.feature ?? context.function ?? "chức năng");
+        const raw = this.clean(context.feature ?? context.function ?? "chức năng");
+        const operation = this.operation(context);
+        return localizedFunctionName(raw, operation) || sanitizeUserFacingText(raw) || "chức năng";
     }
 
     entity(context) {
-        return (
-            this.feature(context)
-                .replace(
-                    /^(thêm mới|tạo mới|thêm|sửa|cập nhật|chỉnh sửa|xóa|xoá|tìm kiếm|tra cứu|quản lý)\s+/i,
-                    ""
-                )
-                .trim()
-                .toLocaleLowerCase("vi") || "bản ghi"
-        );
+        return domainName(context.feature ?? context.function, "bản ghi").toLocaleLowerCase("vi");
     }
 
     displayTarget(target, context) {
