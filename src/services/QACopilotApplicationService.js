@@ -11,7 +11,7 @@ export default class QACopilotApplicationService {
         this.testCaseReviewValidator = new TestCaseReviewValidator();
     }
 
-    async start({ requirementFile } = {}) {
+    async start({ requirementFile, projectId = null } = {}) {
         this.requireRequirementFile(requirementFile);
 
         const result = await this.qaCopilot.run(requirementFile, {
@@ -20,11 +20,11 @@ export default class QACopilotApplicationService {
         });
 
         const applicationResult = this.buildApplicationResult(result);
-        this.persistApplicationState(applicationResult, requirementFile);
+        this.persistApplicationState(applicationResult, requirementFile, projectId);
         return applicationResult;
     }
 
-    async resume({ requirementFile, workflowContext } = {}) {
+    async resume({ requirementFile, workflowContext, projectId = null } = {}) {
         this.requireRequirementFile(requirementFile);
 
         const normalizedContext = this.normalizeWorkflowContext(workflowContext);
@@ -35,7 +35,7 @@ export default class QACopilotApplicationService {
         });
 
         const applicationResult = this.buildApplicationResult(result);
-        this.persistApplicationState(applicationResult, requirementFile);
+        this.persistApplicationState(applicationResult, requirementFile, projectId);
         return applicationResult;
     }
 
@@ -155,12 +155,15 @@ export default class QACopilotApplicationService {
         if (typeof sessionId !== "string" || !sessionId.trim()) {
             throw this.applicationError("WORKFLOW_ID_REQUIRED", "workflowId is required.", 400);
         }
-        const session = this.qaCopilot.workflowCoordinator.findSession(sessionId);
+        const requestedSession = this.qaCopilot.workflowCoordinator.findSession(sessionId);
+        const session = requestedSession
+            ? this.findCanonicalWorkflowSession(requestedSession)
+            : null;
         if (!session) {
             throw this.applicationError("WORKFLOW_NOT_FOUND", "Không tìm thấy workflow.", 404);
         }
         const artifacts =
-            this.qaCopilot.workflowCoordinator.runtime.findArtifactsBySessionId(sessionId);
+            this.qaCopilot.workflowCoordinator.runtime.findArtifactsBySessionId(session.sessionId);
 
         return {
             ...session,
@@ -170,13 +173,59 @@ export default class QACopilotApplicationService {
         };
     }
 
-    listWorkflows() {
-        return this.qaCopilot.workflowCoordinator.runtime.findSessions().map(session => ({
+    listWorkflows({ projectId = undefined } = {}) {
+        const expected = String(projectId ?? "");
+        const allSessions = this.qaCopilot.workflowCoordinator.runtime.findSessions();
+        const eligibleKeys = new Set(
+            allSessions
+                .filter(session => projectId === undefined || String(session.projectId ?? "") === expected)
+                .map(session => this.workflowChainKey(session) || session.sessionId)
+        );
+        const sessions = allSessions.filter(session =>
+            eligibleKeys.has(this.workflowChainKey(session) || session.sessionId)
+        );
+
+        return this.selectCanonicalWorkflowSessions(sessions)
+        .map(session => ({
             session,
             artifacts: this.qaCopilot.workflowCoordinator.runtime.findArtifactsBySessionId(
                 session.sessionId
             )
         }));
+    }
+
+    deleteWorkflow({ sessionId, projectId = undefined } = {}) {
+        const session = this.requireSession(sessionId);
+        const chainKey = this.workflowChainKey(session);
+        const chainSessions = this.qaCopilot.workflowCoordinator.runtime.findSessions()
+            .filter(candidate => this.workflowChainKey(candidate) === chainKey);
+        const belongsToProject = projectId === undefined || chainSessions.some(candidate =>
+            String(candidate.projectId ?? "") === String(projectId ?? "")
+        );
+
+        if (!belongsToProject) {
+            throw this.applicationError("WORKFLOW_PROJECT_MISMATCH", "Workflow không thuộc Project hiện tại.", 403);
+        }
+
+        let deletedArtifacts = 0;
+        let deletedSessions = 0;
+        chainSessions.forEach(candidate => {
+            deletedArtifacts +=
+                this.qaCopilot.workflowCoordinator.runtime.deleteArtifactsBySessionId(candidate.sessionId);
+            if (this.qaCopilot.workflowCoordinator.runtime.deleteSession(candidate.sessionId)) {
+                deletedSessions += 1;
+            }
+        });
+
+        if (deletedSessions === 0) {
+            throw this.applicationError("WORKFLOW_NOT_FOUND", "Không tìm thấy workflow.", 404);
+        }
+        return {
+            sessionId,
+            workflowChainId: chainKey,
+            deletedSessions,
+            deletedArtifacts
+        };
     }
 
     getCurrentReview({ sessionId } = {}) {
@@ -312,10 +361,13 @@ export default class QACopilotApplicationService {
                 409
             );
         }
-        if (current.approvalStatus !== "pending") {
+        const isFinalizedArtifact = ["approved", "completed"].includes(
+            current.approvalStatus
+        );
+        if (current.approvalStatus !== "pending" && !isFinalizedArtifact) {
             throw this.applicationError(
-                "ARTIFACT_NOT_PENDING",
-                "Only pending artifacts can be edited.",
+                "ARTIFACT_NOT_EDITABLE",
+                "Only pending or approved testcase artifacts can be edited.",
                 409
             );
         }
@@ -329,10 +381,15 @@ export default class QACopilotApplicationService {
 
         const existingCases = this.testCaseReviewValidator.normalizeBatch(current.testCases);
         const existingById = new Map(existingCases.map(testCase => [testCase.id, testCase]));
-        if (testCases.length !== existingCases.length) {
+        const submittedIds = testCases.map(testCase => this.testCaseId(testCase));
+        const membershipChanged =
+            testCases.length !== existingCases.length ||
+            submittedIds.some(id => !existingById.has(id)) ||
+            existingCases.some(testCase => !submittedIds.includes(testCase.id));
+        if (isFinalizedArtifact && membershipChanged) {
             throw this.applicationError(
                 "INCOMPLETE_TEST_CASE_BATCH",
-                "All existing testcases must be submitted; use reviewStatus REMOVED to exclude a testcase.",
+                "A finalized testcase artifact cannot add or delete testcases.",
                 422
             );
         }
@@ -348,10 +405,10 @@ export default class QACopilotApplicationService {
             }
 
             const id = this.testCaseId(testCase);
-            if (!id || !existingById.has(id)) {
+            if (!id) {
                 throw this.applicationError(
-                    "UNSUPPORTED_TEST_CASE_ID",
-                    "Testcase must reference an existing testcase ID.",
+                    "INVALID_TEST_CASE_ID",
+                    "Testcase must have an ID.",
                     422
                 );
             }
@@ -364,22 +421,46 @@ export default class QACopilotApplicationService {
             }
             seen.add(id);
 
+            const existing = existingById.get(id);
             const merged = this.testCaseReviewValidator.normalize({
-                ...this.cloneValue(existingById.get(id)),
-                ...this.cloneValue(testCase)
+                ...(existing ? this.cloneValue(existing) : {}),
+                ...this.cloneValue(testCase),
+                ...(existing
+                    ? {}
+                    : {
+                          source: "MANUAL_TESTER",
+                          reviewStatus: "PENDING",
+                          createdAt: new Date().toISOString()
+                      })
             });
             merged.testData = normalizeTestData(merged.testData, merged);
             merged.executionReadiness = resolveExecutionReadiness(merged.testData);
             return merged;
         });
 
-        this.testCaseReviewValidator.validateBatch(updatedTestCases);
-        return this.qaCopilot.workflowCoordinator.saveArtifact({
+        this.testCaseReviewValidator.validateBatch(updatedTestCases, {
+            requireResolved: isFinalizedArtifact
+        });
+        const updatedArtifact = {
             ...current,
             testCases: updatedTestCases,
             summary: this.qaCopilot.buildTestCaseReviewSummary(updatedTestCases),
             updatedAt: new Date().toISOString()
-        });
+        };
+
+        if (isFinalizedArtifact) {
+            const approvedTestCases = this.qaCopilot.approvedTestCaseMapper.map({
+                ...updatedArtifact,
+                approvalStatus: "approved"
+            });
+            Object.entries(current.outputs ?? {}).forEach(([format, outputPath]) => {
+                if (typeof outputPath === "string" && outputPath) {
+                    this.qaCopilot.outputManager.export(approvedTestCases, format, outputPath);
+                }
+            });
+        }
+
+        return this.qaCopilot.workflowCoordinator.saveArtifact(updatedArtifact);
     }
 
     approveReview({ sessionId, artifactId, approvedBy = "user" } = {}) {
@@ -470,7 +551,8 @@ export default class QACopilotApplicationService {
     }
 
     async resumeSession({ sessionId } = {}) {
-        const session = this.requireSession(sessionId);
+        const requestedSession = this.requireSession(sessionId);
+        const session = this.findCanonicalWorkflowSession(requestedSession);
 
         if (!session.requirementFile || !session.workflowContext) {
             throw this.applicationError(
@@ -482,8 +564,72 @@ export default class QACopilotApplicationService {
 
         return this.resume({
             requirementFile: session.requirementFile,
-            workflowContext: session.workflowContext
+            workflowContext: session.workflowContext,
+            projectId: session.projectId ?? null
         });
+    }
+
+    findCanonicalWorkflowSession(session) {
+        const key = this.workflowChainKey(session);
+        if (!key) return session;
+
+        const related = this.qaCopilot.workflowCoordinator.runtime.findSessions()
+            .filter(candidate => this.workflowChainKey(candidate) === key);
+        return this.selectPreferredWorkflowSession(related) ?? session;
+    }
+
+    selectCanonicalWorkflowSessions(sessions = []) {
+        const groups = new Map();
+
+        sessions.forEach(session => {
+            const key = this.workflowChainKey(session) || session.sessionId;
+            const current = groups.get(key);
+            groups.set(key, this.selectPreferredWorkflowSession([current, session].filter(Boolean)));
+        });
+
+        return [...groups.values()];
+    }
+
+    selectPreferredWorkflowSession(sessions = []) {
+        return [...sessions].sort((left, right) => {
+            const rankDifference = this.workflowSessionRank(right) - this.workflowSessionRank(left);
+            if (rankDifference !== 0) return rankDifference;
+
+            return this.workflowSessionTimestamp(right) - this.workflowSessionTimestamp(left);
+        })[0] ?? null;
+    }
+
+    workflowChainKey(session = {}) {
+        const context = new WorkflowExecutionContext(session.workflowContext ?? {});
+        const stages = [
+            "clarificationReview",
+            "requirementReview",
+            "moduleReview",
+            "scenarioReview",
+            "testCaseReview"
+        ];
+
+        return stages
+            .map(stage => context.getStage(stage).sessionId)
+            .find(Boolean) || session.sessionId || "";
+    }
+
+    workflowSessionRank(session = {}) {
+        if (session.pipelineStatus === PipelineStatuses.COMPLETED) return 100;
+
+        const ranks = {
+            [PipelineStatuses.AWAITING_TEST_CASE_REVIEW]: 50,
+            [PipelineStatuses.AWAITING_SCENARIO_REVIEW]: 40,
+            [PipelineStatuses.AWAITING_MODULE_REVIEW]: 30,
+            [PipelineStatuses.AWAITING_REQUIREMENT_REVIEW]: 20,
+            [PipelineStatuses.AWAITING_AI_CLARIFICATION]: 10
+        };
+        return ranks[session.pipelineStatus] ?? 0;
+    }
+
+    workflowSessionTimestamp(session = {}) {
+        const value = Date.parse(session.updatedAt ?? session.completedAt ?? session.startedAt ?? "");
+        return Number.isFinite(value) ? value : 0;
     }
 
     getOutputs({ sessionId } = {}) {
@@ -586,7 +732,7 @@ export default class QACopilotApplicationService {
         }
     }
 
-    persistApplicationState(applicationResult, requirementFile) {
+    persistApplicationState(applicationResult, requirementFile, projectId = null) {
         const currentStage = applicationResult.currentStage;
         const context = new WorkflowExecutionContext(applicationResult.workflowContext);
         const persistedStage =
@@ -608,6 +754,7 @@ export default class QACopilotApplicationService {
 
         this.qaCopilot.workflowCoordinator.runtime.saveSession({
             ...session,
+            projectId: projectId ?? session.projectId ?? null,
             requirementFile,
             workflowContext: context.toJSON(),
             pipelineStatus: applicationResult.status,

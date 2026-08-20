@@ -150,7 +150,7 @@ export default class AutomationWorkspaceApplicationService {
     /* ============================== A. Workspace ============================== */
 
     /** Tạo workspace từ danh sách approved testcase. Chỉ load reviewStatus=APPROVED. */
-    createWorkspace({ source = "NEW", approvedTestCases = [], module = "", sourceFile = null } = {}) {
+    createWorkspace({ source = "NEW", approvedTestCases = [], module = "", sourceFile = null, projectId = null } = {}) {
         const mode = String(source || "NEW").toUpperCase();
         if (!WORKSPACES_MODES_HAS(mode)) fail(V3_ERRORS.INVALID_REQUEST, `source không hợp lệ: ${source}`);
         const raw = Array.isArray(approvedTestCases) ? approvedTestCases : [];
@@ -174,7 +174,7 @@ export default class AutomationWorkspaceApplicationService {
             testData: tc?.testData ?? null,
             expectedResult: String(tc?.expectedResult ?? tc?.expected ?? "").trim()
         }));
-        const ws = this.workspace.create({ mode, module: module || testCases[0]?.module || "", testCases });
+        const ws = this.workspace.create({ mode, module: module || testCases[0]?.module || "", testCases, projectId });
         // P0 — M = tổng approved có thể quản lý: snapshot (workspace mới) hoặc
         // selectedCount (workspace cũ thiếu snapshot) — không bao giờ 0 khi có testcase.
         const approvedTotal = (ws?.approvedTestCaseSnapshot ?? []).length || (ws?.selectedTestCases ?? []).length;
@@ -189,8 +189,8 @@ export default class AutomationWorkspaceApplicationService {
 
     /** Lấy toàn bộ trạng thái workspace (DTO gọn cho API). */
     /** P0-D (C) — Danh sách workspace (sort updatedAt DESC; không lộ raw ID làm primary). */
-    listWorkspaces() {
-        return (this.workspace?.list?.() ?? [])
+    listWorkspaces({ projectId = null } = {}) {
+        return (this.workspace?.list?.(projectId) ?? [])
             .slice()
             .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))
             .map(w => ({
@@ -366,15 +366,18 @@ export default class AutomationWorkspaceApplicationService {
         return bindings;
     }
 
-    deleteWorkspace({ workspaceId }) {
+    deleteWorkspace({ workspaceId, projectId = undefined }) {
+        this.ensureWorkspaceProject(workspaceId, projectId);
         const removed = this.workspace?.remove?.(workspaceId) ?? false;
         if (!removed) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
         return { workspaceId, removed: true };
     }
 
-    getWorkspace(workspaceId) {
+    getWorkspace(workspaceId, projectId = undefined) {
         const ws = this.workspace.get(workspaceId);
-        if (!ws) fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace.");
+        if (!ws || (projectId !== undefined && String(ws.projectId ?? "") !== String(projectId ?? ""))) {
+            fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace trong Project hiện tại.");
+        }
         // P0 — M = tổng approved có thể quản lý: snapshot (workspace mới) hoặc
         // selectedCount (workspace cũ thiếu snapshot) — không bao giờ 0 khi có testcase.
         const approvedTotal = (ws?.approvedTestCaseSnapshot ?? []).length || (ws?.selectedTestCases ?? []).length;
@@ -388,6 +391,16 @@ export default class AutomationWorkspaceApplicationService {
             status: "OPEN",
             items: (ws.selectedTestCases ?? []).map(entry => this.toItem(entry, ws.workspaceId))
         };
+    }
+
+    /** Workspace ID không được phép vượt qua ranh giới Project. Trả 404 để không lộ
+     *  sự tồn tại của dữ liệu thuộc Project khác. */
+    ensureWorkspaceProject(workspaceId, projectId = undefined) {
+        const ws = this.workspace?.get?.(workspaceId) ?? null;
+        if (!ws || (projectId !== undefined && String(ws.projectId ?? "") !== String(projectId ?? ""))) {
+            fail(V3_ERRORS.WORKSPACE_NOT_FOUND, "Không tìm thấy workspace trong Project hiện tại.");
+        }
+        return ws;
     }
 
     selectTestCase({ workspaceId, testCaseId }) {
@@ -419,7 +432,7 @@ export default class AutomationWorkspaceApplicationService {
         // Session tự reject nếu đã có recording đang hoạt động (RECORDING_ALREADY_ACTIVE).
         let session;
         try {
-            session = this.session.start({ workspaceId, testCaseId, type: recType, url, browser });
+            session = this.session.start({ workspaceId, testCaseId, type: recType, url, browser, projectId: this.workspace.get(workspaceId)?.projectId ?? null });
         } catch (error) {
             if (error?.code === "RECORDING_ALREADY_ACTIVE") {
                 fail(V3_ERRORS.RECORDING_ALREADY_ACTIVE, error.message);
@@ -1046,6 +1059,7 @@ export default class AutomationWorkspaceApplicationService {
         let saved;
         try {
             saved = this.actionLibrary.addBlock({
+                projectId: this.workspace.get(workspaceId)?.projectId ?? null,
                 label: label ?? block.label ?? "",
                 kind: block.kind,
                 steps: block.steps,
@@ -1062,7 +1076,7 @@ export default class AutomationWorkspaceApplicationService {
     /** Danh sách thao tác trong Library (kèm usage derive từ bindings của MỌI workspace). */
     listLibrary({ workspaceId }) {
         this.ensureWorkspace(workspaceId);
-        const blocks = this.actionLibrary ? this.actionLibrary.list() : [];
+        const blocks = this.actionLibrary ? this.actionLibrary.list(this.workspace.get(workspaceId)?.projectId ?? null) : [];
         const usage = this.countLibraryUsage();
         return blocks.map(b => this.libraryBlockDto(b, usage.get(b.blockId) ?? 0));
     }
@@ -1072,6 +1086,10 @@ export default class AutomationWorkspaceApplicationService {
         this.ensureTestCase(workspaceId, testCaseId);
         const lib = this.actionLibrary?.get(blockId);
         if (!lib) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác trong thư viện.");
+        const projectId = this.workspace.get(workspaceId)?.projectId ?? null;
+        if (String(lib.projectId ?? "") !== String(projectId ?? "")) {
+            fail(V3_ERRORS.BLOCK_NOT_FOUND, "Thao tác không thuộc Project hiện tại.");
+        }
         if (lib.status !== "CONFIRMED") fail(V3_ERRORS.BLOCK_NOT_CONFIRMED, "Thao tác thư viện chưa được xác nhận.");
         const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
         // P0-D (B) — bind Library action ĐẦU TIÊN là mốc thể hiện ý định làm automation:
@@ -1525,6 +1543,10 @@ export default class AutomationWorkspaceApplicationService {
      *  Nếu fingerprint hiện tại ≠ fingerprint lúc Generate → stale → chặn, yêu cầu Generate lại. */
     async runTestcase({ workspaceId, testCaseId, env = {} }) {
         this.ensureTestCase(workspaceId, testCaseId);
+        // Recompute persisted bindings immediately before checking the generated
+        // artifact.  Test Data and replacement actions are edited independently in
+        // the UI; this makes their persisted workspace state the runtime SSOT.
+        this.autoBindTestData(workspaceId, testCaseId);
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         if (entry.generateStatus !== "GENERATED" || !entry.generatedFile) {
             fail(V3_ERRORS.NOT_GENERATED, "Chưa có script. Hãy Sinh Playwright trước khi chạy thử.");
@@ -1534,7 +1556,13 @@ export default class AutomationWorkspaceApplicationService {
             fail(V3_ERRORS.STALE_GENERATED, "Testcase/action/data/điều kiện đã thay đổi sau lần Generate. Hãy Sinh lại rồi chạy thử.");
         }
         if (!this.runner) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner chưa sẵn sàng trong môi trường này.");
-        const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId });
+        const generation = {
+            version: entry.generationVersion ?? null,
+            hash: entry.generationHash ?? null,
+            fingerprint: entry.generatedFingerprint ?? null,
+            effectiveDataBindings: entry.effectiveDataBindings ?? []
+        };
+        const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId, generation });
         // P0-D (B) — runStatus enum: NOT_RUN | PASSED | FAILED (+ DIAGNOSTIC/ERROR khi chưa chạy được).
         // P0 RUNTIME FIX — runner thật trả status "PASSED"/"FAILED" (Playwright convention);
         // stub/test cũ trả "PASS"/"FAIL" — normalize CẢ HAI để `passed` luôn đúng.

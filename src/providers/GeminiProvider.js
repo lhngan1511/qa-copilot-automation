@@ -146,6 +146,66 @@ class GeminiProvider extends AIProvider {
             throw new Error(`GeminiProvider.generate() failed: ${technicalDetails}`, { cause: error });
         }
     }
+
+    /** Ảnh UI → dữ liệu requirement có cấu trúc. AI chỉ quan sát/đề xuất; tester mới xác nhận. */
+    async analyzeRequirementImages({ images = [], analysisMode = "FEATURES", correction = "" } = {}) {
+        const prompt = `Bạn là trợ lý phân tích yêu cầu phần mềm từ ảnh giao diện.
+VAI TRÒ VÀ RANH GIỚI:
+- Ghi observations chỉ khi nhìn thấy bằng chứng trực tiếp trên ảnh.
+- Nội dung suy luận (quyền, quan hệ dữ liệu, business rule, validation, ngoại lệ) phải đưa vào inferences, kèm evidence, confidence 0..1 và needsConfirmation=true.
+- Không tự coi suy luận là sự thật. Không tạo testcase. Không tuyên bố đã xác nhận.
+- document chỉ chứa nội dung quan sát được trực tiếp từ ảnh. Suy luận chưa được xác nhận không được chèn vào businessRules, validations, permissions, relationships hoặc exceptions; dùng "Chưa xác định" khi ảnh không cung cấp đủ bằng chứng.
+- Một module có thể có nhiều feature. Dùng tiếng Việt, trừ Screen/Operation/Tags.
+- Không dùng thuật ngữ UI tiếng Anh "Modal"; dùng "hộp thoại".
+- Không tạo Feature chung chung tên "Quản lý ..." với Operation "CRUD".
+- Mỗi Feature phải có sourceImages chỉ rõ ảnh nguồn và chỉ mô tả hành vi nhìn thấy trong các ảnh đó.
+- document phải tuân thủ Requirement Markdown V1 giống mẫu canonical: mỗi Feature có đủ Mô tả, Điều kiện tiên quyết, Input, Luồng chính, Quy tắc nghiệp vụ, Validation, Kết quả mong đợi, Ngoại lệ và Automation.
+- Luồng chính phải mô tả hành động nghiệp vụ rõ ràng. Với Search phải có bước "Người dùng thực hiện tìm kiếm" (có thể kèm nhấn nút Tìm); không chỉ ghi một động từ hoặc tên nút mơ hồ.
+- Không rút gọn nhiều bước quan sát được thành một câu chung. Kết quả mong đợi phải gắn trực tiếp với Feature tương ứng.
+${analysisMode === "FEATURES" ? `- CÁC ẢNH MÔ TẢ NHIỀU CHỨC NĂNG: phân tích từng ảnh theo thứ tự và tách mỗi hành vi nghiệp vụ khác nhau thành Feature độc lập.
+- Ảnh danh sách/tìm kiếm, ảnh thêm mới, ảnh cập nhật và ảnh xác nhận xóa phải thành các Feature riêng với Operation lần lượt phù hợp như Search/View, Create, Update, Delete.
+- Số Feature không bắt buộc bằng số ảnh, nhưng tuyệt đối không gom thêm/sửa/xóa/tìm kiếm thành một Feature CRUD.` : `- CÁC ẢNH CÙNG MỘT LUỒNG: có thể hợp nhất các bước liên tiếp thành một Feature nếu chúng thực sự phục vụ cùng một kết quả nghiệp vụ.`}
+${correction ? `YÊU CẦU SỬA KẾT QUẢ TRƯỚC: ${correction}` : ""}
+CHỈ trả JSON hợp lệ theo cấu trúc:
+{
+  "observations":[{"text":"...","evidence":"ảnh/tên vùng"}],
+  "inferences":[{"text":"...","evidence":"...","confidence":0.0,"needsConfirmation":true}],
+  "questions":["..."],
+  "document":{
+    "module":{"name":"","purpose":"","description":"","permissions":[],"sharedData":[{"Trường":"","Control Type":"","Nguồn dữ liệu":"","Bắt buộc":"Có|Không","Mô tả":""}],"relationships":[]},
+    "features":[{"name":"","sourceImages":[1],"description":"","preconditions":[],"inputs":[{"Trường":"","Bắt buộc":"Có|Không","Quy tắc":""}],"mainFlow":[],"businessRules":[],"validations":[],"expectedResults":[],"exceptions":[],"automation":{"screen":"","operation":"Create|Update|Delete|Search|View|GenerateCode|Other","priority":"High|Medium|Low","candidate":true,"tags":[]}}]
+  }
+}`;
+        const parts = [{ text: prompt }, ...images.map(image => ({ inlineData: { mimeType: image.mimeType, data: image.data } }))];
+        const response = await this.client.models.generateContent({
+            model: this.model,
+            contents: [{ role: "user", parts }],
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.1,
+                maxOutputTokens: Number(process.env.GEMINI_IMAGE_REQUIREMENT_MAX_OUTPUT_TOKENS ?? 32768) || 32768,
+                thinkingConfig: { thinkingLevel: "minimal" }
+            }
+        });
+        const first = Array.isArray(response?.candidates) ? response.candidates[0] : null;
+        const finishReason = first?.finishReason ?? null;
+        const raw = (first ? this.concatCandidateText(first) : (typeof response?.text === "string" ? response.text : "")).trim();
+        if (!raw) throw new Error(`Gemini không trả về kết quả phân tích ảnh (finishReason=${finishReason ?? "unknown"}).`);
+        let parsed;
+        try { parsed = JSON.parse(raw.replace(/^```json\s*/i, "").replace(/\s*```$/i, "")); }
+        catch (error) { throw new Error(`Gemini trả về JSON chưa hoàn chỉnh (finishReason=${finishReason ?? "unknown"}, length=${raw.length}).`, { cause: error }); }
+        if (!parsed?.document || typeof parsed.document !== "object") throw new Error("Gemini không trả về document requirement hợp lệ.");
+        const usage = response?.usageMetadata ?? {};
+        return {
+            ...parsed,
+            model: this.model,
+            usage: {
+                inputTokens: usage.promptTokenCount ?? null,
+                outputTokens: usage.candidatesTokenCount ?? null,
+                totalTokens: usage.totalTokenCount ?? null
+            }
+        };
+    }
 }
 
 export default GeminiProvider;

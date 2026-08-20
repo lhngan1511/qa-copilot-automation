@@ -139,8 +139,12 @@ class MarkdownExporter {
             return this.hasValues(data) ? this.renderValueBlock(data) : "- Không có\n";
         }
 
-        if (data.fields && typeof data.fields === "object") {
-            const rows = Object.entries(data.fields).map(([name, field]) => {
+        const fieldEntries =
+            data.fields && typeof data.fields === "object" && !Array.isArray(data.fields)
+                ? Object.entries(data.fields)
+                : [];
+        if (fieldEntries.length > 0) {
+            const rows = fieldEntries.map(([name, field]) => {
                 const value = field?.requiresTesterInput
                     ? field.instruction || "Tester cung cấp giá trị"
                     : field?.value;
@@ -152,12 +156,15 @@ class MarkdownExporter {
         }
 
         if (Object.hasOwn(data, "requirement") || Object.hasOwn(data, "value")) {
-            return (
-                [
-                    `- Yêu cầu dữ liệu: ${data.requirement || ""}`,
-                    `- Giá trị tester: ${data.value || ""}`
-                ].join("\n") + "\n"
-            );
+            const requirement = this.normalizeText(data.requirement);
+            const value = this.normalizeText(data.value);
+            if (value && !requirement) return `- ${value}\n`;
+            if (requirement && !value) return `- ${requirement}\n`;
+            const rows = [
+                requirement ? `- Yêu cầu dữ liệu: ${requirement}` : "",
+                value ? `- Giá trị kiểm thử: ${value}` : ""
+            ].filter(Boolean);
+            return rows.length > 0 ? `${rows.join("\n")}\n` : "- Không có\n";
         }
 
         const validData = Object.prototype.hasOwnProperty.call(data, "inputs")

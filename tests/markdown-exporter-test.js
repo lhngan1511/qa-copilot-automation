@@ -1,4 +1,5 @@
 import fs from "fs";
+import assert from "node:assert/strict";
 
 import MarkdownExporter from "../src/exporters/MarkdownExporter.js";
 import TestCase from "../src/models/TestCase.js";
@@ -30,11 +31,23 @@ testCase.expectedResults = [
 ];
 
 const exporter = new MarkdownExporter();
+const manualTestCase = {
+    ...structuredClone(testCase),
+    id: "TC008",
+    testcaseId: "TC008",
+    title: "Xóa kho không thành công",
+    testData: {
+        fields: {},
+        requirement: "",
+        value: "Tên kho: kho Trang thiết bị",
+        requiresTesterInput: false
+    }
+};
 
 const outputPath = "./output/testcases.md";
 
 exporter.export(
-    [testCase],
+    [testCase, manualTestCase],
     outputPath
 );
 
@@ -46,6 +59,7 @@ const markdown = fs.readFileSync(
 );
 
 console.log(markdown);
+assert.match(markdown, /### Dữ liệu kiểm thử[\s\S]*- Tên kho: kho Trang thiết bị/);
 
 console.log("\n=================================");
 console.log(" MARKDOWN EXPORTER COMPLETED");

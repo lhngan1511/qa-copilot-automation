@@ -240,6 +240,18 @@ assert.equal(resolveBusinessFieldForFill("text search", ctx({ confirmedTestData:
 assert.equal(resolveBusinessFieldForFill("text search", ctx({ approvedTestData: { fields: { A: { value: "1" }, B: { value: "2" } } } })), "text search", "4g6: mơ hồ -> target (không đoán)");
 assert.equal(resolveBusinessFieldForFill("text search", ctx()), "text search", "4g7: không data -> target (sẽ thành UNRESOLVED ở renderV3Spec)");
 
+// 4h — explicit tester-confirmed value wins over setup env classification.
+const r4h = renderV3Spec({
+    testCase: { id: "TC010", title: "Setup field được tester cập nhật" },
+    testcaseRecording: rec([{ actionType: "FILL", target: "Mã xác nhận", locator: "getByLabel('Mã xác nhận').", recordedValue: "recorded-old" }, CLICK]),
+    confirmedTestData: { "Mã xác nhận": { value: "123", intent: "VALUE" } },
+    approvedTestData: { fields: { "Mã xác nhận": { value: "approved-old", purpose: "VALID" } } },
+    confirmedAssertions: confirmedAssertionsArr
+});
+assert.equal(r4h.ok, true, "CASE4h: tester-confirmed setup value -> generate OK");
+assert.ok(r4h.code.includes('.fill("123")'), "CASE4h: runtime dùng tester-confirmed sensitive value");
+assert.ok(!r4h.code.includes("LOGIN_CAPTCHA") && !r4h.code.includes("recorded-old"), "CASE4h: env/recorded không override tester");
+
 // ===== CASE 5 — frontend mirror (render-level): prep status dùng canonical, khớp generate =====
 const { canonicalBusinessFieldForInput, actionPrepStatus } = await import("../web-ui/src/utils/testDataView.js");
 const fctx = (over = {}) => ({ bindings: {}, confirmedTestData: null, approvedFields: null, ...over });

@@ -22,6 +22,7 @@ export function libraryStepDetail(step) {
         semantic: semanticStepText(step),
         locator: String(step?.locator ?? ""),
         target: String(step?.target ?? ""),
+        sensitive: Boolean(step?.sensitive),
         recordedValue: recorded,
         hasRecordedValue: recorded.trim() !== ""
     };

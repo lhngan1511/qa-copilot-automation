@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import EmptyState from "../components/EmptyState.jsx";
 import ErrorState from "../components/ErrorState.jsx";
 import LoadingState from "../components/LoadingState.jsx";
-import WorkflowStepper from "../components/WorkflowStepper.jsx";
 import RecentWorkflowsTable from "../components/dashboard/RecentWorkflowsTable.jsx";
 import useWorkflows from "../hooks/useWorkflows.js";
+import { deleteWorkflow } from "../api/workflowApi.js";
 
 const PAGE_SIZE = 6;
 
@@ -40,7 +40,9 @@ function DashboardIcon({ name }) {
                 <path d="M6 3h9l3 3v15H6V3Z" />
                 <path d="M15 3v4h4M9 12h6M9 16h6" />
             </>
-        )
+        ),
+        code: <><path d="m9 8-4 4 4 4M15 8l4 4-4 4M13 5l-2 14" /></>,
+        automation: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3" /><path d="M12 3.5V6M12 18v2.5M3.5 12H6M18 12h2.5" /></>
     };
 
     return (
@@ -50,56 +52,40 @@ function DashboardIcon({ name }) {
     );
 }
 
-function DashboardSummaryCard({ icon, tone, label, value, detail }) {
-    return (
-        <article className="dashboard-summary-card">
-            <span className={`dashboard-summary-card__icon dashboard-summary-card__icon--${tone}`}>
-                <DashboardIcon name={icon} />
-            </span>
-            <span>
-                <small>{label}</small>
-                <strong>{value}</strong>
-                <span>{detail}</span>
-            </span>
-        </article>
-    );
-}
-
 export default function DashboardPage() {
     const [offset, setOffset] = useState(0);
+    const [pendingDelete, setPendingDelete] = useState(null);
+    const [deletingId, setDeletingId] = useState("");
+    const [deleteError, setDeleteError] = useState("");
     const query = useWorkflows({ limit: PAGE_SIZE, offset });
     const items = query.data?.items ?? [];
     const pagination = query.data?.pagination ?? {};
     const pageNumber = Math.floor(offset / PAGE_SIZE) + 1;
     const totalPages = Math.max(1, Math.ceil((pagination.total ?? 0) / PAGE_SIZE));
 
-    const pageSummary = useMemo(
-        () => ({
-            visible: items.length,
-            needsReview: items.filter(workflow =>
-                [
-                    "AI_ANALYSIS_REVIEW_REQUIRED",
-                    "TEST_CASE_REVIEW_REQUIRED",
-                    "REVIEW_REQUIRED"
-                ].includes(workflow.status)
-            ).length,
-            completed: items.filter(workflow => workflow.status === "COMPLETED").length,
-            testCases: items.reduce(
-                (total, workflow) => total + (workflow.testCases?.total ?? 0),
-                0
-            )
-        }),
-        [items]
-    );
+    const confirmDelete = async () => {
+        if (!pendingDelete || deletingId) return;
+        setDeletingId(pendingDelete.id);
+        setDeleteError("");
+        try {
+            await deleteWorkflow(pendingDelete.id);
+            setPendingDelete(null);
+            if (items.length === 1 && offset > 0) setOffset(current => Math.max(0, current - PAGE_SIZE));
+            else await query.refetch();
+        } catch (error) {
+            setDeleteError(error?.message ?? "Không xóa được phiên testcase.");
+        } finally {
+            setDeletingId("");
+        }
+    };
 
     return (
         <section className="page dashboard-page">
             <header className="dashboard-page__header">
                 <div>
-                    <h2>Dashboard</h2>
+                    <h2>Tổng quan project</h2>
                     <p>
-                        Quản lý quy trình phân tích requirement, review và phê duyệt testcase bằng
-                        AI.
+                        Bắt đầu từ yêu cầu, hoàn thiện testcase, ghi thao tác và tạo automation trong cùng một project.
                     </p>
                 </div>
                 <Link
@@ -107,23 +93,35 @@ export default function DashboardPage() {
                     to="/workflows/new"
                 >
                     <span aria-hidden="true">+</span>
-                    New AI Test Design
+                    Tạo bộ testcase
                 </Link>
             </header>
 
             <section
-                className="dashboard-section dashboard-workflow-overview"
-                aria-labelledby="workflow-overview-title"
+                className="dashboard-project-flow"
+                aria-labelledby="project-flow-title"
             >
-                <header className="dashboard-section__header">
-                    <div>
-                        <span className="dashboard-section__heading-icon">
-                            <DashboardIcon name="workflow" />
-                        </span>
-                        <h3 id="workflow-overview-title">AI Test Design Workflow</h3>
-                    </div>
+                <header className="dashboard-project-flow__header">
+                    <h3 id="project-flow-title">Các khu vực làm việc</h3>
+                    <p>Mỗi khu vực dùng chung dữ liệu của project đang chọn.</p>
                 </header>
-                <WorkflowStepper />
+                <div className="dashboard-project-flow__grid">
+                    <Link className="dashboard-project-card" to="/workflows/new">
+                        <span className="dashboard-project-card__icon"><DashboardIcon name="testcase" /></span>
+                        <span><strong>Thiết kế testcase</strong><small>Nhập Markdown hoặc ảnh giao diện, review và phê duyệt testcase.</small></span>
+                        <span className="dashboard-project-card__arrow" aria-hidden="true">→</span>
+                    </Link>
+                    <Link className="dashboard-project-card" to="/codegen">
+                        <span className="dashboard-project-card__icon"><DashboardIcon name="code" /></span>
+                        <span><strong>Ghi và quản lý thao tác</strong><small>Ghi luồng sử dụng, phân tích và lưu Action theo chức năng.</small></span>
+                        <span className="dashboard-project-card__arrow" aria-hidden="true">→</span>
+                    </Link>
+                    <Link className="dashboard-project-card" to="/automation">
+                        <span className="dashboard-project-card__icon"><DashboardIcon name="automation" /></span>
+                        <span><strong>Tạo automation</strong><small>Ghép Action với testcase đã duyệt, sinh và chạy kịch bản.</small></span>
+                        <span className="dashboard-project-card__arrow" aria-hidden="true">→</span>
+                    </Link>
+                </div>
             </section>
 
             <section
@@ -136,8 +134,8 @@ export default function DashboardPage() {
                             <DashboardIcon name="clock" />
                         </span>
                         <span>
-                            <h3 id="recent-workflows-title">Recent Workflows</h3>
-                            <p>Theo dõi các phiên AI Test Design đang xử lý hoặc đã hoàn thành.</p>
+                            <h3 id="recent-workflows-title">Các phiên testcase gần đây</h3>
+                            <p>Tiếp tục những requirement đang review hoặc đã hoàn thành.</p>
                         </span>
                     </div>
                 </header>
@@ -149,7 +147,7 @@ export default function DashboardPage() {
                 {query.isSuccess && items.length === 0 && <EmptyState />}
                 {query.isSuccess && items.length > 0 && (
                     <>
-                        <RecentWorkflowsTable workflows={items} />
+                        <RecentWorkflowsTable workflows={items} deletingId={deletingId} onDelete={workflow => { setDeleteError(""); setPendingDelete(workflow); }} />
                         <nav className="dashboard-pagination" aria-label="Phân trang workflow">
                             <button
                                 className="button button--secondary"
@@ -159,7 +157,7 @@ export default function DashboardPage() {
                                     setOffset(current => Math.max(0, current - PAGE_SIZE))
                                 }
                             >
-                                Previous
+                                Trước
                             </button>
                             <span>
                                 Trang <strong>{pageNumber}</strong> / {totalPages}
@@ -171,48 +169,27 @@ export default function DashboardPage() {
                                 disabled={!pagination.hasMore || query.isFetching}
                                 onClick={() => setOffset(current => current + PAGE_SIZE)}
                             >
-                                Next
+                                Sau
                             </button>
                         </nav>
                     </>
                 )}
             </section>
 
-            {query.isSuccess && items.length > 0 && (
-                <section
-                    className="dashboard-summary"
-                    aria-label="Tóm tắt các workflow đang hiển thị"
-                >
-                    <DashboardSummaryCard
-                        icon="folder"
-                        tone="purple"
-                        label="Workflows đang hiển thị"
-                        value={pageSummary.visible}
-                        detail={`Trang ${pageNumber} hiện tại`}
-                    />
-                    <DashboardSummaryCard
-                        icon="review"
-                        tone="blue"
-                        label="Cần review"
-                        value={pageSummary.needsReview}
-                        detail="Trong các workflow hiển thị"
-                    />
-                    <DashboardSummaryCard
-                        icon="complete"
-                        tone="green"
-                        label="Hoàn thành"
-                        value={pageSummary.completed}
-                        detail="Trong các workflow hiển thị"
-                    />
-                    <DashboardSummaryCard
-                        icon="testcase"
-                        tone="amber"
-                        label="Testcases đã tạo"
-                        value={pageSummary.testCases}
-                        detail="Tổng trên trang hiện tại"
-                    />
-                </section>
+            {pendingDelete && (
+                <div className="dashboard-confirm-overlay" role="presentation" onClick={() => !deletingId && setPendingDelete(null)}>
+                    <div className="dashboard-confirm" role="dialog" aria-modal="true" aria-labelledby="delete-workflow-title" onClick={event => event.stopPropagation()}>
+                        <h3 id="delete-workflow-title">Xóa phiên testcase?</h3>
+                        <p>Phiên <strong>{pendingDelete.name || "Chưa có tên"}</strong> và toàn bộ nội dung review của phiên sẽ bị xóa. Action Library và Automation Workspace không bị ảnh hưởng.</p>
+                        {deleteError && <div className="dashboard-confirm__error" role="alert">{deleteError}</div>}
+                        <div className="dashboard-confirm__actions">
+                            <button className="button button--secondary" type="button" disabled={Boolean(deletingId)} onClick={() => setPendingDelete(null)}>Hủy</button>
+                            <button className="button dashboard-confirm__danger" type="button" disabled={Boolean(deletingId)} onClick={confirmDelete}>{deletingId ? "Đang xóa…" : "Xóa phiên"}</button>
+                        </div>
+                    </div>
+                </div>
             )}
+
         </section>
     );
 }

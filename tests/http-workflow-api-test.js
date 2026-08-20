@@ -21,6 +21,15 @@ try {
     assert.equal(review.body.data.artifactId, current.artifactId);
     const artifacts = await api.request("GET", `/api/workflows/${current.sessionId}/artifacts`);
     assert.equal(artifacts.body.data.length, 1);
+
+    const deleted = await api.request("DELETE", `/api/workflows/${current.sessionId}`);
+    assert.equal(deleted.status, 200);
+    assert.equal(deleted.body.data.sessionId, current.sessionId);
+    assert.equal(deleted.body.data.deletedArtifacts, 1);
+    const missing = await api.request("GET", `/api/workflows/${current.sessionId}`);
+    assert.equal(missing.status, 404);
+    const listing = await api.request("GET", "/api/workflows?limit=20&offset=0");
+    assert.equal(listing.body.data.items.some(item => item.id === current.sessionId), false);
 } finally {
     await api.close();
 }

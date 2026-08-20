@@ -42,7 +42,20 @@ try {
                   ...testCase,
                   testData: {
                       ...testCase.testData,
-                      value: "TESTER-PROVIDED-VALUE"
+                      requiresTesterInput: false,
+                      value: Object.keys(testCase.testData.fields)
+                          .map(name => `${name}: TESTER-${name}`)
+                          .join("\n"),
+                      fields: Object.fromEntries(
+                          Object.entries(testCase.testData.fields).map(([name, field]) => [
+                              name,
+                              {
+                                  ...field,
+                                  value: `TESTER-${name}`,
+                                  requiresTesterInput: false
+                              }
+                          ])
+                      )
                   }
               }
             : testCase
@@ -60,7 +73,13 @@ try {
 
     assert.equal(edit.status, 200);
     assert.equal(edit.body.data.approvalStatus, "pending");
-    assert.equal(edit.body.data.testCases[editableIndex].testData.value, "TESTER-PROVIDED-VALUE");
+    const savedTestData = edit.body.data.testCases[editableIndex].testData;
+    assert.ok(
+        Object.entries(savedTestData.fields).every(
+            ([name, field]) => field?.value === `TESTER-${name}`
+        ),
+        "mọi giá trị tester nhập phải được lưu vào cấu trúc fields chuẩn"
+    );
     assert.equal(edit.body.data.testCases[editableIndex].executionReadiness, "READY");
 } finally {
     await api.close();

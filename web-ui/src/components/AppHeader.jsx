@@ -1,13 +1,15 @@
 import cuscSoftwareLogo from "../assets/cusc-software-logo.png";
+import ProjectSwitcher from "./ProjectSwitcher.jsx";
 
 export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
     return (
         <header className="app-header">
             <div className="app-header__brand">
                 <img className="product-logo" src={cuscSoftwareLogo} alt="CUSC Software" />
-                <span>
-                    <strong>QC Intelligence</strong>
-                    <small>AI-powered Software Testing Platform</small>
+                <span className="app-header__brand-copy">
+                    <small className="app-header__brand-kicker">QC Intelligence</small>
+                    <strong>QA Copilot</strong>
+                    <small className="app-header__brand-subtitle">Testing &amp; Automation Workspace</small>
                 </span>
             </div>
 
@@ -23,6 +25,8 @@ export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
                     <path d="M4 7h16M4 12h16M4 17h16" />
                 </svg>
             </button>
+
+            <ProjectSwitcher />
 
             <div className="app-header__actions">
                 <button

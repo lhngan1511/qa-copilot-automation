@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import { renderV3Spec, pickLatestApproved } from "./rendererV3.js";
 
 /*
@@ -143,10 +144,15 @@ export default class GenerateService {
 
         // Cập nhật Workspace: GENERATED.
         const fingerprint = this.buildFingerprint({ workspaceId, testCaseId });
+        const generationVersion = Number(entry.generationVersion ?? 0) + 1;
+        const generationHash = crypto.createHash("sha256").update(rendered.code, "utf8").digest("hex");
         this.workspace.transition(workspaceId, testCaseId, {
             generateStatus: "GENERATED",
             generatedFile: outputPath,
             generatedFingerprint: fingerprint,
+            generationVersion,
+            generationHash,
+            effectiveDataBindings: rendered.metadata?.effectiveDataBindings ?? [],
             recordingId: rendered.metadata.recording?.id ?? null,
             recordingVersion: rendered.metadata.recording?.version ?? null,
             recordingHash: rendered.metadata.recording?.hash ?? null
@@ -155,7 +161,9 @@ export default class GenerateService {
         return {
             ok: true,
             ...rendered,
-            outputPath
+            outputPath,
+            generationVersion,
+            generationHash
         };
     }
 

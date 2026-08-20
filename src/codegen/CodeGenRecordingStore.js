@@ -53,8 +53,10 @@ export default class CodeGenRecordingStore {
         fs.writeFileSync(this.metadataFile, JSON.stringify(payload, null, 2), "utf8");
     }
 
-    list() {
-        return this.recordings.map(rec => this.sanitize(rec));
+    list(projectId = undefined) {
+        const expected = String(projectId ?? "");
+        const records = projectId === undefined ? this.recordings : this.recordings.filter(rec => String(rec.projectId ?? "") === expected);
+        return records.map(rec => this.sanitize(rec));
     }
 
     get(recordingId) {
@@ -87,9 +89,10 @@ export default class CodeGenRecordingStore {
         return this.recordings.filter(item => item.testCaseId === testCaseId).length;
     }
 
-    create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE" } = {}) {
+    create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE", projectId = null } = {}) {
         const recording = {
             recordingId: newRecordingId(),
+            projectId: projectId ?? null,
             mode: MODES.has(mode) ? mode : "FULL_FLOW",
             // V3 — gắn recording trực tiếp testCaseId (không đoán segment).
             workspaceId: workspaceId ?? null,

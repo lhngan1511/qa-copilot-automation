@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import AIAnalysisReviewPanel from "../components/AIAnalysisReviewPanel.jsx";
 import TestCaseReviewPanel from "../components/TestCaseReviewPanel.jsx";
 import CompletedWorkflowPanel from "../components/CompletedWorkflowPanel.jsx";
@@ -21,6 +21,7 @@ function SummaryCard({ value, label, detail }) {
 
 export default function WorkflowDetailPage() {
     const { workflowId } = useParams();
+    const [searchParams] = useSearchParams();
     const query = useWorkflow(workflowId);
 
     if (query.isPending) {
@@ -54,7 +55,9 @@ export default function WorkflowDetailPage() {
         );
     }
 
+    const showTestCaseList = searchParams.get("view") === "testcases";
     const isTestCaseReview =
+        showTestCaseList ||
         workflow.status === "TEST_CASE_REVIEW_REQUIRED" || workflow.step === "TEST_CASE_REVIEW";
     if (isTestCaseReview) {
         return (

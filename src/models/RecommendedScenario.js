@@ -44,6 +44,8 @@ class RecommendedScenario {
 
         sourceReferences = [],
 
+        clarificationAnswers = [],
+
         riskReason = "",
 
         riskCategory = "",
@@ -155,6 +157,12 @@ class RecommendedScenario {
         this.sourceItems = Array.isArray(sourceItems) ? [...sourceItems] : [];
 
         this.sourceReferences = Array.isArray(sourceReferences) ? [...sourceReferences] : [];
+
+        this.clarificationAnswers = Array.isArray(clarificationAnswers)
+            ? clarificationAnswers.map(item =>
+                  item && typeof item === "object" ? { ...item } : item
+              )
+            : [];
 
         this.riskReason = riskReason;
 

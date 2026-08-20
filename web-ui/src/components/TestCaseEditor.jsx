@@ -23,6 +23,102 @@ function DetailList({ title, values }) {
     );
 }
 
+function StringListEditor({ title, values = [], itemLabel, onChange }) {
+    return (
+        <fieldset className="testcase-list-editor">
+            <legend>{title}</legend>
+            {values.map((item, index) => (
+                <div key={`${title}-${index}`}>
+                    <span>{index + 1}</span>
+                    <input
+                        aria-label={`${itemLabel} ${index + 1}`}
+                        value={String(item?.action ?? item ?? "")}
+                        onChange={event => {
+                            const next = [...values];
+                            next[index] = event.target.value;
+                            onChange(next);
+                        }}
+                    />
+                    <button
+                        className="text-button"
+                        type="button"
+                        onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}
+                    >
+                        Xóa
+                    </button>
+                </div>
+            ))}
+            <button
+                className="text-button"
+                type="button"
+                onClick={() => onChange([...values, ""])}
+            >
+                + Thêm điều kiện
+            </button>
+        </fieldset>
+    );
+}
+
+function TestDataEditor({ testData = {}, onChange }) {
+    const fields =
+        testData.fields && typeof testData.fields === "object" && !Array.isArray(testData.fields)
+            ? testData.fields
+            : {};
+    const entries = Object.entries(fields);
+
+    if (entries.length === 0) {
+        return (
+            <label>
+                Dữ liệu kiểm thử
+                <textarea
+                    rows="3"
+                    value={testData.value ?? ""}
+                    placeholder={testData.requirement || "Nhập dữ liệu cần dùng khi thực thi testcase"}
+                    onChange={event => onChange({ ...testData, value: event.target.value })}
+                />
+            </label>
+        );
+    }
+
+    return (
+        <fieldset className="testcase-data-editor">
+            <legend>Dữ liệu kiểm thử</legend>
+            {entries.map(([name, field]) => (
+                <label key={name}>
+                    <span>{name}</span>
+                    <input
+                        value={field?.value ?? ""}
+                        placeholder={field?.instruction || "Nhập giá trị kiểm thử"}
+                        onChange={event => {
+                            const nextFields = {
+                                ...fields,
+                                [name]: {
+                                    ...field,
+                                    value: event.target.value,
+                                    requiresTesterInput: false
+                                }
+                            };
+                            onChange({
+                                ...testData,
+                                fields: nextFields,
+                                value: Object.entries(nextFields)
+                                    .map(([fieldName, item]) => `${fieldName}: ${item?.value ?? ""}`)
+                                    .join("\n"),
+                                requiresTesterInput: Object.values(nextFields).some(
+                                    item => item?.requiresTesterInput === true
+                                )
+                            });
+                        }}
+                    />
+                    {(field?.instruction || field?.purpose) && (
+                        <small>{field.instruction || `Mục đích: ${field.purpose}`}</small>
+                    )}
+                </label>
+            ))}
+        </fieldset>
+    );
+}
+
 export default function TestCaseEditor({
     testCase,
     editing,
@@ -33,7 +129,9 @@ export default function TestCaseEditor({
     onEdit,
     onCancel,
     onDraftChange,
-    onSave
+    onSave,
+    creating = false,
+    onDelete
 }) {
     if (!testCase) {
         return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
@@ -43,6 +141,9 @@ export default function TestCaseEditor({
     const warnings = testCaseWarnings(value);
     const invalid =
         !String(value.scenario ?? value.title ?? "").trim() ||
+        !String(value.module ?? "").trim() ||
+        !String(value.feature ?? value.function ?? "").trim() ||
+        !String(value.type ?? "").trim() ||
         !String(value.expectedResult ?? "").trim() ||
         normalizeSteps(value.steps).length === 0;
     const set = (field, next) => onDraftChange({ ...value, [field]: next });
@@ -63,6 +164,16 @@ export default function TestCaseEditor({
                             onClick={onEdit}
                         >
                             Chỉnh sửa
+                        </button>
+                    )}
+                    {!creating && onDelete && (
+                        <button
+                            className="button button--destructive"
+                            type="button"
+                            disabled={disabled || saving}
+                            onClick={onDelete}
+                        >
+                            Xóa
                         </button>
                     )}
                     <button
@@ -91,7 +202,7 @@ export default function TestCaseEditor({
             {editing ? (
                 <div className="testcase-detail-form">
                     <label>
-                        Scenario
+                        Tình huống kiểm tra
                         <textarea
                             rows="3"
                             value={value.scenario ?? ""}
@@ -100,47 +211,39 @@ export default function TestCaseEditor({
                     </label>
                     <div className="testcase-detail-form__grid">
                         <label>
-                            Module
+                            Phân hệ
                             <input
                                 value={value.module ?? ""}
                                 onChange={event => set("module", event.target.value)}
                             />
                         </label>
                         <label>
-                            Feature
+                            Chức năng
                             <input
                                 value={value.feature ?? value.function ?? ""}
                                 onChange={event => set("feature", event.target.value)}
                             />
                         </label>
                         <label>
-                            Test Type
+                            Loại testcase
                             <input
                                 value={value.type ?? ""}
                                 onChange={event => set("type", event.target.value)}
                             />
                         </label>
                     </div>
-                    <label>
-                        Test Data
-                        <textarea
-                            rows="2"
-                            value={value.testData?.value ?? ""}
-                            onChange={event =>
-                                set("testData", { ...value.testData, value: event.target.value })
-                            }
-                        />
-                    </label>
-                    <label>
-                        Expected Result
-                        <textarea
-                            rows="3"
-                            value={value.expectedResult ?? ""}
-                            onChange={event => set("expectedResult", event.target.value)}
-                        />
-                    </label>
+                    <StringListEditor
+                        title="Điều kiện tiên quyết"
+                        itemLabel="Điều kiện"
+                        values={value.preconditions ?? []}
+                        onChange={next => set("preconditions", next)}
+                    />
+                    <TestDataEditor
+                        testData={value.testData}
+                        onChange={next => set("testData", next)}
+                    />
                     <fieldset className="testcase-step-editor">
-                        <legend>Test Steps</legend>
+                        <legend>Các bước thực hiện</legend>
                         {(value.steps ?? []).map((step, index) => (
                             <div key={`${testCase.id}-step-${index}`}>
                                 <span>{index + 1}</span>
@@ -189,6 +292,14 @@ export default function TestCaseEditor({
                             + Thêm bước
                         </button>
                     </fieldset>
+                    <label>
+                        Kết quả mong đợi
+                        <textarea
+                            rows="3"
+                            value={value.expectedResult ?? ""}
+                            onChange={event => set("expectedResult", event.target.value)}
+                        />
+                    </label>
                     <div className="testcase-detail-form__actions">
                         <button
                             className="button button--secondary"
@@ -204,21 +315,21 @@ export default function TestCaseEditor({
                             disabled={disabled || invalid || saving}
                             onClick={onSave}
                         >
-                            {saving ? "Đang lưu..." : "Lưu"}
+                            {saving ? "Đang lưu..." : creating ? "Thêm testcase" : "Lưu"}
                         </button>
                     </div>
                 </div>
             ) : (
                 <div className="testcase-detail-content">
                     <section className="testcase-detail-section">
-                        <h4>Scenario</h4>
+                        <h4>Tình huống kiểm tra</h4>
                         <p>{text(value.scenario ?? value.title)}</p>
                     </section>
                     <section className="testcase-detail-section">
-                        <h4>General Information</h4>
+                        <h4>Thông tin chung</h4>
                         <dl>
                             <div>
-                                <dt>Module / Feature</dt>
+                                <dt>Phân hệ / Chức năng</dt>
                                 <dd>
                                     {text(
                                         [value.module, value.feature ?? value.function]
@@ -228,21 +339,21 @@ export default function TestCaseEditor({
                                 </dd>
                             </div>
                             <div>
-                                <dt>Test Type</dt>
+                                <dt>Loại testcase</dt>
                                 <dd>{text(value.type)}</dd>
                             </div>
                         </dl>
                     </section>
+                    <DetailList title="Điều kiện tiên quyết" values={value.preconditions} />
                     <DetailList
-                        title="Test Data"
+                        title="Dữ liệu kiểm thử"
                         values={formatTestData(value.testData).split("\n").filter(Boolean)}
                     />
+                    <DetailList title="Các bước thực hiện" values={value.steps} />
                     <section className="testcase-detail-section">
-                        <h4>Expected Result</h4>
+                        <h4>Kết quả mong đợi</h4>
                         <p>{text(value.expectedResult)}</p>
                     </section>
-                    <DetailList title="Test Steps" values={value.steps} />
-                    <DetailList title="Preconditions" values={value.preconditions} />
                 </div>
             )}
         </aside>

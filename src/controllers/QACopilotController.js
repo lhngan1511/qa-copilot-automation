@@ -34,7 +34,8 @@ export default class QACopilotController {
 
         try {
             const result = await this.applicationService.start({
-                requirementFile: normalizedInput.requirementFile
+                requirementFile: normalizedInput.requirementFile,
+                projectId: normalizedInput.projectId ?? null
             });
 
             return this.successResponse({
@@ -53,7 +54,8 @@ export default class QACopilotController {
         try {
             const result = await this.applicationService.resume({
                 requirementFile: normalizedInput.requirementFile,
-                workflowContext: normalizedInput.workflowContext
+                workflowContext: normalizedInput.workflowContext,
+                projectId: normalizedInput.projectId ?? null
             });
 
             return this.successResponse({
@@ -159,7 +161,7 @@ export default class QACopilotController {
     async listWorkflows(input = {}) {
         try {
             const query = this.workflowListQueryValidator.validate(input);
-            const records = this.applicationService.listWorkflows();
+            const records = this.applicationService.listWorkflows({ projectId: input.projectId });
             const result = this.publicWorkflowListMapper.map(records, query);
 
             return this.successResponse({
@@ -169,6 +171,12 @@ export default class QACopilotController {
         } catch (error) {
             return this.errorResponse(error);
         }
+    }
+
+    async deleteWorkflow(input = {}) {
+        return this.invoke(() => this.applicationService.deleteWorkflow(input), {
+            mapPublicResponse: false
+        });
     }
 
     async getCurrentReview(input = {}) {

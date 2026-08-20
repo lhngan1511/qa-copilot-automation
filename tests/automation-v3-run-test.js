@@ -33,10 +33,19 @@ async function boot() {
         let d; try { d = await r.json(); } catch { d = null; }
         return { status: r.status, body: d };
     }
-    return { srv, req };
+    return { srv, req, app };
 }
 
-let { srv, req } = await boot();
+let { srv, req, app } = await boot();
+const spawned = [];
+// Capture the exact artifact handed to the runner.  This tests the production
+// Run boundary without launching a real browser in this HTTP regression test.
+app.locals.dependencies.v3ApplicationService.runner = {
+    async runFile(filePath, options) {
+        spawned.push({ filePath, options, code: fs.readFileSync(filePath, "utf8") });
+        return { status: "PASSED", durationMs: 1 };
+    }
+};
 
 // ===== Setup =====
 const start = await req("POST", "/api/codegen/start", { url: "about:blank", browser: "chrome", mode: "FULL_FLOW" });
@@ -81,6 +90,8 @@ const wsGet = await req("GET", `/api/automation-v3/workspaces/${wid}`);
 const item = wsGet.body.items.find(x => x.testCaseId === "TC001");
 assert.equal(item.generateStatus, "GENERATED", "3: generateStatus GENERATED");
 assert.ok(item.generatedFingerprint, "3: có fingerprint");
+const generatedA = fs.readFileSync(gen.body.outputPath, "utf8");
+assert.ok(generatedA.includes("DV01"), "3: spec ban đầu dùng dữ liệu A");
 
 // ===== Run sau khi stale (data đổi sau Generate) → chặn =====
 await req("PATCH", `/api/automation-v3/workspaces/${wid}/testcases/TC001/test-data`, { testData: { "Mã đơn vị tính": "DV99" } });
@@ -91,9 +102,17 @@ assert.ok(String(runStale.body?.message).includes("Sinh lại"), "6: message yê
 // Generate lại → fingerprint mới → run không stale (runner có thể báo DIAGNOSTIC thiếu BASE_URL — KHÔNG phải stale)
 const gen2 = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, {});
 assert.equal(gen2.status, 200, "generate lại OK");
+const generatedB = fs.readFileSync(gen2.body.outputPath, "utf8");
+assert.ok(generatedB.includes("DV99"), "6: regenerate phải dùng dữ liệu tester vừa sửa (B)");
+assert.ok(!generatedB.includes("DV01"), "6: generated spec mới không được còn dữ liệu cũ (A)");
 const runOk = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/run`, {});
 assert.notEqual(runOk.body?.errorCode, "STALE_GENERATED", "6: sau generate lại không còn stale");
 assert.ok(["PASSED", "FAILED", "DIAGNOSTIC", "ERROR"].includes(runOk.body?.runStatus) || runOk.status === 200 || runOk.body?.errorCode, "6: run trả kết quả (PASSED/FAILED hoặc diagnostic rõ)");
+assert.equal(spawned.length, 1, "6: chỉ script mới được đưa sang runner");
+assert.ok(spawned[0].code.includes("DV99"), "6: Run nhận script chứa B");
+assert.ok(!spawned[0].code.includes("DV01"), "6: Run không nhận script cũ chứa A");
+assert.ok(spawned[0].options.generation.hash, "6: Run nhận generation hash để audit");
+assert.equal(spawned[0].options.generation.effectiveDataBindings[0].value, "DV99", "6: Run log context chứa effective binding B");
 
 srv.close();
 fs.rmSync(tempRoot, { recursive: true, force: true });

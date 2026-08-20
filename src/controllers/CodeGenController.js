@@ -15,8 +15,10 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const usage = typeof this.usageFn === "function" ? (this.usageFn() ?? new Map()) : new Map();
-            const blocks = this.actionLibrary.list().map(b => ({
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            const blocks = this.actionLibrary.list(projectId).map(b => ({
                 blockId: b.blockId,
+                projectId: b.projectId ?? null,
                 label: b.label ?? null,
                 kind: b.kind,
                 groupName: b.groupName ?? null,
@@ -30,7 +32,8 @@ export default class CodeGenController {
                     actionType: s.actionType,
                     locator: s.locator,
                     target: s.target,
-                    recordedValue: s.sensitive ? "••••" : (s.recordedValue ?? "")
+                    recordedValue: s.sensitive ? "••••" : (s.recordedValue ?? ""),
+                    sensitive: Boolean(s.sensitive)
                 })),
                 recordedAssertionCount: (b.recordedAssertions ?? []).length,
                 recordedAssertions: (b.recordedAssertions ?? []).map(a => ({
@@ -43,6 +46,8 @@ export default class CodeGenController {
                 })),
                 sourceRecordingId: b.sourceRecordingId ?? null,
                 sourceRange: b.sourceRange ?? null,
+                createdAt: b.createdAt ?? null,
+                updatedAt: b.updatedAt ?? null,
                 status: b.status,
                 usedByTestCases: usage.get(b.blockId) ?? 0
             }));
@@ -57,6 +62,7 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const { recordingId, label, kind = "ACTION", startStep, endStep, groupName } = req.body ?? {};
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
             if (!recordingId || !Number.isInteger(startStep) || !Number.isInteger(endStep)) {
                 return this.fail(res, new Error("Thiếu recordingId/startStep/endStep."), 400, "INVALID_REQUEST", "Thiếu thông tin đoạn thao tác.");
             }
@@ -81,7 +87,8 @@ export default class CodeGenController {
                 recordedAssertions: asserts,
                 sourceRecordingId: recordingId,
                 sourceRange: { startStep, endStep },
-                groupName: String(groupName ?? "").trim() || null
+                groupName: String(groupName ?? "").trim() || null,
+                projectId
             });
             return res.status(201).json({ success: true, data: { blockId: block.blockId, label: block.label, kind: block.kind, groupName: block.groupName, stepCount: block.steps.length, recordedAssertionCount: block.recordedAssertions.length }, error: null });
         } catch (error) {
@@ -94,6 +101,10 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const { blockId } = req.params ?? {};
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            if (!this.actionLibrary.belongsToProject(blockId, projectId)) {
+                return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong Project hiện tại.");
+            }
             // P0 EDIT/DELETE — guard: Action đang được testcase dùng KHÔNG được xóa (xóa làm
             // binding resolve null -> testcase generate 422 SEGMENT_MAPPING_INVALID / mất action).
             const usage = typeof this.usageFn === "function" ? (this.usageFn() ?? new Map()) : new Map();
@@ -117,8 +128,9 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const { blockId } = req.params ?? {};
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
             const { label, groupName, steps } = req.body ?? {};
-            if (!this.actionLibrary.get(blockId)) {
+            if (!this.actionLibrary.belongsToProject(blockId, projectId)) {
                 return this.fail(res, new Error("Không tìm thấy thao tác."), 404, "LIBRARY_BLOCK_NOT_FOUND", "Không tìm thấy thao tác trong thư viện.");
             }
             const patch = {};
@@ -126,8 +138,22 @@ export default class CodeGenController {
             if (groupName !== undefined) patch.groupName = groupName;
             if (steps !== undefined) {
                 if (!Array.isArray(steps)) return this.fail(res, new Error("steps phải là mảng."), 400, "INVALID_REQUEST", "Danh sách bước không hợp lệ.");
-                // Chỉ nhận steps hiện có (snapshot copy) — không raw script.
-                patch.steps = steps.map(s => ({ ...s }));
+                // Merge theo step order để edit không làm mất metadata nguồn. Với dữ liệu nhạy cảm,
+                // frontend gửi preserveRecordedValue=true nếu tester không nhập giá trị thay thế.
+                const current = this.actionLibrary.get(blockId);
+                patch.steps = steps.map(s => {
+                    const original = (current?.steps ?? []).find(item => item.order === s.order) ?? {};
+                    const incoming = { ...s };
+                    const preserveSensitive = Boolean(original.sensitive && incoming.preserveRecordedValue);
+                    delete incoming.preserveRecordedValue;
+                    if (preserveSensitive) delete incoming.recordedValue;
+                    return {
+                        ...original,
+                        ...incoming,
+                        recordedValue: preserveSensitive ? original.recordedValue : incoming.recordedValue,
+                        sensitive: Boolean(original.sensitive)
+                    };
+                });
             }
             let updated;
             try {
@@ -150,9 +176,10 @@ export default class CodeGenController {
         try {
             if (!this.actionLibrary) return this.fail(res, new Error("ActionLibrary chưa cấu hình."), 500, "LIBRARY_NOT_CONFIGURED", "Thư viện thao tác chưa sẵn sàng.");
             const { oldGroupName, newGroupName } = req.body ?? {};
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
             let result;
             try {
-                result = this.actionLibrary.renameGroup(oldGroupName, newGroupName);
+                result = this.actionLibrary.renameGroup(oldGroupName, newGroupName, projectId);
             } catch (e) {
                 return this.fail(res, e, 400, e.code ?? "GROUP_RENAME_FAILED", e.message ?? "Không đổi được tên nhóm.");
             }
@@ -166,7 +193,8 @@ export default class CodeGenController {
      *  Output = PROPOSAL (structured); không persist. AI lỗi/unavailable → proposals: [] (manual vẫn chạy). */
     async createRecording(req, res) {
         try {
-            const data = this.manager.createRecording(req.body ?? {});
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            const data = this.manager.createRecording({ ...(req.body ?? {}), projectId });
             return res.status(201).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 400, "CODE_GEN_CREATE_FAILED", "Không tạo được bản ghi.");
@@ -189,12 +217,16 @@ export default class CodeGenController {
             if (!provider) {
                 return res.status(200).json({ success: true, data: { proposals: [] }, error: { code: "AI_PROVIDER_UNAVAILABLE", retryable: true, message: "AI provider chưa sẵn sàng." } });
             }
-            const prompt = `Bạn là trợ lý phân tích Playwright recording. Hãy nhóm các bước thành các CỤM THAO TÁC có ý nghĩa nghiệp vụ (VD: Đăng nhập, Mở chức năng, Thêm, Tìm kiếm, Sửa, Xóa).
+            const prompt = `Bạn là trợ lý phân tích Playwright recording. Hãy chia bản ghi thành các THAO TÁC nghiệp vụ có thể tái sử dụng và phân loại từng thao tác vào đúng CHỨC NĂNG.
 CHỈ trả về JSON hợp lệ, không kèm text khác, dạng:
-{"proposals":[{"suggestedName":"...","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true}]}
+{"proposals":[{"suggestedGroupName":"Đăng nhập","suggestedName":"Đăng nhập thành công","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true}]}
 QUY TẮC:
+- "suggestedGroupName" là CHỨC NĂNG/phân hệ nghiệp vụ dùng để phân nhóm trong thư viện, ví dụ: Đăng nhập, Điều hướng, Thiết bị.
+- "suggestedName" là kết quả hoặc kịch bản cụ thể có thể thực thi, ví dụ: Đăng nhập thành công, Chọn phân hệ Thiết bị, Thêm thiết bị thành công.
+- Một recording dài có thể đi qua NHIỀU chức năng. Phải gán chức năng riêng cho từng cụm, không gom toàn bộ recording vào một chức năng.
+- Không dùng các động từ chung như "Thêm", "Sửa", "Mở chức năng" làm tên khi có đủ bằng chứng để đặt tên nghiệp vụ rõ hơn.
 - Không biết/không nhắc testcase.
-- Nếu không đủ bằng chứng cho 1 cụm, vẫn đề xuất range nhưng suggestedName có thể rỗng.
+- Nếu không đủ bằng chứng, vẫn đề xuất range nhưng suggestedGroupName hoặc suggestedName có thể rỗng.
 - KHÔNG tự sửa locator.
 Dữ liệu recording:
 steps: ${JSON.stringify(steps)}
@@ -209,6 +241,7 @@ assertions: ${JSON.stringify(assertions)}`;
                 const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
                 const json = JSON.parse(cleaned);
                 if (Array.isArray(json.proposals)) proposals = json.proposals.map(p => ({
+                    suggestedGroupName: String(p.suggestedGroupName ?? p.groupName ?? "").trim() || null,
                     suggestedName: String(p.suggestedName ?? "").trim() || null,
                     startStep: Number.isInteger(p.startStep) ? p.startStep : null,
                     endStep: Number.isInteger(p.endStep) ? p.endStep : null,
@@ -228,7 +261,8 @@ assertions: ${JSON.stringify(assertions)}`;
 
     async start(req, res) {
         try {
-            const data = await this.manager.start(req.body ?? {});
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            const data = await this.manager.start({ ...(req.body ?? {}), projectId });
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 200, "CODE_GEN_START_FAILED", "Không thể bắt đầu ghi CodeGen.");
@@ -255,7 +289,8 @@ assertions: ${JSON.stringify(assertions)}`;
 
     async list(req, res) {
         try {
-            const data = this.manager.list();
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            const data = this.manager.list(projectId);
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 500, "CODE_GEN_LIST_FAILED", "Không thể đọc danh sách recording.");
@@ -265,7 +300,8 @@ assertions: ${JSON.stringify(assertions)}`;
     async get(req, res) {
         try {
             const data = this.manager.get(req.params.recordingId);
-            if (!data) return res.status(404).json({ success: false, data: null, error: { code: "RECORDING_NOT_FOUND", message: "Không tìm thấy recording." } });
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            if (!data || String(data.projectId ?? "") !== String(projectId ?? "")) return res.status(404).json({ success: false, data: null, error: { code: "RECORDING_NOT_FOUND", message: "Không tìm thấy recording trong Project hiện tại." } });
             return res.status(200).json({ success: true, data, error: null });
         } catch (error) {
             return this.fail(res, error, 404, "RECORDING_NOT_FOUND", "Không tìm thấy recording.");

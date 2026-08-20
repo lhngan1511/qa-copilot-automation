@@ -52,7 +52,7 @@ export default class ActionLibrary {
     }
 
     /** Tester chủ động LƯU thao tác vào Library (REUSABLE — bắt buộc label). */
-    addBlock({ label, kind = "ACTION", steps = [], recordedAssertions = [], sourceRecordingId = null, sourceRange = null, groupName = null }) {
+    addBlock({ label, kind = "ACTION", steps = [], recordedAssertions = [], sourceRecordingId = null, sourceRange = null, groupName = null, projectId = null }) {
         const trimmedLabel = String(label ?? "").trim();
         if (!trimmedLabel) {
             const err = new Error("Thao tác lưu vào thư viện bắt buộc đặt tên.");
@@ -61,6 +61,7 @@ export default class ActionLibrary {
         }
         const block = {
             blockId: newLibraryBlockId(),
+            projectId: String(projectId ?? "").trim() || null,
             label: trimmedLabel,
             kind: kind === "SETUP" ? "SETUP" : "ACTION",
             groupName: String(groupName ?? "").trim() || null,
@@ -124,7 +125,7 @@ export default class ActionLibrary {
     /** P0 — Rename group (tester-owned): cập nhật groupName của MỌI block thuộc group cũ.
      *  oldGroupName null/''/"Chưa phân loại" → target null (group chưa phân loại).
      *  newGroupName bắt buộc; trùng tên group khác → merge tự nhiên (không duplicate block). */
-    renameGroup(oldGroupName, newGroupName) {
+    renameGroup(oldGroupName, newGroupName, projectId = undefined) {
         const trimmed = String(newGroupName ?? "").trim();
         if (!trimmed) {
             const err = new Error("Tên nhóm không được để trống.");
@@ -136,6 +137,7 @@ export default class ActionLibrary {
         const oldRaw = isUngrouped ? null : oldTrimmed;
         let updated = 0;
         for (const block of this.blocks) {
+            if (projectId !== undefined && String(block.projectId ?? "") !== String(projectId ?? "")) continue;
             const bg = block.groupName ?? null;
             if (bg === oldRaw || (isUngrouped && bg === null)) {
                 block.groupName = trimmed;
@@ -160,7 +162,14 @@ export default class ActionLibrary {
         return b ? { ...b } : null;
     }
 
-    list() {
-        return this.blocks.map(b => ({ ...b }));
+    list(projectId = undefined) {
+        const expected = String(projectId ?? "").trim();
+        const blocks = projectId === undefined ? this.blocks : this.blocks.filter(b => String(b.projectId ?? "") === expected);
+        return blocks.map(b => ({ ...b }));
+    }
+
+    belongsToProject(blockId, projectId) {
+        const block = this.blocks.find(item => item.blockId === blockId);
+        return Boolean(block && String(block.projectId ?? "") === String(projectId ?? ""));
     }
 }

@@ -108,32 +108,56 @@ try {
     const blocked = await request(baseUrl, "POST", `/api/workflows/${workflowId}/resume`);
     assert.equal(blocked.status, 409);
 
-    const unsupportedAdd = await request(
+    const generatedCases = review.body.data.testCases;
+    const manualCase = {
+        ...structuredClone(generatedCases[0]),
+        id: "TC900",
+        testcaseId: "TC900",
+        title: "Testcase tester thêm thủ công",
+        scenario: "Testcase tester thêm thủ công",
+        testScenario: "Testcase tester thêm thủ công",
+        reviewStatus: "APPROVED",
+        source: "UNTRUSTED_CLIENT_VALUE"
+    };
+    const added = await request(
         baseUrl,
         "PUT",
         `/api/workflows/${workflowId}/test-case-review`,
         {
             artifactId: review.body.data.artifactId,
-            testCases: [...review.body.data.testCases, { id: "UI-LOCAL", title: "Added" }]
+            testCases: [...generatedCases, manualCase]
         }
     );
-    assert.equal(unsupportedAdd.status, 422);
+    assert.equal(added.status, 200);
+    assert.equal(added.body.data.testCases.length, generatedCases.length + 1);
+    assert.equal(added.body.data.testCases.at(-1).reviewStatus, "PENDING");
+    assert.equal(added.body.data.testCases.at(-1).source, "MANUAL_TESTER");
 
-    const initialCases = review.body.data.testCases;
+    const deletedAgain = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: review.body.data.artifactId,
+            testCases: generatedCases
+        }
+    );
+    assert.equal(deletedAgain.status, 200);
+    assert.equal(deletedAgain.body.data.testCases.length, generatedCases.length);
+
+    const readded = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: review.body.data.artifactId,
+            testCases: [...generatedCases, manualCase]
+        }
+    );
+    assert.equal(readded.status, 200);
+    const initialCases = readded.body.data.testCases;
     assert.ok(initialCases.every(testCase => testCase.reviewStatus === "PENDING"));
     assert.ok(initialCases.every(testCase => testCase.steps.length > 0));
-
-    const incomplete = await request(
-        baseUrl,
-        "PUT",
-        `/api/workflows/${workflowId}/test-case-review`,
-        {
-            artifactId: review.body.data.artifactId,
-            testCases: initialCases.slice(1)
-        }
-    );
-    assert.equal(incomplete.status, 422);
-    assert.equal(incomplete.body.error.code, "INCOMPLETE_TEST_CASE_BATCH");
 
     const invalidSteps = await request(
         baseUrl,
@@ -150,12 +174,38 @@ try {
     assert.equal(invalidSteps.body.error.code, "INVALID_TEST_STEPS");
 
     const editedTitle = `TESTER EDIT - ${initialCases[0].title}`;
+    const editedPrecondition = "Dữ liệu nền đã được chuẩn bị bởi tester";
+    const firstFieldName = Object.keys(initialCases[0].testData?.fields ?? {})[0];
+    assert.ok(firstFieldName, "testcase đầu tiên phải có ít nhất một field dữ liệu kiểm thử");
     const decisions = initialCases.map((testCase, index) => ({
         ...testCase,
         title: index === 0 ? editedTitle : testCase.title,
+        preconditions:
+            index === 0
+                ? [...(testCase.preconditions ?? []), editedPrecondition]
+                : testCase.preconditions,
         testData:
-            index === 0 ? { ...testCase.testData, value: "TESTER-VALUE-001" } : testCase.testData,
-        reviewStatus: index === 0 ? "APPROVED" : index === 1 ? "NEEDS_CHANGES" : "REMOVED"
+            index === 0
+                ? {
+                      ...testCase.testData,
+                      fields: {
+                          ...testCase.testData.fields,
+                          [firstFieldName]: {
+                              ...testCase.testData.fields[firstFieldName],
+                              value: "TESTER-VALUE-001",
+                              requiresTesterInput: false
+                          }
+                      }
+                  }
+                : testCase.testData,
+        reviewStatus:
+            testCase.id === "TC900"
+                ? "APPROVED"
+                : index === 0
+                  ? "APPROVED"
+                  : index === 1
+                    ? "NEEDS_CHANGES"
+                    : "REMOVED"
     }));
     const updated = await request(baseUrl, "PUT", `/api/workflows/${workflowId}/test-case-review`, {
         artifactId: review.body.data.artifactId,
@@ -163,15 +213,20 @@ try {
     });
     assert.equal(updated.status, 200);
     assert.equal(updated.body.data.testCases.length, initialCases.length);
-    assert.equal(updated.body.data.summary.approved, 1);
+    assert.equal(updated.body.data.summary.approved, 2);
     assert.equal(updated.body.data.summary.needsChanges, 1);
-    assert.equal(updated.body.data.summary.removed, initialCases.length - 2);
+    assert.equal(updated.body.data.summary.removed, initialCases.length - 3);
     assert.equal(updated.body.data.testCases[0].title, editedTitle);
 
     const reloaded = await request(baseUrl, "GET", `/api/workflows/${workflowId}/test-case-review`);
     assert.deepEqual(
         reloaded.body.data.testCases.map(testCase => testCase.reviewStatus),
         decisions.map(testCase => testCase.reviewStatus)
+    );
+    assert.ok(reloaded.body.data.testCases[0].preconditions.includes(editedPrecondition));
+    assert.equal(
+        reloaded.body.data.testCases[0].testData.fields[firstFieldName].value,
+        "TESTER-VALUE-001"
     );
 
     const blockedApproval = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {
@@ -191,7 +246,7 @@ try {
         { artifactId: review.body.data.artifactId, testCases: resolvedBatch }
     );
     assert.equal(bulkApproved.status, 200);
-    assert.equal(bulkApproved.body.data.summary.approved, 2);
+    assert.equal(bulkApproved.body.data.summary.approved, 3);
 
     const approved = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {
         artifactId: review.body.data.artifactId,
@@ -205,8 +260,31 @@ try {
     assert.deepEqual(completed.body.data.workflow.allowedActions.sort(), [
         "DOWNLOAD_EXCEL",
         "DOWNLOAD_JSON",
-        "DOWNLOAD_MARKDOWN"
+        "DOWNLOAD_MARKDOWN",
+        "UPDATE_TEST_CASES"
     ]);
+
+    const completedReview = await request(
+        baseUrl,
+        "GET",
+        `/api/workflows/${workflowId}/test-case-review`
+    );
+    const completedEditTitle = "Testcase đã hoàn tất vẫn được chỉnh sửa";
+    const completedEditedCases = completedReview.body.data.testCases.map((testCase, index) =>
+        index === 0 ? { ...testCase, title: completedEditTitle } : testCase
+    );
+    const completedEdit = await request(
+        baseUrl,
+        "PUT",
+        `/api/workflows/${workflowId}/test-case-review`,
+        {
+            artifactId: completedReview.body.data.artifactId,
+            testCases: completedEditedCases
+        }
+    );
+    assert.equal(completedEdit.status, 200);
+    assert.equal(completedEdit.body.data.testCases[0].title, completedEditTitle);
+    assert.equal(completedEdit.body.data.testCases[0].reviewStatus, "APPROVED");
 
     const jsonDownload = await request(
         baseUrl,
@@ -229,8 +307,11 @@ try {
     const approvedJson = Array.isArray(jsonDownload.body)
         ? jsonDownload.body
         : JSON.parse(jsonDownload.body.toString("utf8"));
-    assert.equal(approvedJson.length, 2);
+    assert.equal(approvedJson.length, 3);
     assert.ok(approvedJson.every(testCase => testCase.reviewStatus === "APPROVED"));
+    assert.equal(approvedJson[0].title, completedEditTitle);
+    assert.ok(approvedJson.some(testCase => testCase.id === "TC900"));
+    assert.ok(markdownDownload.body.toString("utf8").includes("TC900"));
     assert.ok(approvedJson.every(testCase => testCase.steps.length > 0));
     assert.equal(
         approvedJson.some(testCase => testCase.reviewStatus === "REMOVED"),
@@ -252,8 +333,8 @@ try {
 
     console.log("TestCase Review HTTP test PASSED");
     console.log(`Approved testcases: ${approvedJson.length}`);
-    console.log("Add testcase: NOT SUPPORTED");
-    console.log("Remove testcase: SUPPORTED");
+    console.log("Add testcase: SUPPORTED");
+    console.log("Delete testcase: SUPPORTED WHILE PENDING");
     console.log(`JSON records: ${approvedJson.length}`);
     console.log(`Excel bytes: ${excelDownload.body.length}`);
 } finally {

@@ -51,7 +51,7 @@ export default class CurrentRecordingSession {
     /**
      * Start recording cho testcase (TESTCASE) hoặc setup chung (SETUP).
      */
-    start({ workspaceId, testCaseId = null, type = "TESTCASE", url = "", browser = "chrome" }) {
+    start({ workspaceId, testCaseId = null, type = "TESTCASE", url = "", browser = "chrome", projectId = null }) {
         if (this.active) {
             const err = new Error("Đã có recording đang hoạt động trong workspace.");
             err.code = "RECORDING_ALREADY_ACTIVE";
@@ -82,6 +82,7 @@ export default class CurrentRecordingSession {
         if (this.store) {
             const rec = this.store.create({
                 workspaceId,
+                projectId,
                 testCaseId: session.testCaseId,
                 type: sessionType,
                 url,

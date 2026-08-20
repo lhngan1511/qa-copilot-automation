@@ -5,6 +5,7 @@ import V3RecordingPanel from "../components/automationV3/V3RecordingPanel.jsx";
 import V3SegmentMappingPanel from "../components/automationV3/V3SegmentMappingPanel.jsx";
 import V3ReviewDrawer from "../components/automationV3/V3ReviewDrawer.jsx";
 import V3ConfirmDialog from "../components/automationV3/V3ConfirmDialog.jsx";
+import { useProject } from "../contexts/ProjectContext.jsx";
 import {
     createWorkspace,
     getWorkspace,
@@ -80,6 +81,8 @@ export function shortWorkspaceId(id) {
 }
 
 export default function AutomationV3Page() {
+    const { projectId } = useProject();
+    const workspaceStorageKey = `${STORAGE_KEY}.${projectId}`;
     const [workspace, setWorkspace] = useState(null);
     const [displayMap, setDisplayMap] = useState(() => readDisplayMap());
     const [recentWorkspaces, setRecentWorkspaces] = useState(() => readRecentWorkspaces());
@@ -116,32 +119,63 @@ export default function AutomationV3Page() {
     const refreshWorkspaceList = async () => {
         try {
             const data = await listWorkspaces();
-            setWorkspaceList(Array.isArray(data) ? data : []);
+            const nextList = Array.isArray(data) ? data : [];
+            setWorkspaceList(nextList);
+            return nextList;
         } catch {
             /* giữ list cũ */
+            return null;
         }
     };
 
     useEffect(() => {
         let cancelled = false;
-        const savedId = window.localStorage.getItem(STORAGE_KEY);
-        refreshWorkspaceList();
-        if (!savedId) {
-            setCreating(true);
-            return;
-        }
-        getWorkspace(savedId)
-            .then(data => {
+        const loadProjectWorkspace = async () => {
+            // Project là ranh giới dữ liệu. Xóa ngay context cũ trước khi tải để
+            // workspace/testcase của project trước không nháy hoặc tồn tại dai dẳng.
+            setWorkspace(null);
+            setWorkspaceList([]);
+            setCreating(false);
+            setDrawerTestCaseId(null);
+            setMappingPanel(null);
+            setDrawerGenerateResult(null);
+            setDrawerRunResult(null);
+            setWsPopoverOpen(false);
+            setWsManagerOpen(false);
+            setWsMenuId(null);
+            setAddTcOpen(false);
+            setError("");
+
+            const list = await refreshWorkspaceList();
+            if (cancelled || !list) return;
+
+            const savedId = window.localStorage.getItem(workspaceStorageKey);
+            // Không gọi GET bằng ID lưu từ project khác. Chỉ mở workspace đã được
+            // endpoint danh sách xác nhận thuộc project hiện tại.
+            const activeId = savedId && list.some(item => item.workspaceId === savedId)
+                ? savedId
+                : list[0]?.workspaceId;
+
+            if (!activeId) {
+                window.localStorage.removeItem(workspaceStorageKey);
+                return;
+            }
+
+            try {
+                const data = await getWorkspace(activeId);
                 if (cancelled) return;
-                setWorkspace({ workspaceId: savedId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
-            })
-            .catch(() => {
+                setWorkspace({ workspaceId: activeId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
+                window.localStorage.setItem(workspaceStorageKey, activeId);
+            } catch {
                 if (cancelled) return;
-                window.localStorage.removeItem(STORAGE_KEY);
-                setCreating(true);
-            });
+                window.localStorage.removeItem(workspaceStorageKey);
+                setWorkspaceList(current => current.filter(item => item.workspaceId !== activeId));
+            }
+        };
+
+        loadProjectWorkspace();
         return () => { cancelled = true; };
-    }, []);
+    }, [projectId]);
 
     const selectedIds = useMemo(() => {
         if (!workspace?.items) return [];
@@ -177,7 +211,7 @@ export default function AutomationV3Page() {
         try {
             const data = await getWorkspace(wsId);
             setWorkspace({ workspaceId: wsId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
-            window.localStorage.setItem(STORAGE_KEY, wsId);
+            window.localStorage.setItem(workspaceStorageKey, wsId);
             setDrawerTestCaseId(null);
             setMappingPanel(null);
             setDrawerGenerateResult(null);
@@ -252,7 +286,7 @@ export default function AutomationV3Page() {
                 });
             }
             setWorkspace({ workspaceId: created.workspaceId, items: created.items ?? [], approvedTotal: created.approvedCount ?? null });
-            window.localStorage.setItem(STORAGE_KEY, created.workspaceId);
+            window.localStorage.setItem(workspaceStorageKey, created.workspaceId);
             const map = {};
             for (const tc of result.approved ?? []) {
                 map[tc.testCaseId] = {
@@ -440,7 +474,7 @@ export default function AutomationV3Page() {
             setConfirm({
                 kind: "remove_testcase",
                 title: `Loại ${testCase.testCaseId} khỏi Automation Workspace?`,
-                message: "Testcase sẽ không còn hiển thị trong workspace này. Không ảnh hưởng: Testcase đã duyệt · Action Library dùng chung.",
+                message: "Testcase sẽ không còn hiển thị trong workspace này. Testcase đã duyệt và Thư viện thao tác dùng chung không bị ảnh hưởng.",
                 testCase
             });
         } else if (action === "record_again" || action === "setup") {
@@ -477,7 +511,7 @@ export default function AutomationV3Page() {
         setConfirm({
             kind: "delete_workspace",
             title: `Xóa workspace "${w.module || "Workspace"}"?`,
-            message: "Toàn bộ cấu hình automation thuộc workspace này sẽ bị xóa. Không ảnh hưởng: Testcase đã duyệt · Action Library dùng chung. Generated Playwright artifact KHÔNG cascade delete trong P0.",
+            message: "Toàn bộ cấu hình automation thuộc workspace này sẽ bị xóa. Testcase đã duyệt và Thư viện thao tác dùng chung không bị ảnh hưởng. Các tệp Playwright đã sinh sẽ được giữ lại.",
             testCase: null,
             workspaceId: w.workspaceId
         });
@@ -515,19 +549,21 @@ export default function AutomationV3Page() {
                 const wsId = confirm.workspaceId;
                 const isCurrent = wsId === workspace?.workspaceId;
                 await deleteWorkspace(wsId);
-                await refreshWorkspaceList();
+                const refreshedList = await refreshWorkspaceList();
                 if (isCurrent) {
                     // Chọn workspace gần nhất còn lại (newest first) — UI nói rõ đã chuyển.
-                    const next = (workspaceList ?? []).filter(w => w.workspaceId !== wsId)[0] ?? null;
+                    const next = (refreshedList ?? []).find(w => w.workspaceId !== wsId) ?? null;
                     if (next) {
                         const data = await getWorkspace(next.workspaceId);
                         setWorkspace({ workspaceId: next.workspaceId, items: Array.isArray(data.items) ? data.items : [], approvedTotal: data.approvedTotal ?? null });
-                        window.localStorage.setItem(STORAGE_KEY, next.workspaceId);
+                        window.localStorage.setItem(workspaceStorageKey, next.workspaceId);
                         setNotice(`Đã xóa workspace cũ và chuyển sang "${next.module || "Workspace"}".`);
                     } else {
-                        window.localStorage.removeItem(STORAGE_KEY);
+                        window.localStorage.removeItem(workspaceStorageKey);
                         setWorkspace(null);
-                        setCreating(true);
+                        setCreating(false);
+                        setDrawerTestCaseId(null);
+                        setMappingPanel(null);
                         setNotice("Đã xóa workspace. Tạo workspace mới để bắt đầu.");
                     }
                 } else {
@@ -545,7 +581,7 @@ export default function AutomationV3Page() {
     /* ---------------- Render ---------------- */
 
     return (
-        <div className="v3-page">
+        <div className={`v3-page${creating ? " v3-page--creating" : ""}${drawerTestcase ? " v3-page--drawer-open" : ""}`}>
             <div className="v3-page__head">
                 <div>
                     <h1 className="v3-page__title">Automation Workspace</h1>
@@ -636,12 +672,13 @@ export default function AutomationV3Page() {
             ) : null}
 
             {creating ? (
-                <section className="v3-section" aria-label="Tạo workspace mới">
+                <section className="v3-section v3-section--create" aria-label="Tạo workspace mới">
                     <div className="v3-section__title">
-                        <h2>Tạo Workspace mới</h2>
-                        <span className="v3-section__hint">Tải approved-testcases.json</span>
+                        <h2>Tạo workspace mới</h2>
                     </div>
-                    <V3UploadPanel onApproved={handleCreated} onError={setError} busy={busy} />
+                    <div className="v3-upload-shell">
+                        <V3UploadPanel onApproved={handleCreated} onError={setError} busy={busy} />
+                    </div>
                     {workspace ? (
                         <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setCreating(false)}>
                             Quay lại workspace
@@ -704,6 +741,7 @@ export default function AutomationV3Page() {
                     <V3TestCaseList
                         testCases={enrichedItems}
                         selectedIds={selectedIds}
+                        activeTestCaseId={drawerTestCaseId}
                         onToggle={handleToggle}
                         recordingActive={recordingActive}
                         onPrimaryAction={handlePrimaryAction}

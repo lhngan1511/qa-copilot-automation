@@ -185,7 +185,6 @@ function confirmedEntry(entry) {
 export function resolveFillStatus({ target, testDataBindings = {}, confirmedTestData = {}, approvedTestData = {}, purposeMap = {}, singleInput = false, stepDecision = null } = {}) {
     const t = String(target ?? "").trim();
     if (!t) return { status: "SKIP", businessField: "", value: null, source: null, bound: false };
-    if (envKeyFor(t)) return { status: "SETUP", businessField: t, value: null, source: "SETUP_ENV", bound: false };
     const rawBinding = testDataBindings && String(testDataBindings[t] ?? "").trim();
     const businessField = rawBinding
         ? rawBinding
@@ -206,6 +205,9 @@ export function resolveFillStatus({ target, testDataBindings = {}, confirmedTest
     if (confEntry.intent === "VALUE" && confEntry.value.trim() !== "") {
         return { status: "VALUE", businessField, value: confEntry.value, source: "USER_CONFIRMED", bound: Boolean(rawBinding) };
     }
+    // Setup fields normally use runtime env, but an explicit tester decision above wins.
+    // This is a generic precedence rule: no testcase id, locator or CAPTCHA literal.
+    if (envKeyFor(t)) return { status: "SETUP", businessField: t, value: null, source: "SETUP_ENV", bound: Boolean(rawBinding) };
     const apprVal = pickApprovedValue(approvedTestData, businessField);
     if (apprVal !== undefined && apprVal !== null && String(apprVal).trim() !== "") {
         return { status: "VALUE", businessField, value: String(apprVal), source: "APPROVED_JSON", bound: Boolean(rawBinding) };
@@ -431,6 +433,19 @@ export function renderV3Spec({
         };
     }
     validation.spec.bindingValid = true;
+
+    // Provenance used by Generate/Run diagnostics.  This is intentionally derived
+    // from the same resolved status that renders the spec: a diagnostic can never
+    // describe a different data source from the one Playwright will receive.
+    metadata.effectiveDataBindings = [...fillStatuses.entries()].map(([target, fs]) => ({
+        target,
+        field: fs.businessField,
+        status: fs.status,
+        source: fs.source,
+        // Never put credentials/secrets in server logs.  Non-sensitive values make
+        // a stale-data investigation auditable without exposing login data.
+        value: fs.status === "VALUE" && !isSensitiveField(fs.businessField) ? fs.value : undefined
+    }));
 
     // P0-A — xây testDataMap: CHỈ VALUE (APPROVED_JSON/USER_CONFIRMED) đi vào const testData.
     const testDataMap = {};

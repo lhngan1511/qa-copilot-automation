@@ -36,6 +36,13 @@ export function removeWorkingAction(list, id) {
     return (Array.isArray(list) ? list : []).filter(x => x.blockId !== id);
 }
 
+/** Cập nhật Chức năng cho đúng working set của bản ghi hiện tại.
+ * Không rename group ở cấp Library, vì group đó có thể chứa Action của bản ghi cũ. */
+export function applyGroupToWorkingActions(list, groupName) {
+    const normalized = String(groupName ?? "").trim() || null;
+    return (Array.isArray(list) ? list : []).map(item => ({ ...item, groupName: normalized }));
+}
+
 export function proposalStatus(proposal, workingList, dismissed = []) {
     const l = Array.isArray(workingList) ? workingList : [];
     const p = proposal ?? {};

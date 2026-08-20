@@ -134,7 +134,7 @@ try {
         "POST",
         `/api/workflows/${workflowId}/clarifications/CL001`,
         {
-            answer: "Không",
+            answer: "Requirement không đề cập",
             answeredBy: "http-review-tester"
         }
     );
@@ -145,7 +145,10 @@ try {
         "GET",
         `/api/workflows/${workflowId}/ai-analysis-review`
     );
-    assert.equal(answeredReview.body.data.clarifications[0].answer, "Không");
+    assert.equal(
+        answeredReview.body.data.clarifications[0].answer,
+        "Requirement không đề cập"
+    );
     assert.equal(answeredReview.body.data.clarifications[0].status, "ANSWERED");
     assert.equal(answeredReview.body.data.summary.answered, 1);
     assert.equal(answeredReview.body.data.summary.remaining, 0);
@@ -165,7 +168,7 @@ try {
     );
     assert.equal(updated.status, 200);
     assert.equal(updated.body.data.analysis.purpose, reviewedPurpose);
-    assert.equal(updated.body.data.clarifications[0].answer, "Không");
+    assert.equal(updated.body.data.clarifications[0].answer, "Requirement không đề cập");
     assert.equal(JSON.stringify(updated.body.data).includes(tempRoot), false);
 
     const approval = await request(baseUrl, "POST", `/api/workflows/${workflowId}/approve`, {

@@ -18,6 +18,7 @@ export default function TestCaseList({
     selectedIds,
     allVisibleSelected,
     disabled,
+    reviewDisabled = disabled,
     onSelect,
     onToggle,
     onToggleAll,
@@ -34,7 +35,7 @@ export default function TestCaseList({
                                 type="checkbox"
                                 aria-label="Chọn tất cả test case đang hiển thị"
                                 checked={allVisibleSelected && testCases.length > 0}
-                                disabled={disabled || testCases.length === 0}
+                                disabled={reviewDisabled || testCases.length === 0}
                                 onChange={onToggleAll}
                             />
                         </th>
@@ -73,7 +74,7 @@ export default function TestCaseList({
                                         type="checkbox"
                                         aria-label={`Chọn test case ${id}`}
                                         checked={selectedIds.has(id)}
-                                        disabled={disabled}
+                                        disabled={reviewDisabled}
                                         onClick={event => event.stopPropagation()}
                                         onChange={() => onToggle(id)}
                                     />
@@ -131,7 +132,7 @@ export default function TestCaseList({
                                     <div className="testcase-row-actions">
                                         <button
                                             type="button"
-                                            disabled={disabled}
+                                            disabled={reviewDisabled}
                                             onClick={event => {
                                                 event.stopPropagation();
                                                 onDecision([id], "APPROVED");

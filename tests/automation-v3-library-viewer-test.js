@@ -87,7 +87,7 @@ const fillGhiChu = steps.find(s => s.actionType === "FILL" && s.target === "Ghi 
 assert.equal(fillGhiChu.recordedValue, "ghi chú", "CASE4: recorded value 'ghi chú' hiện NGUYÊN");
 const fillPassword = byLabel["Đăng nhập"].steps.find(s => s.actionType === "FILL" && s.target === "Mật khẩu");
 assert.equal(fillPassword.recordedValue, "••••", "CASE4: sensitive (Mật khẩu) vẫn mask '••••' — security giữ");
-assert.equal(fillPassword.sensitive, undefined, "CASE4: DTO không lộ flag nội bộ");
+assert.equal(fillPassword.sensitive, true, "CASE4: DTO chỉ lộ cờ nhạy cảm để UI bảo vệ giá trị, không lộ secret");
 
 // ===== CASE 5 — Shared source: CodeGen list và Automation workspace list CÙNG nguồn =====
 const ws = await req("POST", "/api/automation-v3/workspaces", { source: "NEW", module: "Đơn vị tính", approvedTestCases: [

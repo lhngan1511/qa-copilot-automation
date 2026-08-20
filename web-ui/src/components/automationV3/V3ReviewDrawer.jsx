@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveTestData } from "../../api/automationV3Api.js";
-import { canGenerateForTestcase, generateGateReason, automationDisplayStatus } from "../../utils/automationV3.js";
+import { ACTION_LABEL, canGenerateForTestcase, generateGateReason, automationDisplayStatus } from "../../utils/automationV3.js";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 import V3StepReviewSection from "./V3StepReviewSection.jsx";
@@ -156,9 +156,9 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         <div className="v3-drawer" role="dialog" aria-modal="true" aria-label={`Automation ${testCase.testCaseId}`}>
             <div className="v3-drawer__head">
                 <div>
+                    <span className="v3-drawer__eyebrow">Chi tiết testcase</span>
                     <b>{testCase.testCaseId} · {testCase.title}</b>
                     <div className="v3-drawer__sub">
-                        {expected ? <span>Kết quả mong đợi: {expected.length > 70 ? `${expected.slice(0, 70)}…` : expected}</span> : null}
                         <span>Automation: {automationDisplayStatus(testCase)}</span>
                     </div>
                 </div>
@@ -189,9 +189,11 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
             <div className="v3-drawer__body">
                 {tab === "info" ? (
                     <div className="v3-info-tab v3-info-tab--compact">
-                        <div className="v3-info-row"><span>TC</span><b>{testCase.testCaseId} · {testCase.type}</b></div>
-                        <div className="v3-info-row"><span>Tiêu đề</span><b>{testCase.title}</b></div>
-                        <div className="v3-info-row"><span>Module</span><b>{testCase.module || "—"}</b></div>
+                        <div className="v3-info-summary">
+                            <div className="v3-info-summary__item"><span>Mã testcase</span><b>{testCase.testCaseId}</b></div>
+                            <div className="v3-info-summary__item"><span>Loại</span><b>{testCase.type}</b></div>
+                            <div className="v3-info-summary__item v3-info-summary__item--wide"><span>Module</span><b>{testCase.module || "—"}</b></div>
+                        </div>
                         {/* P0-A — DỮ LIỆU KIỂM THỬ: editable (tester edit cho lần automation);
                             approved giữ nguyên; [Khôi phục dữ liệu testcase] trả về approved. */}
                         <div className="v3-info-td">
@@ -213,7 +215,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 }
                                 return (
                                     <>
-                                        {businessKeys.map(k => {
+                                        <div className="v3-info-td__fields">{businessKeys.map(k => {
                                             // P0 TC001 — entry {value, intent}: VALUE (nhập) / EMPTY (Để trống) /
                                             // UNRESOLVED (chưa intent — cần review trước khi Sinh).
                                             const entry = draft[k] ?? { value: "", intent: "" };
@@ -251,7 +253,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                                     </label>
                                                 </div>
                                             );
-                                        })}
+                                        })}</div>
                                         <div className="v3-td-actions">
                                             {/* P0-A UX — [Lưu dữ liệu] là primary (lưu automation-specific, không sửa approved). */}
                                             <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={tdSaving} onClick={() => persistTd()}>
@@ -341,11 +343,28 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                 })
                             ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
                         </div>
-                        {/* Action sequence */}
+                        {/* Same Action -> Steps hierarchy consumed by GenerateService. */}
                         <div className="v3-exp__block">
-                            <h4 className="v3-exp__h">Thao tác</h4>
+                            <h4 className="v3-exp__h">Thao tác sẽ chạy</h4>
                             {testCase?.segments?.length > 0 ? (
-                                testCase.segments.map(s => <div className="v3-info-row" key={s.segmentId}><span>{s.orderInTestCase}.</span><b>{s.label ?? s.segmentId}</b></div>)
+                                testCase.segments.map(s => (
+                                    <div className="v3-run-action" key={`${s.segmentId}:${s.orderInTestCase}`}>
+                                        <div className="v3-run-action__title">
+                                            <span>{s.orderInTestCase}.</span>
+                                            <b>{s.label ?? s.segmentId}</b>
+                                            <em>{Array.isArray(s.steps) ? `${s.steps.length} bước` : ""}</em>
+                                        </div>
+                                        {Array.isArray(s.steps) && s.steps.length > 0 ? (
+                                            <ol className="v3-run-action__steps">
+                                                {s.steps.map((step, index) => {
+                                                    const action = ACTION_LABEL[step.actionType] ?? step.actionType ?? "";
+                                                    const target = step.target || step.locator || "";
+                                                    return <li key={`${s.segmentId}:${step.order ?? index}`}>{`${action}${target ? ` ${target}` : ""}`.trim()}</li>;
+                                                })}
+                                            </ol>
+                                        ) : <p className="v3-act__note">Action chưa có bước thực thi.</p>}
+                                    </div>
+                                ))
                             ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
                         </div>
                         {/* P0-D1 — Kết quả đã chọn */}
@@ -418,9 +437,6 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                 )}
             </div>
 
-            <div className="v3-drawer__footer">
-                <button type="button" className="v3-btn v3-btn--ghost" onClick={onClose}>Đóng</button>
-            </div>
         </div>
     );
 }

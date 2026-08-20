@@ -19,10 +19,9 @@ function readFileAsText(file) {
 export default function V3UploadPanel({ onApproved, onError, busy = false }) {
     const inputRef = useRef(null);
     const [error, setError] = useState("");
+    const [dragActive, setDragActive] = useState(false);
 
-    const handleFile = async event => {
-        const file = event.target.files?.[0];
-        event.target.value = "";
+    const processFile = async file => {
         setError("");
         if (!file) return;
         if (!/\.json$/i.test(file.name)) {
@@ -42,14 +41,32 @@ export default function V3UploadPanel({ onApproved, onError, busy = false }) {
         }
     };
 
+    const handleFile = event => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        processFile(file);
+    };
+
+    const handleDrop = event => {
+        event.preventDefault();
+        setDragActive(false);
+        if (!busy) processFile(event.dataTransfer.files?.[0]);
+    };
+
     return (
-        <div className="v3-upload">
+        <div
+            className={`v3-upload ${dragActive ? "v3-upload--active" : ""} ${busy ? "v3-upload--disabled" : ""}`}
+            onDragEnter={event => { event.preventDefault(); if (!busy) setDragActive(true); }}
+            onDragOver={event => event.preventDefault()}
+            onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget)) setDragActive(false); }}
+            onDrop={handleDrop}
+        >
             <div className="v3-upload__icon" aria-hidden="true">
-                📄
+                <svg viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.8-9.94A6.5 6.5 0 0 1 18.7 10.5 3.75 3.75 0 0 1 18.25 18H14" /><path d="M12 20V10m0 0-3 3m3-3 3 3" /></svg>
             </div>
             <div className="v3-upload__copy">
-                <h4>Tải approved-testcases.json</h4>
-                <p>Chỉ đọc testcase đã duyệt (reviewStatus = APPROVED).</p>
+                <h4>Kéo file testcase đã duyệt vào đây</h4>
+                <p>approved-testcases.json · chỉ nhận testcase có trạng thái đã duyệt</p>
             </div>
             <input
                 ref={inputRef}
@@ -60,8 +77,8 @@ export default function V3UploadPanel({ onApproved, onError, busy = false }) {
                 disabled={busy}
                 aria-label="Chọn file approved-testcases.json"
             />
-            <button type="button" className="v3-btn v3-btn--primary" onClick={() => inputRef.current?.click()} disabled={busy}>
-                Chọn file
+            <button type="button" className="v3-btn v3-btn--secondary v3-upload__button" onClick={() => inputRef.current?.click()} disabled={busy}>
+                Chọn file từ máy
             </button>
             {error ? <p className="v3-upload__error" role="alert">{error}</p> : null}
         </div>

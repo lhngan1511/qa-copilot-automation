@@ -150,8 +150,9 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setScreen("paste");
     };
 
-    const openLibrary = async () => {
+    const openLibrary = async (mode2 = "append") => {
         setLocalError("");
+        setAddMode(mode2);
         setSelectedLib([]);
         setPickerGroup(null);
         setScreen("library");
@@ -261,7 +262,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         }
     };
 
-    const handleReplace = item => openFallbackPaste({ type: "replaceOne", blockId: item.blockId, order: item.order });
+    const handleReplace = item => openLibrary({ type: "replaceOne", blockId: item.blockId, order: item.order });
 
     const handleMove = async (index, dir) => {
         if (saving) return;
@@ -326,14 +327,35 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setSelectedLib(prev => (prev.includes(blockId) ? prev.filter(x => x !== blockId) : [...prev, blockId]));
     };
 
+    const moveSelectedLib = (index, delta) => {
+        setSelectedLib(prev => {
+            const nextIndex = index + delta;
+            if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+            const next = [...prev];
+            [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+            return next;
+        });
+    };
+
     const addSelectedLibrary = async () => {
         if (saving || selectedLib.length === 0) return;
         setSaving(true);
         setLocalError("");
         try {
-            // Bind theo thứ tự chọn — append từng cái (cho phép cùng LIB-* nhiều occurrence).
-            for (const blockId of selectedLib) {
-                await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
+            if (addMode && addMode.type === "replaceOne") {
+                // Thay đúng item tại vị trí tester đã sắp, bằng lựa chọn từ Library.
+                const oldIndex = binding.findIndex(i => i.blockId === addMode.blockId && i.order === addMode.order);
+                await unbindBlock(workspaceId, testCase.testCaseId, addMode.blockId, addMode.order);
+                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
+                if (oldIndex >= 0) {
+                    const current = (await getBinding(workspaceId, testCase.testCaseId)).sequence.map(i => i.blockId);
+                    const replacements = current.splice(current.length - selectedLib.length, selectedLib.length);
+                    current.splice(oldIndex, 0, ...replacements);
+                    await reorderBinding(workspaceId, testCase.testCaseId, current);
+                }
+            } else {
+                // Bind theo thứ tự chọn — append từng cái (cho phép cùng LIB-* nhiều occurrence).
+                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
             }
             setSelectedLib([]);
             setScreen("list");
@@ -365,6 +387,11 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         return `${base}${range}`;
     };
 
+    const selectedLibraryItems = selectedLib.map(blockId => library.find(item => item.blockId === blockId)).filter(Boolean);
+    const selectedFunctionCount = new Set(selectedLibraryItems.map(item => groupDisplayName(item.groupName))).size;
+    const libraryGroups = groupLibraryActions(library);
+    const activePickerGroup = pickerGroup ?? (libraryGroups[0]?.rawGroupName ?? "");
+
     if (loading) return <div className="v3-note">Đang tải thao tác…</div>;
 
     return (
@@ -386,14 +413,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                         <div className="v3-cond__body">
                                             <div className="v3-cond__line">
                                                 <b>{idx + 1}. {blockTitle(item)}</b>
-                                                <span className="v3-cond__meta">
-                                                    {item.stepCount} thao tác ·
-                                                    {item.status === "CONFIRMED" ? (
-                                                        <span className="v3-ok">✓ Đã xác nhận</span>
-                                                    ) : (
-                                                        <span className="v3-warn">⚠ Chưa xác nhận</span>
-                                                    )}
-                                                </span>
+                                                <span className="v3-cond__meta">{item.stepCount} thao tác</span>
                                             </div>
                                         </div>
                                         <div className="v3-cond__actions">
@@ -406,6 +426,11 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                             <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setExpandedId(expandedId === itemKey ? null : itemKey)}>
                                                 {expandedId === itemKey ? "Thu gọn" : "Xem"}
                                             </button>
+                                            {item.status === "CONFIRMED" ? (
+                                                <span className="v3-cond__status v3-ok">✓ Đã xác nhận</span>
+                                            ) : (
+                                                <span className="v3-cond__status v3-warn">⚠ Chưa xác nhận</span>
+                                            )}
                                             {item.status !== "CONFIRMED" ? (
                                                 <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => handleConfirm(item)} disabled={saving}>
                                                     Xác nhận
@@ -450,7 +475,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                         })
                     )}
                     <div className="v3-act__add">
-                        <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={openLibrary} disabled={saving}>
+                        <button type="button" className="v3-btn v3-btn--ghost v3-act__add-button" onClick={openLibrary} disabled={saving}>
                             + Thêm thao tác từ thư viện
                         </button>
                     </div>
@@ -465,62 +490,84 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             {/* ---------- Library picker (P0 — MULTI-SELECT batch) ---------- */}
             {screen === "library" ? (
                 <div className="v3-act__library">
-                    <h4 className="v3-map__h">THÊM THAO TÁC TỪ THƯ VIỆN</h4>
+                    <div>
+                        <h4 className="v3-map__h">{addMode?.type === "replaceOne" ? "Thay thế bằng thao tác từ thư viện" : "Thêm thao tác từ thư viện"}</h4>
+                        <p className="v3-act__note">Chọn thao tác ở nhiều chức năng, sau đó sắp xếp thành luồng sẽ chạy.</p>
+                    </div>
                     {libraryLoading ? (
                         <p className="v3-act__note">Đang tải thư viện…</p>
                     ) : library.length === 0 ? (
                         <p className="v3-act__note">Chưa có thao tác nào được lưu để dùng lại.</p>
-                    ) : pickerGroup === null ? (
-                        /* P0-B — chọn CHỨC NĂNG trước (group-first), không render flat toàn bộ Library. */
-                        <>
-                            <p className="v3-act__note">Chọn chức năng để xem thao tác:</p>
-                            {groupLibraryActions(library).map(g => (
-                                <button type="button" className="v3-lib-group__head" key={g.rawGroupName ?? ""} onClick={() => setPickerGroup(g.rawGroupName ?? "")}>
-                                    <span className="v3-lib-group__arrow">▸</span>
-                                    <b>{g.groupName}</b>
-                                    <span className="v3-lib-group__count">· {g.count} thao tác</span>
-                                </button>
-                            ))}
-                        </>
                     ) : (
-                        /* Đang xem 1 group — render actions bên trong; multi-select + repeated giữ. */
-                        <>
-                            <div className="v3-exp__row">
-                                <b className="v3-map__h">{groupDisplayName(pickerGroup)}</b>
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setPickerGroup(null)} disabled={saving}>
-                                    ← Tất cả chức năng
-                                </button>
-                            </div>
-                            {library.filter(b => (b.groupName ?? "") === pickerGroup).map(b => {
-                                const inUse = binding.filter(i => i.blockId === b.blockId).length;
-                                return (
-                                    <label className="v3-lib-option" key={b.blockId}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedLib.includes(b.blockId)}
-                                            onChange={() => toggleLib(b.blockId)}
+                        <div className="v3-lib-composer">
+                            <section className="v3-lib-browser" aria-label="Thư viện theo chức năng">
+                                <div className="v3-lib-function-tabs" role="tablist" aria-label="Chức năng">
+                                    {libraryGroups.map(g => (
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={(g.rawGroupName ?? "") === activePickerGroup}
+                                            className={`v3-lib-function-tab ${(g.rawGroupName ?? "") === activePickerGroup ? "is-active" : ""}`}
+                                            key={g.rawGroupName ?? ""}
+                                            onClick={() => setPickerGroup(g.rawGroupName ?? "")}
                                             disabled={saving}
-                                        />
-                                        <span className="v3-lib-option__body">
-                                            <b>{b.label}</b>
-                                            <span className="v3-cond__meta">
-                                                {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện kiểm tra · Đang dùng bởi {b.usedByTestCases ?? 0} testcase
-                                                {inUse > 0 ? <span className="v3-warn">· đã có {inUse} lần trong testcase (chọn để thêm lần nữa)</span> : null}
-                                            </span>
+                                        >
+                                            <span>{g.groupName}</span><small>{g.count}</small>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="v3-lib-browser__actions">
+                                    <h5>{groupDisplayName(activePickerGroup)}</h5>
+                                    {library.filter(b => (b.groupName ?? "") === activePickerGroup).map(b => {
+                                        const inUse = binding.filter(i => i.blockId === b.blockId).length;
+                                        return (
+                                            <label className="v3-lib-option" key={b.blockId}>
+                                                <input type="checkbox" checked={selectedLib.includes(b.blockId)} onChange={() => toggleLib(b.blockId)} disabled={saving} />
+                                                <span className="v3-lib-option__body">
+                                                    <b>{b.label}</b>
+                                                    <span className="v3-cond__meta">
+                                                        {b.stepCount} thao tác · {b.recordedAssertionCount} điều kiện · Đang dùng bởi {b.usedByTestCases ?? 0} testcase
+                                                        {inUse > 0 ? <span className="v3-warn"> · đã có {inUse} lần</span> : null}
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                            <aside className="v3-lib-sequence" aria-label="Kịch bản đã chọn">
+                                <div className="v3-lib-sequence__head">
+                                    <h5>Kịch bản đã chọn</h5>
+                                    <span>{selectedLib.length}</span>
+                                </div>
+                                {selectedLibraryItems.length === 0 ? (
+                                    <p className="v3-act__note">Chưa chọn thao tác. Bạn có thể chọn từ nhiều chức năng.</p>
+                                ) : selectedLibraryItems.map((item, index) => (
+                                    <div className="v3-lib-sequence__item" key={item.blockId}>
+                                        <span className="v3-lib-sequence__number">{index + 1}</span>
+                                        <span className="v3-lib-sequence__body"><b>{item.label}</b><small>{groupDisplayName(item.groupName)}</small></span>
+                                        <span className="v3-lib-sequence__controls">
+                                            <button type="button" className="v3-lib-sequence__control" onClick={() => moveSelectedLib(index, -1)} disabled={saving || index === 0} aria-label="Đưa lên">↑</button>
+                                            <button type="button" className="v3-lib-sequence__control" onClick={() => moveSelectedLib(index, 1)} disabled={saving || index === selectedLib.length - 1} aria-label="Đưa xuống">↓</button>
+                                            <button type="button" className="v3-lib-sequence__control" onClick={() => toggleLib(item.blockId)} disabled={saving} aria-label="Bỏ thao tác">×</button>
                                         </span>
-                                    </label>
-                                );
-                            })}
-                        </>
+                                    </div>
+                                ))}
+                            </aside>
+                        </div>
                     )}
                     <div className="v3-lib-pick__footer">
-                        <span className="v3-act__note">Đã chọn: {selectedLib.length} thao tác</span>
+                        <span className="v3-act__note">Đã chọn {selectedLib.length} thao tác từ {selectedFunctionCount} chức năng</span>
                         <div className="v3-lib-pick__actions">
                             <button type="button" className="v3-btn v3-btn--ghost" onClick={() => setScreen("list")} disabled={saving}>
                                 Hủy
                             </button>
                             <button type="button" className="v3-btn v3-btn--primary" onClick={addSelectedLibrary} disabled={saving || selectedLib.length === 0}>
-                                {saving ? "Đang thêm…" : `Thêm ${selectedLib.length} thao tác`}
+                                {saving
+                                    ? (addMode?.type === "replaceOne" ? "Đang thay thế…" : "Đang thêm…")
+                                    : (addMode?.type === "replaceOne"
+                                        ? `Thay thế bằng ${selectedLib.length} thao tác`
+                                        : `Thêm ${selectedLib.length} thao tác vào testcase`)}
                             </button>
                         </div>
                     </div>

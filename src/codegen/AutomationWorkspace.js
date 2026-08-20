@@ -63,9 +63,10 @@ export default class AutomationWorkspace {
     }
 
     /** Tạo Workspace mới từ danh sách testcase approved. */
-    create({ sourceFile = null, mode = "NEW", module = "", testCases = [] } = {}) {
+    create({ sourceFile = null, mode = "NEW", module = "", testCases = [], projectId = null } = {}) {
         const workspace = {
             workspaceId: newWorkspaceId(),
+            projectId: String(projectId ?? "").trim() || null,
             source: {
                 file: sourceFile,
                 mode: WORKSPACE_MODES.has(String(mode).toUpperCase()) ? String(mode).toUpperCase() : "NEW",
@@ -135,9 +136,12 @@ export default class AutomationWorkspace {
         return this.workspaces.find(w => w.workspaceId === workspaceId) ?? null;
     }
 
-    list() {
-        return this.workspaces.map(w => ({
+    list(projectId = undefined) {
+        const expected = String(projectId ?? "").trim();
+        const workspaces = projectId === undefined ? this.workspaces : this.workspaces.filter(w => String(w.projectId ?? "") === expected);
+        return workspaces.map(w => ({
             workspaceId: w.workspaceId,
+            projectId: w.projectId ?? null,
             module: w.module,
             source: w.source,
             createdAt: w.createdAt,

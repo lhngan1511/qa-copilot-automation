@@ -392,7 +392,8 @@ class ScenarioRecommendationEngine {
                 steps: this.userSteps(reviewedFunction?.flow),
                 operation: this.getText(reviewedFunction?.automation?.operation),
                 requirementReferences: this.getArray(functionKnowledge.requirementReferences),
-                source: knowledge.source || "Approved Module Artifact"
+                source: knowledge.source || "Approved Module Artifact",
+                clarificationAnswers: this.getArray(knowledge.clarificationAnswers)
             };
             const permissionRules = this.uniqueRules([
                 ...this.getArray(functionKnowledge.permissions),
@@ -485,6 +486,10 @@ class ScenarioRecommendationEngine {
             ].filter(Boolean);
 
             candidates.forEach(candidate => {
+                this.attachClarificationEvidence(
+                    candidate,
+                    this.getArray(knowledge.clarificationAnswers)
+                );
                 this.generateFromList(
                     [candidate],
                     candidate.type,
@@ -494,6 +499,61 @@ class ScenarioRecommendationEngine {
                 );
             });
         });
+    }
+
+    attachClarificationEvidence(candidate, answers) {
+        if (!candidate || !Array.isArray(answers) || answers.length === 0) return candidate;
+
+        const sourceText = this.getArray(candidate.sourceItems)
+            .map(item => this.getText(item?.content ?? item))
+            .join(" ");
+        if (!sourceText) return candidate;
+
+        const normalizedSource = this.normalizeForComparison(sourceText);
+        const references = this.getArray(candidate.sourceReferences);
+
+        answers.forEach(answer => {
+            if (!answer || typeof answer !== "object") return;
+            const sourceId = this.getText(answer.questionId ?? answer.id);
+            const targetField = this.normalizeForComparison(answer.targetField);
+            const targetRule = this.normalizeForComparison(answer.targetRule);
+            const question = this.normalizeForComparison(answer.question);
+            const related =
+                (targetField && normalizedSource.includes(targetField)) ||
+                (targetRule && normalizedSource.includes(targetRule)) ||
+                (question && this.ruleKeywords(question).some(keyword => normalizedSource.includes(keyword)));
+
+            if (!sourceId || !related) return;
+            if (
+                !references.some(
+                    reference =>
+                        reference?.sourceType === "CLARIFICATION" &&
+                        reference?.sourceId === sourceId
+                )
+            ) {
+                references.push({ sourceType: "CLARIFICATION", sourceId });
+            }
+        });
+
+        candidate.sourceReferences = references;
+        return candidate;
+    }
+
+    ruleKeywords(value) {
+        const ignored = new Set([
+            "neu",
+            "thi",
+            "he thong",
+            "nguoi dung",
+            "co",
+            "khong",
+            "duoc",
+            "la",
+            "gi"
+        ]);
+        return this.comparable(value)
+            .split(/[^a-z0-9]+/)
+            .filter(token => token.length >= 3 && !ignored.has(token));
     }
 
     buildGroupedCandidate(values, context, type, priority, title, groupType = type) {
@@ -730,6 +790,8 @@ class ScenarioRecommendationEngine {
                 sourceItems: this.getArray(item?.sourceItems),
 
                 sourceReferences: this.getArray(item?.sourceReferences),
+
+                clarificationAnswers: this.getArray(item?.clarificationAnswers),
 
                 riskReason: this.getText(item?.riskReason),
 

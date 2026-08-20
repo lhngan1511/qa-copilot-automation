@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getWorkflowOutputUrl } from "../api/workflowApi.js";
 import {
     useApproveTestCaseReview,
     useResumeTestCaseWorkflow,
@@ -28,6 +29,45 @@ const baseTabs = [
     ["VALIDATION", "Validation"],
     ["BUSINESS_RULE", "Business Rule"]
 ];
+const exportLabels = {
+    excel: "Tải Excel mới",
+    json: "Tải JSON mới",
+    markdown: "Tải Markdown mới"
+};
+
+function nextManualTestCase(testCases) {
+    const nextNumber =
+        Math.max(
+            0,
+            ...testCases.map(testCase => {
+                const match = testCaseId(testCase).match(/^TC(\d+)$/i);
+                return match ? Number(match[1]) : 0;
+            })
+        ) + 1;
+    const id = `TC${String(nextNumber).padStart(3, "0")}`;
+    return {
+        id,
+        testcaseId: id,
+        title: "",
+        scenario: "",
+        testScenario: "",
+        module: "",
+        feature: "",
+        type: "POSITIVE",
+        preconditions: [],
+        testData: {
+            fields: {},
+            requirement: "",
+            value: "",
+            requiresTesterInput: false
+        },
+        steps: [{ order: 1, action: "", expected: "" }],
+        expectedResult: "",
+        reviewStatus: "PENDING",
+        source: "MANUAL_TESTER",
+        automationCandidate: false
+    };
+}
 
 function SummaryCard({ label, value, tone }) {
     return (
@@ -53,6 +93,7 @@ export default function TestCaseReviewPanel({ workflow }) {
     const [page, setPage] = useState(1);
     const [editing, setEditing] = useState(false);
     const [editDraft, setEditDraft] = useState(null);
+    const [creating, setCreating] = useState(false);
     const [notice, setNotice] = useState("");
 
     useEffect(() => {
@@ -96,7 +137,9 @@ export default function TestCaseReviewPanel({ workflow }) {
         ...(availableTypes.has("BOUNDARY") ? [["BOUNDARY", "Boundary"]] : [])
     ];
     const pending = update.isPending || approve.isPending || resume.isPending;
+    const isCompleted = workflow?.status === "COMPLETED";
     const canEdit = query.data?.allowedActions?.includes("UPDATE_TEST_CASES") === true;
+    const canReviewDecisions = canEdit && !isCompleted;
     const canResume = query.data?.allowedActions?.includes("RESUME_WORKFLOW") === true;
     const canApprove = canApproveTestCaseBatch({
         review: query.data,
@@ -133,7 +176,7 @@ export default function TestCaseReviewPanel({ workflow }) {
     };
 
     const applyDecision = async (ids, reviewStatus) => {
-        if (!canEdit || pending || ids.length === 0) return;
+        if (!canReviewDecisions || pending || ids.length === 0) return;
         if (
             reviewStatus === "REMOVED" &&
             !window.confirm(`Loại bỏ ${ids.length} test case khỏi kết quả cuối cùng?`)
@@ -153,13 +196,59 @@ export default function TestCaseReviewPanel({ workflow }) {
     };
 
     const saveEdit = async () => {
-        if (!editDraft || !selected) return;
-        const next = draft.map(testCase =>
-            testCaseId(testCase) === selectedId
-                ? { ...editDraft, reviewStatus: "PENDING" }
-                : testCase
-        );
-        if (await persistBatch(next, "Đã lưu chỉnh sửa test case.")) {
+        if (!editDraft || (!selected && !creating)) return;
+        const next = creating
+            ? [
+                  ...draft,
+                  {
+                      ...editDraft,
+                      title: editDraft.title || editDraft.scenario,
+                      testScenario: editDraft.testScenario || editDraft.scenario,
+                      reviewStatus: "PENDING"
+                  }
+              ]
+            : draft.map(testCase =>
+                  testCaseId(testCase) === selectedId
+                      ? {
+                            ...editDraft,
+                            reviewStatus: isCompleted ? selected.reviewStatus : "PENDING"
+                        }
+                      : testCase
+              );
+        if (
+            await persistBatch(
+                next,
+                isCompleted
+                    ? "Đã lưu testcase và tạo lại các file xuất."
+                    : creating
+                      ? "Đã thêm testcase mới vào danh sách chờ duyệt."
+                      : "Đã lưu chỉnh sửa test case."
+            )
+        ) {
+            setSelectedId("");
+            setEditing(false);
+            setEditDraft(null);
+            setCreating(false);
+        }
+    };
+
+    const startCreate = () => {
+        const testCase = nextManualTestCase(draft);
+        setSelectedId("");
+        setEditDraft(testCase);
+        setCreating(true);
+        setEditing(true);
+    };
+
+    const deleteSelected = async () => {
+        if (!selected || isCompleted || pending) return;
+        if (draft.length === 1) {
+            window.alert("Phiên review phải còn ít nhất một testcase.");
+            return;
+        }
+        if (!window.confirm(`Xóa testcase ${testCaseId(selected)} khỏi phiên review?`)) return;
+        const next = draft.filter(testCase => testCaseId(testCase) !== selectedId);
+        if (await persistBatch(next, "Đã xóa testcase khỏi phiên review.")) {
             setSelectedId("");
             setEditing(false);
             setEditDraft(null);
@@ -194,24 +283,59 @@ export default function TestCaseReviewPanel({ workflow }) {
     const error = update.error || approve.error || resume.error;
 
     return (
-        <section className="testcase-review-page" aria-labelledby="testcase-review-title">
+        <section
+            className={`testcase-review-page ${
+                selected || creating ? "testcase-review-page--detail-open" : ""
+            }`}
+            aria-labelledby="testcase-review-title"
+        >
             <header className="testcase-review-page__header">
                 <div>
-                    <h2 id="testcase-review-title">Test Case Review</h2>
-                    <p>Review, chỉnh sửa và phê duyệt test case trước khi tạo output cuối cùng.</p>
+                    <h2 id="testcase-review-title">Duyệt testcase</h2>
+                    <p>Kiểm tra, chỉnh sửa và phê duyệt testcase trước khi xuất kết quả.</p>
                 </div>
-                <button
-                    className="button button--secondary"
-                    type="button"
-                    disabled={!canEdit || pending}
-                    onClick={approveAllEligible}
-                >
-                    Duyệt tất cả đủ điều kiện
-                </button>
+                {!isCompleted && <div className="testcase-review-page__header-actions">
+                    <button
+                        className="button button--secondary"
+                        type="button"
+                        disabled={!canReviewDecisions || pending}
+                        onClick={startCreate}
+                    >
+                        + Thêm testcase
+                    </button>
+                    <button
+                        className="button button--secondary"
+                        type="button"
+                        disabled={!canReviewDecisions || pending}
+                        onClick={approveAllEligible}
+                    >
+                        Duyệt tất cả đủ điều kiện
+                    </button>
+                </div>}
             </header>
 
+            {isCompleted && (query.data?.exports?.length ?? 0) > 0 && (
+                <section className="testcase-completed-exports" aria-label="Tải file testcase mới nhất">
+                    <div>
+                        <strong>File testcase mới nhất</strong>
+                        <span>Mỗi lần lưu chỉnh sửa, các file dưới đây được tạo lại tự động.</span>
+                    </div>
+                    <div className="testcase-completed-exports__actions">
+                        {query.data.exports.map(output => (
+                            <a
+                                className="button button--secondary"
+                                href={getWorkflowOutputUrl(workflowId, output.format)}
+                                key={output.format}
+                            >
+                                {exportLabels[output.format] ?? `Tải ${output.format}`}
+                            </a>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             <section className="testcase-summary-grid" aria-label="Tóm tắt review">
-                <SummaryCard label="Tổng test case" value={summary.total} tone="neutral" />
+                <SummaryCard label="Tổng testcase" value={summary.total} tone="neutral" />
                 <SummaryCard label="Đã duyệt" value={summary.approved} tone="success" />
                 <SummaryCard label="Cần chỉnh sửa" value={summary.needsChanges} tone="warning" />
                 <SummaryCard label="Đã loại bỏ" value={summary.removed} tone="danger" />
@@ -240,13 +364,13 @@ export default function TestCaseReviewPanel({ workflow }) {
                         <input
                             type="search"
                             value={search}
-                            placeholder="Tìm theo ID, scenario, module..."
+                            placeholder="Tìm theo ID, tình huống, module..."
                             onChange={event => setSearch(event.target.value)}
                         />
                     </label>
                 </div>
 
-                {selectedIds.size > 0 && (
+                {!isCompleted && selectedIds.size > 0 && (
                     <div className="testcase-bulk-actions">
                         <strong>{selectedIds.size} test case đã chọn</strong>
                         <div>
@@ -277,7 +401,7 @@ export default function TestCaseReviewPanel({ workflow }) {
 
                 <div
                     className={`testcase-review-main ${
-                        selected ? "testcase-review-main--drawer-open" : ""
+                        selected || creating ? "testcase-review-main--drawer-open" : ""
                     }`}
                 >
                     <div className="testcase-review-main__table">
@@ -286,7 +410,8 @@ export default function TestCaseReviewPanel({ workflow }) {
                             selectedId={selectedId}
                             selectedIds={selectedIds}
                             allVisibleSelected={allFilteredSelected}
-                            disabled={!canEdit || pending}
+                            disabled={pending}
+                            reviewDisabled={!canReviewDecisions || pending}
                             onSelect={id => {
                                 setSelectedId(id);
                                 setEditing(false);
@@ -313,9 +438,9 @@ export default function TestCaseReviewPanel({ workflow }) {
                                 Không tìm thấy test case phù hợp.
                             </p>
                         )}
-                        <nav
+                        {pageCount > 1 ? <nav
                             className="testcase-review-pagination"
-                            aria-label="Phân trang test case"
+                            aria-label="Phân trang testcase"
                         >
                             <button
                                 className="button button--secondary"
@@ -336,11 +461,11 @@ export default function TestCaseReviewPanel({ workflow }) {
                             >
                                 Sau
                             </button>
-                        </nav>
+                        </nav> : null}
                     </div>
-                    {selected && (
+                    {(selected || creating) && (
                         <TestCaseEditor
-                            testCase={selected}
+                            testCase={selected ?? editDraft}
                             editing={editing}
                             editDraft={editDraft}
                             disabled={!canEdit || pending}
@@ -349,6 +474,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                                 setSelectedId("");
                                 setEditing(false);
                                 setEditDraft(null);
+                                setCreating(false);
                             }}
                             onEdit={() => {
                                 setEditDraft(structuredClone(selected));
@@ -359,9 +485,12 @@ export default function TestCaseReviewPanel({ workflow }) {
                                 setSelectedId("");
                                 setEditing(false);
                                 setEditDraft(null);
+                                setCreating(false);
                             }}
                             onDraftChange={setEditDraft}
                             onSave={saveEdit}
+                            creating={creating}
+                            onDelete={!isCompleted && !creating ? deleteSelected : null}
                         />
                     )}
                 </div>
@@ -379,7 +508,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                 </p>
             )}
 
-            <footer className="testcase-final-action">
+            {!isCompleted && <footer className="testcase-final-action">
                 <div>
                     <strong>Tester kiểm soát quyết định cuối cùng</strong>
                     <span>{reviewCompletionMessage(summary)}</span>
@@ -392,7 +521,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                 >
                     {pending ? "Đang xử lý..." : "Xác nhận & Tiếp tục"}
                 </button>
-            </footer>
+            </footer>}
         </section>
     );
 }

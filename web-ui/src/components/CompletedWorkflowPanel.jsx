@@ -53,8 +53,11 @@ export default function CompletedWorkflowPanel({ workflow }) {
                 )}
             </div>
 
-            <Link className="button button--secondary" to="/">
-                Quay lại danh sách testcase
+            <Link
+                className="button button--secondary"
+                to={`/workflows/${encodeURIComponent(workflow.id)}?view=testcases`}
+            >
+                Xem danh sách testcase
             </Link>
         </section>
     );

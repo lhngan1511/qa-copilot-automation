@@ -154,6 +154,7 @@ assert.ok(css.includes("@media (max-width: 640px)"), "có media query mobile");
 assert.ok(css.includes("overflow-wrap: anywhere"), "path/title dài không vỡ layout");
 assert.ok(css.includes("min-height: 40px"), "button >= 40px");
 assert.ok(css.includes("font-size: 14px") || css.includes("font-size:14px"), "font >= 14px");
+assert.ok(css.includes("clamp(640px, 42vw, 840px)"), "drawer desktop chiếm khoảng 40–45% viewport");
 
 // ---- Sidebar chỉ hiển thị "Automation", không có "Automation V3" ----
 const navSource = read("config/navigation.js");
@@ -168,6 +169,9 @@ assert.ok(!pageClean.includes("Record by Testcase"), "không hiển thị tên p
 assert.ok(pageClean.includes("Chưa có Automation Workspace"), "empty state khi chưa có workspace");
 assert.ok(pageClean.includes("V3UploadPanel") && pageClean.includes("creating"), "Upload chỉ trong luồng tạo workspace (creating)");
 assert.ok(pageClean.includes("localStorage") && pageClean.includes("getWorkspace"), "mở lại workspace đã lưu");
+assert.ok(pageClean.includes("workspaceStorageKey") && pageClean.includes("projectId"), "workspace localStorage được tách theo Project");
+assert.ok(pageClean.includes("list.some(item => item.workspaceId === savedId)"), "chỉ mở workspace đã được danh sách Project hiện tại xác nhận");
+assert.ok(pageClean.includes("const refreshedList = await refreshWorkspaceList()"), "xóa workspace dùng danh sách mới, không dùng state cũ");
 
 // ---- Không hiển thị khái niệm 5A/5B/5C / 'bước sau' ----
 assert.ok(!/5A|5B|5C|bước sau|Bước sau/.test(allClean), "không lộ 5A/5B/5C hay 'bước sau'");
@@ -196,6 +200,8 @@ assert.ok(drawerClean.includes("Thông tin") && drawerClean.includes("Thao tác"
 assert.ok(!drawerClean.includes("Duyệt recording"), "6C.1: không còn Duyệt recording (recording không là business gate)");
 assert.ok(!drawerClean.includes("Dữ liệu"), "không có tab Dữ liệu ở 5B");
 assert.ok(drawerClean.includes("Chạy thử") && drawerClean.includes("onRun"), "P0-C: drawer có tab Chạy thử (Run 1 testcase đang mở)");
+assert.ok(drawerClean.includes("s.steps") && drawerClean.includes("s.steps.map"), "drawer hiển thị hierarchy Action → actual Steps");
+assert.ok(drawerClean.includes("ACTION_LABEL") && drawerClean.includes("step.target"), "step dùng loại thao tác và target thực tế");
 assert.ok(!/run ?testcase/.test(drawerClean), "không có run toàn bộ testcase (chỉ chạy thử 1 testcase đang mở)");
 
 // ---- Bước 5B: source chỉ tải khi "Xem mã" (V3RecordingTab) ----
@@ -207,7 +213,7 @@ assert.ok(recTab.includes("getRecordingSource") && recTab.includes("Xem mã"), "
 // ---- 14. Card hiển thị trạng thái 3 nhãn + thông tin đoạn đã gán ----
 const utilsSource = stripComments(read("utils/automationV3.js"));
 assert.ok(utilsSource.includes("Chưa quyết định") && utilsSource.includes("Có automation") && utilsSource.includes("Chỉ kiểm thử thủ công"), "3 nhãn trạng thái (utils)");
-assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("Thao tác:"), "card dùng nhãn quyết định + thông tin thao tác");
+assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("thao tác"), "card dùng nhãn quyết định + thông tin thao tác");
 assert.ok(cardClean.includes("Đánh dấu chỉ kiểm thử thủ công"), "menu có đánh dấu thủ công");
 assert.ok(!cardClean.includes("Sinh automation"), "card chưa có nút sinh (đợi 5C)");
 
@@ -349,11 +355,11 @@ assert.ok(recPrepCleanup.includes("Dùng bởi") && recPrepCleanup.includes("đi
 assert.ok(recPrepCleanup.includes("Đã lưu") && recPrepCleanup.includes("vào Thư viện"), "Lib: success feedback sau save");
 assert.ok(recPrepCleanup.includes("listLibrary"), "Lib: reuse listLibrary API (không xây Library mới)");
 
-assert.ok(recPrepCleanup.includes("II. TẠO THAO TÁC") && recPrepCleanup.includes("I. BẢN GHI") && recPrepCleanup.includes("THAO TÁC ĐÃ TẠO"), "P0-3: headings I. BẢN GHI / II. TẠO THAO TÁC / THAO TÁC ĐÃ TẠO");
+assert.ok(recPrepCleanup.includes("II. TẠO THAO TÁC") && recPrepCleanup.includes("Bản ghi Playwright") && recPrepCleanup.includes("THAO TÁC ĐÃ TẠO"), "P0-3: headings Bản ghi Playwright / II. TẠO THAO TÁC / THAO TÁC ĐÃ TẠO");
 assert.ok(recPrepCleanup.includes("Xem kỹ thuật"), "P0 Cleanup: verification business-readable + Xem kỹ thuật cho raw");
 
 assert.ok(!codegenPage.includes("Đối chiếu testcase"), "Codegen V3 bỏ Đối chiếu testcase (legacy)");
-assert.ok(codegenPage.includes("I. BẢN GHI"), "Codegen: heading I. BẢN GHI");
+assert.ok(recPrepCleanup.includes("Bản ghi Playwright"), "Codegen: heading Bản ghi Playwright");
 assert.ok(!codegenPage.includes("PHÂN ĐOẠN THAO TÁC → THƯ VIỆN"), "Codegen: bỏ heading PHÂN ĐOẠN");
 assert.ok(recPrepCleanup.includes("Sao chép mã") && recPrepCleanup.includes("Lưu bản ghi Playwright"), "P0 Save Recording: panel có Sao chép mã + Lưu bản ghi Playwright (canonical source)");
 assert.ok(!codegenPage.includes("Chạy thử bản ghi"), "Codegen: bỏ Chạy thử bản ghi");
@@ -362,8 +368,8 @@ assert.ok(!codegenPage.includes("Chạy thử bản ghi"), "Codegen: bỏ Chạy
 // ---- 27. Card: primary theo trạng thái + hiển thị Expected Result + Thao tác ----
 assert.ok(cardClean.includes("Tạo Automation") && cardClean.includes("Tiếp tục Automation") && cardClean.includes("Xem Automation"), "card 3 primary 6C");
 assert.ok(cardClean.includes("Kết quả mong đợi:"), "card hiển thị Expected Result");
-assert.ok(cardClean.includes("Thao tác:") && cardClean.includes("Chưa có thao tác"), "card hiển thị trạng thái thao tác");
-assert.ok(cardClean.includes("Playwright:") && cardClean.includes("Chạy thử:"), "P0-D1: card hiển thị Playwright + Chạy thử");
+assert.ok(cardClean.includes("thao tác") && cardClean.includes("Chưa có thao tác"), "card hiển thị trạng thái thao tác");
+assert.ok(cardClean.includes("Playwright đã sinh") && cardClean.includes("runStatus"), "P0-D1: card hiển thị Playwright + Chạy thử");
 assert.ok(!cardClean.includes("Sinh automation"), "card không có Sinh automation");
 
 // ---- 28. Panel Thao tác (V3ActionSetupPanel): màn B/C/D theo wireframe ----
@@ -376,7 +382,7 @@ assert.ok(actPanel.includes("Mở CodeGen") && actPanel.includes('to="/codegen"'
 const recPrep = stripComments(read("components/automationV3/V3RecordingPreparationPanel.jsx"));
 assert.ok(recPrep.includes("Bắt đầu") && recPrep.includes("Kết thúc") && recPrep.includes("Xác nhận thao tác"), "Seg UX: manual Start/End + Xác nhận thao tác");
 assert.ok(recPrep.includes("ĐOẠN ĐANG CHỌN") && !recPrep.includes("ĐOẠN ĐÃ CHỌN") && recPrep.includes("Xác nhận thao tác"), "P0-3.1: ĐOẠN ĐANG CHỌN + Xác nhận thao tác");
-assert.ok(recPrep.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút save phản ánh số lượng");
+assert.ok(recPrep.includes("pendingLibraryCount") && recPrep.includes("`Lưu ${pendingLibraryCount} thao tác`"), "P0-3.2: nút save phản ánh số chưa lưu");
 assert.ok(recPrep.includes("THAO TÁC ĐÃ TẠO"), "P0-3: danh sách thao tác đã tạo (compact)");
 assert.ok(actPanel.includes("Thao tác sẽ chạy") && actPanel.includes("+ Thêm thao tác từ thư viện"), "màn D: danh sách + primary Library");
 assert.ok(!actPanel.includes("V3RecordingPreparationPanel"), "P0-B: Automation KHÔNG nhúng V3RecordingPreparationPanel (Library-only)");
@@ -434,10 +440,11 @@ const codegenPageP0 = stripComments(read("pages/CodeGenPage.jsx"));
 assert.ok(codegenPageP0.includes("codegen-card") && codegenPageP0.includes("V3RecordingPreparationPanel"),
     "Codegen: prep panel bọc card (padding/margin khớp layout — không dính sát mép phải)");
 // ---- 34. Automation: ADD FROM LIBRARY MULTI-SELECT (batch, picker không đóng sau mỗi chọn) ----
-assert.ok(actPanel.includes("THÊM THAO TÁC TỪ THƯ VIỆN"), "P0: heading picker THÊM THAO TÁC TỪ THƯ VIỆN");
+assert.ok(actPanel.includes("Thêm thao tác từ thư viện"), "P0: heading picker rõ ràng, không dùng uppercase nặng");
 assert.ok(actPanel.includes('type="checkbox"') && actPanel.includes("toggleLib"), "P0: checkbox batch selection");
-assert.ok(actPanel.includes("Đã chọn:") && actPanel.includes("Thêm ${selectedLib.length} thao tác"), "P0: footer 'Đã chọn: N thao tác' + [Thêm N thao tác]");
+assert.ok(actPanel.includes("Đã chọn {selectedLib.length} thao tác từ {selectedFunctionCount} chức năng") && actPanel.includes("Thêm ${selectedLib.length} thao tác vào testcase"), "P0: footer cho biết số thao tác, số chức năng và CTA rõ đích đến");
 assert.ok(actPanel.includes("addSelectedLibrary"), "P0: [Thêm N thao tác] bind batch theo thứ tự chọn");
+assert.ok(actPanel.includes("Kịch bản đã chọn") && actPanel.includes("moveSelectedLib"), "P0: hiển thị và sắp xếp luồng đa chức năng trước khi thêm");
 assert.ok(actPanel.includes("Hủy"), "P0: [Hủy] đóng picker");
 assert.ok(!/Dùng lại/.test(actPanel), "P0: bỏ badge 'Dùng lại' khỏi action card");
 assert.ok(actPanel.includes("Nguồn: Thư viện thao tác"), "P0: provenance chỉ trong [Xem]: 'Nguồn: Thư viện thao tác'");
@@ -495,7 +502,8 @@ assert.ok(addPBody.length > 0 && !addPBody.includes("setStartSel(") && !addPBody
 // ---- 41. Library gate: persist chỉ ở saveAllToLibrary (bấm Lưu N thao tác) ----
 const saveB = recPrepP0.match(/const saveAllToLibrary = async \(\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
 assert.ok(saveB.includes("createLibraryAction") && saveB.includes("planLibrarySave"), "P0: Lưu → createLibraryAction cho action cần tạo, reconcile canonical (không duplicate)");
-assert.ok(recPrepP0.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "P0-3.2: nút 'Lưu N thao tác vào Thư viện'");
+assert.ok(recPrepP0.includes("pendingLibraryCount") && recPrepP0.includes("`Lưu ${pendingLibraryCount} thao tác`"),
+    "P0-3.2: nút lưu phản ánh số thao tác chưa lưu");
 
 // ================= P0 — SAVE CURRENT PLAYWRIGHT RECORDING =================
 // ---- 42. Utility recording: copy/save dùng CHÍNH canonical `source` (KHÔNG active.scriptContent list) ----

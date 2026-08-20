@@ -35,6 +35,10 @@ export default class WorkflowRuntime {
         return this.workflowSessionManager.findAll();
     }
 
+    deleteSession(sessionId) {
+        return this.workflowSessionManager.deleteById(sessionId);
+    }
+
     saveArtifact(artifact) {
         return this.artifactManager.save(artifact);
     }
@@ -45,5 +49,11 @@ export default class WorkflowRuntime {
 
     findArtifactsBySessionId(sessionId) {
         return this.artifactManager.findBySessionId(sessionId);
+    }
+
+    deleteArtifactsBySessionId(sessionId) {
+        const artifacts = this.artifactManager.findBySessionId(sessionId);
+        artifacts.forEach(artifact => this.artifactManager.deleteById(artifact.artifactId));
+        return artifacts.length;
     }
 }

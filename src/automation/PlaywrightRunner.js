@@ -292,7 +292,7 @@ export default class PlaywrightRunner {
      * @param {string} filePath
      * @returns {Promise<object>}
      */
-    runFile(filePath, { env = {}, testCaseId = "", headed = null, slowMo = null } = {}) {
+    runFile(filePath, { env = {}, testCaseId = "", headed = null, slowMo = null, generation = null } = {}) {
         return new Promise((resolve) => {
             // Chế độ chạy hiệu lực: option > instance default (demo headed + slowMo 500).
             const effectiveHeaded = headed ?? this.headed;
@@ -312,7 +312,8 @@ export default class PlaywrightRunner {
                 testDir,
                 fileExists,
                 baseName,
-                testCaseId: testCaseId || null
+                testCaseId: testCaseId || null,
+                generation: generation ?? null
             };
             const respond = (base, overrides = {}) => resolve({ ...base, ...this.enrichRun({ ...base, ...overrides }), diag });
 
@@ -380,7 +381,7 @@ export default class PlaywrightRunner {
             diag.slowMo = effectiveSlowMo;
             const browserLabel = this.configuredChannel() ?? "chromium";
             console.log(
-                `[RUN_START] requestId=${requestId} command=${process.execPath} cliPath=${cliPath} testCaseId=${testCaseId || "?"} filePath=${filePath} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel} cwd=${this.rootDir} args=${JSON.stringify(args)}`
+                `[RUN_START] requestId=${requestId} command=${process.execPath} cliPath=${cliPath} testCaseId=${testCaseId || "?"} filePath=${filePath} generationVersion=${generation?.version ?? "?"} generationHash=${generation?.hash ?? "?"} effectiveDataBindings=${JSON.stringify(generation?.effectiveDataBindings ?? [])} headed=${effectiveHeaded} slowMo=${effectiveSlowMo} browser=${browserLabel} cwd=${this.rootDir} args=${JSON.stringify(args)}`
             );
             // Spawn bằng process.execPath + CLI JS thật (không .cmd, không shell:true) — ổn định trên Windows.
             const child = this.spawnFn(process.execPath, [cliPath, ...args], {

@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
  PHẦN A — step grid 5 cột (STT|Loại|Thao tác|Giá trị bản ghi|Technical) thẳng hàng.
  PHẦN B — header [Chỉnh sửa][Xóa] + warning used.
- PHẦN C — edit: rename / group / include-exclude step (KHÔNG raw Playwright) → PATCH
+ PHẦN C — edit: rename / group / include-exclude step / recorded value (KHÔNG raw Playwright) → PATCH
           /codegen/library/:id (updateBlock + confirm; content change → version++ + hash mới).
  PHẦN D — delete: used > 0 → BLOCK 409 LIBRARY_IN_USE (không phá workspace); unused → 200.
  PHẦN E — shared Library duy nhất (CodeGen + Automation cùng nguồn).
@@ -145,11 +145,17 @@ fs.rmSync(tempRoot, { recursive: true, force: true });
 const viewerSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3LibraryViewer.jsx"), "utf8");
 assert.ok(viewerSource.includes("v3-lib-modal__steps-head") && viewerSource.includes("v3-lib-modal__step"), "A1: step grid container");
 assert.ok(viewerSource.includes("v3-lib-step__n") && viewerSource.includes("v3-lib-step__type") && viewerSource.includes("v3-lib-step__desc") && viewerSource.includes("v3-lib-step__val") && viewerSource.includes("v3-lib-step__tech"), "A1: 5 cột STT/Loại/Thao tác/Giá trị/Technical");
-assert.ok(viewerSource.includes("title={s.hasRecordedValue ? s.recordedValue : \"\"}"), "A2: recorded value ellipsis + title full");
-assert.ok(viewerSource.includes("Xem kỹ thuật") && viewerSource.includes("<details"), "A3: technical collapsed");
+assert.ok(viewerSource.includes("title={!withCheckbox && s.hasRecordedValue ? s.recordedValue : \"\"}"), "A2: view mode có recorded value ellipsis + title full");
+assert.ok(viewerSource.includes("expandedTechnicalStep") && viewerSource.includes("▸ Xem") && viewerSource.includes("▾ Ẩn"), "A3: technical collapsed và mở theo từng bước");
 assert.ok(viewerSource.includes("Chỉnh sửa") && viewerSource.includes("Xóa"), "A4: header actions");
+assert.ok(viewerSource.includes("sameRecordingActions") && viewerSource.includes("Áp dụng Chức năng cho {sameRecordingActions.length} thao tác cùng bản ghi"),
+    "A5b: sửa Chức năng đồng loạt theo sourceRecordingId của cùng bản ghi");
+assert.ok(viewerSource.includes("updateLibraryAction(item.blockId, { groupName: editGroup })"),
+    "A5b: cập nhật từng Action cùng bản ghi, không rename lây bản ghi khác");
 assert.ok(viewerSource.includes("Action này đang được dùng bởi") || viewerSource.includes("đang được dùng bởi"), "A7: warning used");
 assert.ok(viewerSource.includes("updateLibraryAction") && viewerSource.includes("deleteLibraryAction"), "REUSE: edit/delete qua API shared");
+assert.ok(viewerSource.includes("v3-lib-step__value-input") && viewerSource.includes("editValues"), "EDIT: giá trị bản ghi là input có state riêng");
+assert.ok(viewerSource.includes("preserveRecordedValue") && viewerSource.includes("dirtySensitiveValues"), "EDIT: secret không đổi được giữ nguyên, không ghi đè bằng mask");
 const cssSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "styles", "automationV3.css"), "utf8");
 assert.ok(cssSource.includes("grid-template-columns: 44px 84px minmax(0, 1fr) 150px 120px"), "A1: grid 5 cột width cố định STT/Loại + 1fr mô tả");
 assert.ok(cssSource.includes("text-overflow: ellipsis"), "A2: long value truncate");

@@ -14,6 +14,8 @@ import {
     validateClarificationAnswers
 } from "../utils/aiAnalysisReview.js";
 
+const SKIPPED_ANSWER = "Requirement không đề cập";
+
 function initialAnswers(review) {
     return Object.fromEntries(
         review.clarifications.map(item => [
@@ -90,6 +92,30 @@ function InteractiveReview({ workflowId, review }) {
             setQuestionIndex(index => Math.min(index + 1, totalQuestions));
         } catch {
             setNotice("");
+        }
+    };
+
+    const skipCurrentAndContinue = async () => {
+        if (!currentQuestion || pending) return;
+        setNotice("");
+        setAnswerErrors(current => {
+            const next = { ...current };
+            delete next[currentQuestion.id];
+            return next;
+        });
+        setAnswers(current => ({ ...current, [currentQuestion.id]: SKIPPED_ANSWER }));
+        try {
+            if (String(currentQuestion.answer ?? "").trim() !== SKIPPED_ANSWER) {
+                await saveAnswers.mutateAsync([
+                    { questionId: currentQuestion.id, answer: SKIPPED_ANSWER, changed: true }
+                ]);
+            }
+            setQuestionIndex(index => Math.min(index + 1, totalQuestions));
+        } catch {
+            setAnswers(current => ({
+                ...current,
+                [currentQuestion.id]: String(currentQuestion.answer ?? "")
+            }));
         }
     };
 
@@ -188,11 +214,9 @@ function InteractiveReview({ workflowId, review }) {
                                 className="button button--secondary"
                                 type="button"
                                 disabled={pending}
-                                onClick={() =>
-                                    setQuestionIndex(index => Math.min(index + 1, totalQuestions))
-                                }
+                                onClick={skipCurrentAndContinue}
                             >
-                                Bỏ qua
+                                {saveAnswers.isPending ? "Đang lưu..." : "Bỏ qua"}
                             </button>
                             <button
                                 className="button button--primary"
@@ -212,8 +236,8 @@ function InteractiveReview({ workflowId, review }) {
                     </span>
                     <h3>Sẵn sàng tạo test case</h3>
                     <p>
-                        Bạn đã trả lời toàn bộ câu hỏi. Hãy xác nhận requirement để hệ thống chuẩn
-                        bị test case cho bước review tiếp theo.
+                        Bạn đã xử lý toàn bộ câu hỏi. Những câu bỏ qua được ghi nhận là
+                        “Requirement không đề cập”. Hãy xác nhận để hệ thống chuẩn bị test case.
                     </p>
                     <div
                         ref={errorSummaryRef}

@@ -557,6 +557,12 @@ export default class MarkdownParser {
 
         feature.businessRules = this.normalizeRuleList(rawBusinessRules, "BR", businessRuleCounter);
 
+        feature.validationRules = this.extractBlockListSection(blockLines, [
+            "Validation",
+            "Quy tắc kiểm tra",
+            "Validation Rules"
+        ]);
+
         feature.expectedResults = this.extractBlockListSection(blockLines, [
             "Kết quả mong đợi",
             "Kết quả",
@@ -1042,6 +1048,9 @@ export default class MarkdownParser {
             "các bước thực hiện",
             "quy tắc cơ bản",
             "quy tắc nghiệp vụ",
+            "validation",
+            "quy tắc kiểm tra",
+            "validation rules",
             "kết quả mong đợi",
             "kết quả",
             "trường hợp ngoại lệ",

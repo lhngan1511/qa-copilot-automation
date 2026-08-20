@@ -17,8 +17,12 @@ import AutomationWorkspaceApplicationService from "../services/AutomationWorkspa
 import ActionLibrary from "../codegen/ActionLibrary.js";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
 import createAutomationV3Routes from "../routes/automationV3Routes.js";
+import createProjectRoutes from "../routes/projectRoutes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
+import AIProviderFactory from "../providers/AIProviderFactory.js";
+import ImageRequirementDraftService from "../requirements/ImageRequirementDraftService.js";
+import createImageRequirementRoutes from "../routes/imageRequirementRoutes.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,7 +38,8 @@ export default function createApp({
     publicDir = defaultPublicDirectory,
     outputDir = "./outputs",
     uploadDir,
-    v3OutputDir = null
+    v3OutputDir = null,
+    projectRepository = null
 } = {}) {
     const repositories = RepositoryFactory.create({
         type: repositoryType,
@@ -54,6 +59,15 @@ export default function createApp({
     const requirementUploadService = new RequirementUploadService({
         uploadDir: uploadDir ?? path.join(repositories.config.dataDir, "uploads")
     });
+    const imageRequirementService = new ImageRequirementDraftService({
+        dataDir: repositories.config.dataDir,
+        requirementUploadService,
+        provider: {
+            analyzeRequirementImages(input) {
+                return AIProviderFactory.createProvider("gemini").analyzeRequirementImages(input);
+            }
+        }
+    });
 
     const resolvedPublicDirectory = path.resolve(publicDir);
     const indexFile = path.join(resolvedPublicDirectory, "index.html");
@@ -71,7 +85,8 @@ export default function createApp({
             try {
                 const result = requirementUploadService.save({
                     fileName: req.get("x-file-name"),
-                    content: req.body
+                    content: req.body,
+                    projectId: req.get("x-project-id") || null
                 });
 
                 res.status(201).json({
@@ -85,6 +100,12 @@ export default function createApp({
         }
     );
 
+    app.use(
+        "/api/requirement-drafts/images",
+        express.json({ limit: "45mb" }),
+        createImageRequirementRoutes({ service: imageRequirementService })
+    );
+
     app.use(express.json({ limit: "2mb" }));
 
     app.get("/health", (_req, res) => {
@@ -95,12 +116,16 @@ export default function createApp({
         });
     });
 
+    if (projectRepository) {
+        app.use("/api/projects", createProjectRoutes({ repository: projectRepository }));
+    }
+
     app.use(
         "/api/workflows",
         createWorkflowRoutes({
             controller: resolvedController,
             outputDir,
-            resolveRequirementFile: requirementId => requirementUploadService.resolve(requirementId)
+            resolveRequirementFile: (requirementId, projectId) => requirementUploadService.resolve(requirementId, projectId)
         })
     );
 

@@ -70,7 +70,18 @@ const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), "qa-excel-exporter-"));
 const outputPath = path.join(outputRoot, "thiet-bi-approved-testcases.xlsx");
 
 try {
-    new ExcelExporter().export([testCase], outputPath);
+    const manualTestCase = {
+        ...structuredClone(testCase),
+        id: "TC008",
+        testcaseId: "TC008",
+        testData: {
+            fields: {},
+            requirement: "",
+            value: "Tên kho: kho Trang thiết bị",
+            requiresTesterInput: false
+        }
+    };
+    new ExcelExporter().export([testCase, manualTestCase], outputPath);
     const workbook = XLSX.readFile(outputPath);
     assert.deepEqual(workbook.SheetNames, ["Test Cases"]);
     const worksheet = workbook.Sheets["Test Cases"];
@@ -83,13 +94,14 @@ try {
 
     assert.deepEqual(header, expectedColumns);
     removedColumns.forEach(column => assert.equal(header.includes(column), false));
-    assert.equal(rows.length, 1);
+    assert.equal(rows.length, 2);
     assert.equal(rows[0]["Test Case ID"], "TC001");
     assert.equal(rows[0]["Chức năng"], "Thêm thiết bị");
     assert.equal(rows[0]["Loại kiểm tra"], "POSITIVE");
     assert.match(rows[0]["Dữ liệu đầu vào"], /Mã thiết bị: TB001/);
     assert.match(rows[0]["Các bước thực hiện"], /Mở chức năng Thiết bị/);
-    assert.equal(worksheet["!autofilter"].ref, "A7:J8");
+    assert.equal(rows[1]["Dữ liệu đầu vào"], "Tên kho: kho Trang thiết bị");
+    assert.equal(worksheet["!autofilter"].ref, "A7:J9");
     assert.deepEqual(worksheet["!merges"], [XLSX.utils.decode_range("A1:J1")]);
 
     console.log("Excel exporter tester-facing columns test PASSED");

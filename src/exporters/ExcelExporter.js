@@ -111,12 +111,16 @@ class ExcelExporter {
     }
 
     testDataToText(testData) {
-        if (
+        const fieldEntries =
             testData?.fields &&
             typeof testData.fields === "object" &&
             !Array.isArray(testData.fields)
+                ? Object.entries(testData.fields)
+                : [];
+        if (
+            fieldEntries.length > 0
         ) {
-            const lines = Object.entries(testData.fields).map(([name, field]) => {
+            const lines = fieldEntries.map(([name, field]) => {
                 const value = field?.requiresTesterInput
                     ? field.instruction || "Tester cung cấp giá trị"
                     : this.valueToText(field?.value);
@@ -133,10 +137,14 @@ class ExcelExporter {
             !Array.isArray(testData) &&
             (Object.hasOwn(testData, "requirement") || Object.hasOwn(testData, "value"))
         ) {
+            const requirement = this.normalizeText(testData.requirement);
+            const value = this.normalizeText(testData.value);
+            if (value && !requirement) return value;
+            if (requirement && !value) return requirement;
             return [
-                `Yêu cầu dữ liệu: ${testData.requirement ?? ""}`,
-                `Giá trị tester: ${testData.value ?? ""}`
-            ].join("\n");
+                requirement ? `Yêu cầu dữ liệu: ${requirement}` : "",
+                value ? `Giá trị kiểm thử: ${value}` : ""
+            ].filter(Boolean).join("\n");
         }
 
         return this.objectToText(testData);

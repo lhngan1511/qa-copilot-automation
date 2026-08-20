@@ -27,7 +27,10 @@ export default class PublicActionMapper {
         }
 
         if (internalStatus === PipelineStatuses.COMPLETED) {
-            return outputs.map(output => `DOWNLOAD_${output.format.toUpperCase()}`);
+            return [
+                "UPDATE_TEST_CASES",
+                ...outputs.map(output => `DOWNLOAD_${output.format.toUpperCase()}`)
+            ];
         }
 
         return [];

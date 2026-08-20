@@ -371,6 +371,9 @@ export default class ProductionTestCaseQualityGate {
         const hasAction = steps.some(step => {
             const action = this.key(step?.action);
             if (!action) return false;
+            if (operation === "SEARCH" && /\b(tim|tim kiem|loc|tra cuu)\b/.test(action)) {
+                return true;
+            }
             if (/^(mo|truy cap|di den) /.test(action)) return operation === "VIEW";
             if (/^(nhap|chon mot|de trong|chon ban ghi|bat dau) /.test(action)) {
                 return /^(chon) /.test(action) && ["AUTHENTICATE", "GENERATE", "NAVIGATE"].includes(operation);

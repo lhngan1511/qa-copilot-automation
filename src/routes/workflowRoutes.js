@@ -22,7 +22,8 @@ export default function createWorkflowRoutes({
             res,
             await controller.listWorkflows({
                 limit: req.query.limit,
-                offset: req.query.offset
+                offset: req.query.offset,
+                projectId: req.get("x-project-id") || null
             })
         );
     });
@@ -32,7 +33,7 @@ export default function createWorkflowRoutes({
 
         if (req.body?.requirementId && typeof resolveRequirementFile === "function") {
             try {
-                requirementFile = resolveRequirementFile(req.body.requirementId);
+                requirementFile = resolveRequirementFile(req.body.requirementId, req.get("x-project-id") || null);
             } catch (error) {
                 return res.status(error.statusCode ?? 400).json({
                     success: false,
@@ -49,13 +50,21 @@ export default function createWorkflowRoutes({
         send(
             res,
             await controller.start({
-                requirementFile
+                requirementFile,
+                projectId: req.get("x-project-id") || null
             })
         );
     });
 
     router.get("/:sessionId", async (req, res) => {
         send(res, await controller.getWorkflow({ sessionId: req.params.sessionId }));
+    });
+
+    router.delete("/:sessionId", async (req, res) => {
+        send(res, await controller.deleteWorkflow({
+            sessionId: req.params.sessionId,
+            projectId: req.get("x-project-id") || undefined
+        }));
     });
 
     router.get("/:sessionId/current-review", async (req, res) => {

@@ -106,8 +106,13 @@ try {
         sessionId: "SESSION-C",
         artifactType: "TEST_CASE_REVIEW",
         approvalStatus: "approved",
-        requirement: { module: "Quản lý sản phẩm", content: "private full content" },
-        testCases: [{ id: "TC003", executionReadiness: "READY" }],
+        testCases: [
+            {
+                id: "TC003",
+                module: "Quản lý sản phẩm",
+                executionReadiness: "READY"
+            }
+        ],
         outputs: {
             json: "G:\\private\\outputs\\approved-testcases.json",
             excel: "G:\\private\\outputs\\approved-testcases.xlsx"
@@ -126,6 +131,7 @@ try {
     assert.equal(listing.body.data.items[0].testCases.total, 2);
     assert.equal(listing.body.data.items[0].testCases.requiresTesterInput, 1);
     assert.equal(listing.body.data.items[1].clarification.remaining, 1);
+    assert.equal(listing.body.data.items[2].name, "Quản lý sản phẩm");
     assert.equal(listing.body.data.items[2].exportAvailable, true);
     assert.equal("testCasesArray" in listing.body.data.items[0], false);
     assert.equal("requirement" in listing.body.data.items[0], false);

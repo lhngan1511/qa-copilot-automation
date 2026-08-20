@@ -180,8 +180,8 @@ export default class CodeGenSessionManager {
     }
 
     /** Danh sách recording sessions. */
-    list() {
-        return this.store.list();
+    list(projectId = undefined) {
+        return this.store.list(projectId);
     }
 
     /** Chi tiết một recording (kèm scriptContent). */
@@ -194,12 +194,12 @@ export default class CodeGenSessionManager {
      * Start một Recording Session (tự do, không bắt buộc testcase).
      */
     /** P0 Cleanup — tạo GLOBAL recording KHÔNG spawn recorder (chỉ dùng cho Paste path). */
-    createRecording({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null } = {}) {
-        const recording = this.store.create({ mode, url: String(url ?? ""), browser: String(browser ?? "chrome"), context });
+    createRecording({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null, projectId = null } = {}) {
+        const recording = this.store.create({ mode, url: String(url ?? ""), browser: String(browser ?? "chrome"), context, projectId });
         return this.store.get(recording.recordingId);
     }
 
-    async start({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null } = {}) {
+    async start({ url = "", browser = "chrome", mode = "FULL_FLOW", context = null, projectId = null } = {}) {
         const normalizedUrl = String(url ?? "").trim();
         if (!normalizedUrl) {
             const error = new Error("URL không được để trống.");
@@ -223,7 +223,7 @@ export default class CodeGenSessionManager {
 
         // Tạo recording record (persistent metadata) trước.
         // context (module/feature/artifactId/session) dùng để lọc đối chiếu testcase.
-        const recording = this.store.create({ mode, url: normalizedUrl, browser: normalizedBrowser, context });
+        const recording = this.store.create({ mode, url: normalizedUrl, browser: normalizedBrowser, context, projectId });
 
         const recordingFile = path.join(this.tempDir, "recordings", `${recording.recordingId}.js`);
         const channel = this.channelFor(normalizedBrowser);

@@ -180,11 +180,21 @@ export default class PublicWorkflowMapper {
             artifact => artifact?.requirement && typeof artifact.requirement === "object"
         );
         const requirement = requirementArtifact?.requirement ?? source.requirement;
+        const testCaseArtifact = artifacts.find(
+            artifact => Array.isArray(artifact?.testCases) && artifact.testCases.length > 0
+        );
+        const firstTestCase =
+            testCaseArtifact?.testCases?.[0] ??
+            source.testCases?.[0] ??
+            source.data?.testCases?.[0] ??
+            null;
 
         return (
             requirement?.module ??
             requirement?.feature ??
             requirement?.purpose ??
+            firstTestCase?.module ??
+            firstTestCase?.feature ??
             source.name ??
             source.workflowName ??
             source.workflowId ??

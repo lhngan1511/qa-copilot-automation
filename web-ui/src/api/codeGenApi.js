@@ -128,10 +128,10 @@ export async function focusCodeGenBrowser({ signal } = {}) {
 }
 
 /** P0 Consolidation — tạo Library Action từ GLOBAL recording (không workspace). */
-export async function createLibraryAction({ recordingId, label, kind = "ACTION", startStep, endStep }) {
+export async function createLibraryAction({ recordingId, label, kind = "ACTION", startStep, endStep, groupName = null }) {
     return apiClient.post("/codegen/library", {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recordingId, label, kind, startStep, endStep })
+        body: JSON.stringify({ recordingId, label, kind, startStep, endStep, groupName })
     });
 }
 
@@ -161,7 +161,7 @@ export async function deleteLibraryAction(blockId) {
     return apiClient.delete(`/codegen/library/${encodeURIComponent(blockId)}`);
 }
 
-/** P0 EDIT — Action Library composition: rename / đổi Chức năng / include-exclude step. */
+/** Action Library composition: rename / đổi Chức năng / include-exclude step / sửa recorded value. */
 export async function updateLibraryAction(blockId, { label, groupName, steps } = {}) {
     return apiClient.patch(`/codegen/library/${encodeURIComponent(blockId)}`, {
         headers: { "Content-Type": "application/json" },

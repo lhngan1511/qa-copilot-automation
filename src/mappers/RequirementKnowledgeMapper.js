@@ -43,7 +43,11 @@ export default class RequirementKnowledgeMapper {
                 parsedRequirement.features,
                 parsedRequirement.functions
             ]),
-            module
+            module,
+            this.firstCollection([
+                artifactRequirement.features,
+                parsedRequirement.features
+            ])
         );
         const questions = this.collect([
             clarificationQuestions,
@@ -210,24 +214,31 @@ export default class RequirementKnowledgeMapper {
         return String(value ?? "").trim().toLowerCase().replace(/\\s+/g, " ");
     }
 
-    normalizeFunctions(functions, module) {
+    normalizeFunctions(functions, module, reviewedFeatures = []) {
         const moduleId = this.isObject(module) ? module.id : "";
 
         return functions.map(value => {
             if (!this.isObject(value)) return value;
 
+            const reviewedFeature = (Array.isArray(reviewedFeatures) ? reviewedFeatures : []).find(
+                feature =>
+                    this.isObject(feature) &&
+                    ((value.id && feature.id && String(value.id) === String(feature.id)) ||
+                        this.normalizeFactKey(feature.name ?? feature.feature ?? feature.title) ===
+                            this.normalizeFactKey(value.name ?? value.feature ?? value.title))
+            );
+            const inputs =
+                Array.isArray(value.inputs) && value.inputs.length > 0
+                    ? value.inputs
+                    : Array.isArray(reviewedFeature?.inputs)
+                      ? reviewedFeature.inputs
+                      : [];
+
             const businessRules = this.toTextArray(value.businessRules ?? value.rules);
             const validationRules = this.collect([
                 value.validationRules,
                 value.validations,
-                (Array.isArray(value.inputs) ? value.inputs : []).map(input =>
-                    this.isObject(input)
-                        ? this.withInputName(
-                              input.name ?? input.inputName ?? input.fieldName,
-                              input.description ?? input.content
-                          )
-                        : input
-                )
+                this.deriveInputValidationRules(inputs)
             ]);
             const permissions = this.collect([
                 value.permissions,
@@ -246,6 +257,7 @@ export default class RequirementKnowledgeMapper {
 
             return {
                 ...this.clone(value),
+                inputs: this.clone(inputs),
                 moduleId: value.moduleId ?? moduleId,
                 name: value.name ?? value.feature ?? value.title,
                 businessRules,
@@ -254,6 +266,28 @@ export default class RequirementKnowledgeMapper {
                 boundaries: this.toTextArray(value.boundaries ?? value.boundaryCases),
                 requirementReferences: this.toTextArray(references)
             };
+        });
+    }
+
+    deriveInputValidationRules(inputs) {
+        return (Array.isArray(inputs) ? inputs : []).flatMap(input => {
+            if (!this.isObject(input)) return input;
+
+            const name = input.name ?? input.inputName ?? input.fieldName;
+            const rules = [];
+
+            if (input.required === true) {
+                rules.push(this.withInputName(name, "không được để trống"));
+            }
+
+            const description =
+                input.description ?? input.rule ?? input.rules ?? input.content ?? "";
+            const contextualRule = this.withInputName(name, description);
+            if (contextualRule && !/^chưa xác định$/i.test(String(description).trim())) {
+                rules.push(contextualRule);
+            }
+
+            return rules;
         });
     }
 

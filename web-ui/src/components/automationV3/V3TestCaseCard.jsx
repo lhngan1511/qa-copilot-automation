@@ -28,6 +28,7 @@ const DECISION_BADGE = {
 export default function V3TestCaseCard({
     testCase,
     selected = false,
+    active = false,
     recordingActive = false,
     onToggle,
     onPrimaryAction,
@@ -44,6 +45,7 @@ export default function V3TestCaseCard({
         confirmed: segments.filter(s => s.status === "CONFIRMED").length,
         draft: segments.filter(s => s.status === "DRAFT").length
     };
+    const stepTotal = segments.reduce((sum, segment) => sum + (Number(segment?.stepCount) || (Array.isArray(segment?.steps) ? segment.steps.length : 0)), 0);
     const generated = testCase.generateStatus === "GENERATED";
 
     // 6C — primary action theo trạng thái automation (chỉ MỘT nút).
@@ -52,8 +54,9 @@ export default function V3TestCaseCard({
     else if (segments.length > 0) primary = { key: "setup", label: "Tiếp tục Automation", danger: false, disabled: recordingActive };
     else primary = { key: "setup", label: "Tạo Automation", danger: false, disabled: recordingActive };
 
-    // P0 — MỌI testcase trong workspace đều có menu `...` (không phụ thuộc
-    // status/segments/decision/generate/run): ít nhất Thiết lập + Loại khỏi workspace.
+    // Mọi testcase trong workspace đều có menu `...` cho các thao tác phụ.
+    // Thiết lập/xem và ghi lại không lặp trong menu: CTA chính trên card là
+    // đường vào duy nhất cho Tạo/Tiếp tục/Xem Automation.
     const showMenu = true;
     const badge = STATUS_BADGE[status] ?? ["v3-badge--nosel", "Chưa chọn"];
     const expected = String(testCase.expectedResult ?? "").trim();
@@ -62,7 +65,7 @@ export default function V3TestCaseCard({
         <div
             className={[
                 "v3-card",
-                isSelected ? "v3-card--selected" : "",
+                active ? "v3-card--active" : "",
                 !selectable ? "v3-card--disabled" : ""
             ]
                 .filter(Boolean)
@@ -87,7 +90,7 @@ export default function V3TestCaseCard({
                     <h5 className="v3-card__title">{testCase.title}</h5>
                     <div className="v3-card__row">
                         <span className="v3-badge v3-badge--type">{testCase.type}</span>
-                        <span className={`v3-badge ${badge[0]}`}>{badge[1]}</span>
+                        {status !== "SELECTED" ? <span className={`v3-badge ${badge[0]}`}>{badge[1]}</span> : null}
                         <span className={`v3-badge ${DECISION_BADGE[decision] ?? "v3-badge--review"}`}>
                             {decisionLabel(decision)}
                         </span>
@@ -97,21 +100,12 @@ export default function V3TestCaseCard({
                             Kết quả mong đợi: {expected.length > 80 ? `${expected.slice(0, 80)}…` : expected}
                         </div>
                     ) : null}
-                    <div className="v3-card__row v3-card__row--muted">
-                        {segments.length > 0
-                            ? `Thao tác: ${segSummary.confirmed === segSummary.total ? "✓" : "⚠"} ${segSummary.confirmed}/${segSummary.total}`
-                            : "Chưa có thao tác"}
-                    </div>
-                    {/* P0-D1 — card phản ánh state thật: Playwright + Chạy thử */}
-                    {/* P0 UI STATE — label tổng dùng CHUNG helper với drawer (cùng contract). */}
-                    <div className="v3-card__row v3-card__row--muted">
-                        Automation: {automationDisplayStatus(testCase)}
-                    </div>
-                    <div className="v3-card__row v3-card__row--muted">
-                        Playwright: {testCase.generateStatus === "GENERATED" ? "Đã sinh" : "Chưa sinh"}
-                    </div>
-                    <div className="v3-card__row v3-card__row--muted">
-                        Chạy thử: {testCase.runStatus === "PASSED" ? "✓ Passed" : testCase.runStatus === "FAILED" ? "✕ Failed" : "Chưa chạy"}
+                    <div className="v3-card__row v3-card__row--muted v3-card__status-line">
+                        <span>{segments.length > 0 ? `${segSummary.confirmed}/${segSummary.total} thao tác${stepTotal > 0 ? ` · ${stepTotal} bước` : ""}` : "Chưa có thao tác"}</span>
+                        <span>{automationDisplayStatus(testCase)}</span>
+                        {testCase.generateStatus === "GENERATED" ? <span>Playwright đã sinh</span> : null}
+                        {testCase.runStatus === "PASSED" ? <span className="v3-card__status--ok">✓ Passed</span> : null}
+                        {testCase.runStatus === "FAILED" ? <span className="v3-card__status--fail">✕ Failed</span> : null}
                     </div>
                     {primary ? (
                         <div className="v3-card__action">
@@ -139,12 +133,6 @@ export default function V3TestCaseCard({
                         </button>
                         {menuOpen ? (
                             <div className="v3-menu__pop">
-                                <div role="button" tabIndex={0} onClick={() => onMenuAction?.("setup", testCase)}>
-                                    Thiết lập / xem automation
-                                </div>
-                                <div role="button" tabIndex={0} onClick={() => onMenuAction?.("record_again", testCase)}>
-                                    Ghi lại bản ghi
-                                </div>
                                 {decision === "MANUAL_ONLY" ? (
                                     <div role="button" tabIndex={0} onClick={() => onMenuAction?.("decision_automated", testCase)}>
                                         Cho phép tự động hóa

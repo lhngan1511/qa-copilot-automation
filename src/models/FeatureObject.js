@@ -38,6 +38,9 @@ class FeatureObject {
 
         this.businessRules = [];
 
+        // Validation rules are a first-class part of Requirement Markdown V1.
+        this.validationRules = [];
+
         // =====================================
         // Expected Results
         // =====================================

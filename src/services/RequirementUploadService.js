@@ -6,10 +6,11 @@ export default class RequirementUploadService {
     constructor({ uploadDir = "./data/uploads", maxBytes = 2 * 1024 * 1024 } = {}) {
         this.uploadDir = path.resolve(uploadDir);
         this.maxBytes = maxBytes;
+        this.indexFile = path.join(this.uploadDir, "requirements-index.json");
         fs.mkdirSync(this.uploadDir, { recursive: true });
     }
 
-    save({ fileName, content } = {}) {
+    save({ fileName, content, projectId = null } = {}) {
         const safeName = this.normalizeFileName(fileName);
 
         if (!Buffer.isBuffer(content) || content.length === 0) {
@@ -45,6 +46,9 @@ export default class RequirementUploadService {
         }
 
         fs.writeFileSync(storedPath, content);
+        const index = this.readIndex();
+        index[storedName] = { projectId: String(projectId ?? "").trim() || null, originalName: safeName, createdAt: new Date().toISOString() };
+        fs.writeFileSync(this.indexFile, JSON.stringify(index, null, 2), "utf8");
 
         return {
             originalName: safeName,
@@ -54,9 +58,14 @@ export default class RequirementUploadService {
         };
     }
 
-    resolve(requirementId) {
+    resolve(requirementId, projectId = undefined) {
         const safeName = this.normalizeFileName(requirementId);
         const storedPath = path.resolve(this.uploadDir, safeName);
+        const index = this.readIndex();
+        const metadata = index[safeName] ?? null;
+        if (projectId !== undefined && (!metadata || String(metadata.projectId ?? "") !== String(projectId ?? ""))) {
+            throw this.error("REQUIREMENT_UPLOAD_NOT_FOUND", "Không tìm thấy requirement trong Project hiện tại.", 404);
+        }
 
         if (
             !this.isInside(this.uploadDir, storedPath) ||
@@ -71,6 +80,11 @@ export default class RequirementUploadService {
         }
 
         return storedPath;
+    }
+
+    readIndex() {
+        try { return fs.existsSync(this.indexFile) ? JSON.parse(fs.readFileSync(this.indexFile, "utf8")) : {}; }
+        catch { return {}; }
     }
 
     normalizeFileName(fileName) {

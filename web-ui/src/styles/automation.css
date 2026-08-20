@@ -825,3 +825,39 @@
 .automation-run-config__mode > span, .automation-run-config__speed > span { font-size: 13px; color: var(--muted); }
 .automation-run-config__speed select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); }
 .automation-run-opening { color: var(--primary-dark); background: var(--primary-soft); border-radius: 8px; padding: 8px 10px; font-size: 14px; font-weight: 650; }
+
+/* Typography + spacing polish (CodeGen / Automation workspace). */
+.codegen-page { gap: 24px; }
+.codegen-page__heading p { margin-top: 8px; font-size: var(--font-size-body, 15px); line-height: 1.6; }
+.codegen-card { gap: 16px; padding: 20px 24px; }
+.codegen-label,
+.automation-recommend-draft label { margin-bottom: 8px; font-size: var(--font-size-caption, 13px); font-weight: 500; line-height: 1.4; }
+.codegen-hint,
+.automation-env-source,
+.automation-scenario-node__tag,
+.automation-run-cell span,
+.automation-fail-detail__rows dt,
+.automation-data-empty-badge,
+.automation-data-warn-badge { font-size: var(--font-size-caption, 13px); line-height: 1.45; }
+.codegen-input,
+.automation-env-input,
+.automation-env-select,
+.automation-recommend-draft textarea { font-size: var(--font-size-body, 15px); line-height: 1.5; }
+.codegen-script,
+.codegen-output,
+.automation-scenario-node code,
+.automation-scenario-assertion__code code,
+.automation-recommend code,
+.automation-fail-detail__rows dd code,
+.automation-drawer-workflow__path { font-size: 13px; line-height: 1.55; }
+.codegen-run,
+.automation-notice,
+.automation-data-hint,
+.automation-run-config__mode > span,
+.automation-run-config__speed > span { font-size: var(--font-size-caption, 13px); line-height: 1.5; }
+.automation-scenario-node,
+.automation-scenario-assertion,
+.automation-expected__block,
+.automation-ai-assertion,
+.automation-run-cell,
+.automation-fail-detail { padding-block: 12px; }

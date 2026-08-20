@@ -55,6 +55,43 @@ export async function startWorkflow({ requirementId, signal }) {
     return response?.data ?? null;
 }
 
+export async function deleteWorkflow(workflowId, { signal } = {}) {
+    const response = await apiClient.delete(`/workflows/${encodeURIComponent(workflowId)}`, { signal });
+    return response?.data ?? null;
+}
+
+export async function analyzeRequirementImages({ images, analysisMode = "FEATURES", signal }) {
+    const encoded = await Promise.all(images.map(async file => ({
+        name: file.name,
+        mimeType: file.type,
+        data: await fileToBase64(file)
+    })));
+    const response = await apiClient.post("/requirement-drafts/images/analyze", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: encoded, analysisMode }),
+        signal
+    });
+    return response?.data ?? null;
+}
+
+export async function confirmImageRequirement({ draftId, markdownContent, fileName, signal }) {
+    const response = await apiClient.post(`/requirement-drafts/images/${encodeURIComponent(draftId)}/confirm`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markdownContent, fileName }),
+        signal
+    });
+    return response?.data ?? null;
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? "").split(",")[1] ?? "");
+        reader.onerror = () => reject(new ApiError({ code: "IMAGE_READ_FAILED", message: `Không đọc được ảnh ${file.name}.` }));
+        reader.readAsDataURL(file);
+    });
+}
+
 export async function createWorkflow({ file, signal }) {
     const upload = await uploadRequirement({ file, signal });
     const requirementId = upload?.requirementId;

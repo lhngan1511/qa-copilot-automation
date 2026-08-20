@@ -93,11 +93,11 @@ function closeServer(server) {
     return new Promise(resolve => server.close(resolve));
 }
 
-async function req(baseUrl, method, requestPath, body) {
+async function req(baseUrl, method, requestPath, body, extraHeaders = {}) {
     const jsonBody = body !== undefined;
     const response = await fetch(`${baseUrl}${requestPath}`, {
         method,
-        headers: jsonBody ? { "content-type": "application/json" } : {},
+        headers: { ...(jsonBody ? { "content-type": "application/json" } : {}), ...extraHeaders },
         body: jsonBody ? JSON.stringify(body) : undefined
     });
     let json;
@@ -124,6 +124,23 @@ async function main() {
     assert.equal(created.status, 200, "create workspace 200");
     assert.ok(created.body.workspaceId.startsWith("WS-"), "workspaceId WS-");
     assert.equal(created.body.status, "NEW");
+
+    // Project isolation — workspace tạo trong Project A không được mở/xóa từ Project B.
+    const projectWorkspace = await req(baseUrl, "POST", "/api/automation-v3/workspaces", {
+        source: "NEW",
+        module: "Project A module",
+        approvedTestCases: APPROVED_SNAPSHOT
+    }, { "x-project-id": "PRJ-A" });
+    const projectWorkspaceId = projectWorkspace.body.workspaceId;
+    const hiddenFromOtherProject = await req(baseUrl, "GET",
+        `/api/automation-v3/workspaces/${projectWorkspaceId}`, undefined, { "x-project-id": "PRJ-B" });
+    assert.equal(hiddenFromOtherProject.status, 404, "workspace project khác không được mở");
+    const deleteFromOtherProject = await req(baseUrl, "DELETE",
+        `/api/automation-v3/workspaces/${projectWorkspaceId}`, undefined, { "x-project-id": "PRJ-B" });
+    assert.equal(deleteFromOtherProject.status, 404, "workspace project khác không được xóa");
+    const visibleInOwnerProject = await req(baseUrl, "GET",
+        `/api/automation-v3/workspaces/${projectWorkspaceId}`, undefined, { "x-project-id": "PRJ-A" });
+    assert.equal(visibleInOwnerProject.status, 200, "workspace vẫn tồn tại trong project sở hữu");
 
     // ===== 2. Chỉ load reviewStatus=APPROVED =====
     assert.equal(created.body.approvedCount, 2, "chỉ count APPROVED (TC001, TC002)");

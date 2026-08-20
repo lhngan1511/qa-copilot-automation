@@ -89,4 +89,31 @@ const quality = new ProductionTestCaseQualityGate().apply(
 assert.equal(quality.testCases.length, 0);
 assert.equal(quality.summary.held[0].code, "MISSING_MAIN_ACTION");
 
+const searchQuality = new ProductionTestCaseQualityGate().apply(
+    [
+        {
+            id: "TC-SEARCH",
+            module: "Danh mục Kho",
+            function: "Tìm kiếm kho",
+            feature: "Tìm kiếm kho",
+            title: "Tìm kiếm kho thành công",
+            scenario: "Tìm kiếm kho thành công",
+            type: "POSITIVE",
+            operation: "Search",
+            requirementReferences: ["Tìm kiếm kho"],
+            testData: { fields: {} },
+            steps: [
+                { action: "Nhập từ khóa vào ô tìm kiếm" },
+                { action: "Nhấn nút Tìm" }
+            ],
+            expectedResult: "Danh sách hiển thị các kho khớp với từ khóa"
+        }
+    ],
+    {
+        requirement: { module: "Danh mục Kho", features: [{ name: "Tìm kiếm kho" }] },
+        knowledge: { module: { name: "Danh mục Kho" }, functions: [{ name: "Tìm kiếm kho" }] }
+    }
+);
+assert.equal(searchQuality.testCases.length, 1);
+
 console.log("Requirement fidelity test PASSED");

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction, renameLibraryGroup } from "../../api/codeGenApi.js";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction, renameLibraryGroup, updateLibraryAction } from "../../api/codeGenApi.js";
 import { parseRecording } from "../../../../src/codegen/recordingParser.js"; // thuần — parse cục bộ khi xóa draft step (không API/không recording mới)
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange, scopedAssertionsInRange } from "../../utils/recordingPrepState.js";
-import { appendWorkingAction, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
+import { appendWorkingAction, applyGroupToWorkingActions, removeWorkingAction, proposalStatus } from "../../utils/workingActions.js";
 import { buildRecordingFileName } from "../../utils/recordingFile.js";
 import { paginate } from "../../utils/pagination.js";
-import { groupLibraryActions, groupDisplayName } from "../../utils/libraryGroups.js";
+import { groupDisplayName, groupLibraryActions } from "../../utils/libraryGroups.js";
 import { planLibrarySave } from "../../utils/librarySync.js";
 import { semanticStepText } from "../../utils/semanticSteps.js";
 import { removeStepFromSource } from "../../utils/draftSource.js";
@@ -68,7 +68,7 @@ function downloadScript(content, fileName) {
     URL.revokeObjectURL(url);
 }
 
-export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onError, onConfirmedSegment, splitLayout = false }) {
+export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onOpenLibrary, onError, onConfirmedSegment, splitLayout = false }) {
     const [source, setSource] = useState("");
     const [recordingId, setRecordingId] = useState(null);
     const [steps, setSteps] = useState([]);
@@ -112,6 +112,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     // P0 — Grouping V1: currentGroup = default Chức năng (tester-owned, giữ qua các action);
     // expandedGroup = group đang mở trong THƯ VIỆN (null = tất cả collapsed).
     const [currentGroup, setCurrentGroup] = useState("");
+    const [workingGroupNotice, setWorkingGroupNotice] = useState("");
     const [expandedGroup, setExpandedGroup] = useState(null);
     // P0 — proposal bị tester [Bỏ] (trạng thái, KHÔNG xóa khỏi mảng) → list ổn định, không remount.
     const [dismissedProposals, setDismissedProposals] = useState([]);
@@ -121,6 +122,14 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [localError, setLocalError] = useState("");
 
     const notifyError = msg => { setLocalError(msg); onError?.(msg); };
+
+    // Phản hồi lưu chỉ xác nhận hành động vừa hoàn tất, không phải trạng thái lâu dài.
+    // Tự ẩn để lần tạo thao tác tiếp theo không còn mang thông báo của lần lưu trước.
+    useEffect(() => {
+        if (!saveFeedback) return undefined;
+        const timer = window.setTimeout(() => setSaveFeedback(null), 6000);
+        return () => window.clearTimeout(timer);
+    }, [saveFeedback]);
 
     /* ---------- P0-1: reset context recording cũ (khi tester nhập bản ghi mới) ---------- */
 
@@ -148,6 +157,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         // P0-1 — reset TOÀN BỘ analysis workspace Phần II (start/end/name/AI proposals).
         applyAnalysisWorkspace(freshAnalysisWorkspace());
         setConfirmed([]);
+        setWorkingGroupNotice("");
         setSaveFeedback(null);
         setUtilityNotice("");
         setProposalPage(0);
@@ -295,6 +305,11 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         [assertions, steps, selRange]
     );
 
+    const pendingLibraryCount = useMemo(
+        () => planLibrarySave(confirmed, library).toCreate.length,
+        [confirmed, library]
+    );
+
     /* ---------- Phần II: AI ---------- */
 
     const handleAnalyze = async () => {
@@ -330,15 +345,19 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
     /** P0-3.2 — thêm action vào working set (KHÔNG gọi API, KHÔNG persist Library). */
     const addWorkingAction = (s, e, label, groupName = null) => {
+        setSaveFeedback(null);
         setConfirmed(prev => appendWorkingAction(prev, { label, startStep: s, endStep: e, groupName }));
     };
 
-    /** P0-3.2 — AI proposal đi THẲNG vào working set; KHÔNG populate form, KHÔNG xóa proposal khỏi list,
-     *  KHÔNG tự persist. Tester tiếp tục chọn proposal khác; persist chỉ khi bấm "Lưu ... vào Thư viện". */
+    /** AI chỉ đề xuất Chức năng + Tên thao tác; tester vẫn chủ động thêm và có thể sửa trước khi persist. */
     const handleAddProposal = proposal => {
         if (saving) return;
-        // Group do TESTER chọn (currentGroup) — AI KHÔNG tự quyết định/không tự persist group.
-        addWorkingAction(proposal?.startStep, proposal?.endStep, proposal?.suggestedName || `Bước ${proposal?.startStep}→${proposal?.endStep}`, currentGroup);
+        addWorkingAction(
+            proposal?.startStep,
+            proposal?.endStep,
+            proposal?.suggestedName || `Bước ${proposal?.startStep}→${proposal?.endStep}`,
+            proposal?.suggestedGroupName ?? currentGroup
+        );
     };
 
     /** Fallback (non-split) — giữ hành vi cũ: confirm → persist Library + bind ngay (Automation workflow). */
@@ -386,6 +405,29 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
+    /** Đổi Chức năng cho mọi Action được cắt từ BẢN GHI HIỆN TẠI.
+     * Với Action đã persist, PATCH từng block thay vì rename cả Library group để không
+     * kéo theo Action cũ không thuộc phiên ghi này. */
+    const applyCurrentGroupToWorkingSet = async () => {
+        const groupName = currentGroup.trim();
+        if (!groupName) { notifyError("Vui lòng nhập tên Chức năng cần áp dụng."); return; }
+        if (saving || confirmed.length === 0) return;
+        setSaving(true);
+        setLocalError("");
+        setWorkingGroupNotice("");
+        try {
+            const persisted = confirmed.filter(item => item.blockId && !String(item.blockId).startsWith("WORK-"));
+            await Promise.all(persisted.map(item => updateLibraryAction(item.blockId, { groupName })));
+            setConfirmed(prev => applyGroupToWorkingActions(prev, groupName));
+            if (persisted.length > 0) await refreshLibrary();
+            setWorkingGroupNotice(`Đã áp dụng “${groupName}” cho ${confirmed.length} thao tác vừa tạo.`);
+        } catch (e) {
+            notifyError(e?.message ?? "Không cập nhật được Chức năng cho các thao tác vừa tạo.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const saveAllToLibrary = async () => {
         if (saving || confirmed.length === 0) return;
         setSaving(true);
@@ -415,11 +457,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 // P0-3.3 — Library phải cập nhật NGAY trong cùng màn hình (không F5/không đóng mở).
                 // Reuse refreshLibrary() (listLibrary → setLibrary) — không tạo cache thứ hai.
                 await refreshLibrary();
-                setShowLibrary(true);
-                // P0 — mở group chứa action vừa lưu (nếu có action mới) — grouping thay pagination phẳng.
-                if (plan.toCreate.length > 0) {
-                    setExpandedGroup(groupDisplayName(plan.toCreate[0].groupName));
-                }
                 onSavedToLibrary?.(persistedCount);
             } else {
                 // Fallback — các action đã persist ngay khi confirm; chỉ feedback (như cũ).
@@ -564,6 +601,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                     <div className="v3-cond__body">
                                         <b>{proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
                                         <span className="v3-cond__meta">
+                                            Chức năng đề xuất: <span>{groupDisplayName(proposal.suggestedGroupName)}</span>
+                                        </span>
+                                        <span className="v3-cond__meta">
                                             <span className="v3-cond__num">Gợi ý {globalIdx + 1}/{proposals.length}</span>
                                             <span>Bước {proposal.startStep} → {proposal.endStep} · {stepCount} thao tác</span>
                                         </span>
@@ -578,8 +618,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         ) : null}
                                         {/* P0-3.3 — Điều kiện kiểm tra scoped (không hiển thị assertion ngoài range;
                                             không để trống — luôn có dòng thông tin). */}
-                                        <div className="v3-act__verif">
-                                            <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
+                                        <details className="v3-act__verif v3-act__verification-disclosure">
+                                            <summary>Điều kiện kiểm tra ({propAssertions.length})</summary>
                                             {propAssertions.length > 0 ? (
                                                 propAssertions.map((a, ai) => (
                                                     <div className="v3-cond v3-cond--compact" key={`pa-${ai}`}>
@@ -592,7 +632,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                             ) : (
                                                 <span className="v3-act__note">Không có thông tin xác nhận trong đoạn này.</span>
                                             )}
-                                        </div>
+                                        </details>
                                     </div>
                                     <div className="v3-cond__actions">
                                         {splitLayout ? (
@@ -638,8 +678,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
 
                 {/* Manual — chọn Start/End (cách duy nhất để chọn đoạn) */}
                 <div className="v3-act__manual">HOẶC TỰ TẠO</div>
-                {/* P0 — Grouping V1: Chức năng do TESTER chọn/nhập (AI không tự quyết định);
-                    giữ làm default cho các action tiếp theo trong phiên (currentGroup). */}
+                {/* Tester có thể nhập/sửa Chức năng; AI proposal chỉ là gợi ý, không tự persist. */}
                 <label className="v3-map__label v3-act__name-field">
                     Chức năng
                     <input
@@ -656,6 +695,19 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         {currentGroup.trim() ? <option value={currentGroup.trim()} /> : null}
                     </datalist>
                 </label>
+                {confirmed.length > 0 ? (
+                    <div className="v3-act__bulk-group">
+                        <button
+                            type="button"
+                            className="v3-btn v3-btn--secondary v3-btn--mini"
+                            onClick={applyCurrentGroupToWorkingSet}
+                            disabled={saving || !currentGroup.trim()}
+                        >
+                            Áp dụng cho {confirmed.length} thao tác vừa tạo
+                        </button>
+                        {workingGroupNotice ? <span className="v3-act__note" role="status">{workingGroupNotice}</span> : null}
+                    </div>
+                ) : null}
                 {/* P0-3.1 — thứ tự: Tên thao tác TRƯỚC Start/End (recording readable đã cố định ở cột trái). */}
                 <label className="v3-map__label v3-act__name-field">
                     Tên thao tác
@@ -685,10 +737,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         {/* Split layout: steps đã hiện + highlight ở cột trái → không duplicate preview ở đây.
                             Bố cục 1 cột (fallback drawer): giữ preview steps (UX dài 16-30 bước là checkpoint riêng). */}
                         {!splitLayout ? renderSteps(selSteps, true) : null}
-                        <div className="v3-act__verif">
-                            {scopedAssertions.length > 0 ? (
-                                <>
-                                    <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>
+                        {scopedAssertions.length > 0 ? (
+                            <details className="v3-act__verif v3-act__verification-disclosure">
+                                <summary>Điều kiện kiểm tra ({scopedAssertions.length})</summary>
                                     {scopedAssertions.map((a, i) => (
                                         <div className="v3-cond v3-cond--compact" key={i}>
                                             <div className="v3-cond__body">
@@ -697,11 +748,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                             </div>
                                         </div>
                                     ))}
-                                </>
-                            ) : (
-                                <span className="v3-act__note">Không có điều kiện kiểm tra.</span>
-                            )}
-                        </div>
+                            </details>
+                        ) : (
+                            <span className="v3-act__note">Không có điều kiện kiểm tra.</span>
+                        )}
                     </div>
                 ) : null}
 
@@ -721,35 +771,52 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             {/* THAO TÁC ĐÃ TẠO — compact: Tên · bước X→Y; KHÔNG bung steps trong danh sách */}
             {confirmed.length > 0 ? (
                 <div className="v3-act__saved">
-                    <h4 className="v3-map__h">THAO TÁC ĐÃ TẠO</h4>
-                    {confirmed.map(seg => (
-                        <div className="v3-cond v3-cond--compact" key={seg.blockId}>
-                            <div className="v3-cond__body">
-                                <div className="v3-cond__line">
-                                    <b>{seg.label}</b>
-                                    <span className="v3-cond__meta">{seg.startStep}→{seg.endStep} · {seg.stepCount} thao tác</span>
+                    <div className="v3-act__saved-head">
+                        <h4 className="v3-map__h">THAO TÁC ĐÃ TẠO</h4>
+                        <span>{confirmed.length} thao tác</span>
+                    </div>
+                    <div className="v3-act__saved-list">
+                        {confirmed.map(seg => (
+                            <div className="v3-cond v3-cond--compact" key={seg.blockId}>
+                                <div className="v3-cond__body">
+                                    <div className="v3-cond__line">
+                                        <b>{seg.label}</b>
+                                        <span className="v3-cond__meta">Chức năng: {groupDisplayName(seg.groupName)}</span>
+                                        <span className="v3-cond__meta">Bước {seg.startStep}→{seg.endStep} · {seg.stepCount} thao tác</span>
+                                    </div>
+                                </div>
+                                <div className="v3-cond__actions">
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Sửa</button>
+                                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => removeWorkingAction(prev, seg.blockId))} disabled={saving}>Xóa</button>
                                 </div>
                             </div>
-                            <div className="v3-cond__actions">
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setStartSel(seg.startStep); setEndSel(seg.endStep); setName(seg.label); }} disabled={saving}>Sửa</button>
-                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setConfirmed(prev => removeWorkingAction(prev, seg.blockId))} disabled={saving}>Xóa</button>
-                            </div>
+                        ))}
+                    </div>
+                    <div className="v3-act__saved-footer">
+                        <span className="v3-act__note">
+                            {pendingLibraryCount > 0 ? `${pendingLibraryCount} thao tác chưa lưu` : "Tất cả thao tác đã được lưu"}
+                        </span>
+                        <div className="v3-act__saved-actions">
+                            {onOpenLibrary ? (
+                                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={onOpenLibrary}>
+                                    Xem Thư viện
+                                </button>
+                            ) : null}
+                            {pendingLibraryCount > 0 ? (
+                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini v3-act__save-button" onClick={saveAllToLibrary} disabled={saving}>
+                                    {saving ? "Đang lưu…" : `Lưu ${pendingLibraryCount} thao tác`}
+                                </button>
+                            ) : null}
                         </div>
-                    ))}
-                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveAllToLibrary} disabled={saving}>
-                        Lưu {confirmed.length} thao tác vào Thư viện
-                    </button>
+                    </div>
                     {saveFeedback ? (
-                        <div className="v3-act__save-feedback">
+                        <div className="v3-act__save-feedback" role="status">
                             {/* P0 — message theo số persist THẬT (recreate cũng tính là lưu mới); 0 → nói rõ không tạo gì. */}
                             <span className="v3-ok">
                                 {saveFeedback.count > 0
                                     ? `✓ Đã lưu ${saveFeedback.count} thao tác mới vào Thư viện.`
                                     : `✓ Tất cả ${saveFeedback.total ?? 0} thao tác đã có trong Thư viện.`}
                             </span>
-                            <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => setShowLibrary(true)}>
-                                Mở Thư viện thao tác
-                            </button>
                         </div>
                     ) : null}
                 </div>
@@ -762,7 +829,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const renderRecordingSingle = () => (
         <>
             <div className="v3-exp__row">
-                <h4 className="v3-map__h">I. BẢN GHI</h4>
+                <h4 className="v3-map__h">Bản ghi Playwright</h4>
                 <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector để tạo thao tác.</span>
             </div>
             <textarea
@@ -810,7 +877,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 /* ---------- P0 — DRAFT REVIEW: paste/record → BẢN NHÁP → [Nhập xong] → canonical ---------- */
                 <>
                     <div className="v3-exp__row">
-                        <h4 className="v3-map__h">I. BẢN GHI</h4>
+                        <h4 className="v3-map__h">Bản ghi Playwright</h4>
                         <span className="v3-exp__note">Dán bản ghi Playwright từ Inspector — review bản nháp trước khi Nhập xong.</span>
                     </div>
                     <textarea
@@ -860,7 +927,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                             </div>
                         </div>
                     ) : (
-                        <button type="button" className="v3-btn v3-btn--primary" onClick={handlePasteDone} disabled={saving || !source.trim()}>
+                        <button type="button" className="v3-btn v3-btn--primary v3-rec-prep__analyze" onClick={handlePasteDone} disabled={saving || !source.trim()}>
                             {parsing || saving ? "Đang phân tích…" : "Phân tích bản nháp"}
                         </button>
                     )}
@@ -870,7 +937,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 <div className="v3-rec-prep__split">
                     <div className="v3-rec-prep__col v3-rec-prep__col--rec">
                         <div className="v3-exp__row">
-                            <h4 className="v3-map__h">I. BẢN GHI</h4>
+                            <h4 className="v3-map__h">Bản ghi Playwright</h4>
                             <span className="v3-exp__note">Nguồn cố định — quan sát, đối chiếu. Chọn đoạn ở cột phải.</span>
                             <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={newRecording}>
                                 + Bản ghi mới
@@ -921,7 +988,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             {localError ? <div className="v3-banner v3-banner--error" role="alert">{localError}</div> : null}
 
             {/* ============ THƯ VIỆN THAO TÁC (shared persisted assets — KHÔNG redesign) ============ */}
-            {steps.length > 0 || library.length > 0 ? (
+            {!splitLayout && (steps.length > 0 || library.length > 0) ? (
                 <div className="v3-act__lib">
                     <div className="v3-exp__row">
                         <h4 className="v3-map__h">THƯ VIỆN THAO TÁC</h4>
@@ -971,9 +1038,10 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                                 type="button"
                                                 className="v3-btn v3-btn--ghost v3-btn--mini"
                                                 title="Đổi tên nhóm"
+                                                aria-label={`Đổi tên nhóm ${g.groupName}`}
                                                 onClick={() => setRenamingGroup({ rawGroupName: g.rawGroupName, draft: g.rawGroupName ?? "" })}
                                             >
-                                                ✎
+                                                Đổi tên
                                             </button>
                                         </div>
                                     )}

@@ -41,12 +41,14 @@ async function request(
     { method = "GET", headers = {}, body, signal, baseUrl = API_BASE_URL } = {}
 ) {
     let response;
+    const selectedProjectId = window.localStorage.getItem("qa-copilot-project-id") ?? "";
 
     try {
         response = await fetch(`${baseUrl}${path}`, {
             method,
             headers: {
                 Accept: "application/json",
+                ...(selectedProjectId && !String(path).startsWith("/projects") ? { "X-Project-Id": selectedProjectId } : {}),
                 ...headers
             },
             body,

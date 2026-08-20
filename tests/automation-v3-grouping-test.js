@@ -4,20 +4,22 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { groupLibraryActions, groupDisplayName, UNGROUPED_LABEL } from "../web-ui/src/utils/libraryGroups.js";
+import { applyGroupToWorkingActions } from "../web-ui/src/utils/workingActions.js";
 
 /*
  P0 — ACTION LIBRARY GROUPING V1 (CASE A–H).
 
- Data model: ActionLibrary block thêm `groupName: string|null` (tester-owned).
+ Data model: ActionLibrary block thêm `groupName: string|null` (AI đề xuất, tester xác nhận/sửa).
  Existing block không groupName → presentation "Chưa phân loại" (KHÔNG migration theo label).
  Backend: createLibraryAction nhận/persist groupName; listLibrary trả groupName.
  UI: THƯ VIỆN nhóm theo group (collapsed mặc định; mở 1 group); KHÔNG pagination phẳng.
- Không AI tự group; không hardcode label → group.
+ Không hardcode label → group và không tự persist nếu tester chưa xác nhận.
 */
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const panelSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "components", "automationV3", "V3RecordingPreparationPanel.jsx"), "utf8");
 const clean = panelSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+const apiSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "api", "codeGenApi.js"), "utf8");
 
 // ================= Helper grouping (presentation) =================
 // ---- D — 2 action "Đơn vị tính" + 3 "Kho" → 2 groups đúng count ----
@@ -46,6 +48,17 @@ assert.equal(g2[1].count, 2, "C: 2 block không group không mất");
 assert.equal(groupDisplayName(null), "Chưa phân loại", "C: display name null → Chưa phân loại");
 assert.equal(groupDisplayName("  Kho  "), "Kho", "C: trim groupName");
 
+// ---- Bulk rename chỉ tác động working set của bản ghi hiện tại ----
+const currentRecordingActions = [
+    { blockId: "WORK-1", label: "Mở danh mục", groupName: "Chưa phân loại", startStep: 1, endStep: 2 },
+    { blockId: "WORK-2", label: "Thêm thiết bị", groupName: "Thiết bị cũ", startStep: 3, endStep: 6 }
+];
+const renamedWorkingActions = applyGroupToWorkingActions(currentRecordingActions, "Quản lý thiết bị");
+assert.deepEqual(renamedWorkingActions.map(item => item.groupName), ["Quản lý thiết bị", "Quản lý thiết bị"],
+    "Bulk: mọi thao tác vừa tạo nhận cùng Chức năng");
+assert.deepEqual(currentRecordingActions.map(item => item.groupName), ["Chưa phân loại", "Thiết bị cũ"],
+    "Bulk: không mutate working set cũ");
+
 // ---- E — delete last action trong group → group biến mất (derive) ----
 const libAfterDelete = libMixed.filter(b => b.blockId !== "LIB-1"); // xóa hết "Đơn vị tính"
 const g3 = groupLibraryActions(libAfterDelete);
@@ -57,14 +70,22 @@ assert.ok(clean.includes("groupLibraryActions(library)"), "UI: Library render qu
 assert.ok(clean.includes("v3-lib-group__head") && clean.includes("expandedGroup === g.groupName ? \"▾\" : \"▸\""), "UI: group collapsed mặc định + toggle ▸/▾");
 assert.ok(clean.includes("{g.count} thao tác"), "UI: group hiển thị count");
 assert.ok(!clean.includes("libPage") && !clean.includes("setLibPage") && !clean.includes("Trang {libPaged"), "UI: bỏ pagination phẳng Library");
-assert.ok(clean.includes("setExpandedGroup(groupDisplayName(plan.toCreate[0].groupName))"), "UI: sau save mở group chứa action mới");
+assert.ok(clean.includes("setExpandedGroup(expandedGroup === g.groupName ? null : g.groupName)"), "UI: tester mở/đóng group chức năng rõ ràng");
 
-// ---- Chức năng field: tester-owned, không AI ----
+// ---- Chức năng field: AI đề xuất, tester vẫn chỉnh sửa được ----
 assert.ok(clean.includes("Chức năng") && clean.includes("v3-group-options") && clean.includes("datalist"), "UI: field Chức năng (select/nhập mới qua datalist)");
 assert.ok(clean.includes("currentGroup"), "UI: currentGroup giữ default qua các action");
-assert.ok(clean.includes("addWorkingAction(proposal?.startStep, proposal?.endStep, proposal?.suggestedName || `Bước ${proposal?.startStep}→${proposal?.endStep}`, currentGroup)"),
-    "AI: proposal add dùng currentGroup (tester) — AI không tự quyết định group");
+assert.ok(clean.includes("proposal?.suggestedGroupName ?? currentGroup"),
+    "AI: proposal mang Chức năng đề xuất và fallback currentGroup do tester nhập");
 assert.ok(clean.includes("groupName: seg.groupName ?? null"), "UI: save Library gửi groupName từ working action");
+assert.match(apiSource, /createLibraryAction\(\{[^}]*groupName\s*=\s*null[^}]*\}\)/s,
+    "API adapter: createLibraryAction phải nhận groupName từ working action");
+assert.match(apiSource, /JSON\.stringify\(\{\s*recordingId,\s*label,\s*kind,\s*startStep,\s*endStep,\s*groupName\s*\}\)/,
+    "API adapter: request lưu Library phải gửi groupName xuống backend");
+assert.ok(clean.includes("applyCurrentGroupToWorkingSet") && clean.includes("Áp dụng cho {confirmed.length} thao tác vừa tạo"),
+    "UI: có hành động đổi Chức năng đồng loạt cho nhóm thao tác của bản ghi hiện tại");
+assert.ok(clean.includes("updateLibraryAction(item.blockId, { groupName })"),
+    "UI: Action đã lưu được cập nhật từng block, không rename nhầm cả group Library cũ");
 
 // ================= Backend (HTTP thật) =================
 const { default: createApp } = await import("../src/server/createApp.js");

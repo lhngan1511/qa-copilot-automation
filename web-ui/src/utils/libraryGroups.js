@@ -45,3 +45,39 @@ export function groupLibraryActions(list) {
         };
     });
 }
+
+/** Chia thao tác trong một Chức năng theo ngày ghi; ngày mới nhất và thao tác mới nhất ở trước. */
+export function groupLibraryActionsByCreatedDate(list, now = new Date()) {
+    const items = Array.isArray(list) ? [...list] : [];
+    const validTime = item => {
+        const time = new Date(item?.createdAt ?? "").getTime();
+        return Number.isFinite(time) ? time : null;
+    };
+    items.sort((a, b) => (validTime(b) ?? -Infinity) - (validTime(a) ?? -Infinity));
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const dateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const todayKey = dateKey(today);
+    const yesterdayKey = dateKey(yesterday);
+    const sections = new Map();
+
+    for (const item of items) {
+        const time = validTime(item);
+        const date = time === null ? null : new Date(time);
+        const key = date ? dateKey(date) : "unknown";
+        if (!sections.has(key)) {
+            const label = key === todayKey
+                ? "Hôm nay"
+                : key === yesterdayKey
+                    ? "Hôm qua"
+                    : date
+                        ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date)
+                        : "Không rõ ngày ghi";
+            sections.set(key, { key, label, items: [] });
+        }
+        sections.get(key).items.push(item);
+    }
+    return [...sections.values()];
+}

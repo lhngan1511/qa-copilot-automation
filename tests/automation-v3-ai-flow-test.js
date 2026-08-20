@@ -21,9 +21,9 @@ const panelSource = fs.readFileSync(path.join(testDir, "..", "web-ui", "src", "c
 const clean = panelSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 const PROPOSALS = [
-    { suggestedName: "Login", startStep: 1, endStep: 12, evidence: ["click Đăng nhập"] },
-    { suggestedName: "Open", startStep: 13, endStep: 15, evidence: ["click Danh mục"] },
-    { suggestedName: "Add", startStep: 16, endStep: 23, evidence: ["click Thêm"] }
+    { suggestedGroupName: "Đăng nhập", suggestedName: "Đăng nhập thành công", startStep: 1, endStep: 12, evidence: ["click Đăng nhập"] },
+    { suggestedGroupName: "Điều hướng", suggestedName: "Chọn phân hệ", startStep: 13, endStep: 15, evidence: ["click Danh mục"] },
+    { suggestedGroupName: "Thiết bị", suggestedName: "Thêm thiết bị thành công", startStep: 16, endStep: 23, evidence: ["click Thêm"] }
 ];
 
 // ---- CASE A — AI direct add: working có Login; không populate form; proposals khác còn ----
@@ -76,6 +76,7 @@ assert.ok(!addProposalBody.includes("setStartSel(") && !addProposalBody.includes
 assert.ok(!addProposalBody.includes("setProposals("), "A: handleAddProposal KHÔNG xóa proposal khỏi list (Open/Add vẫn còn)");
 assert.ok(!addProposalBody.includes("createLibraryAction"), "C: handleAddProposal KHÔNG persist Library");
 assert.ok(addProposalBody.includes("addWorkingAction"), "A: handleAddProposal → addWorkingAction (working set)");
+assert.ok(addProposalBody.includes("proposal?.suggestedGroupName ?? currentGroup"), "A: AI proposal chuyển cả Chức năng, vẫn fallback dữ liệu tester");
 
 // addWorkingAction: dùng appendWorkingAction (functional update — chống duplicate), KHÔNG API.
 const addWorkingBody = clean.match(/const addWorkingAction = \(s, e, label, groupName = null\) => \{[\s\S]*?\n    \};/)?.[0] ?? "";
@@ -96,7 +97,8 @@ assert.ok(saveBody.includes("planLibrarySave(confirmed, canonical)"), "C: reconc
 assert.ok(clean.includes("Thêm thao tác"), "A: nút proposal = [Thêm thao tác]");
 assert.ok(clean.includes("Đã thêm"), "E: trạng thái proposal đã thêm (✓ Đã thêm / disabled [Đã thêm])");
 assert.ok(clean.includes("HOẶC TỰ TẠO"), "D: heading HOẶC TỰ TẠO");
-assert.ok(clean.includes("Lưu {confirmed.length} thao tác vào Thư viện"), "B: nút save phản ánh số lượng");
+assert.ok(clean.includes("pendingLibraryCount") && clean.includes("`Lưu ${pendingLibraryCount} thao tác`"),
+    "B: nút save phản ánh đúng số thao tác chưa lưu");
 assert.ok(!clean.includes("HOẶC TỰ CHỌN"), "P0-3.2: bỏ HOẶC TỰ CHỌN cũ");
 assert.ok(clean.includes("proposalStatus"), "component dùng proposalStatus");
 

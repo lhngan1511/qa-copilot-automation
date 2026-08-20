@@ -51,17 +51,21 @@ export default function createAutomationV3Routes({ applicationService = null } =
             source: req.body?.source,
             approvedTestCases: req.body?.approvedTestCases,
             module: req.body?.module,
-            sourceFile: req.body?.sourceFile
+            sourceFile: req.body?.sourceFile,
+            projectId: req.get("x-project-id") || null
         })));
 
     // P0-D (C) — danh sách workspace (newest first) + xóa (không cascade shared assets).
-    router.get("/workspaces", handle(applicationService, (svc) => svc.listWorkspaces()));
+    router.get("/workspaces", handle(applicationService, (svc, req) => svc.listWorkspaces({ projectId: req.get("x-project-id") || null })));
 
     router.delete("/workspaces/:workspaceId", handle(applicationService, (svc, req) =>
-        svc.deleteWorkspace({ workspaceId: req.params.workspaceId })));
+        svc.deleteWorkspace({
+            workspaceId: req.params.workspaceId,
+            projectId: req.get("x-project-id") || null
+        })));
 
     router.get("/workspaces/:workspaceId", handle(applicationService, (svc, req) =>
-        svc.getWorkspace(req.params.workspaceId)));
+        svc.getWorkspace(req.params.workspaceId, req.get("x-project-id") || null)));
 
     // P0 (D/E) — loại testcase khỏi workspace / danh sách approved chưa có / thêm lại.
     router.delete("/workspaces/:workspaceId/testcases/:testCaseId", handle(applicationService, (svc, req) =>

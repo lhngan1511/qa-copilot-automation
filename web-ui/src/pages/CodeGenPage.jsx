@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import V3RecordingPreparationPanel from "../components/automationV3/V3RecordingPreparationPanel.jsx";
 import V3LibraryViewer from "../components/automationV3/V3LibraryViewer.jsx";
 import {
@@ -90,13 +90,10 @@ export default function CodeGenPage() {
         }
     };
 
-    if (recordingsQuery.isPending) return <div className="page">Đang tải...</div>;
+    if (recordingsQuery.isPending) return <div className="page"><div className="state-panel" role="status"><span className="loading-spinner" aria-hidden="true" /><p>Đang tải CodeGen…</p></div></div>;
 
     return (
         <section className="page codegen-page">
-            <Link className="back-link" to="/">
-                ← Về Dashboard
-            </Link>
             {/* P0 — Header gọn: page title chính + subtitle ngắn; bỏ CODEGEN MVP / badge / mô tả cũ. */}
             <header className="codegen-page__heading">
                 <div>
@@ -108,8 +105,8 @@ export default function CodeGenPage() {
             {notice && <div className="automation-notice" role="status">{notice}</div>}
 
             {/* P0 Consolidation — MAIN FLOW: Playwright Recording → Phân đoạn → Lưu Library */}
-            <div className="codegen-card">
-                <label className="codegen-label">I. BẢN GHI</label>
+            <div className="codegen-card codegen-card--recorder">
+                <label className="codegen-label">Ghi phiên thao tác</label>
                 <div className="codegen-row">
                     <input
                         className="codegen-input"
@@ -130,11 +127,11 @@ export default function CodeGenPage() {
                     </button>
                     {/* P0 — tách "Xem Action đã lưu" khỏi "Tạo Action mới": luôn bấm được,
                         KHÔNG cần draft/recording (CASE 1). READ-ONLY viewer. */}
-                    <button className="button button--secondary" type="button" onClick={() => setLibraryViewerOpen(true)}>
-                        Xem Thư viện thao tác
+                    <button className="button button--tertiary" type="button" onClick={() => setLibraryViewerOpen(true)}>
+                        Mở Thư viện thao tác
                     </button>
                 </div>
-                <p className="codegen-hint">Record hoặc dán bản ghi đều đổ vào MỘT nguồn — cắt đoạn → lưu Thư viện thao tác (shared).</p>
+                <p className="codegen-hint">Bản ghi từ Playwright Inspector sẽ được dùng để phân đoạn và lưu vào Thư viện thao tác.</p>
             </div>
 
             {/* P0 — READ-ONLY Action Library Viewer (drawer) — mở độc lập với draft. */}
@@ -143,10 +140,11 @@ export default function CodeGenPage() {
             {/* II/III + Thư viện — shared component (global recording).
                 P0 — bọc card để padding/margin khớp layout (không dính sát mép phải như các card khác).
                 P0-3 — splitLayout: CodeGen = 2 cột (trái recording cố định · phải tạo thao tác). */}
-            <div className="codegen-card">
+            <div className="codegen-card codegen-card--workspace">
                 <V3RecordingPreparationPanel
                     splitLayout
-                    onSavedToLibrary={count => setNotice(`Đã lưu ${count} thao tác vào Thư viện.`)}
+                    onSavedToLibrary={() => setNotice("")}
+                    onOpenLibrary={() => setLibraryViewerOpen(true)}
                     onError={msg => setNotice(msg)}
                 />
             </div>

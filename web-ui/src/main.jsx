@@ -6,11 +6,12 @@ import { queryClient } from "./app/queryClient.js";
 import "./styles/global.css";
 import "./styles/automation.css";
 import "./styles/automationV3.css";
+import { ProjectProvider } from "./contexts/ProjectContext.jsx";
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
-            <App />
+            <ProjectProvider><App /></ProjectProvider>
         </QueryClientProvider>
     </StrictMode>
 );

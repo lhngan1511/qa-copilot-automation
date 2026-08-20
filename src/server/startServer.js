@@ -4,13 +4,15 @@ import { fileURLToPath } from "node:url";
 import { loadedEnvFilePath, envFileExists } from "../config/loadEnv.js";
 
 const { default: createApp } = await import("./createApp.js");
+const { default: createProjectRepository } = await import("../projects/createProjectRepository.js");
 
 const entryFile = fileURLToPath(import.meta.url);
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 3000);
 const repositoryType = process.env.REPOSITORY_TYPE || "file";
 const dataDir = process.env.DATA_DIR || "./data";
-const app = createApp({ repositoryType, dataDir });
+const projectRepository = await createProjectRepository({ dataDir });
+const app = createApp({ repositoryType, dataDir, projectRepository });
 
 const server = app.listen(port, host, () => {
     const url = `http://${host}:${port}`;
@@ -23,6 +25,7 @@ const server = app.listen(port, host, () => {
     console.log(`index.html exists: ${app.locals.dependencies.indexExists}`);
     console.log(`QA Copilot server listening on ${url}`);
     console.log(`Repository type: ${repositoryType}`);
+    console.log(`Project repository: ${process.env.PROJECT_REPOSITORY_TYPE || (process.env.DATABASE_URL ? "postgres" : "file")}`);
     console.log(`Data directory: ${app.locals.dependencies.config.dataDir}`);
 
     if (process.env.OPEN_BROWSER !== "false" && process.env.NODE_ENV !== "test") {
