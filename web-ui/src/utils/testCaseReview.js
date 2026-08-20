@@ -9,6 +9,13 @@ export function testCaseDisplayId(testCase) {
     return String(testCase?.displayId ?? "").trim() || testCaseId(testCase);
 }
 
+export function assignDisplayIds(testCases = []) {
+    return (Array.isArray(testCases) ? testCases : []).map((testCase, index) => ({
+        ...testCase,
+        displayId: `TC${String(index + 1).padStart(3, "0")}`
+    }));
+}
+
 export function parseTestCaseReview(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         throw new Error("Phản hồi TestCase Review không hợp lệ.");
@@ -36,7 +43,7 @@ export function parseTestCaseReview(value) {
             ...structuredClone(testCase),
             id,
             testcaseId: testCase.testcaseId ?? id,
-            displayId: testCase.displayId ?? id,
+            displayId: `TC${String(index + 1).padStart(3, "0")}`,
             intent: testCase.intent ?? "",
             intentGroup: testCase.intentGroup ?? "",
             scenario:

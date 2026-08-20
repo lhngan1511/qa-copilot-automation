@@ -19,7 +19,7 @@ import AITestCaseIntelligenceEngine from "./engines/AITestCaseIntelligenceEngine
 import TestCaseQualityPolicy from "./intelligence/TestCaseQualityPolicy.js";
 import TestCaseIntelligenceMerger from "./intelligence/TestCaseIntelligenceMerger.js";
 import SemanticTestCaseOverlapResolver from "./resolvers/SemanticTestCaseOverlapResolver.js";
-import { applyTestCasePresentation } from "./intelligence/TestCaseIntent.js";
+import { presentTestCases } from "./intelligence/TestCaseIntent.js";
 import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerger.js";
 import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
 import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
@@ -1026,7 +1026,7 @@ class QACopilot {
                 requirement,
                 knowledge
             });
-            testCases = applyTestCasePresentation(qualityResult.testCases);
+            testCases = qualityResult.testCases;
             testCaseQualitySummary = mergedTestCases.summary;
             testCaseQualitySummary.overlapResolution =
                 this.semanticTestCaseOverlapResolver.lastSummary;
@@ -1034,6 +1034,14 @@ class QACopilot {
             testCaseQualitySummary.finalCount = testCases.length;
             console.log(`✓ ${testCases.length} testcases generated`);
         }
+
+        testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
+            defaultStatus:
+                existingTestCaseArtifact?.approvalStatus === "approved" ? "APPROVED" : "PENDING"
+        });
+        testCases = presentTestCases(testCases);
+        this.testCaseReviewValidator.validateBatch(testCases);
+        const testCaseSummary = this.buildTestCaseReviewSummary(testCases);
 
         /*
         =====================================================
@@ -1050,13 +1058,6 @@ class QACopilot {
         đã completed mới được phép tiếp tục Export.
         =====================================================
         */
-
-        testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
-            defaultStatus:
-                existingTestCaseArtifact?.approvalStatus === "approved" ? "APPROVED" : "PENDING"
-        });
-        this.testCaseReviewValidator.validateBatch(testCases);
-        const testCaseSummary = this.buildTestCaseReviewSummary(testCases);
 
         if (!testCaseReviewSessionId || !testCaseArtifactId) {
             const timestamp = this.fileNameGenerator.getTimestamp();
@@ -1362,13 +1363,14 @@ class QACopilot {
                 requirement: confirmedRequirement,
                 knowledge
             });
-            testCases = applyTestCasePresentation(qualityResult.testCases);
+            testCases = qualityResult.testCases;
             productionQualitySummary = qualityResult.summary;
         }
         testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
             defaultStatus:
                 existingTestCaseArtifact?.approvalStatus === "approved" ? "APPROVED" : "PENDING"
         });
+        testCases = presentTestCases(testCases);
         this.testCaseReviewValidator.validateBatch(testCases);
         const coverageSummary = this.coreTestCaseCoverageValidator.validate(knowledge, testCases);
 

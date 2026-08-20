@@ -4,7 +4,7 @@ import { normalizeTestData, resolveExecutionReadiness } from "../utils/TestDataR
 import PipelineStatuses from "../constants/PipelineStatuses.js";
 import ApplicationActions from "../constants/ApplicationActions.js";
 import TestCaseReviewValidator from "../validators/TestCaseReviewValidator.js";
-import { applyTestCasePresentation } from "../intelligence/TestCaseIntent.js";
+import { presentTestCases } from "../intelligence/TestCaseIntent.js";
 
 export default class QACopilotApplicationService {
     constructor({ qaCopilot } = {}) {
@@ -442,7 +442,7 @@ export default class QACopilotApplicationService {
         this.testCaseReviewValidator.validateBatch(updatedTestCases, {
             requireResolved: isFinalizedArtifact
         });
-        const presentedTestCases = applyTestCasePresentation(updatedTestCases);
+        const presentedTestCases = presentTestCases(updatedTestCases);
         const updatedArtifact = {
             ...current,
             testCases: presentedTestCases,

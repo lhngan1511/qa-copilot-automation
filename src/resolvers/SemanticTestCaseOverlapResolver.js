@@ -190,7 +190,7 @@ export default class SemanticTestCaseOverlapResolver {
 
     representativeScore(testCase) {
         let score = 0;
-        if (testCase.catalogKey) score += 80;
+        if (testCase.catalogKey) score += 200;
         if (testCase.executable === true) score += 100;
         if (testCase.needsClarification !== true) score += 40;
         if (testCase.requiresRuntimeSupport !== true) score += 30;

@@ -8,6 +8,7 @@ import {
     useUpdateTestCaseReview
 } from "../hooks/useTestCaseReview.js";
 import {
+    assignDisplayIds,
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
     filterTestCases,
@@ -163,15 +164,19 @@ export default function TestCaseReviewPanel({ workflow }) {
 
     const persistBatch = async (next, message) => {
         setNotice("");
+        const previous = draft;
+        const presented = assignDisplayIds(next);
+        setDraft(structuredClone(presented));
         try {
             const result = await update.mutateAsync({
                 artifactId: query.data.artifactId,
-                testCases: buildTestCaseBatchPayload(next)
+                testCases: buildTestCaseBatchPayload(presented)
             });
-            setDraft(structuredClone(result.testCases));
+            setDraft(assignDisplayIds(structuredClone(result.testCases)));
             setNotice(message);
             return true;
         } catch {
+            setDraft(previous);
             return false;
         }
     };

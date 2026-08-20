@@ -218,17 +218,17 @@ import {
 
 {
     const resolver = new SemanticTestCaseOverlapResolver();
-    const result = resolver.resolve([
+    const requiredKept = resolver.resolve([
         {
             id: "TC004",
             module: "Danh mục",
             function: "Thêm mới đơn vị tính",
             feature: "Thêm mới đơn vị tính",
-            title: "Hiển thị cảnh báo khi bỏ trống trường bắt buộc",
+            title: "Bỏ trống Tên đơn vị tính",
             type: "VALIDATION",
             operation: "CREATE",
             ruleClassification: "REQUIRED",
-            expectedResult: "Hệ thống cảnh báo và có thể tự sinh mã khi để trống",
+            expectedResult: "Hệ thống cảnh báo và không cho phép lưu",
             steps: [{ action: "Bỏ trống trường bắt buộc rồi lưu" }]
         },
         {
@@ -244,12 +244,42 @@ import {
             steps: [{ action: "Để trống mã rồi lưu" }]
         }
     ]);
-    assert.equal(result.length, 2, "empty-code catalog must not merge into required-empty warning");
+    assert.equal(requiredKept.length, 2, "required empty name must not merge into empty-code");
+
+    const autoCodeMerged = resolver.resolve([
+        {
+            id: "TC-WARN",
+            module: "Danh mục",
+            function: "Thêm mới đơn vị tính",
+            feature: "Thêm mới đơn vị tính",
+            title: "Hiển thị cảnh báo khi bỏ trống để hệ thống tự sinh",
+            type: "VALIDATION",
+            operation: "CREATE",
+            ruleClassification: "REQUIRED",
+            expectedResult: "Hệ thống tự sinh Mã đơn vị tính khi để trống",
+            steps: [{ action: "Để trống mã rồi lưu" }]
+        },
+        {
+            id: "TC-CATALOG-CODE",
+            module: "Danh mục",
+            function: "Thêm mới đơn vị tính",
+            feature: "Thêm mới đơn vị tính",
+            title: "Thêm đơn vị tính khi không nhập Mã đơn vị tính",
+            type: "POSITIVE",
+            catalogKey: "CREATE_AUTO_CODE",
+            operation: "CREATE",
+            expectedResult: "Hệ thống tự sinh Mã đơn vị tính",
+            steps: [{ action: "Để trống mã rồi lưu" }]
+        }
+    ]);
+    assert.equal(autoCodeMerged.length, 1, "auto-generate code wording must merge into CREATE_EMPTY_CODE");
+    assert.equal(classifyTestCaseIntent(autoCodeMerged[0]).intent, "CREATE_EMPTY_CODE");
 }
 
 {
     const mapperSource = fs.readFileSync("./src/web/mappers/PublicTestCaseReviewMapper.js", "utf8");
-    assert.match(mapperSource, /applyTestCasePresentation/);
+    assert.match(mapperSource, /presentTestCases/);
+    assert.match(mapperSource, /assignDisplayIds/);
     const mapped = new PublicTestCaseReviewMapper().map({
         review: {
             sessionId: "SESSION-1",
@@ -291,6 +321,55 @@ import {
         ["TC-SEARCH-HIT", "TC-CREATE-FULL"]
     );
     assert.equal(mapped.testCases[0].intent, "SEARCH_FOUND");
+}
+
+{
+    const mapped = new PublicTestCaseReviewMapper().map({
+        review: {
+            sessionId: "SESSION-2",
+            artifact: {
+                artifactId: "TESTCASE-2",
+                artifactType: "TEST_CASE_REVIEW",
+                testCases: [
+                    {
+                        id: "TC001",
+                        testcaseId: "TC001",
+                        title: "Business rule trùng mã",
+                        feature: "Thêm mới đơn vị tính",
+                        type: "BUSINESS_RULE",
+                        operation: "CREATE",
+                        expectedResult: "Không cho phép lưu",
+                        steps: [{ action: "Nhập mã đã tồn tại rồi lưu" }]
+                    },
+                    {
+                        id: "TC006",
+                        testcaseId: "TC006",
+                        title: "Tìm kiếm đơn vị tính có kết quả",
+                        feature: "Tìm kiếm đơn vị tính",
+                        type: "POSITIVE",
+                        catalogKey: "SEARCH_HIT",
+                        expectedResult: "Hiển thị kết quả phù hợp",
+                        steps: [{ action: "Thực hiện tìm kiếm" }]
+                    },
+                    {
+                        id: "TC007",
+                        testcaseId: "TC007",
+                        title: "Tìm kiếm đơn vị tính không có kết quả",
+                        feature: "Tìm kiếm đơn vị tính",
+                        type: "POSITIVE",
+                        catalogKey: "SEARCH_MISS",
+                        expectedResult: "Không hiển thị bản ghi",
+                        steps: [{ action: "Thực hiện tìm kiếm" }]
+                    }
+                ]
+            }
+        },
+        workflow: { status: "AWAITING_TEST_CASE_REVIEW", step: "TEST_CASE_REVIEW" }
+    });
+    assert.deepEqual(
+        mapped.testCases.map(item => `${item.displayId}|${item.id}`),
+        ["TC001|TC006", "TC002|TC007", "TC003|TC001"]
+    );
 }
 
 {
