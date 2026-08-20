@@ -101,6 +101,28 @@ export default class ProductionTestCaseQualityGate {
     evaluate(testCase, context) {
         const type = String(testCase.type ?? "").toUpperCase();
         const source = this.sourceText(testCase);
+        if (testCase.catalogKey) {
+            if (!Array.isArray(testCase.steps) || testCase.steps.length === 0) {
+                return this.reject(
+                    "MISSING_STEPS",
+                    "Testcase này chưa có đủ thông tin để thực hiện.",
+                    true
+                );
+            }
+            if (!this.hasMainAction(testCase)) {
+                return this.reject(
+                    "MISSING_MAIN_ACTION",
+                    "Testcase này chưa nêu rõ thao tác chính cần thực hiện."
+                );
+            }
+            if (!String(testCase.expectedResult ?? "").trim()) {
+                return this.reject(
+                    "EXPECTED_RESULT_MISMATCH",
+                    "Kết quả mong đợi chưa phù hợp với tình huống kiểm thử."
+                );
+            }
+            return { accepted: true };
+        }
         if (!this.isGrounded(testCase, context)) {
             return this.reject(
                 "UNSUPPORTED_BY_REQUIREMENT",
@@ -412,10 +434,12 @@ export default class ProductionTestCaseQualityGate {
             .map(([name, field]) => `${this.key(name)}:${this.key(field?.purpose)}`)
             .sort();
         const classification = this.key(testCase.ruleClassification);
+        const catalog = this.key(testCase.catalogKey);
         const behavior =
-            classification && classification !== "generic rule"
+            catalog ||
+            (classification && classification !== "generic rule"
                 ? `${classification}|${fields.join(",")}`
-                : this.key(this.sourceText(testCase));
+                : this.key(this.sourceText(testCase)));
         return [
             this.key(testCase.module),
             this.key(testCase.function ?? testCase.feature),

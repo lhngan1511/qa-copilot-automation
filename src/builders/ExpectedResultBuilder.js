@@ -81,6 +81,9 @@ export default class ExpectedResultBuilder {
                 state
             )}. Dữ liệu ${entity} vẫn được giữ nguyên.`;
         }
+        if (classification === "AUTO_GENERATED") {
+            return `Hệ thống tự sinh ${targetField || identifier?.name || "mã"} khi để trống và lưu ${entity} thành công.`;
+        }
         if (operation === "CREATE" && String(testCase.type).toUpperCase() === "POSITIVE") {
             return `Hệ thống lưu ${entity} mới thành công.${
                 identifier?.value

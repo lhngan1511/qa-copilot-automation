@@ -154,13 +154,16 @@ VAI TRÒ VÀ RANH GIỚI:
 - Ghi observations chỉ khi nhìn thấy bằng chứng trực tiếp trên ảnh.
 - Nội dung suy luận (quyền, quan hệ dữ liệu, business rule, validation, ngoại lệ) phải đưa vào inferences, kèm evidence, confidence 0..1 và needsConfirmation=true.
 - Không tự coi suy luận là sự thật. Không tạo testcase. Không tuyên bố đã xác nhận.
-- document chỉ chứa nội dung quan sát được trực tiếp từ ảnh. Suy luận chưa được xác nhận không được chèn vào businessRules, validations, permissions, relationships hoặc exceptions; dùng "Chưa xác định" khi ảnh không cung cấp đủ bằng chứng.
+- document ưu tiên bằng chứng nhìn thấy trên ảnh. Các tình huống catalog chuẩn dưới đây PHẢI được draft vào Feature tương ứng khi có bằng chứng UI, đồng thời ghi vào inferences với needsConfirmation=true. Không để "Chưa xác định" cho các mục này nếu đã thấy ô tìm kiếm, form thêm, trường Mã không bắt buộc hoặc nút sinh mã.
 - Một module có thể có nhiều feature. Dùng tiếng Việt, trừ Screen/Operation/Tags.
 - Không dùng thuật ngữ UI tiếng Anh "Modal"; dùng "hộp thoại".
 - Không tạo Feature chung chung tên "Quản lý ..." với Operation "CRUD".
 - Mỗi Feature phải có sourceImages chỉ rõ ảnh nguồn và chỉ mô tả hành vi nhìn thấy trong các ảnh đó.
 - document phải tuân thủ Requirement Markdown V1 giống mẫu canonical: mỗi Feature có đủ Mô tả, Điều kiện tiên quyết, Input, Luồng chính, Quy tắc nghiệp vụ, Validation, Kết quả mong đợi, Ngoại lệ và Automation.
-- Luồng chính phải mô tả hành động nghiệp vụ rõ ràng. Với Search phải có bước "Người dùng thực hiện tìm kiếm" (có thể kèm nhấn nút Tìm); không chỉ ghi một động từ hoặc tên nút mơ hồ.
+- Luồng chính phải mô tả hành động nghiệp vụ rõ ràng. Với Search phải có bước "Người dùng nhập từ khóa" và "Người dùng thực hiện tìm kiếm"; không chỉ ghi một động từ hoặc tên nút mơ hồ.
+- CATALOG BẮT BUỘC khi có bằng chứng UI:
+  + Ô tìm kiếm / nút Tìm / placeholder "tìm theo mã hoặc tên" → Feature Search phải có expectedResults "hiển thị các bản ghi khớp từ khóa" VÀ exceptions "không tìm thấy dữ liệu phù hợp".
+  + Form thêm có trường Mã không có dấu bắt buộc, mô tả "không bắt buộc", hoặc nút sinh mã → Feature Create phải có businessRules "Khi mã được để trống, hệ thống tự sinh mã" và expectedResults gồm cả "thêm thành công khi nhập đầy đủ thông tin" lẫn "thêm thành công khi để trống mã".
 - Không rút gọn nhiều bước quan sát được thành một câu chung. Kết quả mong đợi phải gắn trực tiếp với Feature tương ứng.
 ${analysisMode === "FEATURES" ? `- CÁC ẢNH MÔ TẢ NHIỀU CHỨC NĂNG: phân tích từng ảnh theo thứ tự và tách mỗi hành vi nghiệp vụ khác nhau thành Feature độc lập.
 - Ảnh danh sách/tìm kiếm, ảnh thêm mới, ảnh cập nhật và ảnh xác nhận xóa phải thành các Feature riêng với Operation lần lượt phù hợp như Search/View, Create, Update, Delete.

@@ -62,7 +62,10 @@ class ScenarioEnrichmentEngine {
             inputDefinitions: context.inputs,
             clarificationAnswers: context.clarificationAnswers
         });
-        const steps = this.stepBuilder.build({ context, testData: planningData });
+        const steps =
+            sourceScenario.catalogKey && Array.isArray(sourceScenario.steps) && sourceScenario.steps.length > 0
+                ? this.cloneValue(sourceScenario.steps)
+                : this.stepBuilder.build({ context, testData: planningData });
         const expectedResult = this.resolveExpectedResult(sourceScenario, context, steps);
         const expectedResults = this.normalizeExpectedResults(
             sourceScenario,
@@ -89,8 +92,10 @@ class ScenarioEnrichmentEngine {
                 ? sourceScenario.sourceReferences
                 : []
         ).some(reference => reference?.sourceType === "CLARIFICATION");
+        const keepCatalogTitle = Boolean(sourceScenario?.catalogKey);
 
-        const title = isConfirmedScenario
+        const title =
+            isConfirmedScenario || keepCatalogTitle
             ? String(
                   sourceScenario?.title ??
                       sourceScenario?.testScenario ??

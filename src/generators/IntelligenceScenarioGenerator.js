@@ -146,6 +146,8 @@ class IntelligenceScenarioGenerator {
                 : item.steps;
 
         scenario.operation = item.operation ?? item.automation?.operation ?? "";
+        scenario.catalogKey = item.catalogKey ?? "";
+        scenario.ruleClassification = item.ruleClassification ?? "";
 
         if (Object.prototype.hasOwnProperty.call(item, "testData")) {
             scenario.testData = item.testData;

@@ -1509,6 +1509,7 @@ class QACopilot {
             return true;
         }
         if (type === "POSITIVE") return true;
+        if (scenario?.catalogKey) return true;
         if (type === "CONFIRMED_FACT") return true;
         if (
             type === "BUSINESS_RULE" &&

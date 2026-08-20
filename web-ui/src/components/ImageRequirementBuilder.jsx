@@ -95,7 +95,7 @@ export default function ImageRequirementBuilder() {
                     <svg viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.8-9.94A6.5 6.5 0 0 1 18.7 10.5 3.75 3.75 0 0 1 18.25 18H14" /><path d="M12 20V10m0 0-3 3m3-3 3 3" /></svg>
                 </span>
                 <strong>Kéo ảnh giao diện vào đây</strong>
-                <span>PNG, JPEG hoặc WebP · tối đa 5 ảnh · 8 MB mỗi ảnh</span>
+                <span>PNG, JPEG hoặc WebP · tối đa 5 ảnh · 8 MB mỗi ảnh. Nên gồm ảnh danh sách/tìm kiếm và ảnh form thêm/sửa.</span>
                 <span className="image-requirement__picker-button">Chọn ảnh từ máy</span>
             </label>
             {previews.length > 0 && <div className="image-requirement__previews">{previews.map(({ file, url }, index) => <figure key={`${file.name}-${file.lastModified}`}><img src={url} alt={`Ảnh nguồn ${index + 1}`} /><figcaption>{index + 1}. {file.name}</figcaption></figure>)}</div>}

@@ -173,18 +173,72 @@ export default class RequirementKnowledgeMapper {
             if (!answer) continue;
             const sourceId = String(question.questionId ?? question.id ?? "").trim();
             const category = this.mapClarificationCategory(question.category ?? question.type);
+            const fact = this.composeClarificationFact(question);
+            if (!fact) continue;
             const field = category.field;
             if (field) {
-                knowledge[field] = this.mergeStringFact(knowledge[field], answer);
+                knowledge[field] = this.mergeStringFact(knowledge[field], fact);
                 sources[field] = sources[field] ?? {};
-                this.addSourceReference(sources[field], answer, sourceId);
+                this.addSourceReference(sources[field], fact, sourceId);
             } else {
-                knowledge.confirmedFacts = this.mergeStringFact(knowledge.confirmedFacts, answer);
+                knowledge.confirmedFacts = this.mergeStringFact(knowledge.confirmedFacts, fact);
                 sources.confirmedFacts = sources.confirmedFacts ?? {};
-                this.addSourceReference(sources.confirmedFacts, answer, sourceId);
+                this.addSourceReference(sources.confirmedFacts, fact, sourceId);
             }
         }
         knowledge.knowledgeSources = sources;
+    }
+
+    composeClarificationFact(question) {
+        const answer = String(question?.answer ?? "").trim();
+        const asked = String(question?.question ?? question?.content ?? "").trim();
+        if (!answer) return "";
+        const yes = this.isYes(answer);
+        const no = this.isNo(answer);
+        if (!yes && !no) {
+            if (/vai trò|role|nhóm người dùng|quyền/.test(this.normalizeFactKey(asked))) {
+                return `Chỉ ${answer} được quyền thực hiện thêm, sửa, xóa`;
+            }
+            return answer;
+        }
+        if (!asked) return "";
+        const field = String(question?.targetField ?? "").trim();
+        const askedKey = this.normalizeFactKey(asked);
+        if (/duy nhất/.test(askedKey)) {
+            const subject = field || this.subjectBefore(asked, /có bắt buộc phải duy nhất|có phải là duy nhất|phải duy nhất|có duy nhất/i);
+            return yes
+                ? `${subject || "Giá trị"} phải là duy nhất trong hệ thống`
+                : `${subject || "Giá trị"} không bắt buộc phải duy nhất`;
+        }
+        if (/xóa|xoá/.test(askedKey) && /đang được sử dụng|đang sử dụng/.test(askedKey)) {
+            return yes
+                ? "Được phép xóa bản ghi đang được sử dụng"
+                : "Không được phép xóa bản ghi đang được sử dụng";
+        }
+        if (/trùng/.test(askedKey) && /tên/.test(askedKey)) {
+            return yes ? "Tên được phép trùng lặp" : "Tên không được phép trùng lặp";
+        }
+        if (/bắt buộc/.test(askedKey)) {
+            const subject = field || this.subjectBefore(asked, /có bắt buộc/i);
+            return yes ? `${subject || "Trường"} là bắt buộc` : `${subject || "Trường"} không bắt buộc`;
+        }
+        return "";
+    }
+
+    isYes(value) {
+        return /^(có|yes|true|đúng)$/i.test(String(value ?? "").trim());
+    }
+
+    isNo(value) {
+        return /^(không|no|false|sai)$/i.test(String(value ?? "").trim());
+    }
+
+    subjectBefore(question, marker) {
+        const text = String(question ?? "");
+        const match = text.match(new RegExp(`^(.+?)\\s+${marker.source}`, marker.flags));
+        return String(match?.[1] ?? "")
+            .replace(/^(nếu|khi|liệu)\s+/i, "")
+            .trim();
     }
 
     mapClarificationCategory(value) {

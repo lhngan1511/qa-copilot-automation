@@ -1,8 +1,10 @@
 import RecommendedScenario from "../models/RecommendedScenario.js";
+import CoreCatalogScenarioBuilder from "./CoreCatalogScenarioBuilder.js";
 
 class ScenarioRecommendationEngine {
-    constructor() {
+    constructor({ catalogBuilder = new CoreCatalogScenarioBuilder() } = {}) {
         this.counter = 1;
+        this.catalogBuilder = catalogBuilder;
     }
 
     /*
@@ -28,6 +30,7 @@ class ScenarioRecommendationEngine {
             this.generateFromStructuredFunctions(knowledge, scenarios, requirement);
             this.generateOwnedSuggestions(knowledge, scenarios, requirement);
             this.mergeConfirmedFacts(knowledge, scenarios, requirement);
+            this.catalogBuilder.apply(scenarios, knowledge, requirement);
             return this.removeDuplicateScenarios(scenarios);
         }
 
@@ -68,6 +71,7 @@ class ScenarioRecommendationEngine {
         );
 
         this.mergeConfirmedFacts(knowledge, scenarios, requirement);
+        this.catalogBuilder.apply(scenarios, knowledge, requirement);
         return this.removeDuplicateScenarios(scenarios);
     }
 

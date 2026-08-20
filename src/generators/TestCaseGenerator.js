@@ -105,6 +105,8 @@ class TestCaseGenerator {
                     : [];
 
                 testCase.ruleClassification = scenario.ruleClassification ?? "";
+                testCase.catalogKey = scenario.catalogKey ?? "";
+                testCase.operation = scenario.operation ?? testCase.operation ?? "";
 
                 testCase.needsClarification = scenario.needsClarification ?? false;
 
