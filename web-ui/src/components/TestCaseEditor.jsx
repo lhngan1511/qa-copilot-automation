@@ -23,6 +23,18 @@ function DetailList({ title, values }) {
     );
 }
 
+const TESTCASE_TYPE_OPTIONS = [
+    ["POSITIVE", "Tích cực"],
+    ["NEGATIVE", "Tiêu cực"],
+    ["VALIDATION", "Xác thực dữ liệu"],
+    ["BUSINESS_RULE", "Quy tắc nghiệp vụ"]
+];
+
+function testcaseTypeLabel(value) {
+    const type = String(value ?? "").trim().toUpperCase();
+    return TESTCASE_TYPE_OPTIONS.find(([key]) => key === type)?.[1] ?? text(value);
+}
+
 function StringListEditor({ title, values = [], itemLabel, onChange }) {
     return (
         <fieldset className="testcase-list-editor">
@@ -201,14 +213,6 @@ export default function TestCaseEditor({
 
             {editing ? (
                 <div className="testcase-detail-form">
-                    <label>
-                        Tình huống kiểm tra
-                        <textarea
-                            rows="3"
-                            value={value.scenario ?? ""}
-                            onChange={event => set("scenario", event.target.value)}
-                        />
-                    </label>
                     <div className="testcase-detail-form__grid">
                         <label>
                             Phân hệ
@@ -226,12 +230,27 @@ export default function TestCaseEditor({
                         </label>
                         <label>
                             Loại testcase
-                            <input
+                            <select
                                 value={value.type ?? ""}
                                 onChange={event => set("type", event.target.value)}
-                            />
+                            >
+                                {!TESTCASE_TYPE_OPTIONS.some(([key]) => key === String(value.type ?? "").trim().toUpperCase()) && value.type ? (
+                                    <option value={value.type}>{testcaseTypeLabel(value.type)}</option>
+                                ) : null}
+                                {TESTCASE_TYPE_OPTIONS.map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
                         </label>
                     </div>
+                    <label>
+                        Tình huống kiểm tra
+                        <textarea
+                            rows="3"
+                            value={value.scenario ?? ""}
+                            onChange={event => set("scenario", event.target.value)}
+                        />
+                    </label>
                     <StringListEditor
                         title="Điều kiện tiên quyết"
                         itemLabel="Điều kiện"
@@ -322,10 +341,6 @@ export default function TestCaseEditor({
             ) : (
                 <div className="testcase-detail-content">
                     <section className="testcase-detail-section">
-                        <h4>Tình huống kiểm tra</h4>
-                        <p>{text(value.scenario ?? value.title)}</p>
-                    </section>
-                    <section className="testcase-detail-section">
                         <h4>Thông tin chung</h4>
                         <dl>
                             <div>
@@ -340,9 +355,13 @@ export default function TestCaseEditor({
                             </div>
                             <div>
                                 <dt>Loại testcase</dt>
-                                <dd>{text(value.type)}</dd>
+                                <dd>{testcaseTypeLabel(value.type)}</dd>
                             </div>
                         </dl>
+                    </section>
+                    <section className="testcase-detail-section">
+                        <h4>Tình huống kiểm tra</h4>
+                        <p>{text(value.scenario ?? value.title)}</p>
                     </section>
                     <DetailList title="Điều kiện tiên quyết" values={value.preconditions} />
                     <DetailList
