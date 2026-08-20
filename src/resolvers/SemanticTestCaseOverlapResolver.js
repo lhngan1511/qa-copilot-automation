@@ -1,3 +1,5 @@
+import { intentDedupeKey } from "../intelligence/TestCaseIntent.js";
+
 export default class SemanticTestCaseOverlapResolver {
     constructor() {
         this.lastSummary = this.emptySummary();
@@ -56,6 +58,11 @@ export default class SemanticTestCaseOverlapResolver {
 
     buildSignature(testCase, context = {}) {
         if (!testCase || typeof testCase !== "object" || Array.isArray(testCase)) return "";
+
+        const intentKey = intentDedupeKey(testCase);
+        if (intentKey) {
+            return this.stableSerialize({ kind: "intent", key: intentKey });
+        }
 
         const classification = this.normalize(testCase.ruleClassification);
         if (!classification || classification === "positive") return "";
@@ -183,6 +190,7 @@ export default class SemanticTestCaseOverlapResolver {
 
     representativeScore(testCase) {
         let score = 0;
+        if (testCase.catalogKey) score += 80;
         if (testCase.executable === true) score += 100;
         if (testCase.needsClarification !== true) score += 40;
         if (testCase.requiresRuntimeSupport !== true) score += 30;

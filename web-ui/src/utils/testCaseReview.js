@@ -5,6 +5,10 @@ export function testCaseId(testCase) {
     return String(testCase?.testcaseId ?? testCase?.testCaseId ?? testCase?.id ?? "").trim();
 }
 
+export function testCaseDisplayId(testCase) {
+    return String(testCase?.displayId ?? "").trim() || testCaseId(testCase);
+}
+
 export function parseTestCaseReview(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         throw new Error("Phản hồi TestCase Review không hợp lệ.");
@@ -32,6 +36,9 @@ export function parseTestCaseReview(value) {
             ...structuredClone(testCase),
             id,
             testcaseId: testCase.testcaseId ?? id,
+            displayId: testCase.displayId ?? id,
+            intent: testCase.intent ?? "",
+            intentGroup: testCase.intentGroup ?? "",
             scenario:
                 testCase.scenario ??
                 testCase.testScenario ??
@@ -122,6 +129,7 @@ export function filterTestCases(testCases, { search = "", type = "ALL" } = {}) {
         if (!query) return true;
         return [
             testCaseId(testCase),
+            testCase.displayId,
             testCase.scenario,
             testCase.title,
             testCase.module,

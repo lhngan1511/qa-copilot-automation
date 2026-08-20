@@ -1,4 +1,4 @@
-import { formatTestData, testCaseId } from "../utils/testCaseReview.js";
+import { formatTestData, testCaseDisplayId, testCaseId } from "../utils/testCaseReview.js";
 
 const statusLabels = {
     PENDING: "Chờ duyệt",
@@ -51,6 +51,7 @@ export default function TestCaseList({
                 <tbody>
                     {testCases.map(testCase => {
                         const id = testCaseId(testCase);
+                        const displayId = testCaseDisplayId(testCase);
                         const active = id === selectedId;
                         return (
                             <tr
@@ -72,7 +73,7 @@ export default function TestCaseList({
                                 <td data-label="Chọn" className="testcase-review-table__checkbox">
                                     <input
                                         type="checkbox"
-                                        aria-label={`Chọn test case ${id}`}
+                                        aria-label={`Chọn test case ${displayId}`}
                                         checked={selectedIds.has(id)}
                                         disabled={reviewDisabled}
                                         onClick={event => event.stopPropagation()}
@@ -88,7 +89,7 @@ export default function TestCaseList({
                                             onSelect(id);
                                         }}
                                     >
-                                        {id}
+                                        {displayId}
                                     </button>
                                 </td>
                                 <td data-label="Tình huống kiểm tra">

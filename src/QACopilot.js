@@ -19,6 +19,7 @@ import AITestCaseIntelligenceEngine from "./engines/AITestCaseIntelligenceEngine
 import TestCaseQualityPolicy from "./intelligence/TestCaseQualityPolicy.js";
 import TestCaseIntelligenceMerger from "./intelligence/TestCaseIntelligenceMerger.js";
 import SemanticTestCaseOverlapResolver from "./resolvers/SemanticTestCaseOverlapResolver.js";
+import { applyTestCasePresentation } from "./intelligence/TestCaseIntent.js";
 import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerger.js";
 import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
 import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
@@ -1025,7 +1026,7 @@ class QACopilot {
                 requirement,
                 knowledge
             });
-            testCases = qualityResult.testCases;
+            testCases = applyTestCasePresentation(qualityResult.testCases);
             testCaseQualitySummary = mergedTestCases.summary;
             testCaseQualitySummary.overlapResolution =
                 this.semanticTestCaseOverlapResolver.lastSummary;
@@ -1361,7 +1362,7 @@ class QACopilot {
                 requirement: confirmedRequirement,
                 knowledge
             });
-            testCases = qualityResult.testCases;
+            testCases = applyTestCasePresentation(qualityResult.testCases);
             productionQualitySummary = qualityResult.summary;
         }
         testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {

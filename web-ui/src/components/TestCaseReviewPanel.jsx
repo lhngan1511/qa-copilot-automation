@@ -13,6 +13,7 @@ import {
     filterTestCases,
     reviewCompletionMessage,
     summarizeReview,
+    testCaseDisplayId,
     testCaseId,
     testCaseType
 } from "../utils/testCaseReview.js";
@@ -246,7 +247,7 @@ export default function TestCaseReviewPanel({ workflow }) {
             window.alert("Phiên review phải còn ít nhất một testcase.");
             return;
         }
-        if (!window.confirm(`Xóa testcase ${testCaseId(selected)} khỏi phiên review?`)) return;
+        if (!window.confirm(`Xóa testcase ${testCaseDisplayId(selected)} khỏi phiên review?`)) return;
         const next = draft.filter(testCase => testCaseId(testCase) !== selectedId);
         if (await persistBatch(next, "Đã xóa testcase khỏi phiên review.")) {
             setSelectedId("");

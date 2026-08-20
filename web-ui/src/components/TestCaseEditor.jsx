@@ -1,6 +1,7 @@
 import {
     formatTestData,
     normalizeSteps,
+    testCaseDisplayId,
     testCaseWarnings
 } from "../utils/testCaseReview.js";
 
@@ -149,11 +150,11 @@ export default function TestCaseEditor({
     const set = (field, next) => onDraftChange({ ...value, [field]: next });
 
     return (
-        <aside className="testcase-detail-panel" aria-label={`Chi tiết test case ${testCase.id}`}>
+        <aside className="testcase-detail-panel" aria-label={`Chi tiết test case ${testCaseDisplayId(testCase)}`}>
             <header className="testcase-detail-panel__header">
                 <div>
                     <span>Testcase ID</span>
-                    <strong>{testCase.id}</strong>
+                    <strong>{testCaseDisplayId(testCase)}</strong>
                 </div>
                 <div className="testcase-detail-panel__header-actions">
                     {!editing && (

@@ -4,6 +4,10 @@ import MarkdownParser from "../src/parsers/MarkdownParser.js";
 import RequirementKnowledgeMapper from "../src/mappers/RequirementKnowledgeMapper.js";
 import QACopilot from "../src/QACopilot.js";
 import CoreCatalogScenarioBuilder from "../src/recommenders/CoreCatalogScenarioBuilder.js";
+import {
+    applyTestCasePresentation,
+    classifyTestCaseIntent
+} from "../src/intelligence/TestCaseIntent.js";
 
 const markdown = fs.readFileSync(
     "./data/uploads/danh-muc-don-vi-tinh-1785218218763-bf406277.md",
@@ -63,6 +67,14 @@ const overlap = app.semanticTestCaseOverlapResolver.resolve(generated, {
 const { testCases } = app.productionTestCaseQualityGate.apply(overlap, { requirement, knowledge });
 
 const titles = testCases.map(item => item.title).join("\n");
+const searchFound = testCases.filter(
+    item => classifyTestCaseIntent(item).intent === "SEARCH_FOUND"
+);
+assert.equal(
+    searchFound.length,
+    1,
+    `Search happy path phải gộp còn 1 case, hiện có ${searchFound.length}:\n${titles}`
+);
 assert.ok(
     testCases.some(item => /tìm kiếm/i.test(item.title) && /có kết quả/i.test(item.title)),
     `thiếu tìm kiếm có kết quả:\n${titles}`
@@ -82,6 +94,50 @@ assert.ok(
             /không nhập mã|để trống.*mã|tự sinh/i.test(item.title)
     ),
     `thiếu thêm không nhập mã:\n${titles}`
+);
+
+const presented = applyTestCasePresentation(testCases);
+assert.deepEqual(
+    presented.map((item, index) => item.displayId),
+    presented.map((_, index) => `TC${String(index + 1).padStart(3, "0")}`)
+);
+const searchIntents = presented
+    .filter(item => item.intentGroup === "SEARCH")
+    .map(item => item.intent);
+assert.ok(searchIntents.includes("SEARCH_FOUND"));
+assert.ok(searchIntents.includes("SEARCH_NOT_FOUND"));
+assert.ok(
+    searchIntents.indexOf("SEARCH_FOUND") < searchIntents.indexOf("SEARCH_NOT_FOUND"),
+    "Search found phải đứng trước Search not found"
+);
+const createIntents = presented
+    .filter(item => item.intentGroup === "CREATE")
+    .map(item => item.intent);
+assert.ok(createIntents.includes("CREATE_FULL_DATA"));
+assert.ok(createIntents.includes("CREATE_EMPTY_CODE"));
+assert.ok(
+    createIntents.indexOf("CREATE_FULL_DATA") < createIntents.indexOf("CREATE_EMPTY_CODE"),
+    "Create full data phải đứng trước Create empty code"
+);
+assert.ok(
+    presented.findIndex(item => item.intentGroup === "SEARCH") <
+        presented.findIndex(item => item.intentGroup === "CREATE"),
+    "Nhóm Search phải đứng trước nhóm Create"
+);
+const middle = presented[Math.floor(presented.length / 2)];
+const remainingIds = presented.filter(item => item.id !== middle.id).map(item => item.id);
+const afterDelete = applyTestCasePresentation(presented.filter(item => item.id !== middle.id));
+assert.deepEqual(
+    afterDelete.map(item => item.displayId),
+    afterDelete.map((_, index) => `TC${String(index + 1).padStart(3, "0")}`)
+);
+assert.deepEqual(
+    afterDelete.map(item => item.id),
+    remainingIds
+);
+assert.equal(
+    afterDelete.some(item => item.id === middle.id),
+    false
 );
 
 const prompt = fs.readFileSync("./src/providers/GeminiProvider.js", "utf8");

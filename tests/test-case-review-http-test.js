@@ -130,8 +130,10 @@ try {
     );
     assert.equal(added.status, 200);
     assert.equal(added.body.data.testCases.length, generatedCases.length + 1);
-    assert.equal(added.body.data.testCases.at(-1).reviewStatus, "PENDING");
-    assert.equal(added.body.data.testCases.at(-1).source, "MANUAL_TESTER");
+    const addedManual = added.body.data.testCases.find(testCase => testCase.id === "TC900");
+    assert.ok(addedManual, "testcase thêm thủ công phải được giữ theo ID ổn định");
+    assert.equal(addedManual.reviewStatus, "PENDING");
+    assert.equal(addedManual.source, "MANUAL_TESTER");
 
     const deletedAgain = await request(
         baseUrl,

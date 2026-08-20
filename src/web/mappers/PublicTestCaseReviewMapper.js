@@ -1,6 +1,7 @@
 import PublicTestCaseReviewDto from "../dtos/PublicTestCaseReviewDto.js";
 import TestStepNormalizer from "../../normalizers/TestStepNormalizer.js";
 import TestDataFactory from "../../factories/TestDataFactory.js";
+import { applyTestCasePresentation } from "../../intelligence/TestCaseIntent.js";
 
 const TEXT_FIELDS = [
     "id",
@@ -24,7 +25,12 @@ const TEXT_FIELDS = [
     "source",
     "automationNotes",
     "executionReadiness",
-    "reviewStatus"
+    "reviewStatus",
+    "displayId",
+    "intent",
+    "intentGroup",
+    "catalogKey",
+    "operation"
 ];
 
 const ARRAY_FIELDS = [
@@ -56,9 +62,10 @@ export default class PublicTestCaseReviewMapper {
             );
         }
 
-        const testCases = Array.isArray(artifact.testCases)
-            ? artifact.testCases.map((testCase, index) => this.mapTestCase(testCase, index))
-            : [];
+        const presented = applyTestCasePresentation(
+            Array.isArray(artifact.testCases) ? artifact.testCases : []
+        );
+        const testCases = presented.map((testCase, index) => this.mapTestCase(testCase, index));
 
         return new PublicTestCaseReviewDto({
             workflowId: review.sessionId ?? workflow?.id ?? "",
