@@ -9,10 +9,63 @@ export function testCaseDisplayId(testCase) {
     return String(testCase?.displayId ?? "").trim() || testCaseId(testCase);
 }
 
+export function formatTestCaseCode(number) {
+    const value = Number(number);
+    const index = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
+    return `TC${String(index).padStart(3, "0")}`;
+}
+
+export function nextDisplayCode(testCases = []) {
+    return formatTestCaseCode((Array.isArray(testCases) ? testCases.length : 0) + 1);
+}
+
+export function nextStableTestCaseId(testCases = []) {
+    const ids = (Array.isArray(testCases) ? testCases : []).map(testCase => testCaseId(testCase));
+    const used = new Set(ids);
+    const maxNumber = ids.reduce((max, id) => {
+        const match = String(id).match(/^TC(\d+)$/i);
+        return match ? Math.max(max, Number(match[1])) : max;
+    }, 0);
+    let next = maxNumber + 1;
+    let candidate = formatTestCaseCode(next);
+    while (used.has(candidate)) {
+        next += 1;
+        candidate = formatTestCaseCode(next);
+    }
+    return candidate;
+}
+
+export function createBlankManualTestCase(testCases = []) {
+    const id = nextStableTestCaseId(testCases);
+    return {
+        id,
+        testcaseId: id,
+        displayId: nextDisplayCode(testCases),
+        title: "",
+        scenario: "",
+        testScenario: "",
+        module: "",
+        feature: "",
+        type: "POSITIVE",
+        preconditions: [],
+        testData: {
+            fields: {},
+            requirement: "",
+            value: "",
+            requiresTesterInput: false
+        },
+        steps: [{ order: 1, action: "", expected: "" }],
+        expectedResult: "",
+        reviewStatus: "PENDING",
+        source: "MANUAL_TESTER",
+        automationCandidate: false
+    };
+}
+
 export function assignDisplayIds(testCases = []) {
     return (Array.isArray(testCases) ? testCases : []).map((testCase, index) => ({
         ...testCase,
-        displayId: `TC${String(index + 1).padStart(3, "0")}`
+        displayId: formatTestCaseCode(index + 1)
     }));
 }
 
@@ -43,7 +96,7 @@ export function parseTestCaseReview(value) {
             ...structuredClone(testCase),
             id,
             testcaseId: testCase.testcaseId ?? id,
-            displayId: `TC${String(index + 1).padStart(3, "0")}`,
+            displayId: formatTestCaseCode(index + 1),
             intent: testCase.intent ?? "",
             intentGroup: testCase.intentGroup ?? "",
             scenario:

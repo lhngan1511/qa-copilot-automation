@@ -138,7 +138,10 @@ export default function TestCaseEditor({
         return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
     }
 
-    const value = editing ? editDraft : testCase;
+    const value = editing ? editDraft ?? testCase : testCase;
+    if (!value) {
+        return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
+    }
     const warnings = testCaseWarnings(value);
     const invalid =
         !String(value.scenario ?? value.title ?? "").trim() ||
@@ -203,11 +206,11 @@ export default function TestCaseEditor({
             {editing ? (
                 <div className="testcase-detail-form">
                     <label>
-                        Tình huống kiểm tra
-                        <textarea
-                            rows="3"
-                            value={value.scenario ?? ""}
-                            onChange={event => set("scenario", event.target.value)}
+                        Mã testcase
+                        <input
+                            value={testCaseDisplayId(value)}
+                            readOnly
+                            aria-readonly="true"
                         />
                     </label>
                     <div className="testcase-detail-form__grid">
@@ -233,6 +236,14 @@ export default function TestCaseEditor({
                             />
                         </label>
                     </div>
+                    <label>
+                        Tình huống kiểm tra
+                        <textarea
+                            rows="3"
+                            value={value.scenario ?? ""}
+                            onChange={event => set("scenario", event.target.value)}
+                        />
+                    </label>
                     <StringListEditor
                         title="Điều kiện tiên quyết"
                         itemLabel="Điều kiện"

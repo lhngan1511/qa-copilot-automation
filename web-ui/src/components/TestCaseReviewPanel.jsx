@@ -11,6 +11,7 @@ import {
     assignDisplayIds,
     buildTestCaseBatchPayload,
     canApproveTestCaseBatch,
+    createBlankManualTestCase,
     filterTestCases,
     reviewCompletionMessage,
     summarizeReview,
@@ -36,40 +37,6 @@ const exportLabels = {
     json: "Tải JSON mới",
     markdown: "Tải Markdown mới"
 };
-
-function nextManualTestCase(testCases) {
-    const nextNumber =
-        Math.max(
-            0,
-            ...testCases.map(testCase => {
-                const match = testCaseId(testCase).match(/^TC(\d+)$/i);
-                return match ? Number(match[1]) : 0;
-            })
-        ) + 1;
-    const id = `TC${String(nextNumber).padStart(3, "0")}`;
-    return {
-        id,
-        testcaseId: id,
-        title: "",
-        scenario: "",
-        testScenario: "",
-        module: "",
-        feature: "",
-        type: "POSITIVE",
-        preconditions: [],
-        testData: {
-            fields: {},
-            requirement: "",
-            value: "",
-            requiresTesterInput: false
-        },
-        steps: [{ order: 1, action: "", expected: "" }],
-        expectedResult: "",
-        reviewStatus: "PENDING",
-        source: "MANUAL_TESTER",
-        automationCandidate: false
-    };
-}
 
 function SummaryCard({ label, value, tone }) {
     return (
@@ -201,6 +168,13 @@ export default function TestCaseReviewPanel({ workflow }) {
         if (await persistBatch(next, labels[reviewStatus])) setSelectedIds(new Set());
     };
 
+    const resetEditor = () => {
+        setSelectedId("");
+        setEditing(false);
+        setEditDraft(null);
+        setCreating(false);
+    };
+
     const saveEdit = async () => {
         if (!editDraft || (!selected && !creating)) return;
         const next = creating
@@ -208,15 +182,20 @@ export default function TestCaseReviewPanel({ workflow }) {
                   ...draft,
                   {
                       ...editDraft,
+                      id: testCaseId(editDraft),
+                      testcaseId: testCaseId(editDraft),
                       title: editDraft.title || editDraft.scenario,
                       testScenario: editDraft.testScenario || editDraft.scenario,
-                      reviewStatus: "PENDING"
+                      reviewStatus: "PENDING",
+                      source: "MANUAL_TESTER"
                   }
               ]
             : draft.map(testCase =>
                   testCaseId(testCase) === selectedId
                       ? {
                             ...editDraft,
+                            id: testCaseId(selected),
+                            testcaseId: testCaseId(selected),
                             reviewStatus: isCompleted ? selected.reviewStatus : "PENDING"
                         }
                       : testCase
@@ -231,19 +210,16 @@ export default function TestCaseReviewPanel({ workflow }) {
                       : "Đã lưu chỉnh sửa test case."
             )
         ) {
-            setSelectedId("");
-            setEditing(false);
-            setEditDraft(null);
-            setCreating(false);
+            resetEditor();
         }
     };
 
     const startCreate = () => {
-        const testCase = nextManualTestCase(draft);
+        const testCase = createBlankManualTestCase(draft);
         setSelectedId("");
-        setEditDraft(testCase);
         setCreating(true);
         setEditing(true);
+        setEditDraft(testCase);
     };
 
     const deleteSelected = async () => {
@@ -255,9 +231,7 @@ export default function TestCaseReviewPanel({ workflow }) {
         if (!window.confirm(`Xóa testcase ${testCaseDisplayId(selected)} khỏi phiên review?`)) return;
         const next = draft.filter(testCase => testCaseId(testCase) !== selectedId);
         if (await persistBatch(next, "Đã xóa testcase khỏi phiên review.")) {
-            setSelectedId("");
-            setEditing(false);
-            setEditDraft(null);
+            resetEditor();
         }
     };
 
@@ -421,6 +395,8 @@ export default function TestCaseReviewPanel({ workflow }) {
                             onSelect={id => {
                                 setSelectedId(id);
                                 setEditing(false);
+                                setCreating(false);
+                                setEditDraft(null);
                             }}
                             onToggle={id =>
                                 setSelectedIds(current => {
@@ -476,22 +452,16 @@ export default function TestCaseReviewPanel({ workflow }) {
                             editDraft={editDraft}
                             disabled={!canEdit || pending}
                             saving={update.isPending}
-                            onClose={() => {
-                                setSelectedId("");
-                                setEditing(false);
-                                setEditDraft(null);
-                                setCreating(false);
-                            }}
+                            onClose={resetEditor}
                             onEdit={() => {
+                                if (!selected) return;
+                                setCreating(false);
                                 setEditDraft(structuredClone(selected));
                                 setEditing(true);
                             }}
                             onCancel={() => {
                                 if (update.isPending) return;
-                                setSelectedId("");
-                                setEditing(false);
-                                setEditDraft(null);
-                                setCreating(false);
+                                resetEditor();
                             }}
                             onDraftChange={setEditDraft}
                             onSave={saveEdit}

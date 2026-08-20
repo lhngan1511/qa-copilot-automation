@@ -377,6 +377,7 @@ import {
     assert.match(listSource, /testCaseDisplayId/);
     const editorSource = fs.readFileSync("./web-ui/src/components/TestCaseEditor.jsx", "utf8");
     assert.match(editorSource, /testCaseDisplayId/);
+    assert.match(editorSource, /Mã testcase/);
 }
 
 console.log("TestCase intent presentation test: PASS");
