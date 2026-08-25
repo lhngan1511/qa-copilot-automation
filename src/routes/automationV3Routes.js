@@ -45,6 +45,8 @@ function handle(service, fn) {
 export default function createAutomationV3Routes({ applicationService = null } = {}) {
     const router = Router();
 
+    router.get("/runner-agents", handle(applicationService, (svc, req) => svc.listRunnerAgents(req.user?.userId ?? null)));
+
     // ---------- A. Workspace ----------
     router.post("/workspaces", handle(applicationService, (svc, req) =>
         svc.createWorkspace({
@@ -270,7 +272,17 @@ export default function createAutomationV3Routes({ applicationService = null } =
         svc.bindBlock({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
-            blockId: req.body?.blockId
+            blockId: req.body?.blockId,
+            role: req.body?.role
+        })));
+
+    router.patch("/workspaces/:workspaceId/testcases/:testCaseId/binding/blocks/:blockId/role", handle(applicationService, (svc, req) =>
+        svc.updateBindingRole({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            blockId: req.params.blockId,
+            order: req.body?.order,
+            role: req.body?.role
         })));
 
     router.delete("/workspaces/:workspaceId/testcases/:testCaseId/binding/blocks/:blockId", handle(applicationService, (svc, req) =>
@@ -303,7 +315,8 @@ export default function createAutomationV3Routes({ applicationService = null } =
         svc.bindLibraryBlock({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
-            blockId: req.body?.blockId
+            blockId: req.body?.blockId,
+            role: req.body?.role
         })));
 
     // ---------- C. Assertions (5B + 5C) ----------
@@ -369,7 +382,10 @@ export default function createAutomationV3Routes({ applicationService = null } =
         svc.runTestcase({
             workspaceId: req.params.workspaceId,
             testCaseId: req.params.testCaseId,
-            env: req.body?.env ?? {}
+            env: req.body?.env ?? {},
+            agentId: req.body?.agentId ?? null,
+            runOptions: req.body?.runOptions ?? {},
+            userId: req.user?.userId ?? null
         })));
 
     return router;

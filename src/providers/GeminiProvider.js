@@ -153,6 +153,7 @@ class GeminiProvider extends AIProvider {
 VAI TRÒ VÀ RANH GIỚI:
 - Ghi observations chỉ khi nhìn thấy bằng chứng trực tiếp trên ảnh.
 - Nội dung suy luận (quyền, quan hệ dữ liệu, business rule, validation, ngoại lệ) phải đưa vào inferences, kèm evidence, confidence 0..1 và needsConfirmation=true.
+- Trường preconditions chỉ được ghi khi ảnh thể hiện trực tiếp điều kiện đó. Không tự thêm "Chưa xác định", "Người dùng đã đăng nhập", hoặc "Người dùng truy cập trang/chức năng". Không có bằng chứng thì để mảng preconditions rỗng.
 - Không tự coi suy luận là sự thật. Không tạo testcase. Không tuyên bố đã xác nhận.
 - document ưu tiên bằng chứng nhìn thấy trên ảnh. Các tình huống catalog chuẩn dưới đây PHẢI được draft vào Feature tương ứng khi có bằng chứng UI, đồng thời ghi vào inferences với needsConfirmation=true. Không để "Chưa xác định" cho các mục này nếu đã thấy ô tìm kiếm, form thêm, trường Mã không bắt buộc hoặc nút sinh mã.
 - Một module có thể có nhiều feature. Dùng tiếng Việt, trừ Screen/Operation/Tags.

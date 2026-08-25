@@ -344,9 +344,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     /* ---------- Phần II: working actions (THAO TÁC ĐÃ TẠO — working set trước persist Library) ---------- */
 
     /** P0-3.2 — thêm action vào working set (KHÔNG gọi API, KHÔNG persist Library). */
-    const addWorkingAction = (s, e, label, groupName = null) => {
+    const addWorkingAction = (s, e, label, groupName = null, kind = "ACTION") => {
         setSaveFeedback(null);
-        setConfirmed(prev => appendWorkingAction(prev, { label, startStep: s, endStep: e, groupName }));
+        setConfirmed(prev => appendWorkingAction(prev, { label, startStep: s, endStep: e, groupName, kind }));
     };
 
     /** AI chỉ đề xuất Chức năng + Tên thao tác; tester vẫn chủ động thêm và có thể sửa trước khi persist. */
@@ -356,7 +356,8 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             proposal?.startStep,
             proposal?.endStep,
             proposal?.suggestedName || `Bước ${proposal?.startStep}→${proposal?.endStep}`,
-            proposal?.suggestedGroupName ?? currentGroup
+            proposal?.suggestedGroupName ?? currentGroup,
+            proposal?.kind === "SETUP" ? "SETUP" : "ACTION"
         );
     };
 
@@ -442,7 +443,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                 const saved = [...confirmed];
                 let persistedCount = 0;
                 for (const seg of plan.toCreate) {
-                    const res = await createLibraryAction({ recordingId, label: seg.label, kind: "ACTION", startStep: seg.startStep, endStep: seg.endStep, groupName: seg.groupName ?? null });
+                    const res = await createLibraryAction({ recordingId, label: seg.label, kind: seg.kind === "SETUP" ? "SETUP" : "ACTION", startStep: seg.startStep, endStep: seg.endStep, groupName: seg.groupName ?? null });
                     const data = res?.data ?? res;
                     const blockId = data?.blockId;
                     if (!blockId) throw new Error("Không tạo được thao tác thư viện.");
@@ -602,6 +603,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                         <b>{proposal.suggestedName || "(chưa đủ bằng chứng)"}</b>
                                         <span className="v3-cond__meta">
                                             Chức năng đề xuất: <span>{groupDisplayName(proposal.suggestedGroupName)}</span>
+                                        </span>
+                                        <span className="v3-cond__meta">
+                                            Vai trò gợi ý: {proposal.kind === "SETUP" ? "Bước chuẩn bị" : "Thao tác kiểm thử"}
                                         </span>
                                         <span className="v3-cond__meta">
                                             <span className="v3-cond__num">Gợi ý {globalIdx + 1}/{proposals.length}</span>
@@ -782,6 +786,7 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                     <div className="v3-cond__line">
                                         <b>{seg.label}</b>
                                         <span className="v3-cond__meta">Chức năng: {groupDisplayName(seg.groupName)}</span>
+                                        <span className="v3-cond__meta">Vai trò gợi ý: {seg.kind === "SETUP" ? "Bước chuẩn bị" : "Thao tác kiểm thử"}</span>
                                         <span className="v3-cond__meta">Bước {seg.startStep}→{seg.endStep} · {seg.stepCount} thao tác</span>
                                     </div>
                                 </div>

@@ -10,7 +10,6 @@ import {
     createWorkspace,
     getWorkspace,
     selectTestCase,
-    unselectTestCase,
     startRecording,
     stopRecording,
     approveRecording,
@@ -23,8 +22,10 @@ import {
     deleteWorkspace,
     removeTestCaseFromWorkspace,
     listAvailableTestcases,
-    addTestCaseToWorkspace
+    addTestCaseToWorkspace,
+    listRunnerAgents
 } from "../api/automationV3Api.js";
+import { createRunnerDevice } from "../api/runnerDeviceApi.js";
 
 /*
  AutomationV3Page — Automation Workspace (bước 5A + 5B).
@@ -40,6 +41,9 @@ const STORAGE_KEY = "qa-copilot.automation.workspaceId";
 const DISPLAY_KEY = "qa-copilot.automation.display";
 // P0 lifecycle — danh sách workspace gần đây (tối đa 5) để quay lại; không xây manager lớn.
 const RECENT_KEY = "qa-copilot.automation.recentWorkspaces";
+const RUNNER_AGENT_KEY = "qa-copilot.automation.runnerAgentId";
+const RUNNER_SLOWMO_KEY = "qa-copilot.automation.runnerSlowMo";
+const RUN_BASE_URL_KEY = "qa-copilot.automation.runBaseUrl";
 
 function readDisplayMap() {
     try {
@@ -107,13 +111,23 @@ export default function AutomationV3Page() {
     const [drawerTestCaseId, setDrawerTestCaseId] = useState(null); // P0: chỉ giữ ID — item derive từ workspace
     const [drawerTab, setDrawerTab] = useState("actions");
     const [openMenuId, setOpenMenuId] = useState(null);
-    // P0-C - ket qua Generate/Run nam trong testcase dang mo (khong banner toan workspace).
+    // Response tức thời luôn được gắn testCaseId; canonical history nằm trong workspace item.
     const [drawerGenerateResult, setDrawerGenerateResult] = useState(null);
     const [drawerRunResult, setDrawerRunResult] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
     // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
     const [mappingPanel, setMappingPanel] = useState(null); // { recordingId, initialTestCaseId }
     const [pendingTestCaseId, setPendingTestCaseId] = useState(null);
+    const [runnerAgents, setRunnerAgents] = useState([]);
+    const [runnerAgentId, setRunnerAgentId] = useState(() => window.localStorage.getItem(RUNNER_AGENT_KEY) || "");
+    const [runnerSlowMo, setRunnerSlowMo] = useState(() => {
+        const value = Number(window.localStorage.getItem(RUNNER_SLOWMO_KEY) ?? 1000);
+        return [0, 500, 1000].includes(value) ? value : 1000;
+    });
+    const [runBaseUrl, setRunBaseUrl] = useState(() => window.localStorage.getItem(RUN_BASE_URL_KEY) || "");
+    const [runnerRegistration, setRunnerRegistration] = useState(null);
+    const [runnerMachineName, setRunnerMachineName] = useState("");
+    const [runnerRegistrationBusy, setRunnerRegistrationBusy] = useState(false);
 
     /** P0-D (C) — tải danh sách workspace (newest first). */
     const refreshWorkspaceList = async () => {
@@ -177,10 +191,35 @@ export default function AutomationV3Page() {
         return () => { cancelled = true; };
     }, [projectId]);
 
-    const selectedIds = useMemo(() => {
-        if (!workspace?.items) return [];
-        return workspace.items.filter(item => item.selectedForAutomation).map(item => item.testCaseId);
-    }, [workspace]);
+    useEffect(() => {
+        let cancelled = false;
+        const refreshAgents = async () => {
+            try {
+                const list = await listRunnerAgents();
+                if (!cancelled) setRunnerAgents(Array.isArray(list) ? list : []);
+            } catch {
+                if (!cancelled) setRunnerAgents([]);
+            }
+        };
+        refreshAgents();
+        const timer = window.setInterval(refreshAgents, 5000);
+        return () => { cancelled = true; window.clearInterval(timer); };
+    }, []);
+
+    // Đăng ký máy là action trong menu tài khoản. Trang Automation chỉ nhận tín hiệu
+    // để mở lại đúng dialog hiện có, không tạo thêm state/flow đăng ký song song.
+    useEffect(() => {
+        const openRegistration = () => {
+            window.sessionStorage.removeItem("qa-copilot.openRunnerRegistration");
+            setRunnerRegistration({});
+        };
+        window.addEventListener("qa-copilot:register-runner", openRegistration);
+        if (window.sessionStorage.getItem("qa-copilot.openRunnerRegistration") === "1") {
+            window.sessionStorage.removeItem("qa-copilot.openRunnerRegistration");
+            openRegistration();
+        }
+        return () => window.removeEventListener("qa-copilot:register-runner", openRegistration);
+    }, []);
 
     const meta = useMemo(() => {
         const items = workspace?.items ?? [];
@@ -202,6 +241,14 @@ export default function AutomationV3Page() {
         if (!drawerTestCaseId) return null;
         return (workspace?.items ?? []).find(i => i.testCaseId === drawerTestCaseId) ?? null;
     }, [drawerTestCaseId, workspace]);
+
+    /** Đổi context drawer phải xóa toàn bộ response tạm của testcase trước. */
+    const openDrawer = (testCaseId, tab = "actions") => {
+        setDrawerGenerateResult(null);
+        setDrawerRunResult(null);
+        setDrawerTestCaseId(testCaseId);
+        setDrawerTab(tab);
+    };
 
     /** P0 lifecycle — chuyển active workspace (chỉ khi user chủ động chọn từ danh sách gần đây). */
     const switchWorkspace = async wsId => {
@@ -306,33 +353,27 @@ export default function AutomationV3Page() {
         }
     };
 
-    const handleToggle = async (testCaseId, nextSelected) => {
-        if (!workspace?.workspaceId || recordingActive) return;
-        setError("");
-        setBusy(true);
-        try {
-            const item = nextSelected
-                ? await selectTestCase(workspace.workspaceId, testCaseId)
-                : await unselectTestCase(workspace.workspaceId, testCaseId);
-            applyItem(item);
-        } catch (e) {
-            setError(e?.message ?? "Không cập nhật được lựa chọn.");
-        } finally {
-            setBusy(false);
-        }
-    };
-
     /* ---------------- Recording (5B) ---------------- */
 
     const handlePrimaryAction = async (key, testCase) => {
         setOpenMenuId(null);
         // 6C — primary theo trạng thái: Tạo/Tiếp tục/Xem Automation → mở Drawer tab "Thao tác" (context TC giữ nguyên).
-        if (key === "setup" || key === "view") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("actions"); }
+        if (key === "setup" || key === "view") {
+            if (!testCase.selectedForAutomation) {
+                try {
+                    applyItem(await selectTestCase(workspace.workspaceId, testCase.testCaseId));
+                } catch (e) {
+                    setError(e?.message ?? "Không bắt đầu được thiết lập automation.");
+                    return;
+                }
+            }
+            openDrawer(testCase.testCaseId, "actions");
+        }
         else if (key === "record") await handleStart(testCase);
         else if (key === "stop") await handleStop();
-        else if (key === "review") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("recording"); }
+        else if (key === "review") openDrawer(testCase.testCaseId, "recording");
         else if (key === "segments") openMappingFor(testCase);
-        else if (key === "conditions") { setDrawerTestCaseId(testCase.testCaseId); setDrawerTab("expected"); }
+        else if (key === "conditions") openDrawer(testCase.testCaseId, "expected");
     };
 
     const openMappingFor = testCase => {
@@ -396,9 +437,9 @@ export default function AutomationV3Page() {
             const res = await generateTestcase(workspace.workspaceId, testCase.testCaseId, {});
             await refreshWorkspace();
             // P0-C - ket qua Generate nam trong testcase dang mo (khong success banner toan workspace).
-            setDrawerGenerateResult({ ok: true, code: res?.code ?? "", fileName: res?.outputPath?.split("/").pop() ?? `${testCase.testCaseId}.spec.js` });
+            setDrawerGenerateResult({ testCaseId: testCase.testCaseId, ok: true, code: res?.code ?? "", fileName: res?.outputPath?.split("/").pop() ?? `${testCase.testCaseId}.spec.js` });
         } catch (e) {
-            setDrawerGenerateResult({ ok: false, error: e?.message ?? "Không sinh được automation." });
+            setDrawerGenerateResult({ testCaseId: testCase.testCaseId, ok: false, error: e?.message ?? "Không sinh được automation." });
         } finally {
             setBusy(false);
         }
@@ -410,11 +451,12 @@ export default function AutomationV3Page() {
         setError("");
         setBusy(true);
         try {
-            const res = await runTestcase(workspace.workspaceId, testCase.testCaseId);
-            setDrawerRunResult({ ok: true, ...res });
+            const env = runBaseUrl.trim() ? { BASE_URL: runBaseUrl.trim() } : {};
+            const res = await runTestcase(workspace.workspaceId, testCase.testCaseId, env, runnerAgentId || null, runnerAgentId ? { headed: true, slowMo: runnerSlowMo } : {});
+            setDrawerRunResult({ testCaseId: testCase.testCaseId, ok: true, ...res });
             await refreshWorkspace();
         } catch (e) {
-            setDrawerRunResult({ ok: false, error: e?.message ?? "Không chạy được." });
+            setDrawerRunResult({ testCaseId: testCase.testCaseId, ok: false, error: e?.message ?? "Không chạy được." });
         } finally {
             setBusy(false);
         }
@@ -430,6 +472,45 @@ export default function AutomationV3Page() {
             /* giữ trạng thái cũ nếu tải lỗi */
         }
     };
+
+    // Remote runner trả QUEUED ngay khi dispatch. Poll canonical workspace tới khi
+    // completion callback đã ghi lastRun terminal; không coi response tạm là kết quả cuối.
+    useEffect(() => {
+        const status = String(drawerRunResult?.runStatus ?? "").toUpperCase();
+        const jobId = drawerRunResult?.jobId;
+        const testCaseId = drawerRunResult?.testCaseId;
+        const workspaceId = workspace?.workspaceId;
+        if (!jobId || !testCaseId || !workspaceId || !["QUEUED", "RUNNING"].includes(status)) return undefined;
+
+        let cancelled = false;
+        let timer = null;
+        const poll = async () => {
+            try {
+                const data = await getWorkspace(workspaceId);
+                if (cancelled) return;
+                const nextWorkspace = {
+                    workspaceId,
+                    items: Array.isArray(data.items) ? data.items : [],
+                    approvedTotal: data.approvedTotal ?? null
+                };
+                setWorkspace(nextWorkspace);
+                const canonical = nextWorkspace.items.find(item => item.testCaseId === testCaseId);
+                const canonicalStatus = String(canonical?.runStatus ?? "").toUpperCase();
+                if (["PASSED", "FAILED", "ERROR"].includes(canonicalStatus)) {
+                    setDrawerRunResult(current => current?.jobId === jobId ? null : current);
+                    return;
+                }
+            } catch {
+                // Agent có thể đang offline/hoàn tất chậm; lần poll tiếp theo vẫn dùng canonical API.
+            }
+            if (!cancelled) timer = window.setTimeout(poll, 1500);
+        };
+        timer = window.setTimeout(poll, 1000);
+        return () => {
+            cancelled = true;
+            if (timer) window.clearTimeout(timer);
+        };
+    }, [drawerRunResult?.jobId, drawerRunResult?.runStatus, drawerRunResult?.testCaseId, workspace?.workspaceId]);
 
     const handleApprove = async detail => {
         if (!detail) return;
@@ -479,8 +560,7 @@ export default function AutomationV3Page() {
             });
         } else if (action === "record_again" || action === "setup") {
             // 6C — không đẩy panel recording global; mở Drawer tab "Thao tác" trong context testcase.
-            setDrawerTestCaseId(testCase.testCaseId);
-            setDrawerTab("actions");
+            openDrawer(testCase.testCaseId, "actions");
         } else if (action === "segments") {
             openMappingFor(testCase);
         } else if (action === "decision_manual" || action === "decision_automated") {
@@ -591,19 +671,12 @@ export default function AutomationV3Page() {
                 </div>
                 {workspace ? (
                     <div className="v3-page__head-actions">
-                        {/* P0-D1 (B) — chỉ hiển thị workspace HIỆN TẠI trên main page (không render lịch sử).
-                            [Đổi workspace ▾] mở popover recent; [Xem tất cả workspace] mở modal quản lý. */}
-                        <div className="v3-ws-panel">
-                            <div className="v3-ws-panel__current">
-                                <span className="v3-ws-panel__label">Workspace hiện tại</span>
-                                <b>{meta.module || "Workspace"}</b>
-                                <span className="v3-ws-panel__meta">
-                                    {meta.count} testcase · Cập nhật {formatUpdatedAt(workspaceList.find(w => w.workspaceId === workspace.workspaceId)?.updatedAt)}
-                                </span>
-                            </div>
-                            <div className="v3-ws-panel__switch">
-                                <button type="button" className="v3-btn v3-btn--secondary" onClick={() => setWsPopoverOpen(v => !v)} disabled={recordingActive}>
-                                    Đổi workspace ▾
+                        {/* Workspace context luôn ở hàng trên cùng: selector + tạo mới không bị tách dòng. */}
+                        <div className="v3-workspace-controls">
+                            <div className="v3-ws-panel v3-ws-panel--compact">
+                                <div className="v3-ws-panel__switch">
+                                <button type="button" className="v3-btn v3-btn--secondary v3-ws-panel__trigger" onClick={() => setWsPopoverOpen(v => !v)} disabled={recordingActive} aria-label="Đổi workspace">
+                                    <span>Workspace:</span> <b>{meta.module || "Workspace"}</b> <span aria-hidden="true">▾</span>
                                 </button>
                                 {wsPopoverOpen ? (
                                     <div className="v3-ws-popover">
@@ -632,16 +705,17 @@ export default function AutomationV3Page() {
                                         </button>
                                     </div>
                                 ) : null}
+                                </div>
                             </div>
+                            <button
+                                type="button"
+                                className="v3-btn v3-btn--secondary"
+                                onClick={handleNewWorkspaceClick}
+                                disabled={recordingActive}
+                            >
+                                Tạo workspace mới
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            className="v3-btn v3-btn--secondary"
-                            onClick={handleNewWorkspaceClick}
-                            disabled={recordingActive}
-                        >
-                            Tạo workspace mới
-                        </button>
                     </div>
                 ) : null}
             </div>
@@ -658,6 +732,10 @@ export default function AutomationV3Page() {
                     onStop={handleStop}
                 />
             ) : null}
+            {runnerRegistration ? <div className="v3-modal-backdrop"><section className="v3-modal" aria-label="Đăng ký Runner">
+                <h3>Đăng ký máy chạy Automation</h3>
+                {runnerRegistration.token ? <><p>Sao chép thông tin này ngay; token sẽ không hiển thị lại.</p><label>Runner ID<input readOnly value={runnerRegistration.runnerId} /></label><label>Token<input readOnly value={runnerRegistration.token} /></label><button type="button" className="v3-btn v3-btn--primary" onClick={() => setRunnerRegistration(null)}>Đã sao chép</button></> : <form onSubmit={async event => { event.preventDefault(); if (runnerRegistrationBusy) return; setRunnerRegistrationBusy(true); try { const created = await createRunnerDevice(runnerMachineName); setRunnerRegistration({ ...created.device, token: created.token }); setRunnerMachineName(""); } catch (e) { setError(e.message); } finally { setRunnerRegistrationBusy(false); } }}><label>Tên máy<input required disabled={runnerRegistrationBusy} value={runnerMachineName} onChange={event => setRunnerMachineName(event.target.value)} placeholder="Máy Tester của tôi" /></label><div className="v3-modal__actions"><button type="button" className="v3-btn" disabled={runnerRegistrationBusy} onClick={() => setRunnerRegistration(null)}>Hủy</button><button className="v3-btn v3-btn--primary" disabled={runnerRegistrationBusy}>{runnerRegistrationBusy ? "Đang tạo…" : "Tạo Runner"}</button></div></form>}
+            </section></div> : null}
 
             {mappingPanel ? (
                 <V3SegmentMappingPanel
@@ -740,9 +818,7 @@ export default function AutomationV3Page() {
                     ) : null}
                     <V3TestCaseList
                         testCases={enrichedItems}
-                        selectedIds={selectedIds}
                         activeTestCaseId={drawerTestCaseId}
-                        onToggle={handleToggle}
                         recordingActive={recordingActive}
                         onPrimaryAction={handlePrimaryAction}
                         onMenuAction={handleMenuAction}
@@ -759,6 +835,22 @@ export default function AutomationV3Page() {
                     onClose={() => { setDrawerTestCaseId(null); setDrawerGenerateResult(null); setDrawerRunResult(null); }}
                     onGenerate={handleGenerate}
                     onRun={handleRun}
+                    runnerAgents={runnerAgents}
+                    runnerAgentId={runnerAgentId}
+                    runnerSlowMo={runnerSlowMo}
+                    runBaseUrl={runBaseUrl}
+                    onRunnerChange={next => {
+                        setRunnerAgentId(next);
+                        window.localStorage.setItem(RUNNER_AGENT_KEY, next);
+                    }}
+                    onRunnerSlowMoChange={next => {
+                        setRunnerSlowMo(next);
+                        window.localStorage.setItem(RUNNER_SLOWMO_KEY, String(next));
+                    }}
+                    onRunBaseUrlChange={next => {
+                        setRunBaseUrl(next);
+                        window.localStorage.setItem(RUN_BASE_URL_KEY, next);
+                    }}
                     generateResult={drawerGenerateResult}
                     runResult={drawerRunResult}
                     onChanged={refreshWorkspace}

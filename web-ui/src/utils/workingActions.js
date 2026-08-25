@@ -14,48 +14,95 @@
  (createLibraryAction trong saveAllToLibrary) — AI/manual add KHÔNG tự persist.
 */
 
-export function appendWorkingAction(list, { label, startStep, endStep, groupName = null }) {
+export function appendWorkingAction(
+    list,
+    { label, startStep, endStep, groupName = null, kind = "ACTION" }
+) {
     const l = Array.isArray(list) ? list : [];
+
     if (!Number.isInteger(startStep) || !Number.isInteger(endStep)) return l;
+
     const rangeKey = `${Math.min(startStep, endStep)}:${Math.max(startStep, endStep)}`;
-    if (l.some(x => `${Math.min(x.startStep, x.endStep)}:${Math.max(x.startStep, x.endStep)}` === rangeKey)) {
+
+    if (
+        l.some(
+            x =>
+                `${Math.min(x.startStep, x.endStep)}:${Math.max(x.startStep, x.endStep)}` ===
+                rangeKey
+        )
+    ) {
         return l; // chống duplicate cùng range (CASE E — accidental duplicate)
     }
-    return [...l, {
-        blockId: `WORK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        label: String(label ?? "").trim() || `Bước ${startStep}→${endStep}`,
-        groupName: String(groupName ?? "").trim() || null,
-        startStep: Math.min(startStep, endStep),
-        endStep: Math.max(startStep, endStep),
-        stepCount: Math.abs(endStep - startStep) + 1,
-        assertionCount: 0
-    }];
+
+    return [
+        ...l,
+        {
+            blockId: `WORK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            label: String(label ?? "").trim() || `Bước ${startStep}→${endStep}`,
+            groupName: String(groupName ?? "").trim() || null,
+            kind: String(kind ?? "").toUpperCase() === "SETUP" ? "SETUP" : "ACTION",
+            startStep: Math.min(startStep, endStep),
+            endStep: Math.max(startStep, endStep),
+            stepCount: Math.abs(endStep - startStep) + 1,
+            assertionCount: 0
+        }
+    ];
 }
 
 export function removeWorkingAction(list, id) {
     return (Array.isArray(list) ? list : []).filter(x => x.blockId !== id);
 }
 
-/** Cập nhật Chức năng cho đúng working set của bản ghi hiện tại.
- * Không rename group ở cấp Library, vì group đó có thể chứa Action của bản ghi cũ. */
+/**
+ * Cập nhật Chức năng cho đúng working set của bản ghi hiện tại.
+ * Không rename group ở cấp Library, vì group đó có thể chứa Action của bản ghi cũ.
+ */
 export function applyGroupToWorkingActions(list, groupName) {
     const normalized = String(groupName ?? "").trim() || null;
-    return (Array.isArray(list) ? list : []).map(item => ({ ...item, groupName: normalized }));
+
+    return (Array.isArray(list) ? list : []).map(item => ({
+        ...item,
+        groupName: normalized
+    }));
 }
 
 export function proposalStatus(proposal, workingList, dismissed = []) {
     const l = Array.isArray(workingList) ? workingList : [];
     const p = proposal ?? {};
+
     if (!Number.isInteger(p.startStep) || !Number.isInteger(p.endStep)) {
-        return { added: false, blocked: false, dismissed: false, overlapLabel: null };
+        return {
+            added: false,
+            blocked: false,
+            dismissed: false,
+            overlapLabel: null
+        };
     }
+
     const rangeKey = `${Math.min(p.startStep, p.endStep)}:${Math.max(p.startStep, p.endStep)}`;
-    const added = l.some(x => x.startStep === Math.min(p.startStep, p.endStep) && x.endStep === Math.max(p.startStep, p.endStep));
-    // P0 — "Bỏ" = trạng thái (dismissed) chứ KHÔNG xóa khỏi mảng proposals → không remount list,
-    // không đổi "Gợi ý i/N", không làm UI cà giật.
+
+    const added = l.some(
+        x =>
+            x.startStep === Math.min(p.startStep, p.endStep) &&
+            x.endStep === Math.max(p.startStep, p.endStep)
+    );
+
+    // P0 — "Bỏ" = trạng thái (dismissed) chứ KHÔNG xóa khỏi mảng proposals
+    // → không remount list, không đổi "Gợi ý i/N", không làm UI cà giật.
     const dismissedState = Array.isArray(dismissed) && dismissed.includes(rangeKey);
+
     const overlapItem = !added
-        ? l.find(x => x.startStep <= Math.max(p.startStep, p.endStep) && x.endStep >= Math.min(p.startStep, p.endStep))
+        ? l.find(
+              x =>
+                  x.startStep <= Math.max(p.startStep, p.endStep) &&
+                  x.endStep >= Math.min(p.startStep, p.endStep)
+          )
         : null;
-    return { added, blocked: Boolean(overlapItem), dismissed: dismissedState, overlapLabel: overlapItem?.label ?? null };
+
+    return {
+        added,
+        blocked: Boolean(overlapItem),
+        dismissed: dismissedState,
+        overlapLabel: overlapItem?.label ?? null
+    };
 }

@@ -92,7 +92,7 @@ assert.ok(!apiSource.includes("rendererV3") && !apiSource.includes("CodeGenRecor
 
 // Page dùng đúng hàm
 const pageSource = read("pages/AutomationV3Page.jsx");
-assert.ok(pageSource.includes("selectTestCase") && pageSource.includes("unselectTestCase"), "page gọi select/unselect API");
+assert.ok(pageSource.includes("selectTestCase") && !pageSource.includes("unselectTestCase"), "page tự khởi tạo automation khi mở testcase, không còn toggle selection");
 assert.ok(pageSource.includes("createWorkspace"), "page gọi createWorkspace");
 
 // Loại bỏ comment JS để tránh false-positive khi check nội dung cấm.
@@ -104,8 +104,8 @@ function stripComments(code) {
 
 // ---- 8. Card: một trạng thái chính + một primary action; menu chỉ ở REVIEW_REQUIRED/APPROVED ----
 const cardSource = read("components/automationV3/V3TestCaseCard.jsx");
-assert.equal((cardSource.match(/v3-badge--sel/g) ?? []).length, 1, "1 nhánh badge 'Đã chọn'");
-assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 1, "1 nhánh badge 'Chưa chọn'");
+assert.equal((cardSource.match(/type=\"checkbox\"/g) ?? []).length, 0, "không còn checkbox testcase legacy");
+assert.equal((cardSource.match(/v3-badge--nosel/g) ?? []).length, 0, "không còn badge 'Chưa chọn'");
 assert.equal((cardSource.match(/v3-card__action/g) ?? []).length, 1, "card chỉ 1 slot primary action");
 assert.ok(cardSource.includes("const showMenu = true;"), "P0: menu '…' cho MỌI testcase trong workspace (không phụ thuộc status)");
 const cardClean = stripComments(cardSource);
@@ -213,7 +213,7 @@ assert.ok(recTab.includes("getRecordingSource") && recTab.includes("Xem mã"), "
 // ---- 14. Card hiển thị trạng thái 3 nhãn + thông tin đoạn đã gán ----
 const utilsSource = stripComments(read("utils/automationV3.js"));
 assert.ok(utilsSource.includes("Chưa quyết định") && utilsSource.includes("Có automation") && utilsSource.includes("Chỉ kiểm thử thủ công"), "3 nhãn trạng thái (utils)");
-assert.ok(cardClean.includes("decisionLabel") && cardClean.includes("thao tác"), "card dùng nhãn quyết định + thông tin thao tác");
+assert.ok(!cardClean.includes("decisionLabel") && cardClean.includes("thao tác"), "card dùng lifecycle canonical + thông tin thao tác, không có chip quyết định song song");
 assert.ok(cardClean.includes("Đánh dấu chỉ kiểm thử thủ công"), "menu có đánh dấu thủ công");
 assert.ok(!cardClean.includes("Sinh automation"), "card chưa có nút sinh (đợi 5C)");
 
@@ -279,13 +279,14 @@ assert.ok(drawerClean2.includes("canGenerateForTestcase"), "drawer dùng gate Ge
 // ---- 21. Tab expected: đúng flow chốt (xem/sửa → đề xuất chủ động → áp dụng → xác nhận) ----
 const expTab = stripComments(read("components/automationV3/V3ExpectedResultTab.jsx"));
 assert.ok(expTab.includes("Chỉnh sửa kết quả mong đợi"), "sửa Expected Result");
-assert.ok(expTab.includes("Dùng AI phân tích"), "P0-D1: AI phân tích trong menu + Thêm kết quả dự kiến (secondary, không tự bung)");
+assert.ok(expTab.includes("ĐỀ XUẤT TỪ KẾT QUẢ MONG ĐỢI") && expTab.includes("Tạo đề xuất") && expTab.includes("onClick={handleSuggest}"), "P0-D1: đề xuất deterministic có section riêng, không giả là AI");
 assert.ok(expTab.includes("Áp dụng"), "Áp dụng đề xuất");
 assert.ok(expTab.includes("Xác nhận") || expTab.includes("Sử dụng"), "Xác nhận/Sử dụng điều kiện");
-assert.ok(expTab.includes("+ Thêm kết quả dự kiến") && expTab.includes("Nhập thủ công"), "P0-D1: bổ sung tay qua + Thêm kết quả dự kiến");
+assert.ok(expTab.includes("+ Thêm kết quả dự kiến") && expTab.includes("onClick={startAdd}") && expTab.includes("showForm && !editingId ? conditionEditor"), "P0-D1: bổ sung tay mở editor ngay trong KẾT QUẢ DỰ KIẾN");
+assert.ok(!expTab.includes("thêm thủ công hoặc AI bên dưới"), "P0-D1: KẾT QUẢ DỰ KIẾN không trộn AI với manual editor");
 assert.ok(expTab.includes("Chưa có gì để đề xuất"), "gợi ý nhẹ khi không tạo được candidate (không heuristic mạnh)");
 assert.ok(expTab.includes("Cần ít nhất 1 điều kiện được xác nhận"), "nhắc gate assertion");
-assert.ok(expTab.includes("quay về Nháp"), "sửa điều kiện → Nháp");
+assert.ok(expTab.includes("updateAssertion(workspaceId, testCase.testCaseId, editingId, payload)") && expTab.includes("editingId"), "sửa điều kiện vẫn đi qua updateAssertion và giữ lifecycle Nháp");
 assert.ok(!/aiSuggest|aiMapping/i.test(expTab), "tab không AI tự map/đề xuất ngầm (AI chỉ là nút chủ động đã duyệt)");
 assert.ok(!expTab.includes("Xóa trống → quay về bản gốc đã duyệt + hiện warning"), "không còn warning heuristic cũ");
 
@@ -302,7 +303,7 @@ assert.ok(apiSource.includes("generateTestcase"), "api generate");
 // ---- 24. Pure helpers 5C ----
 assert.equal(decisionLabel("AUTOMATED"), "Có automation", "nhãn quyết định (giữ)");
 const canGen = utils.canGenerateForTestcase;
-assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 1 } }), true, "đủ gate");
+assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 1 }, segments: [{ role: "ACTION_UNDER_TEST" }] }), true, "đủ gate");
 assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 0 }, assertionStatus: { confirmed: 1 } }), false, "thiếu segment confirmed");
 assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 2, confirmed: 1 }, assertionStatus: { confirmed: 1 } }), false, "6C.1: TẤT CẢ thao tác phải CONFIRMED");
 assert.equal(canGen({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 0 } }), false, "thiếu assertion confirmed");
@@ -310,7 +311,7 @@ assert.equal(canGen({ selectedForAutomation: false, segmentSummary: { total: 1, 
 assert.equal(utils.assertionTypeLabel("TEXT_VISIBLE"), "Hiển thị nội dung", "nhãn loại");
 assert.equal(utils.assertionStatusLabel("TESTER_CONFIRMED"), "Đã xác nhận", "nhãn trạng thái");
 assert.equal(utils.matcherLabel("toBeHidden"), "Không hiển thị", "nhãn matcher");
-assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, assertionStatus: { confirmed: 0 } }), "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "lý do gate");
+assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 1 }, segments: [{ role: "ACTION_UNDER_TEST" }], assertionStatus: { confirmed: 0 } }), "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.", "lý do gate");
 assert.equal(utils.generateGateReason({ selectedForAutomation: true, segmentSummary: { total: 1, confirmed: 0 }, segments: [{ status: "DRAFT", label: "Đăng nhập" }], assertionStatus: { confirmed: 1 } }), "Thao tác 'Đăng nhập' chưa được xác nhận.", "lý do gate 6C.1");
 
 // ---- 25. Page: nối Generate từ drawer ----
@@ -326,7 +327,7 @@ assert.ok(pageClean2.includes("Workspace gần đây"), "có bộ chọn workspa
 assert.ok(pageClean2.includes("Bạn sắp chuyển sang workspace mới"), "confirm khi tạo workspace mới có dữ liệu");
 assert.ok(pageClean2.includes("handleNewWorkspaceClick"), "nút Tạo workspace mới đi qua confirm handler");
 assert.ok(pageClean2.includes("recentWorkspaces") && pageClean2.includes("switchWorkspace"), "recent + switch workspace");
-assert.ok(pageClean2.includes("v3-ws-panel") && pageClean2.includes("Workspace hiện tại") && pageClean2.includes("delete_workspace"), "P0-D: workspace panel + delete confirm");
+assert.ok(pageClean2.includes("v3-ws-panel--compact") && pageClean2.includes("v3-ws-panel__trigger") && pageClean2.includes("delete_workspace"), "P0-D: workspace selector compact + delete confirm");
 assert.ok(pageClean2.includes("shortWorkspaceId"), "short id chỉ dùng hiển thị phụ");
 
 assert.ok(pageClean2.includes("handleGenerate"), "page có handler Generate");
@@ -399,7 +400,7 @@ assert.ok(drawerClean2.includes("V3ActionSetupPanel"), "drawer render panel thao
 assert.ok(drawerClean2.includes("v3-drawer__sub"), "drawer header có context (expected + trạng thái)");
 
 // ---- 30. Page: nối primary setup/view → drawer tab Thao tác ----
-assert.ok(pageClean2.includes('setDrawerTab("actions")'), "page mở drawer tab Thao tác");
+assert.ok(pageClean2.includes('openDrawer(testCase.testCaseId, "actions")'), "page mở drawer tab Thao tác và reset context cũ");
 
 // ---- 31. API client có đủ endpoint blocks/binding (6B/6C) ----
 assert.ok(apiSource.includes("listBlocks") && apiSource.includes("createBlock"), "api list/create block");

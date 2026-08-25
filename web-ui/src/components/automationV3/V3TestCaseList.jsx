@@ -7,9 +7,7 @@ import V3TestCaseCard from "./V3TestCaseCard.jsx";
 
 export default function V3TestCaseList({
     testCases = [],
-    selectedIds = [],
     activeTestCaseId = null,
-    onToggle,
     recordingActive = false,
     onPrimaryAction,
     onMenuAction,
@@ -29,9 +27,7 @@ export default function V3TestCaseList({
                 <V3TestCaseCard
                     key={testCase.testCaseId}
                     testCase={testCase}
-                    selected={selectedIds.includes(testCase.testCaseId)}
                     active={activeTestCaseId === testCase.testCaseId}
-                    onToggle={onToggle}
                     recordingActive={recordingActive}
                     onPrimaryAction={onPrimaryAction}
                     onMenuAction={onMenuAction}

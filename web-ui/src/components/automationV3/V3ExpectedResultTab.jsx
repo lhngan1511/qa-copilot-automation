@@ -51,8 +51,6 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
     const [dismissedCandidates, setDismissedCandidates] = useState(() => new Set()); // bỏ qua (session)
 
     // Form điều kiện (thêm tay / sửa)
-    // P0-D1 — menu [+ Thêm kết quả dự kiến]: Nhập thủ công | Dùng AI phân tích.
-    const [addResultOpen, setAddResultOpen] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [editingId, setEditingId] = useState(null);
@@ -281,6 +279,42 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
 
     const setFormField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
+    const conditionEditor = (
+        <div className="v3-cond-form">
+            <h5 className="v3-exp__h">{editingId ? "Chỉnh sửa điều kiện" : "Điều kiện mới"}</h5>
+            <div className="v3-cond-form__grid">
+                <label className="v3-map__label">
+                    Loại
+                    <select className="v3-input" value={form.type} onChange={e => setFormField("type", e.target.value)}>
+                        {ASSERTION_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                </label>
+                <label className="v3-map__label">
+                    Matcher
+                    <select className="v3-input" value={form.matcher} onChange={e => setFormField("matcher", e.target.value)}>
+                        {MATCHER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                </label>
+                <label className="v3-map__label">
+                    Đối tượng (nhãn nghiệp vụ)
+                    <input className="v3-input" value={form.target} onChange={e => setFormField("target", e.target.value)} placeholder="VD: Danh mục phần mềm quản lý" />
+                </label>
+                <label className="v3-map__label">
+                    Locator (tùy chọn)
+                    <input className="v3-input" value={form.locator} onChange={e => setFormField("locator", e.target.value)} placeholder="page.getByText('...')" />
+                </label>
+                <label className="v3-map__label">
+                    Giá trị kỳ vọng
+                    <input className="v3-input" value={form.expected ?? ""} onChange={e => setFormField("expected", e.target.value)} placeholder="VD: Danh mục phần mềm quản lý" />
+                </label>
+            </div>
+            <div className="v3-cond-form__actions">
+                <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setShowForm(false); setEditingId(null); }} disabled={saving}>Hủy</button>
+                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveForm} disabled={saving}>{editingId ? "Lưu thay đổi" : "Thêm"}</button>
+            </div>
+        </div>
+    );
+
     if (loading) return <div className="v3-note">Đang tải kết quả mong đợi…</div>;
 
     return (
@@ -298,7 +332,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                                 ? "Đã chỉnh sửa — bản lưu trong workspace, không đổi file testcase đã duyệt."
                                 : "Bản gốc từ testcase đã duyệt. Chỉnh sửa chỉ lưu trong workspace."}
                         </p>
-                        <button type="button" className="v3-btn v3-btn--ghost" onClick={startEditExpected} disabled={saving}>
+                        <button type="button" className="v3-btn v3-btn--ghost v3-exp__expected-edit" onClick={startEditExpected} disabled={saving}>
                             Chỉnh sửa kết quả mong đợi
                         </button>
                     </>
@@ -362,25 +396,12 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 })}
             </div>
 
-            <div className="v3-exp__block">
+            <div className="v3-exp__block v3-exp__intelligence">
                 <div className="v3-exp__row">
-                    <h4 className="v3-exp__h">KẾT QUẢ DỰ KIẾN</h4>
-                    <span className="v3-exp__note">Phát hiện từ thao tác đã chọn (tự động) · thêm thủ công hoặc AI bên dưới.</span>
-                    <div className="v3-td-actions">
-                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setAddResultOpen(v => !v)} disabled={saving}>
-                            + Thêm kết quả dự kiến
-                        </button>
-                        {addResultOpen ? (
-                            <span className="v3-td-actions">
-                                <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setAddResultOpen(false); startAdd(); }} disabled={saving}>
-                                    Nhập thủ công
-                                </button>
-                                <button type="button" className="v3-btn v3-btn--secondary v3-btn--mini" onClick={() => { setAddResultOpen(false); handleSuggest(); }} disabled={suggesting || saving}>
-                                    {suggesting ? "Đang phân tích…" : "Dùng AI phân tích"}
-                                </button>
-                            </span>
-                        ) : null}
-                    </div>
+                    <h4 className="v3-exp__h">ĐỀ XUẤT TỪ KẾT QUẢ MONG ĐỢI</h4>
+                    <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={handleSuggest} disabled={suggesting || saving}>
+                        {suggesting ? "Đang tạo đề xuất…" : "Tạo đề xuất"}
+                    </button>
                 </div>
 
                 {suggestedAt && suggestions.length === 0 ? (
@@ -414,6 +435,19 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                 {suggestedAt && suggestions.length > 0 ? (
                     <p className="v3-exp__note">Áp dụng = tạo điều kiện ở trạng thái Nháp — bạn xem và xác nhận sau.</p>
                 ) : null}
+            </div>
+
+            <div className="v3-exp__block v3-exp__manual">
+                <div className="v3-exp__row">
+                    <h4 className="v3-exp__h">KẾT QUẢ DỰ KIẾN</h4>
+                    {!showForm ? (
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startAdd} disabled={saving}>
+                            + Thêm kết quả dự kiến
+                        </button>
+                    ) : null}
+                </div>
+                <p className="v3-exp__note">Phát hiện từ thao tác đã chọn (tự động) · thêm thủ công bên dưới.</p>
+                {showForm && !editingId ? conditionEditor : null}
             </div>
 
             {/* ---------- Điều kiện kiểm tra ---------- */}
@@ -482,45 +516,7 @@ export default function V3ExpectedResultTab({ workspaceId, testCase, onChanged, 
                     </div>
                 ) : null}
 
-                {showForm ? (
-                    <div className="v3-cond-form">
-                        <h5 className="v3-exp__h">{editingId ? "Chỉnh sửa điều kiện" : "Điều kiện mới"}</h5>
-                        <div className="v3-cond-form__grid">
-                            <label className="v3-map__label">
-                                Loại
-                                <select className="v3-input" value={form.type} onChange={e => setFormField("type", e.target.value)}>
-                                    {ASSERTION_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
-                            </label>
-                            <label className="v3-map__label">
-                                Matcher
-                                <select className="v3-input" value={form.matcher} onChange={e => setFormField("matcher", e.target.value)}>
-                                    {MATCHER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
-                            </label>
-                            <label className="v3-map__label">
-                                Đối tượng (nhãn nghiệp vụ)
-                                <input className="v3-input" value={form.target} onChange={e => setFormField("target", e.target.value)} placeholder="VD: Danh mục phần mềm quản lý" />
-                            </label>
-                            <label className="v3-map__label">
-                                Locator (tùy chọn)
-                                <input className="v3-input" value={form.locator} onChange={e => setFormField("locator", e.target.value)} placeholder="page.getByText('...')" />
-                            </label>
-                            <label className="v3-map__label">
-                                Giá trị kỳ vọng
-                                <input className="v3-input" value={form.expected ?? ""} onChange={e => setFormField("expected", e.target.value)} placeholder="VD: Danh mục phần mềm quản lý" />
-                            </label>
-                        </div>
-                        <div className="v3-exp__actions">
-                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={saveForm} disabled={saving}>
-                                {editingId ? "Lưu (quay về Nháp)" : "Tạo điều kiện"}
-                            </button>
-                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => { setShowForm(false); setEditingId(null); }} disabled={saving}>
-                                Hủy
-                            </button>
-                        </div>
-                    </div>
-                ) : null}
+                {showForm && editingId ? conditionEditor : null}
 
                 {confirmedCount > 0 ? (
                     <p className="v3-exp__ok">✓ Điều kiện kiểm tra đã được tester xác nhận ({confirmedCount} điều kiện).</p>

@@ -46,6 +46,7 @@ async function request(
     try {
         response = await fetch(`${baseUrl}${path}`, {
             method,
+            credentials: "include",
             headers: {
                 Accept: "application/json",
                 ...(selectedProjectId && !String(path).startsWith("/projects") ? { "X-Project-Id": selectedProjectId } : {}),

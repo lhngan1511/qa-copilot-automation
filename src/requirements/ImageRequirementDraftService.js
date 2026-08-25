@@ -46,7 +46,8 @@ export default class ImageRequirementDraftService {
             }
             throw this.error("AI_IMAGE_ANALYSIS_FAILED", "Gemini không phân tích được bộ ảnh. Hãy thử lại; nếu lỗi lặp lại, kiểm tra log server.", 502, cause);
         }
-        const markdown = this.renderer.render(result.document);
+        const document = this.sanitizeImageDocument(result.document);
+        const markdown = this.renderer.render(document);
         const now = new Date().toISOString();
         const draft = {
             draftId: `DRAFT-${crypto.randomUUID()}`,
@@ -58,7 +59,7 @@ export default class ImageRequirementDraftService {
             observations: Array.isArray(result.observations) ? result.observations : [],
             inferences: Array.isArray(result.inferences) ? result.inferences : [],
             questions: Array.isArray(result.questions) ? result.questions : [],
-            document: result.document ?? {},
+            document,
             markdownContent: markdown,
             model: result.model ?? null,
             usage: result.usage ?? null,
@@ -108,6 +109,23 @@ export default class ImageRequirementDraftService {
             const name = String(feature?.name ?? "").trim().toLowerCase();
             return operation === "CRUD" || /^quản lý\b/.test(name);
         });
+    }
+
+    // Ảnh UI không đủ bằng chứng cho login/access chung. Giữ precondition nghiệp vụ
+    // cụ thể (ví dụ bản ghi đã tồn tại), nhưng bỏ placeholder và suy diễn boilerplate.
+    sanitizeImageDocument(document = {}) {
+        const remove = value => {
+            const text = String(value ?? "").trim();
+            if (!text || /^chưa xác định[.!]?$/i.test(text)) return false;
+            return !/^(?:người dùng\s+)?đã đăng nhập(?:\s+và\s+truy cập\s+(?:trang|chức năng).*)?[.!]?$/i.test(text);
+        };
+        return {
+            ...document,
+            features: (Array.isArray(document.features) ? document.features : []).map(feature => ({
+                ...feature,
+                preconditions: (Array.isArray(feature?.preconditions) ? feature.preconditions : []).filter(remove)
+            }))
+        };
     }
 
     confirm({ projectId, draftId, markdownContent, fileName }) {

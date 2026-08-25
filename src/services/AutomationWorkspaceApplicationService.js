@@ -53,7 +53,10 @@ export const V3_ERRORS = {
     // 6B — ActionBlock
     BLOCK_NOT_FOUND: "BLOCK_NOT_FOUND",
     BLOCK_LABEL_REQUIRED: "BLOCK_LABEL_REQUIRED",
-    BLOCK_NOT_CONFIRMED: "BLOCK_NOT_CONFIRMED"
+    BLOCK_NOT_CONFIRMED: "BLOCK_NOT_CONFIRMED",
+    BINDING_ROLE_INVALID: "BINDING_ROLE_INVALID",
+    BINDING_ITEM_NOT_FOUND: "BINDING_ITEM_NOT_FOUND",
+    ACTION_UNDER_TEST_REQUIRED: "ACTION_UNDER_TEST_REQUIRED"
 };
 
 const STATUS_BY_CODE = {
@@ -84,7 +87,10 @@ const STATUS_BY_CODE = {
     SEGMENT_NOT_FOUND: 404,
     BLOCK_NOT_FOUND: 404,
     BLOCK_LABEL_REQUIRED: 400,
-    BLOCK_NOT_CONFIRMED: 409
+    BLOCK_NOT_CONFIRMED: 409,
+    BINDING_ROLE_INVALID: 400,
+    BINDING_ITEM_NOT_FOUND: 404,
+    ACTION_UNDER_TEST_REQUIRED: 422
 };
 
 /** Ném lỗi V3 thống nhất (errorCode + statusCode + message + details). */
@@ -106,7 +112,8 @@ const RENDERER_TO_V3 = {
     ASSERTION_DUPLICATE: "ASSERTION_DUPLICATE",
     RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
     SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
-    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID"
+    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID",
+    ACTION_UNDER_TEST_REQUIRED: "ACTION_UNDER_TEST_REQUIRED"
 };
 
 function newAssertionId() {
@@ -118,6 +125,11 @@ function newSegmentId() {
 }
 
 const AUTOMATION_DECISIONS = new Set(["UNDECIDED", "MANUAL_ONLY", "AUTOMATED"]);
+const BINDING_ROLES = new Set(["PRECONDITION", "ACTION_UNDER_TEST"]);
+
+function defaultBindingRole(block) {
+    return String(block?.kind ?? "").toUpperCase() === "SETUP" ? "PRECONDITION" : "ACTION_UNDER_TEST";
+}
 
 function newBlockId() {
     return `BLK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -138,13 +150,14 @@ function normalizeFieldName(name) {
 }
 
 export default class AutomationWorkspaceApplicationService {
-    constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null, runner = null } = {}) {
+    constructor({ workspace = null, store = null, session = null, generateService = null, actionLibrary = null, runner = null, runnerAgentService = null } = {}) {
         this.workspace = workspace;       // AutomationWorkspace
         this.store = store;               // CodeGenRecordingStore
         this.session = session;           // CurrentRecordingSession
         this.generateService = generateService; // GenerateService
         this.actionLibrary = actionLibrary;     // ActionLibrary (shared asset)
         this.runner = runner;                   // PlaywrightRunner (P0-C: run thu)
+        this.runnerAgentService = runnerAgentService; // Local Runner Agent control plane
     }
 
     /* ============================== A. Workspace ============================== */
@@ -951,12 +964,38 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** Bind block vào binding của testcase (append — tester-owned order). */
-    bindBlock({ workspaceId, testCaseId, blockId }) {
+    resolveBindingRole(block, role = undefined) {
+        if (role === undefined || role === null || role === "") return defaultBindingRole(block);
+        const normalized = String(role).trim().toUpperCase();
+        if (!BINDING_ROLES.has(normalized)) {
+            fail(V3_ERRORS.BINDING_ROLE_INVALID, "Vai trò thao tác không hợp lệ. Chọn Bước chuẩn bị hoặc Thao tác kiểm thử.");
+        }
+        return normalized;
+    }
+
+    /** Backward-compatible migration at the workspace boundary. Old bindings have
+     * no role, so derive once from the block's legacy kind and persist only the
+     * testcase binding; Action Library is never mutated. */
+    normalizeBindingRoles(workspaceId, testCaseId) {
+        const binding = this.workspace.getBinding(workspaceId, testCaseId);
+        if (!binding) return null;
+        let changed = false;
+        const sequence = (binding.sequence ?? []).map(ref => {
+            if (BINDING_ROLES.has(String(ref.role ?? "").toUpperCase())) return { ...ref, role: String(ref.role).toUpperCase() };
+            const block = this.resolveBlock(workspaceId, ref.blockId);
+            changed = true;
+            return { ...ref, role: defaultBindingRole(block) };
+        });
+        if (changed) return this.workspace.setBinding(workspaceId, testCaseId, sequence);
+        return binding;
+    }
+
+    bindBlock({ workspaceId, testCaseId, blockId, role = undefined }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const block = this.workspace.getActionBlock(workspaceId, blockId);
         if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
         if (block.workspaceId !== workspaceId) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Thao tác không thuộc workspace này.");
-        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
+        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId, this.resolveBindingRole(block, role));
         // Có block CONFIRMED trong binding → testcase tự chuyển "Có automation" (giữ hành vi 5C-0).
         if (block.status === "CONFIRMED") {
             this.workspace.setAutomationDecision(workspaceId, testCaseId, "AUTOMATED");
@@ -968,6 +1007,17 @@ export default class AutomationWorkspaceApplicationService {
     unbindBlock({ workspaceId, testCaseId, blockId, order = null }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const binding = this.workspace.unbindBlockFromTestCase(workspaceId, testCaseId, blockId, Number.isInteger(order) ? order : null);
+        return this.bindingDto(workspaceId, testCaseId, binding);
+    }
+
+    updateBindingRole({ workspaceId, testCaseId, blockId, order, role }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        const block = this.resolveBlock(workspaceId, blockId);
+        if (!block) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác.");
+        const binding = this.workspace.updateBindingRole(
+            workspaceId, testCaseId, blockId, Number(order), this.resolveBindingRole(block, role)
+        );
+        if (!binding) fail(V3_ERRORS.BINDING_ITEM_NOT_FOUND, "Không tìm thấy thao tác trong testcase.");
         return this.bindingDto(workspaceId, testCaseId, binding);
     }
 
@@ -987,7 +1037,7 @@ export default class AutomationWorkspaceApplicationService {
     getBinding({ workspaceId, testCaseId }) {
         this.ensureTestCase(workspaceId, testCaseId);
         this.migrateLegacySegments(workspaceId);
-        return this.bindingDto(workspaceId, testCaseId, this.workspace.getBinding(workspaceId, testCaseId));
+        return this.bindingDto(workspaceId, testCaseId, this.normalizeBindingRoles(workspaceId, testCaseId));
     }
 
     /** Reverse dependency: blockId → testCaseIds[] (deterministic, derive từ bindings). */
@@ -1082,7 +1132,7 @@ export default class AutomationWorkspaceApplicationService {
     }
 
     /** Dùng thao tác từ Library cho testcase (bind). */
-    bindLibraryBlock({ workspaceId, testCaseId, blockId }) {
+    bindLibraryBlock({ workspaceId, testCaseId, blockId, role = undefined }) {
         this.ensureTestCase(workspaceId, testCaseId);
         const lib = this.actionLibrary?.get(blockId);
         if (!lib) fail(V3_ERRORS.BLOCK_NOT_FOUND, "Không tìm thấy thao tác trong thư viện.");
@@ -1091,7 +1141,7 @@ export default class AutomationWorkspaceApplicationService {
             fail(V3_ERRORS.BLOCK_NOT_FOUND, "Thao tác không thuộc Project hiện tại.");
         }
         if (lib.status !== "CONFIRMED") fail(V3_ERRORS.BLOCK_NOT_CONFIRMED, "Thao tác thư viện chưa được xác nhận.");
-        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId);
+        const binding = this.workspace.bindBlockToTestCase(workspaceId, testCaseId, blockId, this.resolveBindingRole(lib, role));
         // P0-D (B) — bind Library action ĐẦU TIÊN là mốc thể hiện ý định làm automation:
         // UNDECIDED -> AUTOMATED (giống bindBlock 5C-0). Generate/Run KHÔNG hạ decision.
         this.workspace.setAutomationDecision(workspaceId, testCaseId, "AUTOMATED");
@@ -1137,7 +1187,7 @@ export default class AutomationWorkspaceApplicationService {
         const seq = (binding?.sequence ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
         const items = seq.map(ref => {
             const b = this.resolveBlock(workspaceId, ref.blockId);
-            return b ? { ...this.blockDto(b), order: ref.order } : null;
+            return b ? { ...this.blockDto(b), order: ref.order, role: this.resolveBindingRole(b, ref.role) } : null;
         }).filter(Boolean);
         return { testCaseId, sequence: items };
     }
@@ -1459,6 +1509,7 @@ export default class AutomationWorkspaceApplicationService {
     generate({ workspaceId, testCaseId, confirmedTestData = {} }) {
         this.ensureTestCase(workspaceId, testCaseId);
         this.migrateLegacySegments(workspaceId);
+        this.normalizeBindingRoles(workspaceId, testCaseId);
         const entry = this.workspace.getTestCase(workspaceId, testCaseId);
         if (!entry.selectedForAutomation) {
             fail(V3_ERRORS.TESTCASE_NOT_SELECTED, "Testcase chưa được chọn để automation.");
@@ -1541,8 +1592,9 @@ export default class AutomationWorkspaceApplicationService {
 
     /** P0-C — Chạy thử testcase đang mở: dùng ĐÚNG generated artifact (không generate ngầm).
      *  Nếu fingerprint hiện tại ≠ fingerprint lúc Generate → stale → chặn, yêu cầu Generate lại. */
-    async runTestcase({ workspaceId, testCaseId, env = {} }) {
+    async runTestcase({ workspaceId, testCaseId, env = {}, agentId = null, runOptions = {}, userId = null }) {
         this.ensureTestCase(workspaceId, testCaseId);
+        this.normalizeBindingRoles(workspaceId, testCaseId);
         // Recompute persisted bindings immediately before checking the generated
         // artifact.  Test Data and replacement actions are edited independently in
         // the UI; this makes their persisted workspace state the runtime SSOT.
@@ -1562,6 +1614,31 @@ export default class AutomationWorkspaceApplicationService {
             fingerprint: entry.generatedFingerprint ?? null,
             effectiveDataBindings: entry.effectiveDataBindings ?? []
         };
+        if (agentId) {
+            if (!this.runnerAgentService) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner Agent chưa sẵn sàng trong môi trường này.");
+            this.runnerAgentService.requireOwnedByUser(agentId, userId);
+            let code;
+            try {
+                code = fs.readFileSync(entry.generatedFile, "utf8");
+            } catch {
+                fail(V3_ERRORS.NOT_GENERATED, "Không đọc được script đã sinh. Hãy Sinh Playwright lại.");
+            }
+            // Local Runner mặc định headed + slowMo để tester quan sát browser. Headless
+            // mặc định không chậm; mọi giá trị đều thuộc job runtime, không thuộc spec.
+            const headed = typeof runOptions?.headed === "boolean" ? runOptions.headed : true;
+            const requestedSlowMo = Number(runOptions?.slowMo);
+            const slowMo = Number.isFinite(requestedSlowMo) && requestedSlowMo >= 0
+                ? Math.floor(requestedSlowMo)
+                : (headed ? 1000 : 0);
+            const effectiveRunOptions = { headed, slowMo };
+            const job = this.runnerAgentService.enqueue({
+                agentId,
+                type: "RUN_TESTCASE",
+                payload: { workspaceId, testCaseId, generatedFile: entry.generatedFile, code, env, generation, runOptions: effectiveRunOptions }
+            });
+            console.log(`[RUN_QUEUE] testcaseId=${testCaseId} agentId=${agentId} generatedFile=${entry.generatedFile} generation=${JSON.stringify(generation)}`);
+            return { testCaseId, runStatus: "QUEUED", jobId: job.jobId, agentId, filePath: entry.generatedFile, generation };
+        }
         const result = await this.runner.runFile(entry.generatedFile, { env, testCaseId, generation });
         // P0-D (B) — runStatus enum: NOT_RUN | PASSED | FAILED (+ DIAGNOSTIC/ERROR khi chưa chạy được).
         // P0 RUNTIME FIX — runner thật trả status "PASSED"/"FAILED" (Playwright convention);
@@ -1587,6 +1664,37 @@ export default class AutomationWorkspaceApplicationService {
             durationMs: result?.durationMs ?? null,
             filePath: entry.generatedFile
         };
+    }
+
+    listRunnerAgents(userId = null) {
+        return userId ? (this.runnerAgentService?.listAgentsForUser?.(userId) ?? []) : [];
+    }
+
+    /** Completion callback invoked only after agent token and job ownership validation. */
+    completeRemoteRun({ job, result = {} }) {
+        const payload = job?.payload ?? {};
+        this.ensureTestCase(payload.workspaceId, payload.testCaseId);
+        const entry = this.workspace.getTestCase(payload.workspaceId, payload.testCaseId);
+        if (payload.generation?.fingerprint && entry.generatedFingerprint !== payload.generation.fingerprint) {
+            return { ignored: true, reason: "STALE_REMOTE_JOB" };
+        }
+        const raw = String(result?.status ?? "ERROR").toUpperCase();
+        const passed = raw === "PASS" || raw === "PASSED";
+        const status = passed ? "PASSED" : (raw === "FAIL" || raw === "FAILED" ? "FAILED" : raw);
+        this.workspace.transition(payload.workspaceId, payload.testCaseId, {
+            runStatus: status,
+            lastRun: {
+                at: new Date().toISOString(), status, passed,
+                error: result?.error ?? result?.diagnostic ?? null,
+                durationMs: result?.durationMs ?? null,
+                agentId: job.agentId,
+                exitCode: result?.exitCode ?? null,
+                stdout: String(result?.stdout ?? "").slice(-12000),
+                stderr: String(result?.stderr ?? "").slice(-12000)
+            }
+        });
+        console.log(`[RUN_REMOTE_END] testcaseId=${payload.testCaseId} agentId=${job.agentId} status=${status} generation=${JSON.stringify(payload.generation ?? {})}`);
+        return { testCaseId: payload.testCaseId, runStatus: status, passed };
     }
 
     /* ============================== Helpers ============================== */
@@ -1637,6 +1745,7 @@ export default class AutomationWorkspaceApplicationService {
     toItem(entry, workspaceId) {
         // 6B — migrate legacy segments → binding (canonical) trước khi đọc.
         this.migrateLegacySegments(workspaceId);
+        this.normalizeBindingRoles(workspaceId, entry.testCaseId);
         const recs = (this.store?.allByTestCase(entry.testCaseId) ?? [])
             .filter(r => r.status === "APPROVED")
             .sort((a, b) => (b.recordingVersion || 0) - (a.recordingVersion || 0));
@@ -1651,6 +1760,7 @@ export default class AutomationWorkspaceApplicationService {
                 segmentId: b.blockId,
                 recordingId: b.sourceRecordingId,
                 orderInTestCase: ref.order,
+                role: this.resolveBindingRole(b, ref.role),
                 startStep: b.sourceRange?.startStep ?? null,
                 endStep: b.sourceRange?.endStep ?? null,
                 stepCount: (b.steps ?? []).length,

@@ -516,12 +516,13 @@ export default class AutomationWorkspace {
         return entry.binding ?? { sequence: [] };
     }
 
-    /** Set nguyên sequence binding (dùng cho migrate / khởi tạo). */
+    /** Set nguyên sequence binding (dùng cho migrate / khởi tạo).
+     * Role thuộc occurrence của testcase, không thuộc Action Library. */
     setBinding(workspaceId, testCaseId, sequence) {
         const ws = this.get(workspaceId);
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!ws || !entry) return null;
-        entry.binding = { sequence: (Array.isArray(sequence) ? sequence : []).map((r, i) => ({ blockId: r.blockId, order: r.order ?? i + 1 })) };
+        entry.binding = { sequence: (Array.isArray(sequence) ? sequence : []).map((r, i) => ({ blockId: r.blockId, order: r.order ?? i + 1, ...(r.role ? { role: r.role } : {}) })) };
         ws.updatedAt = new Date().toISOString();
         this.persist();
         return { ...entry.binding };
@@ -529,13 +530,13 @@ export default class AutomationWorkspace {
 
     /** Gán block vào binding (append — tester-owned order; KHÔNG tự sắp xếp).
      *  Unit-type: cho phép CÙNG blockId xuất hiện NHIỀU LẦN (D → E → D). */
-    bindBlockToTestCase(workspaceId, testCaseId, blockId) {
+    bindBlockToTestCase(workspaceId, testCaseId, blockId, role) {
         const ws = this.get(workspaceId);
         const entry = this.getTestCase(workspaceId, testCaseId);
         if (!ws || !entry) return null;
         const seq = (entry.binding?.sequence ?? []).slice();
         const maxOrder = seq.reduce((m, r) => Math.max(m, r.order || 0), 0);
-        seq.push({ blockId, order: maxOrder + 1 });
+        seq.push({ blockId, order: maxOrder + 1, ...(role ? { role } : {}) });
         entry.binding = { sequence: seq };
         ws.updatedAt = new Date().toISOString();
         this.persist();
@@ -559,7 +560,7 @@ export default class AutomationWorkspace {
             seq = seq.filter(ref => ref.blockId !== blockId);
         }
         // Đánh lại order liên tục (1..n).
-        seq = seq.map((r, i) => ({ blockId: r.blockId, order: i + 1 }));
+        seq = seq.map((r, i) => ({ ...r, blockId: r.blockId, order: i + 1 }));
         entry.binding = { sequence: seq };
         ws.updatedAt = new Date().toISOString();
         this.persist();
@@ -592,6 +593,26 @@ export default class AutomationWorkspace {
             const ref = refs.shift() || { blockId: id };
             return { ...ref, blockId: id, order: i + 1 };
         });
+        entry.binding = { sequence: seq };
+        ws.updatedAt = new Date().toISOString();
+        this.persist();
+        return { ...entry.binding };
+    }
+
+    /** Đổi role của ĐÚNG một occurrence (blockId + order), không sửa Library metadata. */
+    updateBindingRole(workspaceId, testCaseId, blockId, order, role) {
+        const ws = this.get(workspaceId);
+        const entry = this.getTestCase(workspaceId, testCaseId);
+        if (!ws || !entry || !Number.isInteger(order)) return null;
+        let changed = false;
+        const seq = (entry.binding?.sequence ?? []).map(ref => {
+            if (!changed && ref.blockId === blockId && ref.order === order) {
+                changed = true;
+                return { ...ref, role };
+            }
+            return ref;
+        });
+        if (!changed) return null;
         entry.binding = { sequence: seq };
         ws.updatedAt = new Date().toISOString();
         this.persist();

@@ -28,10 +28,10 @@ async function boot() {
     const app = createApp({ repositoryType: "file", dataDir, outputDir: path.join(tempRoot, "o"), v3OutputDir: path.join(tempRoot, "out") });
     const srv = await new Promise(r => { const s = app.listen(0, "127.0.0.1", () => r(s)); });
     const base = `http://127.0.0.1:${srv.address().port}`;
-    async function req(m, p, b) {
-        const r = await fetch(`${base}${p}`, { method: m, headers: b !== undefined ? { "content-type": "application/json" } : {}, body: b !== undefined ? JSON.stringify(b) : undefined });
+    async function req(m, p, b, cookie = "") {
+        const r = await fetch(`${base}${p}`, { method: m, headers: { ...(b !== undefined ? { "content-type": "application/json" } : {}), ...(cookie ? { cookie } : {}) }, body: b !== undefined ? JSON.stringify(b) : undefined });
         let d; try { d = await r.json(); } catch { d = null; }
-        return { status: r.status, body: d };
+        return { status: r.status, body: d, cookie: r.headers.get("set-cookie")?.split(";")[0] ?? "" };
     }
     return { srv, req, app };
 }
@@ -113,6 +113,45 @@ assert.ok(spawned[0].code.includes("DV99"), "6: Run nhận script chứa B");
 assert.ok(!spawned[0].code.includes("DV01"), "6: Run không nhận script cũ chứa A");
 assert.ok(spawned[0].options.generation.hash, "6: Run nhận generation hash để audit");
 assert.equal(spawned[0].options.generation.effectiveDataBindings[0].value, "DV99", "6: Run log context chứa effective binding B");
+
+// ===== Remote Runner — QUEUED chỉ là trạng thái chuyển tiếp; complete ghi canonical lastRun =====
+const login = await req("POST", "/api/auth/login", { username: "tester01", password: "tester01" });
+const runnerDevice = await req("POST", "/api/runner-devices", { machineName: "Máy Tester 01" }, login.cookie);
+const runnerId = runnerDevice.body.data.device.runnerId;
+const runnerToken = runnerDevice.body.data.token;
+const registerAgent = await req("POST", "/api/runner-agents/register", {
+    agentId: runnerId, token: runnerToken, machineName: "Máy Tester 01", capabilities: ["PLAYWRIGHT_RUN"]
+});
+assert.equal(registerAgent.status, 200, "remote: runner register thành công");
+// Isolate this remote-run assertion from the preceding local PASS.
+app.locals.dependencies.v3ApplicationService.workspace.transition(wid, "TC001", { runStatus: "NOT_RUN", lastRun: null });
+const remoteQueued = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/run`, { agentId: runnerId }, login.cookie);
+assert.equal(remoteQueued.status, 200, "remote: dispatch trả 200");
+assert.equal(remoteQueued.body?.runStatus, "QUEUED", "remote: dispatch trả QUEUED, không trả lỗi");
+assert.ok(remoteQueued.body?.jobId, "remote: response có job identity để UI theo dõi");
+const claimedRemote = await req("POST", `/api/runner-agents/${runnerId}/jobs/claim`, { token: runnerToken });
+assert.equal(claimedRemote.body?.data?.status, "RUNNING", "remote: runner claim chuyển job sang RUNNING");
+assert.equal(claimedRemote.body?.data?.payload?.runOptions?.headed, true, "remote: Automation Workspace mặc định dispatch headed=true");
+assert.equal(claimedRemote.body?.data?.payload?.runOptions?.slowMo, 1000, "remote: headed mặc định dispatch slowMo=1000ms");
+const completedRemote = await req("POST", `/api/runner-agents/${runnerId}/jobs/${remoteQueued.body.jobId}/complete`, {
+    token: runnerToken, result: { status: "PASSED", exitCode: 0, durationMs: 12, stdout: "1 passed", stderr: "" }
+});
+assert.equal(completedRemote.status, 200, "remote: complete callback thành công");
+const workspaceAfterRemote = await req("GET", `/api/automation-v3/workspaces/${wid}`);
+const remoteItem = workspaceAfterRemote.body.items.find(x => x.testCaseId === "TC001");
+assert.equal(remoteItem.runStatus, "PASSED", "remote: callback ghi canonical testcase runStatus PASSED");
+assert.equal(remoteItem.lastRun?.passed, true, "remote: canonical lastRun xác nhận PASS");
+assert.equal(remoteItem.lastRun?.exitCode, 0, "remote: canonical lastRun giữ exitCode của runner");
+const remoteHeadless = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/run`, {
+    agentId: runnerId, runOptions: { headed: false }
+}, login.cookie);
+const claimedHeadless = await req("POST", `/api/runner-agents/${runnerId}/jobs/claim`, { token: runnerToken });
+assert.equal(remoteHeadless.body?.runStatus, "QUEUED", "remote: headed=false vẫn được dispatch");
+assert.equal(claimedHeadless.body?.data?.payload?.runOptions?.headed, false, "remote: headed=false giữ nguyên trong job contract");
+assert.equal(claimedHeadless.body?.data?.payload?.runOptions?.slowMo, 0, "remote: headed=false mặc định slowMo=0");
+await req("POST", `/api/runner-agents/${runnerId}/jobs/${remoteHeadless.body.jobId}/complete`, {
+    token: runnerToken, result: { status: "PASSED", exitCode: 0, durationMs: 1 }
+});
 
 srv.close();
 fs.rmSync(tempRoot, { recursive: true, force: true });

@@ -5,7 +5,8 @@ function text(value, fallback = "Chưa xác định") {
 
 function bullets(items, fallback = "Chưa xác định") {
     const list = Array.isArray(items) ? items.map(item => text(item, "")).filter(Boolean) : [];
-    return list.length ? list.map(item => `- ${item}`).join("\n") : `- ${fallback}`;
+    if (list.length) return list.map(item => `- ${item}`).join("\n");
+    return fallback ? `- ${fallback}` : "";
 }
 
 function table(headers, rows) {
@@ -37,7 +38,9 @@ export default class RequirementMarkdownRenderer {
             sections.push([
                 `## Feature: ${text(feature?.name)}`,
                 `### Mô tả\n\n${text(feature?.description)}`,
-                `### Điều kiện tiên quyết\n\n${bullets(feature?.preconditions)}`,
+                // Preconditions rỗng là thông tin hợp lệ khi chỉ có ảnh UI; không biến
+                // thành placeholder rồi để placeholder rò xuống testcase.
+                `### Điều kiện tiên quyết\n\n${bullets(feature?.preconditions, "")}`,
                 `### Input\n\n${table(["Trường", "Bắt buộc", "Quy tắc"], feature?.inputs)}`,
                 `### Luồng chính\n\n${(Array.isArray(feature?.mainFlow) && feature.mainFlow.length) ? feature.mainFlow.map((item, index) => `${index + 1}. ${text(item)}`).join("\n") : "1. Chưa xác định"}`,
                 `### Quy tắc nghiệp vụ\n\n${bullets(feature?.businessRules)}`,

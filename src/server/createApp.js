@@ -18,6 +18,12 @@ import ActionLibrary from "../codegen/ActionLibrary.js";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
 import createAutomationV3Routes from "../routes/automationV3Routes.js";
 import createProjectRoutes from "../routes/projectRoutes.js";
+import createRunnerAgentRoutes from "../routes/runnerAgentRoutes.js";
+import RunnerAgentService from "../services/RunnerAgentService.js";
+import MinimalAuthService from "../services/MinimalAuthService.js";
+import RunnerDeviceService from "../services/RunnerDeviceService.js";
+import createAuthRoutes, { attachPrincipal } from "../routes/authRoutes.js";
+import createRunnerDeviceRoutes from "../routes/runnerDeviceRoutes.js";
 import errorHandler from "../middleware/errorHandler.js";
 import RequirementUploadService from "../services/RequirementUploadService.js";
 import AIProviderFactory from "../providers/AIProviderFactory.js";
@@ -107,6 +113,9 @@ export default function createApp({
     );
 
     app.use(express.json({ limit: "2mb" }));
+    const authService = new MinimalAuthService({ dataDir: path.resolve(dataDir ?? path.join(projectDirectory, "data")) });
+    app.use(attachPrincipal(authService));
+    app.use("/api/auth", createAuthRoutes({ auth: authService }));
 
     app.get("/health", (_req, res) => {
         res.status(200).json({
@@ -169,6 +178,11 @@ export default function createApp({
         // P0-C - runner de chay thu testcase dang mo (reuse PlaywrightRunner).
         runner: new PlaywrightRunner({ rootDir: projectDirectory })
     });
+    const runnerDeviceService = new RunnerDeviceService({ dataDir: codeGenDataDir });
+    const runnerAgentService = new RunnerAgentService({ deviceService: runnerDeviceService });
+    v3ApplicationService.runnerAgentService = runnerAgentService;
+    app.use("/api/runner-devices", createRunnerDeviceRoutes({ service: runnerDeviceService }));
+    app.use("/api/runner-agents", createRunnerAgentRoutes({ service: runnerAgentService, applicationService: v3ApplicationService }));
     app.use("/api/automation-v3", createAutomationV3Routes({ applicationService: v3ApplicationService }));
 
     app.use(express.static(resolvedPublicDirectory, { index: false }));
@@ -198,6 +212,9 @@ export default function createApp({
         requirementUploadService,
         codeGenManager,
         v3ApplicationService,
+        runnerAgentService,
+        authService,
+        runnerDeviceService,
         publicDirectory: resolvedPublicDirectory,
         indexFile,
         indexExists: fs.existsSync(indexFile)

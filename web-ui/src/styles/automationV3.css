@@ -902,6 +902,17 @@
 }
 .v3-act__reuse { display: inline-flex; gap: 6px; align-items: center; }
 .v3-act__reuse .v3-input { width: 180px; min-height: 30px; font-size: 12px; }
+.v3-act__role { display: inline-flex; align-items: center; gap: 5px; color: #64748b; font-size: 12px; }
+.v3-act__role select,
+.v3-lib-sequence__item > select {
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+}
 .v3-drawer__sub { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ================= 6C.1 — Compact + status rõ ================= */
@@ -1102,10 +1113,13 @@
 .v3-lib-group__rename .v3-input { flex: 1; min-height: 30px; font-size: 12px; }
 
 /* P0-C — tab Chạy thử. */
-.v3-run-tab { display: grid; gap: 12px; }
+.v3-run-tab { display: grid; gap: 10px; }
 .v3-run-result { border-radius: 8px; padding: 10px 12px; font-size: 13px; display: grid; gap: 4px; }
 .v3-run-result--pass { background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; }
 .v3-run-result--fail { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.v3-run-result--pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+.v3-run-result__output { max-height: 180px; margin: 0; overflow: auto; white-space: pre-wrap; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.v3-modal-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 42, .35); }.v3-modal { width: min(100%, 460px); display: grid; gap: 14px; padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 20px 45px rgba(15,23,42,.22); }.v3-modal h3,.v3-modal p { margin: 0; }.v3-modal label { display: grid; gap: 6px; font-size: 13px; }.v3-modal input { min-height: 36px; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; }.v3-modal form { display: grid; gap: 14px; }.v3-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* P0-A — DỮ LIỆU KIỂM THỬ (info tab drawer). */
 .v3-info-td { display: grid; gap: 6px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 8px; margin-top: 4px; }
@@ -2534,12 +2548,52 @@
   :root { --v3-review-drawer-width: min(480px, 100vw); }
 }
 
+.v3-run-tab .v3-exp__block { gap: 6px; padding: 10px; border-color: #e5eaf1; border-radius: 8px; box-shadow: none; }
+.v3-run-tab .v3-run-test-data .v3-info-row { padding-block: 7px; }
+.v3-run-tab .v3-run-preparation:has(.v3-run-preparation__empty) { padding-block: 8px; }
+.v3-run-preparation__empty { line-height: 1.35; }
+.v3-run-actions__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.v3-run-actions__toggle { display: inline-flex; align-items: center; gap: 5px; padding: 2px 4px; border: 0; border-radius: 5px; color: #64748b; background: transparent; font-size: 12px; cursor: pointer; }
+.v3-run-actions__toggle:hover { color: #1d4ed8; background: #f1f5f9; }
+.v3-run-actions__toggle > span:last-child { font-size: 16px; line-height: 1; transition: transform .15s ease; }
+.v3-run-actions--collapsed .v3-run-actions__toggle > span:last-child { transform: rotate(-90deg); }
 .v3-run-action { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px solid #e5eaf1; }
 .v3-run-action:last-child { border-bottom: 0; }
 .v3-run-action__title { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; color: var(--heading); }
+.v3-run-action__title > div { display: grid; gap: 3px; }
+.v3-run-action__title strong { color: #475569; font-size: 12px; font-weight: 600; }
 .v3-run-action__title b { font-weight: 600; }
 .v3-run-action__title em { color: var(--muted); font-size: 12px; font-style: normal; }
 .v3-run-action__steps { display: grid; gap: 6px; margin: 0 0 0 32px; padding-left: 20px; color: var(--text); font-size: 13px; line-height: 1.5; }
+
+/* Compact workspace context: selector belongs to the page header, not a standalone card. */
+.v3-ws-panel--compact { display: inline-flex; align-items: center; min-width: 0; border: 0; background: transparent; box-shadow: none; padding: 0; }
+.v3-workspace-controls { order: -1; flex: 1 0 100%; display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; }
+.v3-ws-panel--compact .v3-ws-panel__switch { position: relative; }
+.v3-ws-panel__trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 38px; padding: 7px 11px; white-space: nowrap; }
+.v3-ws-panel__trigger span { color: #64748b; font-size: 12px; }
+.v3-ws-panel__trigger b { color: #334155; font-weight: 600; }
+.v3-runner-select { display: inline-grid; gap: 2px; color: #64748b; font-size: 11px; }
+.v3-runner-select select { min-width: 154px; min-height: 38px; padding: 6px 9px; border: 1px solid #d5dfeb; border-radius: 8px; color: #334155; background: #fff; font-size: 12px; }
+.v3-runner-select input { min-width: 220px; min-height: 38px; padding: 6px 9px; border: 1px solid #d5dfeb; border-radius: 8px; color: #334155; background: #fff; font-size: 12px; }
+.v3-runner-select--url { flex: 1 1 220px; }
+.v3-runner-select--url input { width: 100%; }
+.v3-runner-select select:disabled { color: #94a3b8; background: #f8fafc; cursor: not-allowed; }
+.v3-run-config__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.v3-run-config__fields .v3-runner-select--url { grid-column: 1 / -1; }
+.v3-run-config .v3-act__note { margin: 0; }
+
+/* Expected-result tab: preserve the flow, but keep the manual editor visually local. */
+.v3-exp__expected-edit { width: fit-content; min-height: 30px; padding: 4px 6px; color: #4f6f9d; font-size: 12px; font-weight: 400; }
+.v3-exp__expected-edit:hover { color: var(--primary, #2563eb); background: transparent; text-decoration: underline; }
+.v3-exp__intelligence .v3-exp__row,
+.v3-exp__manual .v3-exp__row { align-items: center; }
+.v3-exp__manual .v3-exp__note { margin-top: -2px; }
+.v3-exp__manual .v3-cond-form { margin-top: 4px; }
+.v3-cond-form__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.v3-cond-form__actions .v3-btn { min-height: 32px; }
+
+@media (max-width: 700px) { .v3-workspace-controls { justify-content: flex-start; flex-wrap: wrap; } .v3-run-config__fields { grid-template-columns: 1fr; } .v3-run-config__fields .v3-runner-select--url { grid-column: auto; } }
 
 @media (max-width: 1100px) {
   :root { --v3-review-drawer-width: min(560px, 100vw); }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveTestData } from "../../api/automationV3Api.js";
-import { ACTION_LABEL, canGenerateForTestcase, generateGateReason, automationDisplayStatus } from "../../utils/automationV3.js";
+import { ACTION_LABEL, canGenerateForTestcase, generateGateReason, automationDisplayStatus, bindingRole, bindingRoleLabel, drawerResultForTestCase, drawerDraftForTestCase, displayedRunResultForTestCase, isPendingRunResult, pendingRunMessage } from "../../utils/automationV3.js";
 import V3ExpectedResultTab from "./V3ExpectedResultTab.jsx";
 import V3ActionSetupPanel from "./V3ActionSetupPanel.jsx";
 import V3StepReviewSection from "./V3StepReviewSection.jsx";
@@ -20,24 +20,33 @@ import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus, fieldEntry } f
      chọn Automation + TẤT CẢ thao tác CONFIRMED + ≥1 assertion TESTER_CONFIRMED).
 */
 
-export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onRun, onChanged, onError, generateResult = null, runResult = null }) {
+export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onRun, onChanged, onError, generateResult = null, runResult = null, runnerAgents = [], runnerAgentId = "", runnerSlowMo = 1000, runBaseUrl = "", onRunnerChange, onRunnerSlowMoChange, onRunBaseUrlChange }) {
     const [tab, setTab] = useState(initialTab);
     // P0-A — Test Data editor: bản nháp local; save qua API (persist workspace, không sửa approved).
     const [tdDraft, setTdDraft] = useState(null); // { "<field>": "<value>" }
     // P0 — canonical binding: { "<step.target>": "<businessField>" } (tester-owned; persist reload).
     const [tdBindings, setTdBindings] = useState(null);
+    const [tdContextId, setTdContextId] = useState(null);
+    const [runActionsExpanded, setRunActionsExpanded] = useState(true);
+
+    // Response tạm chỉ hợp lệ cho đúng testcase đang render. Lịch sử Run lấy từ canonical testCase.lastRun.
+    const scopedGenerateResult = drawerResultForTestCase(generateResult, testCase?.testCaseId);
+    const displayedRunResult = displayedRunResultForTestCase(testCase, runResult);
 
     // P0-D1 — Generate SUCCESS → tự chuyển sang tab Chạy thử (không đóng drawer).
     useEffect(() => {
-        if (generateResult?.ok) setTab("run");
-    }, [generateResult]);
+        if (scopedGenerateResult?.ok) setTab("run");
+    }, [scopedGenerateResult]);
     const [tdSaving, setTdSaving] = useState(false);
     const tdApproved = testCase?.testData ?? null;
 
     // Đồng bộ draft khi testcase đổi.
     useEffect(() => {
+        setTdDraft({});
+        setTdBindings({});
+        setTdContextId(testCase?.testCaseId ?? null);
         const td = tdApproved;
-        if (!td || typeof td !== "object") { setTdDraft({}); return; }
+        if (!td || typeof td !== "object") return;
         const entries = [];
         if (td.fields && typeof td.fields === "object") {
             for (const [k, f] of Object.entries(td.fields)) entries.push([k, f && typeof f === "object" ? f.value : f]);
@@ -74,8 +83,12 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [testCase]);
 
+    useEffect(() => {
+        setRunActionsExpanded(true);
+    }, [testCase?.testCaseId]);
+
     const persistTd = async (next, bindingsOverride) => {
-        if (tdSaving) return;
+        if (tdSaving || tdContextId !== testCase?.testCaseId) return;
         setTdSaving(true);
         try {
             // P0 422-LIFECYCLE — drawer KHÔNG còn UI sửa binding (P0 simplify bỏ select):
@@ -151,6 +164,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
     const gateReason = generateGateReason(testCase);
     const expected = String(testCase.expectedResult ?? "").trim();
     const segCount = testCase.segmentSummary?.total ?? 0;
+    const runStepCount = (testCase?.segments ?? []).reduce((count, segment) => count + (Array.isArray(segment?.steps) ? segment.steps.length : 0), 0);
 
     return (
         <div className="v3-drawer" role="dialog" aria-modal="true" aria-label={`Automation ${testCase.testCaseId}`}>
@@ -199,8 +213,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         <div className="v3-info-td">
                             <div className="v3-info-td__head">DỮ LIỆU KIỂM THỬ</div>
                             {(() => {
-                                const draft = tdDraft ?? {};
-                                const bindings = { ...(testCase?.testDataBindings ?? {}), ...(tdBindings ?? {}) };
+                                const draft = drawerDraftForTestCase(tdDraft, tdContextId, testCase?.testCaseId);
+                                const bindings = { ...(testCase?.testDataBindings ?? {}), ...drawerDraftForTestCase(tdBindings, tdContextId, testCase?.testCaseId) };
                                 const actionInputs = businessActionInputs();
                                 // P0 REGRESSION — CHỈ business fields (util testDataView): approved keys
                                 // (đã lọc setup) + business field của binding. KHÔNG technical target,
@@ -291,10 +305,39 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                     </>
                 ) : tab === "run" ? (
                     <div className="v3-run-tab">
-                        <h4 className="v3-map__h">Chạy thử</h4>
+                        {/* Runner và tốc độ là option của lần thực thi, không phải cấu hình Workspace. */}
+                        <div className="v3-exp__block v3-run-config">
+                            <h4 className="v3-exp__h">MÔI TRƯỜNG CHẠY</h4>
+                            <div className="v3-run-config__fields">
+                                <label className="v3-runner-select v3-runner-select--url">
+                                    <span>Địa chỉ hệ thống</span>
+                                    <input type="url" value={runBaseUrl} placeholder="http://localhost:3000" onChange={event => onRunBaseUrlChange?.(event.target.value)} />
+                                </label>
+                                <label className="v3-runner-select">
+                                    <span>Runner</span>
+                                    <select value={runnerAgentId} onChange={event => onRunnerChange?.(event.target.value)}>
+                                        <option value="">Server QA Copilot hiện tại</option>
+                                        {runnerAgents.filter(agent => agent.status === "ONLINE" || agent.status === "BUSY").map(agent => (
+                                            <option value={agent.agentId} key={agent.agentId} disabled={agent.status !== "ONLINE"}>
+                                                {agent.machineName} · {agent.status === "ONLINE" ? "Online" : "Đang chạy"}{agent.runnerVersion ? ` · v${agent.runnerVersion}` : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label className="v3-runner-select" title={runnerAgentId ? "Áp dụng cho Runner từ xa" : "Chỉ áp dụng khi chọn Runner từ xa"}>
+                                    <span>Tốc độ chạy</span>
+                                    <select value={runnerSlowMo} disabled={!runnerAgentId} onChange={event => onRunnerSlowMoChange?.(Number(event.target.value))}>
+                                        <option value={0}>Nhanh</option>
+                                        <option value={500}>Chậm</option>
+                                        <option value={1000}>Rất chậm</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <p className="v3-act__note">Địa chỉ hệ thống được dùng cho lần chạy này; để trống chỉ khi server đã có BASE_URL trong .env. Tốc độ chỉ áp dụng cho máy Runner từ xa.</p>
+                        </div>
                         {/* P0 REGRESSION — DỮ LIỆU TESTCASE (chỉ business fields; không technical/setup).
                             P0 TC001 — state VALUE/EMPTY/UNRESOLVED: EMPTY hiện "—", UNRESOLVED "⚠ Cần review". */}
-                        <div className="v3-exp__block">
+                        <div className="v3-exp__block v3-run-test-data">
                             <h4 className="v3-exp__h">DỮ LIỆU TESTCASE</h4>
                             {(() => {
                                 const approvedPurpose = {};
@@ -317,11 +360,19 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                             })()}
                         </div>
 
-                        {/* P0 — DỮ LIỆU CHUẨN BỊ (per selected action: env/ready/missing). */}
-                        <div className="v3-exp__block">
+                        {/* Chỉ role PRECONDITION có input môi trường/setup mới là dữ liệu chuẩn bị.
+                            ACTION_UNDER_TEST luôn thuộc luồng chạy, không được trình bày như data/setup. */}
+                        <div className="v3-exp__block v3-run-preparation">
                             <h4 className="v3-exp__h">DỮ LIỆU CHUẨN BỊ</h4>
-                            {testCase?.segments?.length > 0 ? (
-                                testCase.segments.map(seg => {
+                            {(() => {
+                                const preparationSegments = (testCase?.segments ?? []).filter(seg =>
+                                    bindingRole(seg) === "PRECONDITION"
+                                    && (seg?.inputs ?? []).some(input => isSetupField(input?.field))
+                                );
+                                if (preparationSegments.length === 0) {
+                                    return <p className="v3-act__note v3-run-preparation__empty">Không có dữ liệu hoặc môi trường chuẩn bị riêng.</p>;
+                                }
+                                return preparationSegments.map(seg => {
                                     // P0 TC001 — singleInput: heuristic unique-business-field chỉ khi ĐÚNG 1 input.
                                     const actionInputs = businessActionInputs();
                                     const prep = actionPrepStatus({
@@ -340,18 +391,24 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                             <b className={prep.status === "missing" ? "v3-warn" : prep.status === "env" ? "" : "v3-ok"}>{prep.text}</b>
                                         </div>
                                     );
-                                })
-                            ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
+                                });
+                            })()}
                         </div>
                         {/* Same Action -> Steps hierarchy consumed by GenerateService. */}
-                        <div className="v3-exp__block">
-                            <h4 className="v3-exp__h">Thao tác sẽ chạy</h4>
-                            {testCase?.segments?.length > 0 ? (
+                        <div className={`v3-exp__block v3-run-actions${runActionsExpanded ? "" : " v3-run-actions--collapsed"}`}>
+                            <div className="v3-run-actions__head">
+                                <h4 className="v3-exp__h">Thao tác sẽ chạy</h4>
+                                <button type="button" className="v3-run-actions__toggle" onClick={() => setRunActionsExpanded(expanded => !expanded)} aria-expanded={runActionsExpanded} aria-label={runActionsExpanded ? "Thu gọn thao tác sẽ chạy" : "Mở rộng thao tác sẽ chạy"}>
+                                    {!runActionsExpanded && runStepCount > 0 ? <span>{runStepCount} bước</span> : null}
+                                    <span aria-hidden="true">⌄</span>
+                                </button>
+                            </div>
+                            {runActionsExpanded && (testCase?.segments?.length > 0 ? (
                                 testCase.segments.map(s => (
                                     <div className="v3-run-action" key={`${s.segmentId}:${s.orderInTestCase}`}>
                                         <div className="v3-run-action__title">
                                             <span>{s.orderInTestCase}.</span>
-                                            <b>{s.label ?? s.segmentId}</b>
+                                            <div><strong>[{bindingRoleLabel(s)}]</strong><b>{s.label ?? s.segmentId}</b></div>
                                             <em>{Array.isArray(s.steps) ? `${s.steps.length} bước` : ""}</em>
                                         </div>
                                         {Array.isArray(s.steps) && s.steps.length > 0 ? (
@@ -365,7 +422,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                         ) : <p className="v3-act__note">Action chưa có bước thực thi.</p>}
                                     </div>
                                 ))
-                            ) : <p className="v3-act__note">Chưa chọn thao tác.</p>}
+                            ) : <p className="v3-act__note">Chưa có thao tác trong testcase.</p>)}
                         </div>
                         {/* P0-D1 — Kết quả đã chọn */}
                         <div className="v3-exp__block">
@@ -377,19 +434,19 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         {/* Generated source */}
                         <div className="v3-exp__block">
                             <h4 className="v3-exp__h">Playwright</h4>
-                            {testCase?.generateStatus === "GENERATED" && generateResult?.ok ? (
+                            {testCase?.generateStatus === "GENERATED" && scopedGenerateResult?.ok ? (
                                 <>
-                                    <p className="v3-act__note">{generateResult.fileName}</p>
-                                    <details className="v3-act__raw"><summary>Xem script</summary><pre className="v3-exp__stmt" style={{ whiteSpace: "pre-wrap", maxHeight: 260, overflow: "auto" }}>{generateResult.code}</pre></details>
+                                    <p className="v3-act__note">{scopedGenerateResult.fileName}</p>
+                                    <details className="v3-act__raw"><summary>Xem script</summary><pre className="v3-exp__stmt" style={{ whiteSpace: "pre-wrap", maxHeight: 260, overflow: "auto" }}>{scopedGenerateResult.code}</pre></details>
                                     <div className="v3-td-actions">
                                         <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => onRun?.(testCase)} disabled={!onRun}>
                                             Chạy thử
                                         </button>
                                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
-                                            const blob = new Blob([generateResult.code], { type: "text/javascript;charset=utf-8" });
+                                            const blob = new Blob([scopedGenerateResult.code], { type: "text/javascript;charset=utf-8" });
                                             const url = URL.createObjectURL(blob);
                                             const a = document.createElement("a");
-                                            a.href = url; a.download = generateResult.fileName;
+                                            a.href = url; a.download = scopedGenerateResult.fileName;
                                             document.body.appendChild(a); a.click(); a.remove();
                                             URL.revokeObjectURL(url);
                                         }}>Lưu file .spec.js</button>
@@ -409,14 +466,20 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         </div>
                         {/* Kết quả run — P0 RUNTIME FIX: PASS khi ok + passed (hoặc runStatus PASSED —
                             runner thật trả "PASSED"); luôn có chi tiết (error hoặc status + duration). */}
-                        {runResult ? (
+                        {displayedRunResult ? (
                             (() => {
-                                const runPassed = Boolean(runResult.ok && (runResult.passed || runResult.runStatus === "PASSED"));
+                                const runPending = isPendingRunResult(displayedRunResult);
+                                const runPassed = Boolean(displayedRunResult.ok && (displayedRunResult.passed || displayedRunResult.runStatus === "PASSED"));
+                                const runFailed = String(displayedRunResult.runStatus ?? "").toUpperCase() === "FAILED";
+                                const failureDetail = [displayedRunResult.error, displayedRunResult.stderr, displayedRunResult.stdout]
+                                    .filter(value => String(value ?? "").trim())
+                                    .map(value => String(value).trim())
+                                    .join("\n");
                                 return (
-                                    <div className={`v3-run-result ${runPassed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
-                                        <strong>{runPassed ? "PASS" : runResult.error ? "FAIL" : "LỖI"}</strong>
-                                        {runResult.error ? <span>{String(runResult.error)}</span> : runResult.runStatus ? (
-                                            <span className="v3-act__note">{runResult.runStatus}{runResult.durationMs ? ` · ${(runResult.durationMs / 1000).toFixed(1)}s` : ""}</span>
+                                    <div className={`v3-run-result ${runPending ? "v3-run-result--pending" : runPassed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
+                                        <strong>{runPending ? "ĐANG CHỜ" : runPassed ? "PASS" : runFailed || displayedRunResult.error ? "FAIL" : "LỖI"}</strong>
+                                        {runPending ? <span>{pendingRunMessage(displayedRunResult)}</span> : failureDetail ? <pre className="v3-run-result__output">{failureDetail}</pre> : displayedRunResult.runStatus ? (
+                                            <span className="v3-act__note">{displayedRunResult.runStatus}{displayedRunResult.durationMs ? ` · ${(displayedRunResult.durationMs / 1000).toFixed(1)}s` : ""}</span>
                                         ) : null}
                                     </div>
                                 );
@@ -432,7 +495,7 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                         onGenerate={onGenerate}
                         canGenerate={canGenerate}
                         gateReason={gateReason}
-                        generateResult={generateResult}
+                        generateResult={scopedGenerateResult}
                     />
                 )}
             </div>

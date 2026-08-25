@@ -10,34 +10,17 @@
  KHÔNG hiển thị thuật ngữ ActionBlock/Binding/Segment.
 */
 
-import { decisionLabel, automationDisplayStatus } from "../../utils/automationV3.js";
-
-const STATUS_BADGE = {
-    SELECTED: ["v3-badge--sel", "Đã chọn"],
-    RECORDING: ["v3-badge--rec", "Đang nhập bản ghi"],
-    REVIEW_REQUIRED: ["v3-badge--review", "Cần duyệt"],
-    APPROVED: ["v3-badge--ok", "Đã duyệt"]
-};
-
-const DECISION_BADGE = {
-    AUTOMATED: "v3-badge--ok",
-    MANUAL_ONLY: "v3-badge--manual",
-    UNDECIDED: "v3-badge--review"
-};
+import { automationDisplayStatus } from "../../utils/automationV3.js";
 
 export default function V3TestCaseCard({
     testCase,
-    selected = false,
     active = false,
     recordingActive = false,
-    onToggle,
     onPrimaryAction,
     onMenuAction,
     menuOpen = false
 }) {
     const selectable = testCase.automationCandidate !== false;
-    const isSelected = selected && selectable;
-    const status = testCase.automationStatus;
     const decision = testCase.automationDecision ?? "UNDECIDED";
     const segments = Array.isArray(testCase.segments) ? testCase.segments : [];
     const segSummary = testCase.segmentSummary ?? {
@@ -58,7 +41,6 @@ export default function V3TestCaseCard({
     // Thiết lập/xem và ghi lại không lặp trong menu: CTA chính trên card là
     // đường vào duy nhất cho Tạo/Tiếp tục/Xem Automation.
     const showMenu = true;
-    const badge = STATUS_BADGE[status] ?? ["v3-badge--nosel", "Chưa chọn"];
     const expected = String(testCase.expectedResult ?? "").trim();
 
     return (
@@ -72,28 +54,11 @@ export default function V3TestCaseCard({
                 .join(" ")}
         >
             <div className="v3-card__top">
-                <label className="v3-check">
-                    <input
-                        type="checkbox"
-                        className="v3-check__input"
-                        checked={isSelected}
-                        disabled={!selectable}
-                        onChange={() => onToggle?.(testCase.testCaseId, !isSelected)}
-                        aria-label={`Chọn testcase ${testCase.testCaseId}`}
-                    />
-                    <span className="v3-check__box" aria-hidden="true">
-                        {isSelected ? "✓" : ""}
-                    </span>
-                </label>
                 <span className="v3-card__id">{testCase.testCaseId}</span>
                 <div className="v3-card__body">
                     <h5 className="v3-card__title">{testCase.title}</h5>
                     <div className="v3-card__row">
                         <span className="v3-badge v3-badge--type">{testCase.type}</span>
-                        {status !== "SELECTED" ? <span className={`v3-badge ${badge[0]}`}>{badge[1]}</span> : null}
-                        <span className={`v3-badge ${DECISION_BADGE[decision] ?? "v3-badge--review"}`}>
-                            {decisionLabel(decision)}
-                        </span>
                     </div>
                     {expected ? (
                         <div className="v3-card__row v3-card__row--muted">

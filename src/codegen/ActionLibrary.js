@@ -51,7 +51,8 @@ export default class ActionLibrary {
             .digest("hex").slice(0, 12);
     }
 
-    /** Tester chủ động LƯU thao tác vào Library (REUSABLE — bắt buộc label). */
+    /** Tester chủ động LƯU thao tác vào Library (REUSABLE — bắt buộc label).
+     * `kind` là metadata/gợi ý mặc định khi bind, không phải vai trò chạy của testcase. */
     addBlock({ label, kind = "ACTION", steps = [], recordedAssertions = [], sourceRecordingId = null, sourceRange = null, groupName = null, projectId = null }) {
         const trimmedLabel = String(label ?? "").trim();
         if (!trimmedLabel) {

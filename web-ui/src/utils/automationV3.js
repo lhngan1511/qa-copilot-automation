@@ -277,7 +277,9 @@ export function canGenerateForTestcase(testCase) {
     const segs = testCase.segmentSummary ?? { total: 0, confirmed: 0, draft: 0 };
     const allConfirmed = segs.total > 0 && segs.confirmed === segs.total;
     const assertionConfirmed = (testCase.assertionStatus?.confirmed ?? 0) > 0;
-    return allConfirmed && assertionConfirmed;
+    const hasActionUnderTest = (Array.isArray(testCase.segments) ? testCase.segments : [])
+        .some(segment => bindingRole(segment) === "ACTION_UNDER_TEST");
+    return allConfirmed && assertionConfirmed && hasActionUnderTest;
 }
 
 /** Lý do chưa thể Generate (message gợi ý cho UI, không phải lỗi API). */
@@ -291,26 +293,82 @@ export function generateGateReason(testCase) {
         const name = draftItem?.label || testCase.title || "thao tác";
         return `Thao tác '${name}' chưa được xác nhận.`;
     }
+    if (!(Array.isArray(testCase.segments) ? testCase.segments : []).some(segment => bindingRole(segment) === "ACTION_UNDER_TEST")) {
+        return "Cần ít nhất một Thao tác kiểm thử.";
+    }
     if ((testCase.assertionStatus?.confirmed ?? 0) === 0) return "Chưa có điều kiện xác nhận phù hợp với kết quả mong đợi.";
     return null;
 }
 
 /**
  * P0 UI STATE — Automation lifecycle display (canonical, dùng CHUNG card + drawer).
- *   UNDECIDED + chưa action        → "Chưa thiết lập"
- *   AUTOMATED (hoặc có action) + chưa generated → "Đang thiết lập"
- *   generated + NOT_RUN            → "Đã sinh automation"
- *   generated + PASSED             → "Automation sẵn sàng"
- *   generated + FAILED             → "Có automation · Chạy thử thất bại"
- * KHÔNG cho "Đang thiết lập" khi Playwright đã sinh / Run đã Passed.
+ *   chưa bắt đầu                   → "Chưa quyết định"
+ *   action chưa đủ gate            → "Đang thiết lập"
+ *   đủ binding/assertion            → "Automation sẵn sàng"
+ *   generated + NOT_RUN            → "Đã sinh Playwright"
+ *   generated + PASSED/FAILED      → "Passed" / "Failed"
  */
 export function automationDisplayStatus(testCase) {
-    if (!testCase) return "Chưa thiết lập";
+    if (!testCase) return "Chưa quyết định";
     const generated = testCase.generateStatus === "GENERATED";
     const run = testCase.runStatus;
-    if (generated && run === "PASSED") return "Automation sẵn sàng";
-    if (generated && run === "FAILED") return "Có automation · Chạy thử thất bại";
-    if (generated) return "Đã sinh automation";
+    if (generated && run === "PASSED") return "Passed";
+    if (generated && run === "FAILED") return "Failed";
+    if (generated) return "Đã sinh Playwright";
+    if (canGenerateForTestcase(testCase)) return "Automation sẵn sàng";
     if (testCase.automationDecision === "AUTOMATED" || (testCase.segmentSummary?.total ?? 0) > 0) return "Đang thiết lập";
-    return "Chưa thiết lập";
+    return "Chưa quyết định";
+}
+
+/** Role thực thi thuộc binding của testcase; `kind` chỉ là fallback migration cho dữ liệu cũ. */
+export function bindingRole(segment) {
+    if (String(segment?.role ?? "").toUpperCase() === "PRECONDITION") return "PRECONDITION";
+    if (String(segment?.role ?? "").toUpperCase() === "ACTION_UNDER_TEST") return "ACTION_UNDER_TEST";
+    return String(segment?.type ?? segment?.kind ?? "").toUpperCase() === "SETUP"
+        ? "PRECONDITION"
+        : "ACTION_UNDER_TEST";
+}
+
+export function bindingRoleLabel(segment) {
+    return bindingRole(segment) === "PRECONDITION" ? "Bước chuẩn bị" : "Thao tác kiểm thử";
+}
+
+/** Response HTTP chỉ là phản hồi tức thời; không được dùng cho testcase context khác. */
+export function drawerResultForTestCase(result, testCaseId) {
+    return result?.testCaseId === testCaseId ? result : null;
+}
+
+/** Draft local không được render hoặc persist khi context drawer đã đổi testcase. */
+export function drawerDraftForTestCase(draft, draftTestCaseId, testCaseId) {
+    return draftTestCaseId === testCaseId ? (draft ?? {}) : {};
+}
+
+/** Lịch sử Run là canonical trên testcase; response tạm chỉ thắng khi cùng testcase. */
+export function displayedRunResultForTestCase(testCase, transientResult) {
+    const transient = drawerResultForTestCase(transientResult, testCase?.testCaseId);
+    if (transient) return transient;
+    if (!testCase?.lastRun) return null;
+    return {
+        ok: true,
+        runStatus: testCase.runStatus ?? testCase.lastRun.status,
+        passed: testCase.lastRun.passed === true || testCase.runStatus === "PASSED",
+        error: testCase.lastRun.error ?? null,
+        durationMs: testCase.lastRun.durationMs ?? null,
+        exitCode: testCase.lastRun.exitCode ?? null,
+        stdout: testCase.lastRun.stdout ?? null,
+        stderr: testCase.lastRun.stderr ?? null
+    };
+}
+
+/** QUEUED/RUNNING là trạng thái chuyển tiếp của remote runner, không phải lỗi chạy. */
+export function isPendingRunResult(result) {
+    const status = String(result?.runStatus ?? "").toUpperCase();
+    return status === "QUEUED" || status === "RUNNING";
+}
+
+export function pendingRunMessage(result) {
+    const runner = String(result?.agentId ?? result?.runnerName ?? "Máy Tester").trim();
+    return String(result?.runStatus ?? "").toUpperCase() === "RUNNING"
+        ? `Đang chờ ${runner} hoàn tất thực thi...`
+        : `Đang chờ ${runner} thực thi...`;
 }

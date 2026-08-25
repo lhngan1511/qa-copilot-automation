@@ -24,8 +24,13 @@ export const GENERATE_ERRORS = {
     // 5C-0 — Record Mapping (tester-owned, không AI, không theo thứ tự).
     RECORDING_MAPPING_REQUIRED: "RECORDING_MAPPING_REQUIRED",
     SEGMENT_NOT_CONFIRMED: "SEGMENT_NOT_CONFIRMED",
-    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID"
+    SEGMENT_MAPPING_INVALID: "SEGMENT_MAPPING_INVALID",
+    ACTION_UNDER_TEST_REQUIRED: "ACTION_UNDER_TEST_REQUIRED"
 };
+
+const bindingRole = ref => String(ref?.role ?? "ACTION_UNDER_TEST").toUpperCase() === "PRECONDITION"
+    ? "PRECONDITION"
+    : "ACTION_UNDER_TEST";
 
 export default class GenerateService {
     constructor({ workspace = null, store = null, outputDir = null, actionLibrary = null } = {}) {
@@ -182,7 +187,7 @@ export default class GenerateService {
             // P0 EDIT — content dependency: label + version + hash (steps/assertions/range).
             // Action bị chỉnh sửa (updateBlock: steps đổi -> version++ + hash mới) => fingerprint
             // đổi => testcase stale => bắt Generate lại. KHÔNG chỉ dựa label.
-            return `${b?.label ?? ref.blockId}|v${b?.version ?? 1}|${b?.hash ?? ""}`;
+            return `${b?.label ?? ref.blockId}|v${b?.version ?? 1}|${b?.hash ?? ""}|role=${bindingRole(ref)}`;
         });
         const assertions = (entry?.automationAssertions ?? []).filter(a => a.status === "TESTER_CONFIRMED")
             .map(a => `${a.matcher}|${a.locator ?? ""}|${a.expected ?? ""}`).sort();
@@ -195,6 +200,13 @@ export default class GenerateService {
 
     resolveBlockFlow({ workspaceId, testCaseId, segments }) {
         const refs = segments.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        if (!refs.some(ref => bindingRole(ref) === "ACTION_UNDER_TEST")) {
+            return {
+                ok: false,
+                errorCode: GENERATE_ERRORS.ACTION_UNDER_TEST_REQUIRED,
+                reason: "Testcase cần ít nhất một Thao tác kiểm thử trước khi Sinh Playwright."
+            };
+        }
         const steps = [];
         const traceSegments = [];
         let baseBlock = null;
@@ -219,6 +231,7 @@ export default class GenerateService {
                 startStep: block.sourceRange?.startStep ?? null,
                 endStep: block.sourceRange?.endStep ?? null,
                 type: block.kind,
+                role: bindingRole(ref),
                 testCaseId
             });
             if (!baseBlock) baseBlock = block;

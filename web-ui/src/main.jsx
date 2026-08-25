@@ -7,11 +7,12 @@ import "./styles/global.css";
 import "./styles/automation.css";
 import "./styles/automationV3.css";
 import { ProjectProvider } from "./contexts/ProjectContext.jsx";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
-            <ProjectProvider><App /></ProjectProvider>
+            <AuthProvider><ProjectProvider><App /></ProjectProvider></AuthProvider>
         </QueryClientProvider>
     </StrictMode>
 );

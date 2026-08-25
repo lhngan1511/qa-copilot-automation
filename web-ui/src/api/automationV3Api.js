@@ -203,10 +203,10 @@ export function saveToLibrary(workspaceId, { blockId, label }) {
 }
 
 /** POST .../testcases/:testCaseId/library/blocks — dùng thao tác từ Thư viện cho testcase. */
-export function bindLibraryBlock(workspaceId, testCaseId, blockId) {
+export function bindLibraryBlock(workspaceId, testCaseId, blockId, role = undefined) {
     return apiClient.post(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/library/blocks`,
-        { headers: jsonHeaders(), body: JSON.stringify({ blockId }) }
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId, role }) }
     );
 }
 
@@ -265,10 +265,18 @@ export function getBinding(workspaceId, testCaseId) {
 }
 
 /** POST .../testcases/:testCaseId/binding/blocks — gắn thao tác vào testcase. */
-export function bindBlock(workspaceId, testCaseId, blockId) {
+export function bindBlock(workspaceId, testCaseId, blockId, role = undefined) {
     return apiClient.post(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks`,
-        { headers: jsonHeaders(), body: JSON.stringify({ blockId }) }
+        { headers: jsonHeaders(), body: JSON.stringify({ blockId, role }) }
+    );
+}
+
+/** PATCH binding occurrence role; order keeps duplicate block occurrences unambiguous. */
+export function updateBindingRole(workspaceId, testCaseId, blockId, order, role) {
+    return apiClient.patch(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/binding/blocks/${encodeURIComponent(blockId)}/role`,
+        { headers: jsonHeaders(), body: JSON.stringify({ order, role }) }
     );
 }
 
@@ -347,11 +355,16 @@ export function updateAssertion(workspaceId, testCaseId, assertionId, patch = {}
 
 /** POST .../testcases/:testCaseId/generate — Sinh automation (chỉ khi đủ gate). */
 /** P0-C - Chay thu testcase dang mo (dung generated artifact; backend chan khi stale). */
-export function runTestcase(workspaceId, testCaseId, env = {}) {
+export function runTestcase(workspaceId, testCaseId, env = {}, agentId = null, runOptions = {}) {
     return apiClient.post(
         `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/run`,
-        { headers: jsonHeaders(), body: JSON.stringify({ env }) }
+        { headers: jsonHeaders(), body: JSON.stringify({ env, agentId, runOptions }) }
     );
+}
+
+/** Runner Agents online; a selected agent executes Playwright on its own workstation. */
+export function listRunnerAgents() {
+    return apiClient.get(`${BASE}/runner-agents`);
 }
 
 /** P0 — CẦN XÁC NHẬN THAO TÁC: quyết định step (INCLUDE + data / EXCLUDE / REVIEW_REQUIRED). */

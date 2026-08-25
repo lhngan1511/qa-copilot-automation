@@ -5,6 +5,7 @@
     "main": "src/index.js",
     "type": "module",
     "scripts": {
+        "prestart": "npm run build:web",
         "start": "node src/server/startServer.js",
         "build:web": "npm run build --prefix web-ui",
         "test": "npm run test:regression",
@@ -24,6 +25,8 @@
         "test:regression": "cross-env ENABLE_AI=false node tests/pipeline-test.js",
         "automation:map": "node src/automation/cli.js --no-run",
         "automation:run": "node src/automation/cli.js",
+        "runner:agent": "node tools/qa-copilot-runner-agent.mjs",
+        "user:add": "node tools/create-user.mjs",
         "test:automation": "node tests/automation-pipeline-test.js",
         "test:mapping": "node tests/automation-mapping-layer-test.js",
         "mapping:cli": "node src/automation/cli-mapping.js",

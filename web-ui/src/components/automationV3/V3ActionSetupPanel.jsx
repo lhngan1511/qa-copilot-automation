@@ -10,6 +10,7 @@ import {
     bindBlock,
     unbindBlock,
     reorderBinding,
+    updateBindingRole,
     listBlocks,
     listLibrary,
     saveToLibrary,
@@ -72,6 +73,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [library, setLibrary] = useState([]);
     const [libraryLoading, setLibraryLoading] = useState(false); // P0-regression: tránh flash "Chưa có thao tác..."
     const [selectedLib, setSelectedLib] = useState([]); // blockIds theo thứ tự chọn
+    const [selectedLibRoles, setSelectedLibRoles] = useState({}); // tester-owned role before bind
     // P0-B — picker group-first: null = đang chọn Chức năng; string = đang xem group đó.
     const [pickerGroup, setPickerGroup] = useState(null);
 
@@ -115,6 +117,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setScreen("list");
         setExpandedId(null);
         setSelectedLib([]);
+        setSelectedLibRoles({});
     }, [testCase.testCaseId]);
 
     useEffect(() => {
@@ -154,6 +157,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setLocalError("");
         setAddMode(mode2);
         setSelectedLib([]);
+        setSelectedLibRoles({});
         setPickerGroup(null);
         setScreen("library");
         setLibraryLoading(true);
@@ -264,6 +268,22 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
 
     const handleReplace = item => openLibrary({ type: "replaceOne", blockId: item.blockId, order: item.order });
 
+    const defaultRoleForBlock = block => block?.kind === "SETUP" ? "PRECONDITION" : "ACTION_UNDER_TEST";
+    const handleRoleChange = async (item, role) => {
+        if (saving || item.role === role) return;
+        setSaving(true);
+        setLocalError("");
+        try {
+            await updateBindingRole(workspaceId, testCase.testCaseId, item.blockId, item.order, role);
+            await refreshBinding();
+            notify();
+        } catch (e) {
+            setLocalError(e?.message ?? "Không đổi được vai trò thao tác.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleMove = async (index, dir) => {
         if (saving) return;
         const next = [...binding];
@@ -324,7 +344,16 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     /* ---------- Library (P0 — MULTI-SELECT batch) ---------- */
 
     const toggleLib = blockId => {
-        setSelectedLib(prev => (prev.includes(blockId) ? prev.filter(x => x !== blockId) : [...prev, blockId]));
+        setSelectedLib(prev => {
+            const selected = prev.includes(blockId);
+            setSelectedLibRoles(roles => {
+                if (!selected) return { ...roles, [blockId]: defaultRoleForBlock(library.find(item => item.blockId === blockId)) };
+                const next = { ...roles };
+                delete next[blockId];
+                return next;
+            });
+            return selected ? prev.filter(x => x !== blockId) : [...prev, blockId];
+        });
     };
 
     const moveSelectedLib = (index, delta) => {
@@ -346,7 +375,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                 // Thay đúng item tại vị trí tester đã sắp, bằng lựa chọn từ Library.
                 const oldIndex = binding.findIndex(i => i.blockId === addMode.blockId && i.order === addMode.order);
                 await unbindBlock(workspaceId, testCase.testCaseId, addMode.blockId, addMode.order);
-                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
+                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId, selectedLibRoles[blockId]);
                 if (oldIndex >= 0) {
                     const current = (await getBinding(workspaceId, testCase.testCaseId)).sequence.map(i => i.blockId);
                     const replacements = current.splice(current.length - selectedLib.length, selectedLib.length);
@@ -355,9 +384,10 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                 }
             } else {
                 // Bind theo thứ tự chọn — append từng cái (cho phép cùng LIB-* nhiều occurrence).
-                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId);
+                for (const blockId of selectedLib) await bindLibraryBlock(workspaceId, testCase.testCaseId, blockId, selectedLibRoles[blockId]);
             }
             setSelectedLib([]);
+            setSelectedLibRoles({});
             setScreen("list");
             await refreshBinding();
             notify();
@@ -431,6 +461,13 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                             ) : (
                                                 <span className="v3-cond__status v3-warn">⚠ Chưa xác nhận</span>
                                             )}
+                                            <label className="v3-act__role">
+                                                <span>Vai trò</span>
+                                                <select value={item.role ?? defaultRoleForBlock(item)} onChange={e => handleRoleChange(item, e.target.value)} disabled={saving}>
+                                                    <option value="PRECONDITION">Bước chuẩn bị</option>
+                                                    <option value="ACTION_UNDER_TEST">Thao tác kiểm thử</option>
+                                                </select>
+                                            </label>
                                             {item.status !== "CONFIRMED" ? (
                                                 <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => handleConfirm(item)} disabled={saving}>
                                                     Xác nhận
@@ -479,7 +516,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                             + Thêm thao tác từ thư viện
                         </button>
                     </div>
-                    <p className="v3-act__note">↑ ↓ để tự sắp thứ tự — hệ thống không tự đổi thứ tự.</p>
+                    <p className="v3-act__note">↑ ↓ để tự sắp thứ tự. Vai trò chỉ mô tả mục đích; hệ thống luôn chạy đúng thứ tự bạn đã chọn.</p>
                     <p className="v3-act__note">
                         Không có thao tác phù hợp?{" "}
                         <Link className="v3-link" to="/codegen">Mở CodeGen</Link>
@@ -492,7 +529,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                 <div className="v3-act__library">
                     <div>
                         <h4 className="v3-map__h">{addMode?.type === "replaceOne" ? "Thay thế bằng thao tác từ thư viện" : "Thêm thao tác từ thư viện"}</h4>
-                        <p className="v3-act__note">Chọn thao tác ở nhiều chức năng, sau đó sắp xếp thành luồng sẽ chạy.</p>
+                        <p className="v3-act__note">Chọn thao tác ở nhiều chức năng, chọn vai trò cho từng thao tác, rồi sắp xếp thành luồng sẽ chạy.</p>
                     </div>
                     {libraryLoading ? (
                         <p className="v3-act__note">Đang tải thư viện…</p>
@@ -546,6 +583,10 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                     <div className="v3-lib-sequence__item" key={item.blockId}>
                                         <span className="v3-lib-sequence__number">{index + 1}</span>
                                         <span className="v3-lib-sequence__body"><b>{item.label}</b><small>{groupDisplayName(item.groupName)}</small></span>
+                                        <select aria-label={`Vai trò ${item.label}`} value={selectedLibRoles[item.blockId] ?? defaultRoleForBlock(item)} onChange={e => setSelectedLibRoles(roles => ({ ...roles, [item.blockId]: e.target.value }))} disabled={saving}>
+                                            <option value="PRECONDITION">Bước chuẩn bị</option>
+                                            <option value="ACTION_UNDER_TEST">Thao tác kiểm thử</option>
+                                        </select>
                                         <span className="v3-lib-sequence__controls">
                                             <button type="button" className="v3-lib-sequence__control" onClick={() => moveSelectedLib(index, -1)} disabled={saving || index === 0} aria-label="Đưa lên">↑</button>
                                             <button type="button" className="v3-lib-sequence__control" onClick={() => moveSelectedLib(index, 1)} disabled={saving || index === selectedLib.length - 1} aria-label="Đưa xuống">↓</button>
