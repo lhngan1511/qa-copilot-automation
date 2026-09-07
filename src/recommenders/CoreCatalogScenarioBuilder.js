@@ -2,11 +2,24 @@ import { domainName, localizedFunctionName } from "../utils/FunctionDisplayName.
 
 /**
  * Bổ sung các tình huống catalog tối thiểu mà tester luôn kỳ vọng
- * khi requirement có Tìm kiếm / Thêm mới:
+ * khi requirement có Tìm kiếm / Thêm mới / Sửa / Xóa:
  *   - Tìm kiếm có kết quả
  *   - Tìm kiếm không có kết quả
  *   - Thêm với đầy đủ thông tin
  *   - Thêm không nhập mã (hệ thống tự sinh) khi mã không bắt buộc
+ *   - Cập nhật với dữ liệu hợp lệ
+ *   - Xóa thành công
+ *
+ * Sửa/Xóa được thêm vào đây (2026-09-04, bug thật đã gặp qua log server thật: "Xóa/Sửa" bị
+ * ProductionTestCaseQualityGate loại vì MISSING_MAIN_ACTION) — testcase "thành công" gốc của 2
+ * operation này được sinh qua ScenarioRecommendationEngine#generateFromStructuredFunctions, bước
+ * đó lấy steps qua userSteps(reviewedFunction.flow) — CHỈ nhận dòng bắt đầu bằng "Người dùng "
+ * (đúng định dạng requirement .md viết tay). Bản ghi CodeGen sinh flow dạng khác hẳn (vd
+ * `Bấm "Xóa"`, `Chọn "..."`  — xem CodeGenRequirementDocumentBuilder#actionLabel), KHÔNG BAO GIỜ
+ * khớp tiền tố đó -> userSteps() luôn trả về RỖNG cho mọi requirement nguồn CodeGen -> testcase
+ * Sửa/Xóa mất bước thực hiện cụ thể -> bị loại. Tìm kiếm/Thêm mới KHÔNG bị ảnh hưởng vì ĐÃ có
+ * catalog riêng ở đây từ trước, dùng steps TỰ VIẾT (searchSteps/createSteps), không phụ thuộc
+ * userSteps(). Sửa/Xóa giờ được đối xử NHẤT QUÁN — cùng cơ chế, cùng độ tin cậy.
  */
 export default class CoreCatalogScenarioBuilder {
     apply(scenarios, knowledge, requirement) {
@@ -16,6 +29,8 @@ export default class CoreCatalogScenarioBuilder {
         functions.forEach(fn => {
             if (this.isSearch(fn)) this.ensureSearchCatalog(list, fn, knowledge);
             if (this.isCreate(fn)) this.ensureCreateCatalog(list, fn, knowledge, requirement);
+            if (this.isUpdate(fn)) this.ensureUpdateCatalog(list, fn, knowledge, requirement);
+            if (this.isDelete(fn)) this.ensureDeleteCatalog(list, fn, knowledge, requirement);
         });
 
         return list;
@@ -101,6 +116,108 @@ export default class CoreCatalogScenarioBuilder {
                 steps: this.createSteps(fn, true, codeField)
             })
         );
+    }
+
+    /** Cập nhật/Xóa: KHÔNG thêm 1 scenario MỚI song song (sẽ trùng lặp với testcase "thành công"
+     *  gốc do generateFromStructuredFunctions sinh — đúng bug "TC005/TC006 gần như trùng lặp" đã sửa
+     *  trước đó). Thay vào đó, VÁ TRỰC TIẾP scenario "thành công" gốc của function này nếu nó đang
+     *  thiếu bước thực hiện cụ thể (do userSteps() không hiểu định dạng flow CodeGen — xem ghi chú ở
+     *  class), gắn catalogKey để cùng được hưởng độ tin cậy như Tìm kiếm/Thêm mới (bỏ qua kiểm tra
+     *  isGrounded/isAmbiguous nghiêm ngặt — nội dung vẫn đến từ đúng requirement/clarification, chỉ
+     *  bước thực hiện bị thiếu). KHÔNG đụng vào scenario đã có bước thực hiện hợp lệ (vd requirement
+     *  .md viết tay đúng định dạng "Người dùng ...") — chỉ vá khi thật sự cần. */
+    ensureFollowUpCatalog(scenarios, fn, knowledge, requirement, { catalogKey, title, operation, fallbackExpectedResult, steps }) {
+        const existing = this.byFunction(scenarios, fn);
+        const nativePositive = existing.find(
+            item => String(item.type ?? "").toUpperCase() === "POSITIVE" && !item.catalogKey
+        );
+        if (nativePositive) {
+            if (!this.hasMeaningfulSteps(nativePositive.steps)) {
+                nativePositive.steps = steps;
+                nativePositive.catalogKey = catalogKey;
+            }
+            return;
+        }
+        if (this.hasCatalog(existing, catalogKey)) return;
+        scenarios.push(
+            this.buildScenario(fn, knowledge, {
+                catalogKey,
+                title,
+                type: "POSITIVE",
+                operation,
+                expectedResults: this.confirmedExpectedResults(fn, requirement, fallbackExpectedResult),
+                steps
+            })
+        );
+    }
+
+    ensureUpdateCatalog(scenarios, fn, knowledge, requirement) {
+        this.ensureFollowUpCatalog(scenarios, fn, knowledge, requirement, {
+            catalogKey: "UPDATE_VALID",
+            title: `Cập nhật ${this.entity(fn)} với dữ liệu hợp lệ`,
+            operation: "UPDATE",
+            fallbackExpectedResult: `Hệ thống lưu thay đổi thành công và ${this.entity(fn)} hiển thị đúng thông tin mới.`,
+            steps: this.updateSteps(fn)
+        });
+    }
+
+    ensureDeleteCatalog(scenarios, fn, knowledge, requirement) {
+        this.ensureFollowUpCatalog(scenarios, fn, knowledge, requirement, {
+            catalogKey: "DELETE_VALID",
+            title: `Xóa ${this.entity(fn)} thành công`,
+            operation: "DELETE",
+            fallbackExpectedResult: `Hệ thống xóa ${this.entity(fn)} thành công và ${this.entity(fn)} không còn xuất hiện trong danh sách.`,
+            steps: this.deleteSteps(fn)
+        });
+    }
+
+    /** feature.expectedResults (ĐÃ được QACopilot#applyOracleConfirmationAnswers thay bằng văn bản
+     *  tester xác nhận, nếu có — xem ghi chú ở đó) là nguồn ƯU TIÊN, phản ánh ĐÚNG những gì tester đã
+     *  xác nhận thay vì suy đoán bằng câu mẫu chung chung. Rơi về fallback khi feature CHƯA có
+     *  expectedResults thật (vẫn "Chưa xác định" hoặc rỗng). */
+    confirmedExpectedResults(fn, requirement, fallback) {
+        const feature = this.featureOf(requirement, fn);
+        const values = this.array(feature?.expectedResults).filter(
+            value => typeof value === "string" && value.trim() && !/chưa xác định/i.test(value)
+        );
+        return values.length > 0 ? values : [fallback];
+    }
+
+    hasMeaningfulSteps(steps) {
+        return (
+            Array.isArray(steps) &&
+            steps.length > 0 &&
+            steps.some(step => String(step?.action ?? "").trim())
+        );
+    }
+
+    updateSteps(fn) {
+        const screen = this.functionLabel(fn, "UPDATE");
+        return [
+            { order: 1, action: `Mở màn hình ${screen}`, target: fn.name },
+            { order: 2, action: "Chọn bản ghi cần sửa đang tồn tại", target: fn.name },
+            { order: 3, action: "Thay đổi thông tin hợp lệ", target: fn.name },
+            { order: 4, action: "Lưu dữ liệu", target: fn.name }
+        ];
+    }
+
+    deleteSteps(fn) {
+        const screen = this.functionLabel(fn, "DELETE");
+        return [
+            { order: 1, action: `Mở màn hình ${screen}`, target: fn.name },
+            { order: 2, action: "Chọn bản ghi cần xóa đang tồn tại", target: fn.name },
+            { order: 3, action: "Xác nhận xóa", target: fn.name }
+        ];
+    }
+
+    isUpdate(fn) {
+        const operation = this.operation(fn);
+        return operation === "UPDATE" || /^(sửa|cập nhật|chỉnh sửa)\b/.test(this.comparable(fn.name));
+    }
+
+    isDelete(fn) {
+        const operation = this.operation(fn);
+        return operation === "DELETE" || /^(xóa|xoá)\b/.test(this.comparable(fn.name));
     }
 
     buildScenario(fn, knowledge, extra) {

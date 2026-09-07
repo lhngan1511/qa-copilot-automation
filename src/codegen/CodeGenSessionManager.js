@@ -576,7 +576,15 @@ export default class CodeGenSessionManager {
         });
     }
 
-    /** Đổi tên file (downloadFileName). */
+    /** Đổi tên. Lưu 2 giá trị riêng: `label` = nguyên văn tester gõ (giữ dấu tiếng Việt, dùng để
+     *  HIỂN THỊ) và `downloadFileName` = qua safeSpecName (an toàn làm tên file .spec.js thật trên
+     *  đĩa, không thể giữ dấu). Bug đã gặp khi build tính năng "Bản ghi đã lưu": dùng chung 1 giá
+     *  trị cho cả 2 mục đích khiến tên tester gõ ("Test đăng nhập UIIS") hiển thị lại thành
+     *  "Test---ng-nh-p-UIIS.spec.js" — safeSpecName strip sạch dấu, không đọc được nữa.
+     *  Tester chủ động đặt tên = tín hiệu "đã lưu" — đánh dấu `savedByUser` để phân biệt với các
+     *  bản ghi tạo tự động lúc parse (mỗi lần sửa nội dung ô dán đều tạo 1 recording mới, xem
+     *  doParse trong V3RecordingPreparationPanel.jsx) — danh sách "Bản ghi đã lưu" chỉ hiện bản ghi
+     *  có cờ này, không bị rác bởi các bản ghi tạm chưa đặt tên. */
     rename(recordingId, { fileName } = {}) {
         const name = String(fileName ?? "").trim();
         if (!name) {
@@ -585,7 +593,7 @@ export default class CodeGenSessionManager {
             throw error;
         }
         const safe = this.store.safeSpecName(name);
-        return this.store.update(recordingId, { downloadFileName: safe });
+        return this.store.update(recordingId, { downloadFileName: safe, label: name, savedByUser: true });
     }
 
     /**

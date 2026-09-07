@@ -15,7 +15,7 @@ import { Router } from "express";
  Không trả stack trace ra frontend.
 */
 
-function sendError(res, error) {
+export function sendError(res, error) {
     const isHttp = Number.isInteger(error?.statusCode) && error.statusCode >= 400;
     const statusCode = isHttp ? error.statusCode : 500;
     const body = {
@@ -28,7 +28,7 @@ function sendError(res, error) {
 }
 
 /** Bọc handler: gọi service, trả JSON hoặc lỗi V3 thống nhất. */
-function handle(service, fn) {
+export function handle(service, fn) {
     return (req, res) => {
         try {
             const result = fn(service, req);
@@ -386,6 +386,14 @@ export default function createAutomationV3Routes({ applicationService = null } =
             agentId: req.body?.agentId ?? null,
             runOptions: req.body?.runOptions ?? {},
             userId: req.user?.userId ?? null
+        })));
+
+    // Ra locator (proactive audit) - chay THAT file .spec.js da Generate, bao cao tung locator.
+    router.post("/workspaces/:workspaceId/testcases/:testCaseId/audit-locators", handle(applicationService, async (svc, req) =>
+        svc.auditLocators({
+            workspaceId: req.params.workspaceId,
+            testCaseId: req.params.testCaseId,
+            env: req.body?.env ?? {}
         })));
 
     return router;

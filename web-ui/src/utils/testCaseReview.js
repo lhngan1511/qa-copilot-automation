@@ -274,6 +274,19 @@ export function formatTestData(testData) {
     return String(testData?.value || testData?.requirement || "").trim();
 }
 
+// "Không có oracle" = expectedResult RỖNG, hoặc còn placeholder "Chưa xác định" do
+// CodeGenRequirementDocumentBuilder/RequirementIntelligenceEngine tự chèn khi bản ghi/requirement
+// KHÔNG có bước kiểm tra kết quả nào. Cả 2 trường hợp đều khiến tester có thể vô tình duyệt 1
+// testcase không biết kết quả đúng là gì. RỖNG được tính riêng (không chỉ placeholder) vì bug thật
+// đã gặp (2026-09-04): backend nới lỏng validateTestCase() để KHÔNG chặn cứng batch merge khi 1
+// testcase PENDING có expectedResult rỗng (xem TestCaseReviewValidator.js) — nếu hasMissingOracle()
+// chỉ bắt placeholder, testcase rỗng sẽ lọt qua "Duyệt tất cả đủ điều kiện" rồi bị backend chặn lại
+// ở bước APPROVED (validator vẫn bắt buộc expectedResult khi APPROVED) — tái diễn đúng lỗi cũ.
+export function hasMissingOracle(testCase) {
+    const expectedResult = String(testCase?.expectedResult ?? "").trim();
+    return !expectedResult || /chưa xác định/i.test(expectedResult);
+}
+
 export function testCaseWarnings(testCase) {
     const warnings = [];
     if (!testCaseId(testCase)) warnings.push("Thiếu testcase ID.");
@@ -283,6 +296,11 @@ export function testCaseWarnings(testCase) {
     if (!String(testCase?.expectedResult ?? "").trim()) {
         warnings.push("Kết quả mong đợi đang trống.");
     }
+    if (hasMissingOracle(testCase)) {
+        warnings.push(
+            "Kết quả mong đợi CHƯA XÁC ĐỊNH — bản ghi/requirement chưa có oracle, cần tester xác nhận cụ thể trước khi duyệt."
+        );
+    }
     if (normalizeSteps(testCase?.steps).length === 0) {
         warnings.push("Testcase phải có ít nhất một bước thực thi hợp lệ.");
     }
@@ -290,6 +308,100 @@ export function testCaseWarnings(testCase) {
         warnings.push("Cần tester nhập giá trị dữ liệu trước khi thực thi.");
     }
     return warnings;
+}
+
+const CONFLICT_STOPWORDS = new Set([
+    "he", "thong", "hien", "thi", "da", "duoc", "la", "cua", "va", "khi", "gi", "khong", "co",
+    "cac", "mot", "nay", "cho", "voi", "tren", "trong", "ra", "vao", "de", "neu", "thi"
+]);
+
+function conflictTokens(text) {
+    return String(text ?? "")
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/đ/gi, "d")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(token => token && !CONFLICT_STOPWORDS.has(token));
+}
+
+/** Overlap coefficient (không phải Jaccard đối xứng) — tính từ phía tập NHỎ HƠN, vì 2 testcase mô
+ *  tả CÙNG 1 sự kiện thường có 1 câu ngắn gọn (vd fact từ clarification: "xóa thông tin thành
+ *  công") và 1 câu dài hơn nêu chi tiết UI (vd "Hệ thống hiển thị: 'Đã xóa thành công'") — Jaccard
+ *  đối xứng bị pha loãng bởi các từ RIÊNG của câu dài, làm điểm thấp giả tạo. */
+function overlapCoefficient(tokensA, tokensB) {
+    if (tokensA.length === 0 || tokensB.length === 0) return 0;
+    const setA = new Set(tokensA);
+    const setB = new Set(tokensB);
+    const intersection = [...setA].filter(token => setB.has(token)).length;
+    return intersection / Math.min(setA.size, setB.size);
+}
+
+function sameModule(a, b) {
+    const moduleA = String(a?.module ?? "").trim().toLocaleLowerCase("vi");
+    const moduleB = String(b?.module ?? "").trim().toLocaleLowerCase("vi");
+    return Boolean(moduleA) && moduleA === moduleB;
+}
+
+/** "Cùng sự kiện" (Ngân báo lỗi thật 2026-09-04, sửa lại sau khi bản đầu báo sai): CHỈ so sánh khi
+ *  CÙNG MODULE VÀ ÍT NHẤT 1 TRONG 2 LÀ CONFIRMED_FACT (fact đứng riêng suy từ clarification, không
+ *  gắn được vào 1 function cụ thể — vd TC005 trong bug gốc, feature chỉ là tên MODULE chứ không phải
+ *  "Xóa đợt nhập học"). Đây là trường hợp DUY NHẤT đã xác nhận thật sự gây xung đột (1 testcase
+ *  "thường" mô tả sự kiện qua assertion ghi được + 1 CONFIRMED_FACT mô tả LẠI cùng sự kiện đó qua
+ *  câu trả lời clarification, nội dung khác nhau).
+ *
+ *  Bản đầu tiên còn coi "2 testcase CÙNG function/feature" (không cần CONFIRMED_FACT) là đủ điều
+ *  kiện so sánh — BÁO SAI THẬT (2026-09-04): nhiều testcase VALIDATION của CÙNG 1 function (vd
+ *  "Đăng nhập" — thiếu Tài khoản/thiếu Mật khẩu/thiếu Mã xác nhận) và cả testcase POSITIVE cùng
+ *  function đó tự nhiên CHIA SẺ tên hàm + câu chữ khuôn mẫu ("Hệ thống không cho phép hoàn tất đăng
+ *  nhập khi ... để trống") — đây là các testcase HỢP LỆ, KHÁC NHAU CÓ CHỦ ĐÍCH (khác field/khác
+ *  luồng), không phải mâu thuẫn — nhưng độ trùng token đủ cao để vượt ngưỡng, bị báo xung đột nhầm.
+ *  Bỏ hẳn nhánh functionsOverlap() để loại lớp báo sai này — chỉ còn CONFIRMED_FACT mới kích hoạt so
+ *  sánh, đúng NGUYÊN VĂN trường hợp đã xác nhận là bug thật. */
+function sameEvent(a, b) {
+    if (!sameModule(a, b)) return false;
+    return testCaseType(a) === "CONFIRMED_FACT" || testCaseType(b) === "CONFIRMED_FACT";
+}
+
+/** Phát hiện 2+ testcase mô tả CÙNG 1 sự kiện (cùng module + cùng function, hoặc có CONFIRMED_FACT)
+ *  nhưng expected result MÂU THUẪN nhau (khác nội dung, không phải trùng hệt — trùng hệt đã được xử
+ *  lý ở tầng dedupe khi sinh testcase). Bug thật đã gặp (2026-09-04): TC004 (Xóa, từ assertion ghi
+ *  được) và TC005 (CONFIRMED_FACT, từ câu trả lời clarification) cùng mô tả thông báo xác nhận xóa
+ *  nhưng cho 2 kết quả mong đợi khác nhau, cả 2 cùng nằm "Chờ duyệt" như không có gì bất thường.
+ *  Trả về Map<testcaseId, Array<{ withId, expectedResult }>> — testcase KHÔNG có trong map nghĩa là
+ *  không phát hiện xung đột nào. Đây là CẢNH BÁO (heuristic, có thể có false positive) — không tự
+ *  quyết định cái nào đúng, chỉ nêu ra để tester tự xem xét. */
+export function findExpectedResultConflicts(testCases) {
+    const list = (Array.isArray(testCases) ? testCases : []).filter(
+        testCase => testCase?.reviewStatus !== "REMOVED"
+    );
+    const conflicts = new Map();
+
+    for (let i = 0; i < list.length; i += 1) {
+        for (let j = i + 1; j < list.length; j += 1) {
+            const a = list[i];
+            const b = list[j];
+            const expectedA = String(a?.expectedResult ?? "").trim();
+            const expectedB = String(b?.expectedResult ?? "").trim();
+            if (!expectedA || !expectedB) continue;
+            if (expectedA.toLocaleLowerCase("vi") === expectedB.toLocaleLowerCase("vi")) continue;
+            if (!sameEvent(a, b)) continue;
+
+            const tokensA = conflictTokens(expectedA);
+            const tokensB = conflictTokens(expectedB);
+            if (tokensA.length < 2 || tokensB.length < 2) continue;
+            if (overlapCoefficient(tokensA, tokensB) < 0.5) continue;
+
+            const idA = testCaseId(a);
+            const idB = testCaseId(b);
+            if (!conflicts.has(idA)) conflicts.set(idA, []);
+            if (!conflicts.has(idB)) conflicts.set(idB, []);
+            conflicts.get(idA).push({ withId: idB, expectedResult: expectedB });
+            conflicts.get(idB).push({ withId: idA, expectedResult: expectedA });
+        }
+    }
+    return conflicts;
 }
 
 export function groupTestCases(testCases) {

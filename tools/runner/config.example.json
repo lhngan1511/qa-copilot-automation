@@ -1,0 +1,6 @@
+{
+  "serverUrl": "http://<địa-chỉ-máy-server>:3000",
+  "agentId": "RUNNER-...",
+  "token": "...",
+  "machineName": "Máy Ngân"
+}

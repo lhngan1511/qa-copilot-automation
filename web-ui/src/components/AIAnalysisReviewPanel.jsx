@@ -30,7 +30,7 @@ function firstQuestionIndex(review) {
     return index === -1 ? review.clarifications.length : index;
 }
 
-function InteractiveReview({ workflowId, review }) {
+function InteractiveReview({ workflowId, review, onCompleted }) {
     const navigate = useNavigate();
     const errorSummaryRef = useRef(null);
     const artifactRef = useRef(review.artifactId);
@@ -136,7 +136,11 @@ function InteractiveReview({ workflowId, review }) {
                 await approve.mutateAsync({ artifactId: review.artifactId });
             }
             const result = await resume.mutateAsync();
-            navigate(`/workflows/${encodeURIComponent(result.workflowId)}`, { replace: true });
+            // "+ Tạo testcase từ CodeGen" (CodeGenRequirementReviewPage.jsx) tái dùng panel này cho 1
+            // workflow "ẩn" — onCompleted thay việc điều hướng mặc định bằng gộp kết quả vào session
+            // "Duyệt testcase" gốc đang mở. Mặc định (mọi nơi khác, luồng .md/ảnh) vẫn điều hướng như cũ.
+            if (onCompleted) await onCompleted(result.workflowId);
+            else navigate(`/workflows/${encodeURIComponent(result.workflowId)}`, { replace: true });
         } catch {
             setNotice("");
         }
@@ -275,7 +279,7 @@ function InteractiveReview({ workflowId, review }) {
     );
 }
 
-export default function AIAnalysisReviewPanel({ workflow }) {
+export default function AIAnalysisReviewPanel({ workflow, onCompleted }) {
     const enabled =
         workflow.status === "AI_ANALYSIS_REVIEW_REQUIRED" || workflow.step === "AI_ANALYSIS_REVIEW";
     const query = useAIAnalysisReview(workflow.id, enabled);
@@ -290,5 +294,5 @@ export default function AIAnalysisReviewPanel({ workflow }) {
             />
         );
     }
-    return <InteractiveReview workflowId={workflow.id} review={query.data} />;
+    return <InteractiveReview workflowId={workflow.id} review={query.data} onCompleted={onCompleted} />;
 }

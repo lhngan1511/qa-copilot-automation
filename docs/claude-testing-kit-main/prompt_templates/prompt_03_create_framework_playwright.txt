@@ -1,0 +1,12 @@
+/generate_automation_framework
+
+# CONTEXT
+Tôi cần xây dựng Web UI Automation Framework từ đầu.
+- Công nghệ: Playwright TypeScript
+
+# HỆ THỐNG
+- URL: [URL hệ thống]
+- Tài khoản test: [EMAIL] / [PASSWORD]
+
+# TÙY CHỌN
+- CI/CD: [GitHub Actions / GitLab CI / Jenkins / Không cần]

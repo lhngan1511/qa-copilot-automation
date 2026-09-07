@@ -1,13 +1,68 @@
 import AIProviderFactory from "../providers/AIProviderFactory.js";
 import AIConfig from "../config/AIConfig.js";
 
+/** Chuẩn hoá 1 proposal thô từ AI (đã JSON.parse) — tách riêng để test thuần không cần gọi AI thật.
+ *  "kind" lạ/thiếu luôn fallback về "ACTION" (an toàn, tương thích ngược). "resultStep" chỉ giữ khi
+ *  kind là EXPECTED_RESULT và là số nguyên hợp lệ, còn lại luôn null. */
+export function sanitizeAnalyzeProposal(p) {
+    const kindRaw = String(p?.kind ?? "").toUpperCase();
+    const kind = kindRaw === "SETUP" ? "SETUP" : kindRaw === "EXPECTED_RESULT" ? "EXPECTED_RESULT" : "ACTION";
+    return {
+        suggestedGroupName: String(p?.suggestedGroupName ?? p?.groupName ?? "").trim() || null,
+        suggestedName: String(p?.suggestedName ?? "").trim() || null,
+        kind,
+        startStep: Number.isInteger(p?.startStep) ? p.startStep : null,
+        endStep: Number.isInteger(p?.endStep) ? p.endStep : null,
+        resultStep: kind === "EXPECTED_RESULT" && Number.isInteger(p?.resultStep) ? p.resultStep : null,
+        evidence: Array.isArray(p?.evidence) ? p.evidence.map(String) : [],
+        confidence: typeof p?.confidence === "number" ? p.confidence : null,
+        needsTesterConfirmation: p?.needsTesterConfirmation !== false
+    };
+}
+
+/** Chuẩn hoá toàn bộ mảng proposals từ response JSON đã parse của AI — lọc bỏ proposal thiếu range. */
+export function sanitizeAnalyzeProposals(json) {
+    if (!Array.isArray(json?.proposals)) return [];
+    return json.proposals
+        .map(sanitizeAnalyzeProposal)
+        .filter(p => Number.isInteger(p.startStep) && Number.isInteger(p.endStep));
+}
+
 export default class CodeGenController {
-    constructor({ manager, testcaseLoader = null, actionLibrary = null, usageFn = null }) {
+    constructor({ manager, testcaseLoader = null, actionLibrary = null, usageFn = null, unbindAllFn = null, remoteCodeGenService = null }) {
         if (!manager) throw new Error("CodeGenController cần manager.");
         this.manager = manager;
         this.testcaseLoader = testcaseLoader;
         this.actionLibrary = actionLibrary;
         this.usageFn = usageFn;
+        this.unbindAllFn = unbindAllFn;
+        this.remoteCodeGenService = remoteCodeGenService;
+    }
+
+    /** Ghi CodeGen từ xa qua Runner Agent đã ghép đôi (Ngân yêu cầu 2026-09-07). */
+    async startRemote(req, res) {
+        try {
+            if (!this.remoteCodeGenService)
+                return this.fail(res, new Error("Chưa cấu hình ghi từ xa."), 500, "SERVICE_UNAVAILABLE", "Chức năng ghi từ xa chưa sẵn sàng.");
+            const projectId = String(req.get?.("x-project-id") ?? "").trim() || null;
+            const userId = req.user?.userId ?? null;
+            const data = this.remoteCodeGenService.startRemote({ ...(req.body ?? {}), projectId, userId });
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_REMOTE_START_FAILED", "Không thể bắt đầu ghi từ xa.");
+        }
+    }
+
+    async stopRemote(req, res) {
+        try {
+            if (!this.remoteCodeGenService)
+                return this.fail(res, new Error("Chưa cấu hình ghi từ xa."), 500, "SERVICE_UNAVAILABLE", "Chức năng ghi từ xa chưa sẵn sàng.");
+            const userId = req.user?.userId ?? null;
+            const data = this.remoteCodeGenService.stopRemote({ recordingId: req.params.recordingId, userId });
+            return res.status(200).json({ success: true, data, error: null });
+        } catch (error) {
+            return this.fail(res, error, 200, "CODE_GEN_REMOTE_STOP_FAILED", "Không thể dừng ghi từ xa.");
+        }
     }
 
     /** P0 Library Visibility — list shared Action Library (kèm usage derive). */
@@ -184,7 +239,8 @@ export default class CodeGenController {
         }
     }
 
-    /** P0 — Xóa thao tác khỏi Library (tester chủ động; UI confirm trước khi gọi — block có thể đang được testcase dùng). */
+    /** Xóa thao tác khỏi Library (tester chủ động, UI đã confirm trước khi gọi). Cho xóa kể cả
+     *  đang được testcase dùng — gỡ khỏi mọi nơi tham chiếu thay vì chặn cứng (unbindAllFn). */
     async deleteLibraryAction(req, res) {
         try {
             if (!this.actionLibrary)
@@ -206,22 +262,10 @@ export default class CodeGenController {
                     "Không tìm thấy thao tác trong Project hiện tại."
                 );
             }
-            // P0 EDIT/DELETE — guard: Action đang được testcase dùng KHÔNG được xóa (xóa làm
-            // binding resolve null -> testcase generate 422 SEGMENT_MAPPING_INVALID / mất action).
-            const usage =
-                typeof this.usageFn === "function" ? (this.usageFn() ?? new Map()) : new Map();
-            const used = usage.get(blockId) ?? 0;
-            if (used > 0) {
-                return this.fail(
-                    res,
-                    new Error(
-                        `Action này đang được sử dụng bởi ${used} testcase. Hãy bỏ Action khỏi các testcase đang dùng trước.`
-                    ),
-                    409,
-                    "LIBRARY_IN_USE",
-                    `Action đang dùng bởi ${used} testcase.`
-                );
-            }
+            // Xóa được kể cả đang dùng — gỡ khỏi mọi testcase tham chiếu trước (testcase đó rơi
+            // về "chưa có thao tác", tester tự chọn lại), tránh Action thừa/rác trong thư viện.
+            const unbindResult =
+                typeof this.unbindAllFn === "function" ? (this.unbindAllFn(blockId) ?? null) : null;
             const removed = this.actionLibrary.removeBlock(blockId);
             if (!removed)
                 return this.fail(
@@ -233,7 +277,7 @@ export default class CodeGenController {
                 );
             return res
                 .status(200)
-                .json({ success: true, data: { blockId, removed: true }, error: null });
+                .json({ success: true, data: { blockId, removed: true, affectedTestCases: unbindResult?.affectedTestCases ?? 0 }, error: null });
         } catch (error) {
             return this.fail(
                 res,
@@ -433,16 +477,18 @@ export default class CodeGenController {
             }
             const prompt = `Bạn là trợ lý phân tích Playwright recording. Hãy chia bản ghi thành các THAO TÁC nghiệp vụ có thể tái sử dụng và phân loại từng thao tác vào đúng CHỨC NĂNG.
 CHỈ trả về JSON hợp lệ, không kèm text khác, dạng:
-{"proposals":[{"suggestedGroupName":"Đăng nhập","suggestedName":"Đăng nhập thành công","kind":"ACTION","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true}]}
+{"proposals":[{"suggestedGroupName":"Đăng nhập","suggestedName":"Đăng nhập thành công","kind":"ACTION","startStep":1,"endStep":4,"evidence":["..."],"confidence":0.9,"needsTesterConfirmation":true},{"suggestedGroupName":"Đăng nhập","suggestedName":"Hiển thị Dashboard sau đăng nhập","kind":"EXPECTED_RESULT","startStep":4,"endStep":4,"resultStep":4,"evidence":["..."],"confidence":0.8,"needsTesterConfirmation":true}]}
 QUY TẮC:
 - "suggestedGroupName" là CHỨC NĂNG/phân hệ nghiệp vụ dùng để phân nhóm trong thư viện, ví dụ: Đăng nhập, Điều hướng, Thiết bị.
 - "suggestedName" là kết quả hoặc kịch bản cụ thể có thể thực thi, ví dụ: Đăng nhập thành công, Chọn phân hệ Thiết bị, Thêm thiết bị thành công.
-- "kind" BẮT BUỘC là "SETUP" hoặc "ACTION".
+- "kind" BẮT BUỘC là "SETUP", "ACTION" hoặc "EXPECTED_RESULT".
 - SETUP là bước chuẩn bị/ngữ cảnh có thể tái sử dụng trước các thao tác nghiệp vụ, ví dụ: mở trang bằng page.goto, đăng nhập hệ thống, điều hướng tới màn hình/chức năng cần kiểm thử.
 - ACTION là hành vi nghiệp vụ hoặc validation cụ thể của một luồng kiểm thử, ví dụ: thêm, sửa, xóa, tìm kiếm, submit, bỏ trống một trường, nhập dữ liệu không hợp lệ.
+- EXPECTED_RESULT là bước/phần tử thể hiện KẾT QUẢ QUAN SÁT ĐƯỢC sau một ACTION — thông báo thành công/lỗi, đổi trạng thái, điều hướng sang màn hình khác... Đề xuất EXPECTED_RESULT NGAY CẢ KHI tester chưa viết expect() cho nó, miễn có bằng chứng rõ trong steps/assertions (ví dụ bước GOTO/điều hướng ngay sau một ACTION, hoặc assertion đã ghi được).
+- "resultStep" CHỈ áp dụng cho proposal kind EXPECTED_RESULT: số thứ tự (order) của ĐÚNG 1 step trong "steps" thể hiện rõ nhất kết quả quan sát được. Để null nếu không xác định được đúng 1 step cụ thể — KHÔNG đoán bừa.
 - Chỉ đề xuất SETUP khi có bằng chứng rõ ràng từ recording. Nếu không chắc chắn thì dùng ACTION.
 - Không được coi toàn bộ một luồng nghiệp vụ là SETUP chỉ vì nó xảy ra trước một luồng khác.
-- SETUP/ACTION chỉ là VAI TRÒ GỢI Ý của AI/Library; tester xác nhận vai trò thực thi riêng khi bind vào từng testcase.
+- SETUP/ACTION/EXPECTED_RESULT chỉ là VAI TRÒ GỢI Ý của AI/Library; tester xác nhận vai trò thực thi riêng khi bind vào từng testcase.
 - Một recording dài có thể đi qua NHIỀU chức năng. Phải gán chức năng riêng cho từng cụm, không gom toàn bộ recording vào một chức năng.
 
 - PHẢI tách riêng các luồng validation khác nhau thành proposal riêng nếu chúng khác điều kiện đầu vào hoặc khác expected result/assertion.
@@ -486,21 +532,7 @@ assertions: ${JSON.stringify(assertions)}`;
                     .replace(/\s*```$/i, "")
                     .trim();
                 const json = JSON.parse(cleaned);
-                if (Array.isArray(json.proposals))
-                    proposals = json.proposals
-                        .map(p => ({
-                            suggestedGroupName:
-                                String(p.suggestedGroupName ?? p.groupName ?? "").trim() || null,
-                            suggestedName: String(p.suggestedName ?? "").trim() || null,
-                            kind:
-                                String(p.kind ?? "").toUpperCase() === "SETUP" ? "SETUP" : "ACTION",
-                            startStep: Number.isInteger(p.startStep) ? p.startStep : null,
-                            endStep: Number.isInteger(p.endStep) ? p.endStep : null,
-                            evidence: Array.isArray(p.evidence) ? p.evidence.map(String) : [],
-                            confidence: typeof p.confidence === "number" ? p.confidence : null,
-                            needsTesterConfirmation: p.needsTesterConfirmation !== false
-                        }))
-                        .filter(p => Number.isInteger(p.startStep) && Number.isInteger(p.endStep));
+                proposals = sanitizeAnalyzeProposals(json);
             } catch {
                 return res.status(200).json({
                     success: true,

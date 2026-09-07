@@ -10,6 +10,17 @@ function text(value, fallback = "Chưa có") {
     return normalized || fallback;
 }
 
+const SOURCE_LABEL = {
+    TEMPLATE: "Khuôn mẫu (rule-based)",
+    MANUAL_TESTER: "Nhập tay",
+    CORE_RULE_ENGINE: "AI / CodeGen phân tích"
+};
+
+function sourceLabel(source) {
+    const key = String(source ?? "").trim();
+    return SOURCE_LABEL[key] ?? text(key);
+}
+
 function DetailList({ title, values }) {
     if (!Array.isArray(values) || values.length === 0) return null;
     return (
@@ -20,6 +31,38 @@ function DetailList({ title, values }) {
                     <li key={`${title}-${index}`}>{text(value?.action ?? value)}</li>
                 ))}
             </ol>
+        </section>
+    );
+}
+
+const CLARIFICATION_METHOD_LABEL = {
+    FIELD_MATCH: "Khớp theo trường dữ liệu",
+    OPERATION_MATCH: "Khớp theo nghiệp vụ (thao tác)",
+    NONE: "Không xác định được nguồn khớp"
+};
+
+function ClarificationProvenanceSection({ sourceReferences }) {
+    const items = (Array.isArray(sourceReferences) ? sourceReferences : []).filter(
+        reference => reference?.sourceType === "CLARIFICATION" && (reference.question || reference.method)
+    );
+    if (items.length === 0) return null;
+    return (
+        <section className="testcase-detail-section">
+            <h4>Nguồn gốc câu hỏi làm rõ</h4>
+            <ul className="testcase-provenance-list">
+                {items.map((reference, index) => (
+                    <li key={`${reference.sourceId || "ref"}-${index}`}>
+                        <div>
+                            {CLARIFICATION_METHOD_LABEL[reference.method] ?? reference.method ?? "Chưa xác định"}
+                            {typeof reference.confidence === "number" && (
+                                <span> — độ tin cậy {Math.round(reference.confidence * 100)}%</span>
+                            )}
+                        </div>
+                        {reference.question && <p>Câu hỏi: {reference.question}</p>}
+                        {reference.answer && <p>Trả lời: {reference.answer}</p>}
+                    </li>
+                ))}
+            </ul>
         </section>
     );
 }
@@ -126,6 +169,7 @@ export default function TestCaseEditor({
     editDraft,
     disabled,
     saving = false,
+    expectedResultConflicts = [],
     onClose,
     onEdit,
     onCancel,
@@ -142,7 +186,13 @@ export default function TestCaseEditor({
     if (!value) {
         return <div className="testcase-detail-empty">Chọn một test case để xem chi tiết.</div>;
     }
-    const warnings = testCaseWarnings(value);
+    const warnings = [
+        ...testCaseWarnings(value),
+        ...expectedResultConflicts.map(
+            conflict =>
+                `Xung đột kết quả mong đợi với testcase ${conflict.withId}: "${conflict.expectedResult}" — kiểm tra lại cái nào đúng trước khi duyệt.`
+        )
+    ];
     const invalid =
         !String(value.scenario ?? value.title ?? "").trim() ||
         !String(value.module ?? "").trim() ||
@@ -354,6 +404,10 @@ export default function TestCaseEditor({
                                 <dt>Loại testcase</dt>
                                 <dd>{text(value.type)}</dd>
                             </div>
+                            <div>
+                                <dt>Nguồn gốc</dt>
+                                <dd>{sourceLabel(value.source)}</dd>
+                            </div>
                         </dl>
                     </section>
                     <DetailList title="Điều kiện tiên quyết" values={value.preconditions} />
@@ -366,6 +420,7 @@ export default function TestCaseEditor({
                         <h4>Kết quả mong đợi</h4>
                         <p>{text(value.expectedResult)}</p>
                     </section>
+                    <ClarificationProvenanceSection sourceReferences={value.sourceReferences} />
                 </div>
             )}
         </aside>

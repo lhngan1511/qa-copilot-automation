@@ -8,11 +8,12 @@ import "./styles/automation.css";
 import "./styles/automationV3.css";
 import { ProjectProvider } from "./contexts/ProjectContext.jsx";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
+import { RunnerProvider } from "./contexts/RunnerContext.jsx";
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
-            <AuthProvider><ProjectProvider><App /></ProjectProvider></AuthProvider>
+            <AuthProvider><ProjectProvider><RunnerProvider><App /></RunnerProvider></ProjectProvider></AuthProvider>
         </QueryClientProvider>
     </StrictMode>
 );

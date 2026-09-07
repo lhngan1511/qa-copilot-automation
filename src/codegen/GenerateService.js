@@ -52,93 +52,24 @@ export default class GenerateService {
      * @param {Array}  o.segments?          refs [{segmentId, recordingId, orderInTestCase}] từ Workspace (5C-0)
      */
     generate({ workspaceId, testCaseId, approvedTestData = {}, confirmedTestData = {}, testDataBindings = {}, confirmedAssertions = [], setupRecordingId = null, segments = null }) {
-        const ws = this.workspace?.get(workspaceId);
-        if (!ws) {
-            return { ok: false, errorCode: GENERATE_ERRORS.WORKSPACE_NOT_FOUND, reason: "Không tìm thấy workspace." };
-        }
-        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
-        if (!entry) {
-            return { ok: false, errorCode: GENERATE_ERRORS.TESTCASE_NOT_FOUND, reason: "Không tìm thấy testcase trong workspace." };
-        }
-        // P0 — STEP DECISION (workspace/testcase scope): { "<blockId>:<stepOrder>": {status,...} }
-        const stepDecisions = entry.stepDecisions ?? {};
-        // Testcase snapshot (approved) — từ entry workspace + approvedTestData truyền vào.
-        const testCase = {
-            id: entry.testCaseId,
-            testcaseId: entry.testCaseId,
-            title: entry.title,
-            module: entry.module,
-            type: entry.type
-        };
+        const resolved = this.resolveRecordingForRender({ workspaceId, testCaseId, segments, setupRecordingId });
+        if (!resolved.ok) return resolved;
+        const { entry, testCase, testcaseRecording, setupRecording, stepDecisions, traceSegments, approvedBy, approvedAt } = resolved;
 
-        let rendered;
-        if (Array.isArray(segments) && segments.length > 0 && segments[0]?.blockId) {
-            // ===== 6B — ActionBlock flow (CANONICAL): snapshot steps từ workspace blocks, theo thứ tự binding =====
-            const resolved = this.resolveBlockFlow({ workspaceId, testCaseId, segments });
-            if (!resolved.ok) return resolved;
-            rendered = renderV3Spec({
-                testCase,
-                testcaseRecording: resolved.mainRecording,
-                setupRecording: null, // block SETUP nằm trong sequence như tester sắp (không tự reorder)
-                confirmedTestData,
-                testDataBindings,
-                stepDecisions,
-                confirmedAssertions,
-                approvedTestData,
-                approvedBy: resolved.mainRecording.approvedBy ?? null,
-                approvedAt: resolved.mainRecording.approvedAt ?? null
-            });
-            if (rendered.ok) {
-                rendered.metadata = { ...rendered.metadata, segments: resolved.traceSegments };
-            }
-        } else if (Array.isArray(segments) && segments.length > 0) {
-            // ===== 5C-0 — Segment flow (legacy compatibility): steps ghép theo thứ tự tester xác nhận =====
-            const resolved = this.resolveSegmentFlow({ testCaseId, segments, setupRecordingId });
-            if (!resolved.ok) return resolved;
-            rendered = renderV3Spec({
-                testCase,
-                testcaseRecording: resolved.mainRecording,
-                setupRecording: null, // steps SETUP đã ghép sẵn trong mainRecording.steps
-                confirmedTestData,
-                testDataBindings,
-                stepDecisions,
-                confirmedAssertions,
-                approvedTestData,
-                approvedBy: resolved.mainRecording.approvedBy ?? null,
-                approvedAt: resolved.mainRecording.approvedAt ?? null
-            });
-            if (rendered.ok) {
-                rendered.metadata = { ...rendered.metadata, segments: resolved.traceSegments };
-            }
-        } else {
-            // ===== Legacy 5B flow (tương thích dữ liệu cũ: recording gắn thẳng testCaseId) =====
-            const tcRecordings = this.store?.allByTestCase(testCaseId) ?? [];
-            const testcaseRecording = pickLatestApproved(tcRecordings);
-            if (!testcaseRecording) {
-                return { ok: false, errorCode: GENERATE_ERRORS.RECORDING_MAPPING_REQUIRED, reason: "Không có bản ghi thao tác cho testcase này." };
-            }
-            const raw = this.store?.getRaw(testcaseRecording.recordingId) ?? testcaseRecording;
-            let setupRecording = null;
-            if (setupRecordingId) {
-                const r = this.store?.getRaw(setupRecordingId);
-                if (r && r.status === "APPROVED") setupRecording = r;
-            } else {
-                const setups = this.store?.allByTestCase("SETUP") ?? [];
-                const approvedSetup = pickLatestApproved(setups);
-                if (approvedSetup) setupRecording = this.store?.getRaw(approvedSetup.recordingId) ?? approvedSetup;
-            }
-            rendered = renderV3Spec({
-                testCase,
-                testcaseRecording: raw,
-                setupRecording,
-                confirmedTestData,
-                testDataBindings,
-                stepDecisions,
-                confirmedAssertions,
-                approvedTestData,
-                approvedBy: raw.approvedBy ?? null,
-                approvedAt: raw.approvedAt ?? null
-            });
+        const rendered = renderV3Spec({
+            testCase,
+            testcaseRecording,
+            setupRecording,
+            confirmedTestData,
+            testDataBindings,
+            stepDecisions,
+            confirmedAssertions,
+            approvedTestData,
+            approvedBy,
+            approvedAt
+        });
+        if (rendered.ok && traceSegments) {
+            rendered.metadata = { ...rendered.metadata, segments: traceSegments };
         }
         if (!rendered.ok) return rendered;
 
@@ -169,6 +100,92 @@ export default class GenerateService {
             outputPath,
             generationVersion,
             generationHash
+        };
+    }
+
+    /**
+     * Xác định testCase/testcaseRecording/setupRecording/stepDecisions cho renderV3Spec — tách
+     * khỏi generate() (không đổi hành vi, chỉ refactor cho gọn): segments/binding có thể là
+     * block flow, segment flow, hoặc legacy — 3 nhánh dưới đây, y hệt generate() cũ.
+     */
+    resolveRecordingForRender({ workspaceId, testCaseId, segments = null, setupRecordingId = null }) {
+        const ws = this.workspace?.get(workspaceId);
+        if (!ws) {
+            return { ok: false, errorCode: GENERATE_ERRORS.WORKSPACE_NOT_FOUND, reason: "Không tìm thấy workspace." };
+        }
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        if (!entry) {
+            return { ok: false, errorCode: GENERATE_ERRORS.TESTCASE_NOT_FOUND, reason: "Không tìm thấy testcase trong workspace." };
+        }
+        // P0 — STEP DECISION (workspace/testcase scope): { "<blockId>:<stepOrder>": {status,...} }
+        const stepDecisions = entry.stepDecisions ?? {};
+        // Testcase snapshot (approved) — từ entry workspace.
+        const testCase = {
+            id: entry.testCaseId,
+            testcaseId: entry.testCaseId,
+            title: entry.title,
+            module: entry.module,
+            type: entry.type
+        };
+
+        if (Array.isArray(segments) && segments.length > 0 && segments[0]?.blockId) {
+            // ===== 6B — ActionBlock flow (CANONICAL): snapshot steps từ workspace blocks, theo thứ tự binding =====
+            const resolved = this.resolveBlockFlow({ workspaceId, testCaseId, segments });
+            if (!resolved.ok) return resolved;
+            return {
+                ok: true,
+                entry,
+                testCase,
+                testcaseRecording: resolved.mainRecording,
+                setupRecording: null, // block SETUP nằm trong sequence như tester sắp (không tự reorder)
+                stepDecisions,
+                traceSegments: resolved.traceSegments,
+                approvedBy: resolved.mainRecording.approvedBy ?? null,
+                approvedAt: resolved.mainRecording.approvedAt ?? null
+            };
+        }
+        if (Array.isArray(segments) && segments.length > 0) {
+            // ===== 5C-0 — Segment flow (legacy compatibility): steps ghép theo thứ tự tester xác nhận =====
+            const resolved = this.resolveSegmentFlow({ testCaseId, segments, setupRecordingId });
+            if (!resolved.ok) return resolved;
+            return {
+                ok: true,
+                entry,
+                testCase,
+                testcaseRecording: resolved.mainRecording,
+                setupRecording: null, // steps SETUP đã ghép sẵn trong mainRecording.steps
+                stepDecisions,
+                traceSegments: resolved.traceSegments,
+                approvedBy: resolved.mainRecording.approvedBy ?? null,
+                approvedAt: resolved.mainRecording.approvedAt ?? null
+            };
+        }
+        // ===== Legacy 5B flow (tương thích dữ liệu cũ: recording gắn thẳng testCaseId) =====
+        const tcRecordings = this.store?.allByTestCase(testCaseId) ?? [];
+        const testcaseRecording = pickLatestApproved(tcRecordings);
+        if (!testcaseRecording) {
+            return { ok: false, errorCode: GENERATE_ERRORS.RECORDING_MAPPING_REQUIRED, reason: "Không có bản ghi thao tác cho testcase này." };
+        }
+        const raw = this.store?.getRaw(testcaseRecording.recordingId) ?? testcaseRecording;
+        let setupRecording = null;
+        if (setupRecordingId) {
+            const r = this.store?.getRaw(setupRecordingId);
+            if (r && r.status === "APPROVED") setupRecording = r;
+        } else {
+            const setups = this.store?.allByTestCase("SETUP") ?? [];
+            const approvedSetup = pickLatestApproved(setups);
+            if (approvedSetup) setupRecording = this.store?.getRaw(approvedSetup.recordingId) ?? approvedSetup;
+        }
+        return {
+            ok: true,
+            entry,
+            testCase,
+            testcaseRecording: raw,
+            setupRecording,
+            stepDecisions,
+            traceSegments: null,
+            approvedBy: raw.approvedBy ?? null,
+            approvedAt: raw.approvedAt ?? null
         };
     }
 

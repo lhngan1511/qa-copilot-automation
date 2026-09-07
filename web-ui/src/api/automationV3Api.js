@@ -367,6 +367,15 @@ export function listRunnerAgents() {
     return apiClient.get(`${BASE}/runner-agents`);
 }
 
+/** Rà locator (proactive audit) — chạy THẬT file .spec.js đã Generate, báo cáo tình trạng từng
+ *  locator. v1 chỉ chạy local (không nhận agentId), giống Boundary Testing. */
+export function auditLocators(workspaceId, testCaseId, env = {}) {
+    return apiClient.post(
+        `${BASE}/workspaces/${encodeURIComponent(workspaceId)}/testcases/${encodeURIComponent(testCaseId)}/audit-locators`,
+        { headers: jsonHeaders(), body: JSON.stringify({ env }) }
+    );
+}
+
 /** P0 — CẦN XÁC NHẬN THAO TÁC: quyết định step (INCLUDE + data / EXCLUDE / REVIEW_REQUIRED). */
 export function saveStepDecision(workspaceId, testCaseId, { blockId, stepOrder, decision, value = "", intent = "" } = {}) {
     return apiClient.patch(
@@ -381,3 +390,5 @@ export function generateTestcase(workspaceId, testCaseId, confirmedTestData = {}
         { headers: jsonHeaders(), body: JSON.stringify({ confirmedTestData }) }
     );
 }
+
+// Kiểm thử biên (Boundary Testing) — HOÀN TOÀN độc lập, xem web-ui/src/api/boundaryTestingApi.js

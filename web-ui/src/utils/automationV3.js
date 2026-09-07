@@ -128,7 +128,8 @@ export const ACTION_LABEL = {
     SELECT: "Chọn",
     PRESS: "Phím",
     HOVER: "Di chuột",
-    ASSERT: "Kiểm tra"
+    ASSERT: "Kiểm tra",
+    DIALOG: "Xác nhận hộp thoại"
 };
 
 /** Trạng thái segment — ngôn ngữ tester. */
@@ -353,6 +354,8 @@ export function displayedRunResultForTestCase(testCase, transientResult) {
         runStatus: testCase.runStatus ?? testCase.lastRun.status,
         passed: testCase.lastRun.passed === true || testCase.runStatus === "PASSED",
         error: testCase.lastRun.error ?? null,
+        errorCode: testCase.lastRun.errorCode ?? null,
+        failedLocator: testCase.lastRun.failedLocator ?? null,
         durationMs: testCase.lastRun.durationMs ?? null,
         exitCode: testCase.lastRun.exitCode ?? null,
         stdout: testCase.lastRun.stdout ?? null,

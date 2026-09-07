@@ -4,6 +4,7 @@ import RequirementFilePicker from "../components/RequirementFilePicker.jsx";
 import useCreateWorkflow from "../hooks/useCreateWorkflow.js";
 import { validateRequirementFile } from "../utils/requirementFileValidation.js";
 import ImageRequirementBuilder from "../components/ImageRequirementBuilder.jsx";
+import { createDirectTestCaseDesign } from "../api/workflowApi.js";
 
 function uploadErrorMessage(error) {
     if (error?.code === "NETWORK_ERROR") {
@@ -24,6 +25,23 @@ export default function NewWorkflowPage() {
     const [file, setFile] = useState(null);
     const [fileError, setFileError] = useState("");
     const [sourceMode, setSourceMode] = useState("file");
+    // Phần 4 — lối tắt "Nhập nhanh testcase" (bỏ qua Requirement/Module/Scenario Review).
+    const [quickBusy, setQuickBusy] = useState(false);
+    const [quickError, setQuickError] = useState("");
+
+    const handleQuickStart = async () => {
+        if (quickBusy) return;
+        setQuickBusy(true);
+        setQuickError("");
+        try {
+            const result = await createDirectTestCaseDesign({});
+            navigate(`/workflows/${encodeURIComponent(result.workflowId)}`);
+        } catch (e) {
+            setQuickError(e?.message ?? "Không tạo được phiên nhập nhanh testcase.");
+        } finally {
+            setQuickBusy(false);
+        }
+    };
 
     const handleFileChange = nextFile => {
         if (mutation.isPending) return;
@@ -69,7 +87,19 @@ export default function NewWorkflowPage() {
             <div className="requirement-source-tabs" role="tablist" aria-label="Nguồn requirement">
                 <button type="button" role="tab" aria-selected={sourceMode === "file"} onClick={() => setSourceMode("file")}>Tải file .md</button>
                 <button type="button" role="tab" aria-selected={sourceMode === "image"} onClick={() => setSourceMode("image")}>Tạo từ hình ảnh</button>
+                {/* Bấm tab này chuyển thẳng sang trang Duyệt testcase — không cần bấm thêm 1 nút
+                    "Bắt đầu" nữa (Ngân phản hồi bấm 2 lần cho cùng 1 quyết định là thừa). */}
+                <button type="button" role="tab" disabled={quickBusy} onClick={handleQuickStart}>
+                    {quickBusy ? "Đang tạo…" : "Nhập nhanh testcase"}
+                </button>
             </div>
+
+            {quickError ? (
+                <div className="inline-alert" role="alert">
+                    <strong>Không thể bắt đầu</strong>
+                    <span>{quickError}</span>
+                </div>
+            ) : null}
 
             {sourceMode === "image" ? <div className="new-workflow-form"><div className="form-section"><ImageRequirementBuilder /></div></div> : <form className="new-workflow-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-section">

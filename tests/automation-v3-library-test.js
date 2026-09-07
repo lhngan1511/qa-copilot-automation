@@ -144,25 +144,23 @@ async function main() {
     assert.equal(bindAfterReload.body.sequence[0].blockId, libMap["Tìm kiếm"], "reload: binding trỏ Library block còn dùng được");
 
     // ===== P0 — Xóa khỏi Library (UI confirm; backend xóa qua codegen DELETE) =====
-    // P0 EDIT/DELETE guard — đang được testcase dùng → BLOCK 409 (không phá workspace).
+    // Cho xóa kể cả đang dùng (200) — gỡ khỏi MỌI testcase tham chiếu trước (cascade unbind),
+    // tránh Action thừa/rác trong thư viện thay vì chặn cứng tester phải tự unbind trước.
+    // "Tìm kiếm" đang dùng bởi 2 testcase: TC001 (2 lần) + TC002 (1 lần).
     const delUsed = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
-    assert.equal(delUsed.status, 409, "delete khi đang dùng → 409 LIBRARY_IN_USE");
-    assert.equal(delUsed.body?.error?.code ?? delUsed.body?.errorCode, "LIBRARY_IN_USE", "errorCode LIBRARY_IN_USE");
-    // Unbind trước (TC001 dùng 2 lần + TC002) → xóa được.
-    await req(base2, "DELETE", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/binding/blocks/${encodeURIComponent(libMap["Tìm kiếm"])}`);
-    await req(base2, "DELETE", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding/blocks/${encodeURIComponent(libMap["Tìm kiếm"])}`);
-    const del = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
-    assert.equal(del.status, 200, "delete library block 200 (sau unbind)");
+    assert.equal(delUsed.status, 200, "delete khi đang dùng → 200 (cho xóa, cascade unbind)");
+    assert.equal(delUsed.body?.data?.affectedTestCases, 2, "gỡ khỏi đúng 2 testcase (TC001 + TC002)");
     const libAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/library`);
     assert.equal(libAfterDelete.body.length, 3, "library còn 3 sau khi xóa Tìm kiếm");
     const del404 = await req(base2, "DELETE", `/api/codegen/library/${libMap["Tìm kiếm"]}`);
     assert.equal(del404.status, 404, "xóa lần 2 → 404 (LIBRARY_BLOCK_NOT_FOUND)");
-    // Binding trỏ block đã xóa → resolveBlock null → sequence lọc item (không crash).
+    // Cascade unbind đã gỡ khỏi CẢ HAI workspace/testcase — binding không còn item đã xóa,
+    // các thao tác khác (Login/Open/Edit) trong TC001 không bị ảnh hưởng.
+    const bind1AfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid1}/testcases/TC001/binding`);
+    assert.ok(!bind1AfterDelete.body.sequence.some(x => x.blockId === libMap["Tìm kiếm"]), "TC001: binding không còn item đã xóa (cascade unbind)");
+    assert.equal(bind1AfterDelete.body.sequence.length, 3, "TC001: còn 3 thao tác (Login/Open/Edit), mất 2 occurrence Tìm kiếm");
     const bindAfterDelete = await req(base2, "GET", `/api/automation-v3/workspaces/${wid2}/testcases/TC002/binding`);
-    assert.ok(!bindAfterDelete.body.sequence.some(x => x.blockId === libMap["Tìm kiếm"]), "binding không còn item đã xóa (unresolved bị lọc)");
-    // P0 EDIT/DELETE guard — block không xóa được khi còn binding (409), nên trường hợp
-    // "binding trỏ block đã xóa" không xảy ra qua API; data file thủ công vẫn bị chặn ở
-    // generate (resolveBlock null → SEGMENT_MAPPING_INVALID) — không crash.
+    assert.ok(!bindAfterDelete.body.sequence.some(x => x.blockId === libMap["Tìm kiếm"]), "TC002: binding không còn item đã xóa (cascade unbind)");
     await closeServer(srv2);
 
     fs.rmSync(tempRoot, { recursive: true, force: true });

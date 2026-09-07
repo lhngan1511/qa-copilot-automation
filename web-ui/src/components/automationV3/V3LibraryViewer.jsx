@@ -26,7 +26,8 @@ const formatRecordedDateTime = value => {
      Edit chỉ thêm checkbox "Sử dụng bước này" trong cell STT — KHÔNG đổi cấu trúc row.
    - Save: PATCH → refresh → re-select SAME blockId → exit edit → detail vẫn cột phải;
      success nhỏ ở status row, tự biến mất (3s).
-   - Delete: confirm inline; backend chặn used>0 (409 LIBRARY_IN_USE) — UI disable khi used.
+   - Delete: cho xóa kể cả đang dùng (200) — backend cascade unbind khỏi mọi testcase tham
+     chiếu trước; UI cảnh báo rõ số testcase bị ảnh hưởng trong hộp xác nhận.
 
  Không đổi backend contract (delete guard/updateBlock/version/hash/fingerprint).
 */
@@ -34,7 +35,11 @@ const formatRecordedDateTime = value => {
 export default function V3LibraryViewer({ onClose }) {
     const [library, setLibrary] = useState(null);
     const [search, setSearch] = useState("");
-    const [expandedGroup, setExpandedGroup] = useState(null);
+    const [statusFilter, setStatusFilter] = useState("all"); // all | DRAFT | CONFIRMED
+    const [usageFilter, setUsageFilter] = useState("all"); // all | used | unused
+    // P0-UI — mặc định KHÔNG mở nhóm nào (đỡ rợp mắt khi thư viện có nhiều Chức năng);
+    // tự mở nhóm nào có kết quả khớp khi đang tìm kiếm.
+    const [expandedGroups, setExpandedGroups] = useState(() => new Set());
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -42,7 +47,9 @@ export default function V3LibraryViewer({ onClose }) {
     const [editGroup, setEditGroup] = useState("");
     const [applyGroupToRecording, setApplyGroupToRecording] = useState(false);
     const [editStepsOn, setEditStepsOn] = useState([]);
+    const [editOrder, setEditOrder] = useState([]); // thứ tự bước tester sắp lại (mảng step.order)
     const [editValues, setEditValues] = useState({});
+    const [editLocators, setEditLocators] = useState({}); // { [step.order]: locator }
     const [dirtySensitiveValues, setDirtySensitiveValues] = useState([]);
     const [editBusy, setEditBusy] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -78,21 +85,30 @@ export default function V3LibraryViewer({ onClose }) {
 
     const filtered = useMemo(() => {
         const q = String(search ?? "").trim().toLowerCase();
-        if (!q) return library ?? [];
-        return (library ?? []).filter(b =>
-            String(b?.label ?? "").toLowerCase().includes(q) ||
-            String(b?.groupName ?? "").toLowerCase().includes(q)
-        );
-    }, [library, search]);
+        return (library ?? []).filter(b => {
+            if (q && !String(b?.label ?? "").toLowerCase().includes(q) && !String(b?.groupName ?? "").toLowerCase().includes(q)) return false;
+            if (statusFilter !== "all" && b?.status !== statusFilter) return false;
+            if (usageFilter === "used" && !((b?.usedByTestCases ?? 0) > 0)) return false;
+            if (usageFilter === "unused" && (b?.usedByTestCases ?? 0) > 0) return false;
+            return true;
+        });
+    }, [library, search, statusFilter, usageFilter]);
 
     const groups = useMemo(() => groupLibraryActions(filtered), [filtered]);
-    const searchEmpty = String(search ?? "").trim().length > 0 && filtered.length === 0;
+    const hasActiveFilter = Boolean(search.trim()) || statusFilter !== "all" || usageFilter !== "all";
+    const searchEmpty = hasActiveFilter && filtered.length === 0;
     const totalActions = (library ?? []).length;
     const libraryEmpty = Array.isArray(library) && library.length === 0;
     const compactState = library === null || libraryEmpty;
     // selected theo blockId — giữ qua refresh (re-select SAME blockId sau save).
     const selected = useMemo(() => (library ?? []).find(b => b.blockId === selectedId) ?? null, [library, selectedId]);
     const selectedSteps = useMemo(() => (selected?.steps ?? []).map(libraryStepDetail), [selected]);
+    // Khi editing: hiển thị theo thứ tự tester đã sắp lại (editOrder); view: giữ nguyên thứ tự gốc.
+    const displaySteps = useMemo(() => {
+        if (!editing) return selectedSteps;
+        const byOrder = new Map(selectedSteps.map(s => [s.order, s]));
+        return editOrder.map(order => byOrder.get(order)).filter(Boolean);
+    }, [editing, editOrder, selectedSteps]);
     const usedCount = selected?.usedByTestCases ?? 0;
     const sameRecordingActions = useMemo(() => {
         const sourceId = String(selected?.sourceRecordingId ?? "").trim();
@@ -106,7 +122,7 @@ export default function V3LibraryViewer({ onClose }) {
         setDeleteConfirmId(null);
         setExpandedTechnicalStep(null);
         setStatus(null);
-        setExpandedGroup(expandedGroup ?? null);
+        setExpandedGroups(prev => new Set(prev).add(String(b.groupName ?? "").trim()));
     };
 
     const startEdit = () => {
@@ -116,21 +132,40 @@ export default function V3LibraryViewer({ onClose }) {
         setEditGroup(selected.groupName ?? "");
         setApplyGroupToRecording(sameRecordingActions.length > 1);
         setEditStepsOn((selected.steps ?? []).map(s => s.order));
+        setEditOrder((selected.steps ?? []).map(s => s.order));
         setEditValues(Object.fromEntries((selected.steps ?? []).map(s => [s.order, s.sensitive ? "" : String(s.recordedValue ?? "")])));
+        setEditLocators(Object.fromEntries((selected.steps ?? []).map(s => [s.order, String(s.locator ?? "")])));
         setDirtySensitiveValues([]);
         setStatus(null);
     };
     const cancelEdit = () => { setEditing(false); setStatus(null); };
 
+    /** Đổi vị trí 1 bước lên/xuống trong Action (chỉ đổi thứ tự lưu — không đổi step.order định danh). */
+    const moveStep = (order, direction) => {
+        setEditOrder(list => {
+            const index = list.indexOf(order);
+            const target = index + direction;
+            if (index === -1 || target < 0 || target >= list.length) return list;
+            const next = [...list];
+            [next[index], next[target]] = [next[target], next[index]];
+            return next;
+        });
+    };
+
     const saveEdit = async () => {
         if (!selected) return;
         setEditBusy(true);
         try {
-            const keptSteps = (selected.steps ?? []).filter(s => editStepsOn.includes(s.order)).map(s => ({
-                ...s,
-                recordedValue: s.sensitive && !dirtySensitiveValues.includes(s.order) ? undefined : (editValues[s.order] ?? ""),
-                preserveRecordedValue: Boolean(s.sensitive && !dirtySensitiveValues.includes(s.order))
-            }));
+            const byOrder = new Map((selected.steps ?? []).map(s => [s.order, s]));
+            const keptSteps = editOrder.filter(order => editStepsOn.includes(order)).map(order => {
+                const s = byOrder.get(order);
+                return {
+                    ...s,
+                    locator: editLocators[order] ?? s.locator,
+                    recordedValue: s.sensitive && !dirtySensitiveValues.includes(order) ? undefined : (editValues[order] ?? ""),
+                    preserveRecordedValue: Boolean(s.sensitive && !dirtySensitiveValues.includes(order))
+                };
+            });
             await updateLibraryAction(selected.blockId, { label: editLabel, groupName: editGroup, steps: keptSteps });
             if (applyGroupToRecording && sameRecordingActions.length > 1) {
                 await Promise.all(sameRecordingActions
@@ -138,13 +173,16 @@ export default function V3LibraryViewer({ onClose }) {
                     .map(item => updateLibraryAction(item.blockId, { groupName: editGroup })));
             }
             // Refresh rồi RE-SELECT cùng blockId — detail vẫn cột phải; edit=false.
+            const originalOrder = (selected.steps ?? []).map(s => s.order);
+            const newOrder = keptSteps.map(s => s.order);
+            const structureChanged = newOrder.length !== originalOrder.length || newOrder.some((o, i) => o !== originalOrder[i]);
             await refresh();
             setSelectedId(selected.blockId);
             setEditing(false);
             setDeleteConfirmId(null);
             showStatus("ok", applyGroupToRecording && sameRecordingActions.length > 1
                 ? `✓ Đã cập nhật Chức năng cho ${sameRecordingActions.length} thao tác cùng bản ghi`
-                : keptSteps.length !== (selected.steps ?? []).length
+                : structureChanged
                 ? "✓ Đã lưu — testcase đang dùng Action cần Sinh lại"
                 : "✓ Đã lưu thay đổi");
         } catch (e) {
@@ -158,12 +196,15 @@ export default function V3LibraryViewer({ onClose }) {
         if (!selected) return;
         setEditBusy(true);
         try {
-            await deleteLibraryAction(selected.blockId);
+            const result = await deleteLibraryAction(selected.blockId);
+            const affected = result?.data?.affectedTestCases ?? 0;
             setSelectedId(null);
             setDeleteConfirmId(null);
             setEditing(false);
             await refresh();
-            showStatus("ok", "✓ Đã xóa thao tác khỏi Thư viện.");
+            showStatus("ok", affected > 0
+                ? `✓ Đã xóa thao tác khỏi Thư viện — đã gỡ khỏi ${affected} testcase, cần chọn lại thao tác khác cho testcase đó.`
+                : "✓ Đã xóa thao tác khỏi Thư viện.");
         } catch (e) {
             showStatus("err", e?.message ?? "Không xóa được thao tác.");
         } finally {
@@ -174,7 +215,7 @@ export default function V3LibraryViewer({ onClose }) {
     // DÙNG CHUNG cho VIEW và EDIT — grid 5 cột; edit thêm checkbox trong cell STT.
     // STT là thứ tự cục bộ trong Action (1..N). s.order vẫn là định danh bước nguồn
     // dùng cho edit/expand/persistence, không được ghi đè bằng số hiển thị.
-    const renderStepRow = (s, withCheckbox, displayOrder) => (
+    const renderStepRow = (s, withCheckbox, displayOrder, position = 0, total = 0) => (
         <Fragment key={s.order}>
         <div className="v3-lib-modal__step">
             <span className="v3-lib-step__n">
@@ -207,6 +248,12 @@ export default function V3LibraryViewer({ onClose }) {
                 )}
             </span>
             <span className="v3-lib-step__tech">
+                {withCheckbox ? (
+                    <span className="v3-lib-sequence__controls" aria-label="Sắp xếp bước">
+                        <button type="button" disabled={editBusy || position === 0} onClick={() => moveStep(s.order, -1)} aria-label={`Đưa bước ${displayOrder} lên`}>↑</button>
+                        <button type="button" disabled={editBusy || position === total - 1} onClick={() => moveStep(s.order, 1)} aria-label={`Đưa bước ${displayOrder} xuống`}>↓</button>
+                    </span>
+                ) : null}
                 <button type="button" className="v3-lib-step__tech-toggle"
                     aria-expanded={expandedTechnicalStep === s.order}
                     onClick={() => setExpandedTechnicalStep(current => current === s.order ? null : s.order)}>
@@ -216,7 +263,22 @@ export default function V3LibraryViewer({ onClose }) {
         </div>
         {expandedTechnicalStep === s.order ? (
             <div className="v3-lib-step__technical-row">
-                <code className="v3-exp__stmt">{s.locator || "Không có locator"}{s.target ? `\ntarget: ${s.target}` : ""}</code>
+                {withCheckbox ? (
+                    <label className="v3-lib-modal__edit-row">
+                        <span className="v3-act__note">Locator (sửa khi giao diện đổi khiến locator cũ không còn đúng)</span>
+                        <input
+                            className="v3-input"
+                            type="text"
+                            value={editLocators[s.order] ?? ""}
+                            disabled={editBusy}
+                            placeholder="Không có locator"
+                            aria-label={`Locator bước ${displayOrder}`}
+                            onChange={e => setEditLocators(values => ({ ...values, [s.order]: e.target.value }))}
+                        />
+                    </label>
+                ) : (
+                    <code className="v3-exp__stmt">{s.locator || "Không có locator"}{s.target ? `\ntarget: ${s.target}` : ""}</code>
+                )}
             </div>
         ) : null}
         </Fragment>
@@ -240,6 +302,16 @@ export default function V3LibraryViewer({ onClose }) {
                     {!compactState ? (
                         <div className="v3-lib-modal__search">
                             <input className="v3-input" type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm thao tác (tên / chức năng)…" />
+                            <select className="v3-input v3-lib-modal__filter" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} aria-label="Lọc theo trạng thái">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="CONFIRMED">Đã xác nhận</option>
+                                <option value="DRAFT">Nháp</option>
+                            </select>
+                            <select className="v3-input v3-lib-modal__filter" value={usageFilter} onChange={e => setUsageFilter(e.target.value)} aria-label="Lọc theo tình trạng sử dụng">
+                                <option value="all">Đang dùng / chưa dùng</option>
+                                <option value="used">Đang dùng</option>
+                                <option value="unused">Chưa dùng</option>
+                            </select>
                         </div>
                     ) : null}
                     {/* Status row — toast/banner nhỏ trong header (không phá body grid) */}
@@ -269,16 +341,23 @@ export default function V3LibraryViewer({ onClose }) {
                             {/* TREE PANE (fixed 340px, scroll riêng) */}
                             <div className="v3-lib-modal__list">
                                 {groups.length === 0 ? (
-                                    <p className="v3-act__note">Không tìm thấy thao tác khớp "{search}".</p>
+                                    <p className="v3-act__note">{search.trim() ? `Không tìm thấy thao tác khớp "${search}".` : "Không có thao tác nào khớp bộ lọc."}</p>
                                 ) : groups.map(g => {
-                                    const open = expandedGroup === null || expandedGroup === g.groupName;
+                                    const groupKey = g.rawGroupName ?? "";
+                                    const searching = Boolean(search.trim());
+                                    const open = searching || expandedGroups.has(groupKey);
                                     return (
-                                        <div className="v3-lib-group" key={g.rawGroupName ?? ""}>
+                                        <div className="v3-lib-group" key={groupKey}>
                                             <button type="button" className="v3-lib-group__head"
                                                 aria-expanded={open}
-                                                onClick={() => setExpandedGroup(open ? (expandedGroup === g.groupName ? null : g.groupName) : g.groupName)}>
+                                                onClick={() => setExpandedGroups(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(groupKey)) next.delete(groupKey); else next.add(groupKey);
+                                                    return next;
+                                                })}>
                                                 <span className={`v3-lib-group__arrow${open ? " is-open" : ""}`} aria-hidden="true">›</span>
                                                 <b>{g.groupName}</b>
+                                                <span className="v3-lib-group__count">{g.count}</span>
                                             </button>
                                             {open ? (
                                                 <div className="v3-lib-modal__group-body">
@@ -363,8 +442,7 @@ export default function V3LibraryViewer({ onClose }) {
                                                     </div>
                                                     <div className="v3-lib-modal__detail-actions">
                                                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={startEdit}>Chỉnh sửa</button>
-                                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={usedCount > 0 || editBusy}
-                                                            title={usedCount > 0 ? "Không thể xóa vì Action đang được testcase sử dụng." : ""}
+                                                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={editBusy}
                                                             onClick={() => setDeleteConfirmId(selected.blockId)}>Xóa</button>
                                                     </div>
                                                 </>
@@ -373,9 +451,13 @@ export default function V3LibraryViewer({ onClose }) {
 
                                         {deleteConfirmId === selected.blockId ? (
                                             <div className="v3-lib-modal__delete-confirm">
-                                                <p className="v3-act__note">Xóa thao tác '{selected.label}' khỏi Thư viện?{usedCount > 0 ? ` (đang dùng bởi ${usedCount} testcase — sẽ bị chặn)` : ""}</p>
+                                                <p className="v3-act__note">
+                                                    {usedCount > 0
+                                                        ? `Đang được ${usedCount} testcase sử dụng. Xóa sẽ gỡ thao tác '${selected.label}' khỏi các testcase đó — bạn sẽ cần chọn lại thao tác khác cho những testcase này.`
+                                                        : `Xóa thao tác '${selected.label}' khỏi Thư viện?`}
+                                                </p>
                                                 <div className="v3-step-review__actions">
-                                                    <button type="button" className="v3-btn v3-btn--danger v3-btn--mini" disabled={usedCount > 0 || editBusy} onClick={doDelete}>{editBusy ? "Đang xóa…" : "Xóa"}</button>
+                                                    <button type="button" className="v3-btn v3-btn--danger v3-btn--mini" disabled={editBusy} onClick={doDelete}>{editBusy ? "Đang xóa…" : (usedCount > 0 ? "Vẫn xóa" : "Xóa")}</button>
                                                     <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={editBusy} onClick={() => setDeleteConfirmId(null)}>Hủy</button>
                                                 </div>
                                             </div>
@@ -389,7 +471,7 @@ export default function V3LibraryViewer({ onClose }) {
                                             <span className="v3-lib-step__val">Giá trị bản ghi</span>
                                             <span className="v3-lib-step__tech">Kỹ thuật</span>
                                         </div>
-                                        {selectedSteps.map((s, index) => renderStepRow(s, editing, index + 1))}
+                                        {displaySteps.map((s, index) => renderStepRow(s, editing, index + 1, index, displaySteps.length))}
                                         {(selected.recordedAssertions ?? []).length > 0 ? (
                                             <div className="v3-act__verif">
                                                 <span className="v3-act__note v3-act__verif-label">Điều kiện kiểm tra:</span>

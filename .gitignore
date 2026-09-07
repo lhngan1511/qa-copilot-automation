@@ -1,5 +1,8 @@
 node_modules/
 .env
+.claude/settings.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 web-ui/node_modules/
 web-ui/dist/
 test-results/
@@ -14,6 +17,7 @@ data/auth-users.json
 data/projects.json
 data/requirement-drafts/
 data/runner-devices.json
+data/boundary-entries.json
 data/uploads/
 data/*.tmp
 output/

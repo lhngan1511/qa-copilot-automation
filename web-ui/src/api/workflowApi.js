@@ -13,6 +13,29 @@ export async function listWorkflows({ limit = 6, offset = 0, signal } = {}) {
     return response?.data ?? { items: [], pagination: {} };
 }
 
+/** Phần 4 — "AI Test Design" lối tắt Nhập nhanh testcase: tạo thẳng session ở TestCase Review,
+ *  bỏ qua Requirement/Module/Scenario Review. */
+export async function createDirectTestCaseDesign({ signal } = {}) {
+    const response = await apiClient.post("/workflows/direct-testcase-design", { signal });
+    const result = response?.data;
+
+    return {
+        workflowId: extractWorkflowId(result),
+        workflow: result?.workflow ?? null
+    };
+}
+
+/** Phần 4 — hoàn tất session bypass sau khi đã duyệt (KHÔNG gọi resumeSession — session này
+ *  không có Requirement/Clarification để resume). */
+export async function finalizeDirectTestCaseDesign({ workflowId, artifactId, signal }) {
+    const response = await apiClient.post(`/workflows/${encodeURIComponent(workflowId)}/finalize-direct`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artifactId }),
+        signal
+    });
+    return response?.data ?? null;
+}
+
 export async function getWorkflow(workflowId, { signal } = {}) {
     const response = await apiClient.get(`/workflows/${encodeURIComponent(workflowId)}`, {
         signal

@@ -11,7 +11,8 @@ import { fileURLToPath } from "node:url";
  PHẦN B — header [Chỉnh sửa][Xóa] + warning used.
  PHẦN C — edit: rename / group / include-exclude step / recorded value (KHÔNG raw Playwright) → PATCH
           /codegen/library/:id (updateBlock + confirm; content change → version++ + hash mới).
- PHẦN D — delete: used > 0 → BLOCK 409 LIBRARY_IN_USE (không phá workspace); unused → 200.
+ PHẦN D — delete: cho xóa kể cả đang dùng (200) — gỡ khỏi mọi testcase tham chiếu trước
+          (cascade unbind); testcase liên quan rơi về "thiếu thao tác", không phá workspace.
  PHẦN E — shared Library duy nhất (CodeGen + Automation cùng nguồn).
  PHẦN F — fingerprint gồm content (label|version|hash): content change → testcase stale
           → Run bị chặn → bắt Generate lại (KHÔNG workaround remove/re-add).
@@ -72,13 +73,15 @@ await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/assertio
 const gen = await req("POST", `/api/automation-v3/workspaces/${wid}/testcases/TC001/generate`, {});
 assert.equal(gen.status, 200, "setup: generate 200");
 
-// ===== A7/A10 — DELETE used Action → BLOCK 409 LIBRARY_IN_USE (an toàn, không phá workspace) =====
-const delUsed = await req("DELETE", `/api/codegen/library/${encodeURIComponent(loginBlockId)}`);
-assert.equal(delUsed.status, 409, "A10: delete used action -> 409 block");
-assert.equal(delUsed.body?.error?.code ?? delUsed.body?.errorCode, "LIBRARY_IN_USE", "A10: errorCode LIBRARY_IN_USE");
-assert.ok(String(delUsed.body?.error?.message ?? delUsed.body?.message ?? "").includes("1 testcase"), "A10: message nói rõ N testcase");
+// ===== A7/A10 — DELETE used Action (searchBlockId — dùng bởi TC001) → 200, gỡ khỏi testcase (cascade) =====
+const delUsed = await req("DELETE", `/api/codegen/library/${encodeURIComponent(searchBlockId)}`);
+assert.equal(delUsed.status, 200, "A10: delete used action -> 200 (cho xóa kể cả đang dùng)");
+assert.equal(delUsed.body?.data?.affectedTestCases, 1, "A10: response nói rõ đã gỡ khỏi 1 testcase");
 const listAfterBlock = (await req("GET", "/api/codegen/library")).body?.data ?? [];
-assert.ok(listAfterBlock.some(b => b.blockId === loginBlockId), "A10: action vẫn còn (block không xóa)");
+assert.ok(!listAfterBlock.some(b => b.blockId === searchBlockId), "A10: action đã bị xóa khỏi Library");
+const tc001AfterDelete = (await req("GET", `/api/automation-v3/workspaces/${wid}/testcases/TC001/binding`)).body?.sequence ?? [];
+assert.ok(!tc001AfterDelete.some(ref => ref.blockId === searchBlockId), "A10: testcase TC001 không còn tham chiếu action đã xóa");
+assert.ok(tc001AfterDelete.some(ref => ref.blockId === loginBlockId), "A10: action khác (loginBlockId) không bị ảnh hưởng");
 
 // ===== A9 — DELETE unused Action (Mở danh mục — không bind) → 200 + list giảm =====
 const delUnused = await req("DELETE", `/api/codegen/library/${encodeURIComponent(openBlockId)}`);

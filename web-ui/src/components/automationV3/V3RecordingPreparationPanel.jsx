@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction, renameLibraryGroup, updateLibraryAction } from "../../api/codeGenApi.js";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { setRecordingScript, getRecording, createLibraryAction, analyzeRecording, createRecording, listLibrary, deleteLibraryAction, renameLibraryGroup, updateLibraryAction, runRecording, renameRecording, deleteRecording } from "../../api/codeGenApi.js";
 import { parseRecording } from "../../../../src/codegen/recordingParser.js"; // thuần — parse cục bộ khi xóa draft step (không API/không recording mới)
 import { ACTION_LABEL } from "../../utils/automationV3.js";
 import { freshAnalysisWorkspace, initializeAnalysisFromSteps, isStepInRange, scopedAssertionsInRange } from "../../utils/recordingPrepState.js";
@@ -68,7 +68,10 @@ function downloadScript(content, fileName) {
     URL.revokeObjectURL(url);
 }
 
-export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibrary, onOpenLibrary, onError, onConfirmedSegment, splitLayout = false }) {
+const V3RecordingPreparationPanel = forwardRef(function V3RecordingPreparationPanel(
+    { workspaceId, onSavedToLibrary, onOpenLibrary, onError, onConfirmedSegment, splitLayout = false },
+    ref
+) {
     const [source, setSource] = useState("");
     const [recordingId, setRecordingId] = useState(null);
     const [steps, setSteps] = useState([]);
@@ -80,6 +83,16 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
     const [draftSteps, setDraftSteps] = useState([]);
     const [draftAssertions, setDraftAssertions] = useState([]);
     const [draftRecordingId, setDraftRecordingId] = useState(null);
+    // Bổ sung theo yêu cầu Ngân 2026-08-28 — Chạy lại / Đặt tên & Lưu / Xóa bản ghi tạm cho bản
+    // nháp đang dán (trước khi "Nhập xong"). savedLabel = tên tester đã đặt (nếu có) — vừa hiển
+    // thị trạng thái đã lưu, vừa là tín hiệu để "Xóa bản ghi tạm" biết có nên xóa recording khỏi
+    // backend hay không (bản ĐÃ lưu thì không xóa, chỉ bản TẠM chưa lưu mới xóa).
+    const [runResult, setRunResult] = useState(null);
+    const [running, setRunning] = useState(false);
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
+    const [saveNameDraft, setSaveNameDraft] = useState("");
+    const [savingName, setSavingName] = useState(false);
+    const [savedLabel, setSavedLabel] = useState(null);
     const parseTimer = useRef(null);
     const parseGen = useRef(0);
     // Phần I — collapsed mặc định (chỉ dùng bố cục 1 cột; split layout luôn hiển thị steps)
@@ -131,6 +144,16 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         return () => window.clearTimeout(timer);
     }, [saveFeedback]);
 
+    // Bug thật Ngân báo lại 2026-09-03: "Bản ghi không có thao tác nào." (đặt lúc draft rỗng tạm
+    // thời khi xóa step, hoặc paste rỗng) đứng yên trên màn hình dù sau đó bản ghi ĐÃ có bước hợp
+    // lệ (steps/draftSteps > 0) — chỉ setLocalError("") ở đầu vài thao tác cụ thể, không tự dọn
+    // khi trạng thái không còn đúng nữa. Tự xoá đúng thông báo này ngay khi có bước hợp lệ.
+    useEffect(() => {
+        if (localError === "Bản ghi không có thao tác nào." && (steps.length > 0 || draftSteps.length > 0)) {
+            setLocalError("");
+        }
+    }, [localError, steps, draftSteps]);
+
     /* ---------- P0-1: reset context recording cũ (khi tester nhập bản ghi mới) ---------- */
 
     /** P0-1 — áp "analysis workspace" Phần II vào state (reset hoặc init từ steps mới). */
@@ -165,6 +188,9 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setShowRecording(false);
         setExpandedLibId(null);
         setDeleteConfirmId(null);
+        setRunResult(null);
+        setShowSaveDialog(false);
+        setSavedLabel(null);
     };
 
     /* ---------- Phần I: nhận recording (parse) ---------- */
@@ -212,12 +238,20 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         await doParse(source, parseGen.current);
     };
 
-    /* ---------- P0 — [+ Bản ghi mới]: reset CHỈ transient workspace ---------- */
+    /* ---------- [Xóa bản ghi tạm]: reset transient workspace + dọn recording CHƯA lưu ---------- */
 
-    const newRecording = () => {
+    const newRecording = async () => {
         // D — unsaved guard: nếu còn nội dung làm việc chưa lưu → cảnh báo trước khi discard.
         const dirty = source.trim() && (draftSteps.length > 0 || steps.length > 0 || confirmed.length > 0 || proposals.length > 0);
-        if (dirty && !window.confirm("Bạn có thay đổi chưa lưu trong bản ghi hiện tại. Tạo bản ghi mới sẽ bỏ các thay đổi này. Tiếp tục?")) return;
+        if (dirty && !window.confirm("Bạn có thay đổi chưa lưu trong bản ghi hiện tại. Xóa bản ghi tạm sẽ bỏ các thay đổi này. Tiếp tục?")) return;
+        // Mỗi lần dán/sửa nội dung đều tự tạo 1 recording nháp trên backend (xem doParse) — nếu
+        // tester CHƯA bấm "Đặt tên & Lưu" (savedLabel rỗng) thì đây đúng là bản TẠM, xóa luôn khỏi
+        // backend cho khớp tên nút (trước đây chỉ reset màn hình, recording tạm bị bỏ rơi vĩnh viễn
+        // trên server — data/codegen-recordings.json và outputs/codegen/ cứ tích rác dần).
+        const idToClean = draftRecordingId ?? recordingId;
+        if (idToClean && !savedLabel) {
+            try { await deleteRecording(idToClean); } catch { /* best-effort — không chặn reset UI nếu xóa lỗi */ }
+        }
         clearTimeout(parseTimer.current);
         parseTimer.current = null;
         parseGen.current += 1;
@@ -241,13 +275,20 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         setUtilityNotice("");
         setLocalError("");
         setShowRecording(false);
-        setExpandedItem(null);
+        // BUG THẬT (pre-existing, không phải do sửa ở đây) — dòng cũ gọi setExpandedItem(null)
+        // nhưng KHÔNG có state nào tên expandedItem trong file này (chỉ có expandedLibId ở dòng
+        // dưới) → mỗi lần bấm nút này đều ném ReferenceError giữa chừng, cắt ngang mọi reset PHÍA
+        // SAU nó (setRunResult/setSavedLabel/setShowSaveDialog thêm ở đây cũng nằm sau, nên trước
+        // khi sửa sẽ không được reset). Xóa dòng thừa, giữ đúng setExpandedLibId(null) bên dưới.
         setExpandedLibId(null);
         setDeleteConfirmId(null);
         setAnalyzing(false);
         setAiStatus(null);
         setProposalPage(0);
         setCurrentGroup(""); // KHÔNG inherit group từ recording trước (CASE 3)
+        setRunResult(null);
+        setShowSaveDialog(false);
+        setSavedLabel(null);
         // C — KHÔNG reset Library: không gọi setLibrary; groups đã rename giữ nguyên.
     };
 
@@ -475,6 +516,75 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
         }
     };
 
+    /* ---------- Chạy lại bản ghi / Đặt tên & Lưu bản ghi (bản NHÁP, trước "Nhập xong") ---------- */
+    // Dùng ĐÚNG recordingId backend đã tạo tự động lúc parse (doParse) — không tạo thêm recording
+    // mới. draftRecordingId còn khi đang ở giai đoạn BẢN NHÁP; recordingId khi đã "Nhập xong".
+
+    const activeRecordingId = draftRecordingId ?? recordingId;
+
+    const handleRunDraft = async () => {
+        if (!activeRecordingId || !source.trim() || running) return;
+        setRunning(true);
+        setRunResult(null);
+        try {
+            const res = await runRecording(activeRecordingId, { script: source });
+            setRunResult(res?.data ?? res);
+        } catch (e) {
+            notifyError(e?.message ?? "Không chạy thử được bản ghi.");
+        } finally {
+            setRunning(false);
+        }
+    };
+
+    const openSaveDialog = () => {
+        setSaveNameDraft(savedLabel ?? "");
+        setShowSaveDialog(true);
+    };
+
+    const confirmSaveRecording = async () => {
+        if (!activeRecordingId || !saveNameDraft.trim() || savingName) return;
+        setSavingName(true);
+        try {
+            await renameRecording(activeRecordingId, { fileName: saveNameDraft.trim() });
+            setSavedLabel(saveNameDraft.trim());
+            setShowSaveDialog(false);
+            setUtilityNotice(`✓ Đã lưu bản ghi "${saveNameDraft.trim()}" — xem lại trong "Bản ghi đã lưu".`);
+        } catch (e) {
+            notifyError(e?.message ?? "Không lưu được bản ghi.");
+        } finally {
+            setSavingName(false);
+        }
+    };
+
+    /** Gọi từ "Bản ghi đã lưu" (CodeGenPage) khi tester bấm "Chọn bản ghi này" — nạp NGUYÊN
+     *  recordingId đã có (KHÔNG tạo recording mới như doParse), parse cục bộ bằng parseRecording
+     *  thuần (đã import sẵn cho removeDraftStep) để tránh 1 lượt gọi API thừa. */
+    const loadSavedRecording = async ({ recordingId: idToLoad, downloadFileName, label }) => {
+        const dirty = source.trim() && (draftSteps.length > 0 || steps.length > 0 || confirmed.length > 0 || proposals.length > 0);
+        if (dirty && !window.confirm("Bạn có thay đổi chưa lưu trong bản ghi hiện tại. Chọn bản ghi khác sẽ bỏ các thay đổi này. Tiếp tục?")) return;
+        const idToClean = draftRecordingId ?? recordingId;
+        if (idToClean && idToClean !== idToLoad && !savedLabel) {
+            try { await deleteRecording(idToClean); } catch { /* best-effort */ }
+        }
+        try {
+            const detail = await getRecording(idToLoad);
+            const rec = detail?.data ?? detail;
+            const script = String(rec?.scriptContent ?? "");
+            const parsed = parseRecording(script);
+            resetRecordingContext();
+            setSource(script);
+            setParsedSource(script);
+            setDraftRecordingId(idToLoad);
+            setDraftSteps(Array.isArray(parsed.steps) ? parsed.steps : []);
+            setDraftAssertions(Array.isArray(parsed.assertions) ? parsed.assertions : []);
+            setSavedLabel(label ?? rec?.label ?? downloadFileName ?? rec?.downloadFileName ?? null);
+        } catch (e) {
+            notifyError(e?.message ?? "Không tải được bản ghi đã lưu.");
+        }
+    };
+
+    useImperativeHandle(ref, () => ({ loadSavedRecording }));
+
     /* ---------- P0 — Lưu bản ghi Playwright: utilities gắn với recording hiện tại (canonical `source`) ---------- */
 
     const handleCopyRecording = async () => {
@@ -605,8 +715,15 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                             Chức năng đề xuất: <span>{groupDisplayName(proposal.suggestedGroupName)}</span>
                                         </span>
                                         <span className="v3-cond__meta">
-                                            Vai trò gợi ý: {proposal.kind === "SETUP" ? "Bước chuẩn bị" : "Thao tác kiểm thử"}
+                                            Vai trò gợi ý: {proposal.kind === "SETUP" ? "Bước chuẩn bị" : proposal.kind === "EXPECTED_RESULT" ? "Kết quả cần quan sát" : "Thao tác kiểm thử"}
                                         </span>
+                                        {proposal.kind === "EXPECTED_RESULT" ? (
+                                            <span className="v3-cond__meta">
+                                                Đây KHÔNG phải thao tác để chạy — là điểm AI nhận thấy nên quan sát sau
+                                                thao tác{proposal.resultStep ? ` (bước ${proposal.resultStep})` : ""}. Khi tạo
+                                                Điều kiện kiểm tra cho thao tác liên quan, hãy đối chiếu điểm này.
+                                            </span>
+                                        ) : null}
                                         <span className="v3-cond__meta">
                                             <span className="v3-cond__num">Gợi ý {globalIdx + 1}/{proposals.length}</span>
                                             <span>Bước {proposal.startStep} → {proposal.endStep} · {stepCount} thao tác</span>
@@ -641,10 +758,14 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                                     <div className="v3-cond__actions">
                                         {splitLayout ? (
                                             // P0-3.2 — AI proposal → working action TRỰC TIẾP (không vòng qua form manual).
+                                            // EXPECTED_RESULT không tạo ActionBlock được (không phải thao tác để chạy) — chỉ
+                                            // xem/bỏ, không có nút "Thêm thao tác".
                                             <>
-                                                <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.added || st.blocked || st.dismissed} onClick={() => handleAddProposal(proposal)}>
-                                                    {st.added ? "Đã thêm" : "Thêm thao tác"}
-                                                </button>
+                                                {proposal.kind !== "EXPECTED_RESULT" && (
+                                                    <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={saving || st.added || st.blocked || st.dismissed} onClick={() => handleAddProposal(proposal)}>
+                                                        {st.added ? "Đã thêm" : "Thêm thao tác"}
+                                                    </button>
+                                                )}
                                                 <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={saving || st.added || st.dismissed} onClick={() => {
                                                     // P0 — "Bỏ" = đánh dấu dismissed (KHÔNG filter mảng) → list không remount/cà giật.
                                                     const rangeKey = `${Math.min(proposal.startStep, proposal.endStep)}:${Math.max(proposal.startStep, proposal.endStep)}`;
@@ -894,10 +1015,39 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
                         spellCheck={false}
                     />
                     <div className="v3-exp__row">
-                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={newRecording}>
-                            + Bản ghi mới
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!activeRecordingId || !source.trim() || running} onClick={handleRunDraft}>
+                            {running ? "Đang chạy…" : "Chạy lại bản ghi"}
                         </button>
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" disabled={!activeRecordingId || !source.trim()} onClick={openSaveDialog}>
+                            Đặt tên & Lưu
+                        </button>
+                        <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={newRecording}>
+                            Xóa bản ghi tạm
+                        </button>
+                        {savedLabel ? <span className="v3-act__note">✓ Đã lưu: {savedLabel}</span> : null}
                     </div>
+                    {showSaveDialog ? (
+                        <div className="v3-rec-save-dialog">
+                            <input
+                                className="v3-input"
+                                type="text"
+                                value={saveNameDraft}
+                                onChange={e => setSaveNameDraft(e.target.value)}
+                                placeholder="Tên bản ghi"
+                                autoFocus
+                            />
+                            <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" disabled={!saveNameDraft.trim() || savingName} onClick={confirmSaveRecording}>
+                                {savingName ? "Đang lưu…" : "Lưu"}
+                            </button>
+                            <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => setShowSaveDialog(false)}>Hủy</button>
+                        </div>
+                    ) : null}
+                    {runResult ? (
+                        <div className={`v3-rec-run-result${runResult.passed ? " v3-rec-run-result--pass" : " v3-rec-run-result--fail"}`}>
+                            <b>{runResult.passed ? "✓ Đạt" : "✗ Không đạt"}</b>
+                            {!runResult.passed && (runResult.error || runResult.diagnostic) ? <p>{runResult.error || runResult.diagnostic}</p> : null}
+                        </div>
+                    ) : null}
                     {draftSteps.length > 0 ? (
                         /* BẢN NHÁP — chưa commit canonical; tester review/chỉnh/xóa bước thừa. */
                         <div className="v3-draft">
@@ -1116,4 +1266,6 @@ export default function V3RecordingPreparationPanel({ workspaceId, onSavedToLibr
             ) : null}
         </div>
     );
-}
+});
+
+export default V3RecordingPreparationPanel;

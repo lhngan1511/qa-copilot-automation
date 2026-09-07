@@ -27,6 +27,26 @@ export async function stopCodeGen({ signal }) {
     return response.data;
 }
 
+/** Ghi từ xa qua Runner Agent đã ghép đôi (Ngân yêu cầu 2026-09-07) — không dùng phiên GLOBAL của
+ *  /codegen/start, xem RemoteCodeGenService.js. */
+export async function startRemoteCodeGen({ url, browser, mode, context, agentId, signal }) {
+    const response = await apiClient.post("/codegen/recordings/start-remote", {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, browser, mode, context, agentId }),
+        signal
+    });
+    return response.data;
+}
+
+export async function stopRemoteCodeGen(recordingId, { signal } = {}) {
+    const response = await apiClient.post(`/codegen/recordings/${encodeURIComponent(recordingId)}/stop-remote`, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        signal
+    });
+    return response.data;
+}
+
 export async function listRecordings({ signal } = {}) {
     const response = await apiClient.get("/codegen/recordings", { signal });
     return response.data;
@@ -100,7 +120,7 @@ export async function openReport(recordingId, { signal }) {
     return response.data;
 }
 
-export async function deleteRecording(recordingId, { signal }) {
+export async function deleteRecording(recordingId, { signal } = {}) {
     const response = await apiClient.delete(`/codegen/recordings/${encodeURIComponent(recordingId)}`, { signal });
     return response.data;
 }

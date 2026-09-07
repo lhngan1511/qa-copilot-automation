@@ -271,7 +271,12 @@ export default class ExpectedResultBuilder {
 
     lowerFirst(value) {
         const text = String(value ?? "").trim();
-        return text ? text.charAt(0).toLocaleLowerCase("vi") + text.slice(1) : "";
+        if (!text) return "";
+        // Chữ viết tắt ở đầu (vd "DM đợt nhập học" = Danh Mục, "TC001") -> KHÔNG hạ chữ cái đầu, để
+        // lại nguyên "dM đợt nhập học" sai chính tả — bug thật đã gặp (2026-09-04, Ngân báo: "Viết
+        // DM thì đúng, dM thì không"). Nhận diện bằng 2+ chữ IN HOA liên tiếp ngay đầu chuỗi.
+        if (/^[A-ZĐ]{2,}/.test(text)) return text;
+        return text.charAt(0).toLocaleLowerCase("vi") + text.slice(1);
     }
 
     capitalize(value) {

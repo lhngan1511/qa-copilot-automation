@@ -68,7 +68,11 @@ export default function V3TestCaseCard({
                     <div className="v3-card__row v3-card__row--muted v3-card__status-line">
                         <span>{segments.length > 0 ? `${segSummary.confirmed}/${segSummary.total} thao tác${stepTotal > 0 ? ` · ${stepTotal} bước` : ""}` : "Chưa có thao tác"}</span>
                         <span>{automationDisplayStatus(testCase)}</span>
-                        {testCase.generateStatus === "GENERATED" ? <span>Playwright đã sinh</span> : null}
+                        {testCase.generateStatus === "GENERATED" ? (
+                            testCase.automationStale
+                                ? <span className="v3-card__status--fail">⚠ Cần Sinh lại</span>
+                                : <span>Playwright đã sinh</span>
+                        ) : null}
                         {testCase.runStatus === "PASSED" ? <span className="v3-card__status--ok">✓ Passed</span> : null}
                         {testCase.runStatus === "FAILED" ? <span className="v3-card__status--fail">✕ Failed</span> : null}
                     </div>

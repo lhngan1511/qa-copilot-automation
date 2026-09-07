@@ -27,6 +27,9 @@ const VALID_CHANNELS = new Set(["chrome", "msedge"]);
 // Tên file test hợp lệ: *.spec.js / *.test.js / *.spec.ts / *.test.ts / *.spec.mjs / *.test.cjs...
 const TEST_FILE_RE = /\.(spec|test)\.[cm]?[jt]s$/;
 
+// Rà locator (proactive audit) — dòng hành động cần chèn kiểm tra count() trước khi thực thi.
+const AUDIT_ACTION_RE = /^(\s*)await\s+(.+?)\.(click|fill|check|uncheck|selectOption|press|hover)\(/;
+
 export default class PlaywrightRunner {
     /**
      * @param {object} options
@@ -457,6 +460,335 @@ export default class PlaywrightRunner {
                     { browserDiagnostic: status === "DIAGNOSTIC" ? browser.diagnostic : null, code }
                 );
             });
+        });
+    }
+
+    /**
+     * Phase 5 — Kiểm thử biên: chạy 1 file .spec.js chứa NHIỀU test() (mỗi candidate 1 test,
+     * title = candidate.id) và trả kết quả RIÊNG TỪNG test — khác `runFile` (chỉ đọc exit code
+     * tổng của cả file) và khác `buildExecutionResults`/`flattenSpecs` (gom theo TÊN FILE, ghi đè
+     * khi nhiều test cùng file — không dùng được ở đây, xem `collectBoundarySpecs`).
+     *
+     * Dùng `--reporter=json` + biến môi trường chính thức của Playwright JSON reporter
+     * `PLAYWRIGHT_JSON_OUTPUT_NAME` để ghi kết quả ra file thay vì stdout (cùng cơ chế
+     * `runProject` đã dùng qua `test-results.json`), rồi gom theo `spec.title` (= candidate.id).
+     *
+     * Dùng `playwright.boundary.config.js` (kế thừa config gốc, chỉ đổi `screenshot: "on"`) thay
+     * vì config mặc định (`only-on-failure`) — tester cần thấy giao diện thực tế sau khi nhập giá
+     * trị biên dù PASSED hay FAILED, không chỉ khi lỗi (xem playwright.boundary.config.js).
+     *
+     * Ảnh chụp màn hình Playwright ghi vào `test-results/` — thư mục này bị Playwright XÓA SẠCH
+     * mỗi lần chạy mới, nên phải copy ra `screenshotsDir` (bền vững, không bị ghi đè) ngay khi đọc
+     * xong kết quả, nếu không lịch sử chạy cũ sẽ mất ảnh sau lần chạy kế tiếp.
+     * @returns {Promise<{ok:boolean, resultsById:Map<string,{status,errorMessage,screenshotFile}>, raw:string, error:string|null}>}
+     */
+    runBoundarySpec(filePath, { env = {}, screenshotsDir = null } = {}) {
+        return new Promise((resolve) => {
+            const abs = path.resolve(this.rootDir, filePath);
+            if (!fs.existsSync(abs)) {
+                resolve({ ok: false, resultsById: new Map(), raw: "", error: `Không tìm thấy file "${filePath}".` });
+                return;
+            }
+            if (!TEST_FILE_RE.test(path.basename(abs))) {
+                resolve({ ok: false, resultsById: new Map(), raw: "", error: `File "${filePath}" không đúng tên *.spec.js.` });
+                return;
+            }
+            if (!this.baseUrl(env)) {
+                resolve({ ok: false, resultsById: new Map(), raw: "", error: ERROR_MESSAGES.BASE_URL_MISSING });
+                return;
+            }
+            const browser = this.resolveBrowser();
+            if (!browser.ok) {
+                resolve({ ok: false, resultsById: new Map(), raw: "", error: browser.diagnostic });
+                return;
+            }
+            const proj = this.resolveProject();
+            if (!proj.present) {
+                resolve({ ok: false, resultsById: new Map(), raw: "", error: `playwright.config.js không có project 'chromium' (${JSON.stringify(proj.available)}).` });
+                return;
+            }
+
+            const relRaw = path.relative(this.rootDir, abs).split(path.sep).join("/");
+            const rel = this.escapeRegex(relRaw);
+            const jsonOutputFile = path.join(path.dirname(abs), `${path.basename(abs, path.extname(abs))}.result.json`);
+            try {
+                if (fs.existsSync(jsonOutputFile)) fs.unlinkSync(jsonOutputFile);
+            } catch {
+                /* ignore */
+            }
+
+            const boundaryConfigPath = path.join(this.rootDir, "playwright.boundary.config.js");
+            const destScreenshotsDir = screenshotsDir ? path.resolve(screenshotsDir) : path.join(path.dirname(abs), "screenshots");
+            const args = this.buildArgs({ filePath: rel, project: proj.name, extraArgs: ["--config", boundaryConfigPath, "--reporter=json"] });
+            const cliPath = this.cliPath();
+            const requestId = `BND-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            console.log(`[BOUNDARY_RUN_START] requestId=${requestId} filePath=${filePath} args=${JSON.stringify(args)}`);
+            const child = this.spawnFn(process.execPath, [cliPath, ...args], {
+                cwd: this.rootDir,
+                env: {
+                    ...process.env,
+                    ...env,
+                    BASE_URL: this.baseUrl(env) || "",
+                    PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "",
+                    PLAYWRIGHT_HEADLESS: this.headed ? "false" : "true",
+                    PLAYWRIGHT_SLOW_MO: String(this.slowMo || 0),
+                    PLAYWRIGHT_JSON_OUTPUT_NAME: jsonOutputFile
+                },
+                stdio: ["ignore", "pipe", "pipe"],
+                windowsHide: false
+            });
+            let stdout = "";
+            let stderr = "";
+            // Log ra console giống runFile ([RUN_STDOUT]) — không có log này thì không ai (kể cả
+            // dev) chẩn đoán được vì sao 1 kịch bản kiểm thử biên chạy thật lại fail (bug thật:
+            // trước đây `raw` bị bỏ qua hoàn toàn sau khi resolve, không log, không lưu).
+            child.stdout.on("data", (d) => { stdout += d; console.log(`[BOUNDARY_RUN_STDOUT] requestId=${requestId} ${String(d).trimEnd()}`); });
+            child.stderr.on("data", (d) => { stderr += d; console.log(`[BOUNDARY_RUN_STDERR] requestId=${requestId} ${String(d).trimEnd()}`); });
+            child.on("error", (err) => {
+                console.error(`[BOUNDARY_RUN_END] requestId=${requestId} status=SPAWN_FAILED error=${String(err)}`);
+                resolve({ ok: false, resultsById: new Map(), raw: String(err), error: String(err) });
+            });
+            child.on("close", (exitCode) => {
+                let results = null;
+                if (fs.existsSync(jsonOutputFile)) {
+                    try {
+                        results = JSON.parse(fs.readFileSync(jsonOutputFile, "utf8"));
+                    } catch {
+                        results = null;
+                    }
+                }
+                if (!results) {
+                    console.error(`[BOUNDARY_RUN_END] requestId=${requestId} status=NO_JSON_RESULT exitCode=${exitCode}`);
+                    resolve({ ok: false, resultsById: new Map(), raw: stdout + stderr, error: "Không đọc được kết quả JSON của Playwright." });
+                    return;
+                }
+                const resultsById = this.extractBoundaryResults(results, destScreenshotsDir);
+                const summary = [...resultsById.entries()].map(([id, r]) => ({ id, status: r.status, error: r.errorMessage, screenshot: r.screenshotFile }));
+                console.log(`[BOUNDARY_RUN_END] requestId=${requestId} status=DONE exitCode=${exitCode} results=${JSON.stringify(summary)}`);
+                resolve({ ok: true, resultsById, raw: stdout + stderr, error: null });
+            });
+        });
+    }
+
+    /** Đọc kết quả PASSED/FAILED + lỗi + ảnh chụp màn hình từ JSON reporter thật của Playwright,
+     *  gom theo `spec.title` (= candidate.id). Tách riêng thành hàm thuần (không I/O ngoài
+     *  `persistBoundaryScreenshot`) để unit-test được với 1 fixture JSON thật — trước đây logic
+     *  này nằm trực tiếp trong callback `child.on("close")` và đọc SAI field
+     *  (`spec.status`/`spec.results`, vốn không tồn tại — cây JSON thật là `spec.ok` (boolean) +
+     *  `spec.tests[].results[]`), khiến MỌI lần chạy đều báo FAILED không lý do, không ảnh, bất kể
+     *  kết quả thật — xem tests/boundary-testing-test.js để thấy fixture thật bắt được lỗi này. */
+    extractBoundaryResults(results, destScreenshotsDir) {
+        const byTitle = new Map();
+        for (const suite of results.suites || []) this.collectBoundarySpecs(suite, byTitle);
+        const resultsById = new Map();
+        for (const [title, spec] of byTitle.entries()) {
+            const status = spec.ok ? "PASSED" : "FAILED";
+            const errors = [];
+            let screenshotFile = null;
+            for (const test of spec.tests || []) {
+                for (const r of test.results || []) {
+                    if (r.error?.message) errors.push(this.stripAnsi(String(r.error.message)).slice(0, 500));
+                    for (const att of r.attachments || []) {
+                        if (!screenshotFile && String(att.name ?? "") === "screenshot" && att.path) {
+                            screenshotFile = this.persistBoundaryScreenshot(att.path, destScreenshotsDir, title);
+                        }
+                    }
+                }
+            }
+            resultsById.set(title, { status, errorMessage: errors[0] ?? null, screenshotFile });
+        }
+        return resultsById;
+    }
+
+    /** Playwright ghi mã màu ANSI vào message lỗi (vd \x1b[31m...\x1b[39m) — hiển thị thẳng ra
+     *  UI tester sẽ ra ký tự rác, phải bóc trước khi lưu/trả về. */
+    stripAnsi(text) {
+        return text.split(String.fromCharCode(27)).join("").replace(/\[[0-9;]*m/g, "");
+    }
+
+    /** Đệ quy cây `suites` của Playwright JSON reporter, gom theo `spec.title` (= candidate.id
+     *  — mỗi test() trong file boundary được đặt title riêng) — KHÁC `flattenSpecs` (gom theo
+     *  tên file, ghi đè khi nhiều test cùng file, không dùng được cho N-test-1-file). */
+    collectBoundarySpecs(suite, byTitle) {
+        for (const s of suite.suites || []) this.collectBoundarySpecs(s, byTitle);
+        for (const spec of suite.specs || []) {
+            if (spec.title) byTitle.set(spec.title, spec);
+        }
+    }
+
+    /** Copy 1 ảnh chụp màn hình từ `test-results/` (Playwright xóa sạch thư mục này mỗi lần chạy
+     *  mới) sang `destDir` bền vững — trả về TÊN FILE (không phải đường dẫn hệ thống tuyệt đối,
+     *  vì đường dẫn đó không mở được từ trình duyệt; route tĩnh sẽ ghép URL từ tên file này). */
+    persistBoundaryScreenshot(srcPath, destDir, title) {
+        try {
+            if (!fs.existsSync(srcPath)) return null;
+            fs.mkdirSync(destDir, { recursive: true });
+            const safeTitle = String(title).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40);
+            const fileName = `${safeTitle}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+            fs.copyFileSync(srcPath, path.join(destDir, fileName));
+            return fileName;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Rà locator (proactive audit) — chạy ĐÚNG file .spec.js đã Generate thật (không dựng lại
+     * logic render riêng, tránh lệch với những gì Chạy thử thực sự dùng), nhưng chèn thêm 1 dòng
+     * kiểm tra `locator.count()` trước mỗi hành động để biết locator đó còn khớp đúng 1 phần tử
+     * trên giao diện hiện tại hay không — không cần đợi cả bài test chạy fail giữa chừng mới biết.
+     * Đây là run THẬT (thao tác thật trên hệ thống, giống hệt Chạy thử), chỉ khác ở chỗ có thêm
+     * báo cáo tình trạng từng locator dọc theo quá trình chạy.
+     * @returns {Promise<{ok:boolean, results:Array, raw:string, error:string|null}>}
+     */
+    runLocatorAudit(filePath, { env = {} } = {}) {
+        return new Promise((resolve) => {
+            const abs = path.resolve(this.rootDir, filePath);
+            if (!fs.existsSync(abs)) {
+                resolve({ ok: false, results: [], raw: "", error: `Không tìm thấy file "${filePath}".` });
+                return;
+            }
+            if (!TEST_FILE_RE.test(path.basename(abs))) {
+                resolve({ ok: false, results: [], raw: "", error: `File "${filePath}" không đúng tên *.spec.js.` });
+                return;
+            }
+            if (!this.baseUrl(env)) {
+                resolve({ ok: false, results: [], raw: "", error: ERROR_MESSAGES.BASE_URL_MISSING });
+                return;
+            }
+            const browser = this.resolveBrowser();
+            if (!browser.ok) {
+                resolve({ ok: false, results: [], raw: "", error: browser.diagnostic });
+                return;
+            }
+            const proj = this.resolveProject();
+            if (!proj.present) {
+                resolve({ ok: false, results: [], raw: "", error: `playwright.config.js không có project 'chromium' (${JSON.stringify(proj.available)}).` });
+                return;
+            }
+
+            const auditDir = path.join(this.rootDir, "outputs", "generated-tests", ".audit");
+            fs.mkdirSync(auditDir, { recursive: true });
+            const baseName = path.basename(abs);
+            const auditFile = path.join(auditDir, baseName);
+            const resultsPath = path.join(auditDir, `${path.basename(abs, path.extname(abs))}.audit-result.json`);
+
+            const source = fs.readFileSync(abs, "utf8");
+            const instrumented = this.instrumentForAudit(source, resultsPath);
+            if (!instrumented.ok) {
+                resolve({ ok: false, results: [], raw: "", error: instrumented.error });
+                return;
+            }
+            try {
+                if (fs.existsSync(resultsPath)) fs.unlinkSync(resultsPath);
+            } catch {
+                /* ignore */
+            }
+            fs.writeFileSync(auditFile, instrumented.code, "utf8");
+
+            const relRaw = path.relative(this.rootDir, auditFile).split(path.sep).join("/");
+            const rel = this.escapeRegex(relRaw);
+            const auditConfigPath = path.join(this.rootDir, "playwright.audit.config.js");
+            const args = this.buildArgs({ filePath: rel, project: proj.name, extraArgs: ["--config", auditConfigPath] });
+            const cliPath = this.cliPath();
+            const requestId = `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            console.log(`[AUDIT_RUN_START] requestId=${requestId} filePath=${filePath} args=${JSON.stringify(args)}`);
+            const child = this.spawnFn(process.execPath, [cliPath, ...args], {
+                cwd: this.rootDir,
+                env: {
+                    ...process.env,
+                    ...env,
+                    BASE_URL: this.baseUrl(env) || "",
+                    PLAYWRIGHT_BROWSER_CHANNEL: this.configuredChannel() || "",
+                    PLAYWRIGHT_HEADLESS: this.headed ? "false" : "true",
+                    PLAYWRIGHT_SLOW_MO: String(this.slowMo || 0)
+                },
+                stdio: ["ignore", "pipe", "pipe"],
+                windowsHide: false
+            });
+            let stdout = "";
+            let stderr = "";
+            child.stdout.on("data", (d) => { stdout += d; console.log(`[AUDIT_RUN_STDOUT] requestId=${requestId} ${String(d).trimEnd()}`); });
+            child.stderr.on("data", (d) => { stderr += d; console.log(`[AUDIT_RUN_STDERR] requestId=${requestId} ${String(d).trimEnd()}`); });
+            child.on("error", (err) => {
+                console.error(`[AUDIT_RUN_END] requestId=${requestId} status=SPAWN_FAILED error=${String(err)}`);
+                resolve({ ok: false, results: [], raw: String(err), error: String(err) });
+            });
+            child.on("close", (exitCode) => {
+                let raw = [];
+                if (fs.existsSync(resultsPath)) {
+                    try {
+                        raw = JSON.parse(fs.readFileSync(resultsPath, "utf8"));
+                    } catch {
+                        raw = [];
+                    }
+                }
+                const results = this.classifyAuditResults(raw);
+                console.log(`[AUDIT_RUN_END] requestId=${requestId} exitCode=${exitCode} results=${JSON.stringify(results.map(r => ({ line: r.line, verdict: r.verdict })))}`);
+                resolve({ ok: true, results, raw: stdout + stderr, error: null });
+            });
+        });
+    }
+
+    /** Chèn dòng kiểm tra `count()` trước mỗi hành động, bọc thân test trong try/finally để vẫn
+     *  ghi được kết quả MỘT PHẦN khi 1 bước sau đó throw/timeout (locator gãy giữa chừng không
+     *  làm mất kết quả các bước đã audit trước đó). Chỉ nhận đúng cấu trúc spec do rendererV3.js
+     *  sinh ra (1 khối `test(...)` duy nhất, dòng cuối là "});") — không dùng cho spec viết tay. */
+    instrumentForAudit(source, resultsPath) {
+        const lines = String(source ?? "").split("\n");
+        const testStartIdx = lines.findIndex(l => /^test\(/.test(l));
+        let testEndIdx = -1;
+        for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].trim() === "});") { testEndIdx = i; break; }
+        }
+        if (testStartIdx === -1 || testEndIdx === -1 || testEndIdx <= testStartIdx) {
+            return { ok: false, error: "Không nhận diện được cấu trúc file test để rà locator." };
+        }
+        const out = [];
+        out.push(lines[0]);
+        out.push('import fs from "node:fs";');
+        for (let i = 1; i < testStartIdx; i++) out.push(lines[i]);
+        out.push(lines[testStartIdx]);
+        out.push("  const __audit = [];");
+        out.push("  try {");
+        for (let i = testStartIdx + 1; i < testEndIdx; i++) {
+            const line = lines[i];
+            const m = AUDIT_ACTION_RE.exec(line);
+            if (m) {
+                const expr = m[2].trim();
+                out.push(`${m[1]}__audit.push({ line: ${i + 1}, expr: ${JSON.stringify(expr)}, count: await (${expr}).count() });`);
+            }
+            out.push(line);
+        }
+        out.push("  } finally {");
+        out.push(`    fs.writeFileSync(${JSON.stringify(resultsPath.split(path.sep).join("/"))}, JSON.stringify(__audit));`);
+        out.push("  }");
+        for (let i = testEndIdx; i < lines.length; i++) out.push(lines[i]);
+        return { ok: true, code: out.join("\n") };
+    }
+
+    /** Loại locator từ biểu thức nguồn (`page.getByRole(...)`, `page.locator(...)`, ...) — bản
+     *  backend tương đương `classifyLocatorKind` ở web-ui/src/utils/runDiagnose.js (không import
+     *  cross-runtime giữa web-ui và src, 2 phía chạy 2 runtime khác nhau). */
+    classifyLocatorKind(expr) {
+        const s = String(expr ?? "");
+        if (/getByRole/i.test(s)) return "role";
+        if (/getByLabel/i.test(s)) return "label";
+        if (/getByPlaceholder/i.test(s)) return "placeholder";
+        if (/getByTestId/i.test(s)) return "testid";
+        if (/getByText/i.test(s)) return "text";
+        if (/^\/\/|xpath=/i.test(s)) return "xpath";
+        return "css";
+    }
+
+    /** count() -> verdict + cờ fragile (css/xpath vẫn khớp đúng 1 phần tử nhưng kém ổn định nhất
+     *  theo thứ tự ưu tiên locator — xem .claude/rules/locator_strategy.md). */
+    classifyAuditResults(rawEntries) {
+        return (Array.isArray(rawEntries) ? rawEntries : []).map(e => {
+            const kind = this.classifyLocatorKind(e?.expr);
+            const count = Number(e?.count ?? 0);
+            const verdict = count === 0 ? "BROKEN" : count === 1 ? "OK" : "AMBIGUOUS";
+            return { line: e?.line ?? null, expr: e?.expr ?? "", kind, count, verdict, fragile: kind === "css" || kind === "xpath" };
         });
     }
 

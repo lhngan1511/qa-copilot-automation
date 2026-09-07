@@ -216,6 +216,87 @@ export function resolveFillStatus({ target, testDataBindings = {}, confirmedTest
     return { status: "UNRESOLVED", businessField, value: null, source: null, bound: Boolean(rawBinding) };
 }
 
+/**
+ * resolveFillPlan — pre-pass của renderV3Spec: xác định EXACT cùng 1 cách cho MỌI FILL step
+ * trong testcase (status VALUE/EMPTY/SETUP/UNRESOLVED, giá trị) và testDataMap dùng để build
+ * `const testData = {...}`. Tách nguyên vẹn từ renderV3Spec (không đổi hành vi, chỉ refactor).
+ */
+export function resolveFillPlan({
+    testcaseRecording,
+    setupRecording = null,
+    testDataBindings = {},
+    confirmedTestData = {},
+    approvedTestData = {},
+    stepDecisions = {}
+} = {}) {
+    const purposeMap = {};
+    for (const [k, f] of Object.entries(approvedTestData?.fields ?? {})) purposeMap[k] = f?.purpose ?? "VALID";
+
+    // P0 — STEP DECISION lookup: identity "<blockId>:<stepOrder>" (blockId từ resolveBlockFlow
+    // annotate _blockId; order từ snapshot). Guard: chỉ áp dụng khi step THẬT khớp locator +
+    // actionType (block đổi sau này → decision cũ không áp dụng → REVIEW_REQUIRED lại).
+    const decisionFor = step => {
+        const bid = step?._blockId ?? step?.blockId;
+        if (!bid || !Number.isInteger(step?.order)) return null;
+        const d = stepDecisions?.[`${bid}:${step.order}`] ?? null;
+        if (!d) return null;
+        if (d.locator && String(step.locator ?? "") !== d.locator) return null;
+        if (d.actionType && String(step.actionType ?? "") !== d.actionType) return null;
+        return d;
+    };
+    // Steps effective: EXCLUDE decision → bỏ step KHỎI testcase/workspace hiện tại
+    // (deterministic; KHÔNG mutate Action Library — renderer chỉ consume model).
+    const allSteps = [...(setupRecording?.steps ?? []), ...(testcaseRecording?.steps ?? [])]
+        .filter(s => decisionFor(s)?.status !== "EXCLUDE");
+    const fillTargets = new Set(
+        allSteps
+            .filter(s => String(s?.actionType ?? "").toUpperCase() === "FILL")
+            .map(s => String(s?.target ?? "").trim())
+            .filter(t => t && !envKeyFor(t)) // bỏ setup env-bound
+    );
+    const singleInput = fillTargets.size === 1;
+    const fillStatuses = new Map();
+    const unresolved = [];
+    for (const step of allSteps) {
+        if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
+        const target = String(step?.target ?? "").trim();
+        if (!target || fillStatuses.has(target)) continue;
+        const fs = resolveFillStatus({ target, testDataBindings, confirmedTestData, approvedTestData, purposeMap, singleInput, stepDecision: decisionFor(step) });
+        fillStatuses.set(target, fs);
+        if (fs.status === "UNRESOLVED") unresolved.push({ field: fs.businessField, bound: fs.bound });
+    }
+    if (unresolved.length > 0) {
+        const hasBound = unresolved.some(u => u.bound);
+        const uniqueFields = [...new Set(unresolved.map(u => u.field))];
+        const unresolvedFields = uniqueFields.map(f => {
+            const u = unresolved.find(x => x.field === f);
+            return { field: f, mapped: Boolean(u?.bound) };
+        });
+        return { ok: false, hasBound, unresolvedFields, allSteps, fillStatuses, purposeMap, decisionFor };
+    }
+
+    // P0-A — xây testDataMap: CHỈ VALUE (APPROVED_JSON/USER_CONFIRMED) đi vào const testData.
+    const testDataMap = {};
+    const collectTestData = rec => {
+        for (const step of rec?.steps ?? []) {
+            if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
+            // P0 LEGACY-INCLUDE-FIX — KHÔNG skip step vì legacy INCLUDE: mọi FILL step đều
+            // đóng góp canonical value (confirmed/approved) vào testDataMap; legacy INCLUDE
+            // không còn là nguồn dữ liệu (bị HEAL xóa; resolveFillStatus không đọc nó).
+            const target = String(step?.target ?? "").trim();
+            const fs = target ? fillStatuses.get(target) : null;
+            if (!fs || fs.status !== "VALUE") continue;
+            if (Object.prototype.hasOwnProperty.call(testDataMap, fs.businessField)) continue;
+            if (isSensitiveField(fs.businessField)) continue;
+            testDataMap[fs.businessField] = fs.value;
+        }
+    };
+    if (setupRecording) collectTestData(setupRecording);
+    collectTestData(testcaseRecording);
+
+    return { ok: true, allSteps, fillStatuses, testDataMap, purposeMap, decisionFor };
+}
+
 /** Render MỘT step — stateless: step → { line?, runtimeEnv?, diagnostics? }.
  *  P0-A — testDataMap: map target → value (từ approved/confirmed testcase data).
  *  Khi có mapping evidence → `fill(testData["<target>"])` (dễ sửa về sau);
@@ -227,10 +308,18 @@ export function renderStep(step, { purposeMap = {}, confirmedTestData = {}, appr
     let loc = String(step?.locator ?? "").trim().replace(/\.\s*$/, "").replace(/^page\d*\s*\.\s*/, "");
     loc = loc ? `page.${loc}` : "";
 
-    // GOTO có thể không locator — dùng recordedValue (URL).
-    if (!loc && action !== "GOTO") return { line: null, runtimeEnv, diagnostics };
+    // GOTO có thể không locator — dùng recordedValue (URL). DIALOG không có locator (không phải
+    // element trên trang — là hộp thoại xác nhận của trình duyệt).
+    if (!loc && action !== "GOTO" && action !== "DIALOG") return { line: null, runtimeEnv, diagnostics };
 
     switch (action) {
+        case "DIALOG": {
+            // Đăng ký listener NGAY TRƯỚC bước sẽ mở hộp thoại (đúng thứ tự nguồn từ recording) —
+            // page.once tự huỷ đăng ký sau khi bắt được đúng 1 hộp thoại, khớp hành vi CodeGen gốc.
+            const willAccept = String(step?.recordedValue ?? "").toUpperCase() === "ACCEPT";
+            const line = `  page.once('dialog', dialog => dialog.${willAccept ? "accept" : "dismiss"}().catch(() => {}));`;
+            return { line, runtimeEnv, diagnostics };
+        }
         case "GOTO": {
             const url = String(step?.recordedValue ?? loc ?? "");
             const line = /^https?:\/\//i.test(url)
@@ -362,77 +451,36 @@ export function renderV3Spec({
     validation.spec.assertionValid = true;
 
     // 4. Render steps (SETUP + TESTCASE) — stateless renderStep.
-    const purposeMap = {};
-    for (const [k, f] of Object.entries(approvedTestData?.fields ?? {})) purposeMap[k] = f?.purpose ?? "VALID";
     const runtimeEnv = {};
 
-    // P0 TC001 — canonical FILL semantics (VALUE/EMPTY/UNRESOLVED/SETUP).
-    // Pre-pass: resolve status cho TỪNG FILL target (một nguồn sự thật cho cả collectTestData,
-    // renderStep và chặn Generate). Recorded literal = RECORDED_SAMPLE — KHÔNG bao giờ là
-    // runtime value nếu chưa được tester xác nhận (VALUE) hoặc để trống (EMPTY).
-    // P0 — STEP DECISION lookup: identity "<blockId>:<stepOrder>" (blockId từ resolveBlockFlow
-    // annotate _blockId; order từ snapshot). Guard: chỉ áp dụng khi step THẬT khớp locator +
-    // actionType (block đổi sau này → decision cũ không áp dụng → REVIEW_REQUIRED lại).
-    const decisionFor = step => {
-        const bid = step?._blockId ?? step?.blockId;
-        if (!bid || !Number.isInteger(step?.order)) return null;
-        const d = stepDecisions?.[`${bid}:${step.order}`] ?? null;
-        if (!d) return null;
-        if (d.locator && String(step.locator ?? "") !== d.locator) return null;
-        if (d.actionType && String(step.actionType ?? "") !== d.actionType) return null;
-        return d;
-    };
-    // Steps effective: EXCLUDE decision → bỏ step KHỎI testcase/workspace hiện tại
-    // (deterministic; KHÔNG mutate Action Library — renderer chỉ consume model).
-    const allSteps = [...(setupRecording?.steps ?? []), ...(testcaseRecording?.steps ?? [])]
-        .filter(s => decisionFor(s)?.status !== "EXCLUDE");
-    const fillTargets = new Set(
-        allSteps
-            .filter(s => String(s?.actionType ?? "").toUpperCase() === "FILL")
-            .map(s => String(s?.target ?? "").trim())
-            .filter(t => t && !envKeyFor(t)) // bỏ setup env-bound
-    );
-    const singleInput = fillTargets.size === 1;
-    const fillStatuses = new Map();
-    const unresolved = [];
-    for (const step of allSteps) {
-        if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
-        const target = String(step?.target ?? "").trim();
-        if (!target || fillStatuses.has(target)) continue;
-        const fs = resolveFillStatus({ target, testDataBindings, confirmedTestData, approvedTestData, purposeMap, singleInput, stepDecision: decisionFor(step) });
-        fillStatuses.set(target, fs);
-        if (fs.status === "UNRESOLVED") unresolved.push({ field: fs.businessField, bound: fs.bound });
-    }
-    if (unresolved.length > 0) {
+    // P0 TC001 — canonical FILL semantics (VALUE/EMPTY/UNRESOLVED/SETUP), tính qua resolveFillPlan
+    // (tách thành hàm riêng — không đổi hành vi).
+    const plan = resolveFillPlan({ testcaseRecording, setupRecording, testDataBindings, confirmedTestData, approvedTestData, stepDecisions });
+    const { purposeMap, decisionFor } = plan;
+    if (!plan.ok) {
         // UNRESOLVED (chưa xác định data source/intent) → CHẶN Generate, yêu cầu review.
         // Bound + thiếu data giữ code TESTDATA_BINDING_REQUIRED (compat contract cũ).
         // P0 422-LIFECYCLE — response structured: unresolvedFields [{field, mapped}] để UI/API
         // biết CHÍNH XÁC field nào gây block (không bắt tester đoán).
         validation.spec.bindingValid = false;
-        const hasBound = unresolved.some(u => u.bound);
-        const uniqueFields = [...new Set(unresolved.map(u => u.field))];
-        const unresolvedFields = uniqueFields.map(f => {
-            const u = unresolved.find(x => x.field === f);
-            return { field: f, mapped: Boolean(u?.bound) };
-        });
-        const fields = uniqueFields.map(f => {
-            const u = unresolved.find(x => x.field === f);
+        const fields = plan.unresolvedFields.map(u =>
             // Input chưa map business field (technical target) — nói rõ, không để tester đoán.
-            return u && !u.bound ? `${JSON.stringify(f)} (input chưa map business field)` : JSON.stringify(f);
-        }).join(", ");
+            !u.mapped ? `${JSON.stringify(u.field)} (input chưa map business field)` : JSON.stringify(u.field)
+        ).join(", ");
         return {
             ok: false,
-            errorCode: hasBound ? RENDERER_ERRORS.TESTDATA_BINDING_REQUIRED : RENDERER_ERRORS.TESTDATA_UNRESOLVED,
+            errorCode: plan.hasBound ? RENDERER_ERRORS.TESTDATA_BINDING_REQUIRED : RENDERER_ERRORS.TESTDATA_UNRESOLVED,
             validation,
             metadata,
             runtimeEnv,
-            unresolvedFields,
-            reason: hasBound
+            unresolvedFields: plan.unresolvedFields,
+            reason: plan.hasBound
                 ? `Thiếu dữ liệu: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data.`
                 : `Chưa xác định dữ liệu cho: ${fields}. Xác nhận giá trị hoặc chọn 'Để trống' trong Test Data trước khi Sinh.`
         };
     }
     validation.spec.bindingValid = true;
+    const { fillStatuses, testDataMap } = plan;
 
     // Provenance used by Generate/Run diagnostics.  This is intentionally derived
     // from the same resolved status that renders the spec: a diagnostic can never
@@ -446,25 +494,6 @@ export function renderV3Spec({
         // a stale-data investigation auditable without exposing login data.
         value: fs.status === "VALUE" && !isSensitiveField(fs.businessField) ? fs.value : undefined
     }));
-
-    // P0-A — xây testDataMap: CHỈ VALUE (APPROVED_JSON/USER_CONFIRMED) đi vào const testData.
-    const testDataMap = {};
-    const collectTestData = rec => {
-        for (const step of rec?.steps ?? []) {
-            if (String(step?.actionType ?? "").toUpperCase() !== "FILL") continue;
-            // P0 LEGACY-INCLUDE-FIX — KHÔNG skip step vì legacy INCLUDE: mọi FILL step đều
-            // đóng góp canonical value (confirmed/approved) vào testDataMap; legacy INCLUDE
-            // không còn là nguồn dữ liệu (bị HEAL xóa; resolveFillStatus không đọc nó).
-            const target = String(step?.target ?? "").trim();
-            const fs = target ? fillStatuses.get(target) : null;
-            if (!fs || fs.status !== "VALUE") continue;
-            if (Object.prototype.hasOwnProperty.call(testDataMap, fs.businessField)) continue;
-            if (isSensitiveField(fs.businessField)) continue;
-            testDataMap[fs.businessField] = fs.value;
-        }
-    };
-    if (setupRecording) collectTestData(setupRecording);
-    collectTestData(testcaseRecording);
 
     const renderRecording = rec => {
         const lines = [];

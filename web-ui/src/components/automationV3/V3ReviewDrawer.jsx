@@ -7,6 +7,7 @@ import V3StepReviewSection from "./V3StepReviewSection.jsx";
 import { isSensitiveField } from "../../utils/sensitive.js";
 import { isSetupField, isLoginTestCase } from "../../utils/setupFields.js";
 import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus, fieldEntry } from "../../utils/testDataView.js";
+import { guidanceFor } from "../../utils/runDiagnose.js";
 
 /*
  V3ReviewDrawer — Drawer (6C + 6C.1: TESTCASE luôn là context chính).
@@ -20,7 +21,7 @@ import { infoBusinessKeys, runTestcaseDataRows, actionPrepStatus, fieldEntry } f
      chọn Automation + TẤT CẢ thao tác CONFIRMED + ≥1 assertion TESTER_CONFIRMED).
 */
 
-export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onRun, onChanged, onError, generateResult = null, runResult = null, runnerAgents = [], runnerAgentId = "", runnerSlowMo = 1000, runBaseUrl = "", onRunnerChange, onRunnerSlowMoChange, onRunBaseUrlChange }) {
+export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "actions", onClose, onGenerate, onRun, onAuditLocators, onChanged, onError, generateResult = null, runResult = null, auditResult = null, runnerAgents = [], runnerAgentId = "", runnerSlowMo = 1000, runBaseUrl = "", onRunnerChange, onRunnerSlowMoChange, onRunBaseUrlChange }) {
     const [tab, setTab] = useState(initialTab);
     // P0-A — Test Data editor: bản nháp local; save qua API (persist workspace, không sửa approved).
     const [tdDraft, setTdDraft] = useState(null); // { "<field>": "<value>" }
@@ -32,6 +33,8 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
     // Response tạm chỉ hợp lệ cho đúng testcase đang render. Lịch sử Run lấy từ canonical testCase.lastRun.
     const scopedGenerateResult = drawerResultForTestCase(generateResult, testCase?.testCaseId);
     const displayedRunResult = displayedRunResultForTestCase(testCase, runResult);
+    const scopedAuditResult = drawerResultForTestCase(auditResult, testCase?.testCaseId);
+    const [auditRunning, setAuditRunning] = useState(false);
 
     // P0-D1 — Generate SUCCESS → tự chuyển sang tab Chạy thử (không đóng drawer).
     useEffect(() => {
@@ -442,6 +445,17 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                         <button type="button" className="v3-btn v3-btn--primary v3-btn--mini" onClick={() => onRun?.(testCase)} disabled={!onRun}>
                                             Chạy thử
                                         </button>
+                                        <button
+                                            type="button"
+                                            className="v3-btn v3-btn--ghost v3-btn--mini"
+                                            disabled={!onAuditLocators || auditRunning}
+                                            onClick={async () => {
+                                                setAuditRunning(true);
+                                                try { await onAuditLocators?.(testCase); } finally { setAuditRunning(false); }
+                                            }}
+                                        >
+                                            {auditRunning ? "Đang rà…" : "Rà locator"}
+                                        </button>
                                         <button type="button" className="v3-btn v3-btn--ghost v3-btn--mini" onClick={() => {
                                             const blob = new Blob([scopedGenerateResult.code], { type: "text/javascript;charset=utf-8" });
                                             const url = URL.createObjectURL(blob);
@@ -475,15 +489,48 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                                     .filter(value => String(value ?? "").trim())
                                     .map(value => String(value).trim())
                                     .join("\n");
+                                const showGuidance = !runPending && !runPassed && (runFailed || displayedRunResult.errorCode);
                                 return (
                                     <div className={`v3-run-result ${runPending ? "v3-run-result--pending" : runPassed ? "v3-run-result--pass" : "v3-run-result--fail"}`}>
                                         <strong>{runPending ? "ĐANG CHỜ" : runPassed ? "PASS" : runFailed || displayedRunResult.error ? "FAIL" : "LỖI"}</strong>
-                                        {runPending ? <span>{pendingRunMessage(displayedRunResult)}</span> : failureDetail ? <pre className="v3-run-result__output">{failureDetail}</pre> : displayedRunResult.runStatus ? (
-                                            <span className="v3-act__note">{displayedRunResult.runStatus}{displayedRunResult.durationMs ? ` · ${(displayedRunResult.durationMs / 1000).toFixed(1)}s` : ""}</span>
-                                        ) : null}
+                                        {runPending ? <span>{pendingRunMessage(displayedRunResult)}</span> : (
+                                            <>
+                                                {displayedRunResult.errorCode && <span className="v3-act__note">{displayedRunResult.errorCode}</span>}
+                                                {displayedRunResult.runStatus && !failureDetail && (
+                                                    <span className="v3-act__note">{displayedRunResult.runStatus}{displayedRunResult.durationMs ? ` · ${(displayedRunResult.durationMs / 1000).toFixed(1)}s` : ""}</span>
+                                                )}
+                                                {showGuidance && <p className="v3-act__note">💡 {guidanceFor(displayedRunResult.errorCode, displayedRunResult.failedLocator)}</p>}
+                                                {failureDetail && <details className="v3-act__raw"><summary>Log kỹ thuật</summary><pre className="v3-run-result__output">{failureDetail}</pre></details>}
+                                            </>
+                                        )}
                                     </div>
                                 );
                             })()
+                        ) : null}
+                        {/* Kết quả Rà locator — Rà locator thao tác THẬT trên hệ thống giống hệt
+                            Chạy thử, chỉ khác ở chỗ báo cáo tình trạng từng locator dọc quá trình chạy. */}
+                        {scopedAuditResult ? (
+                            <div className="v3-run-result">
+                                <strong>Rà locator</strong>
+                                {!scopedAuditResult.ok ? (
+                                    <span className="v3-act__note">{scopedAuditResult.error || "Rà locator thất bại."}</span>
+                                ) : scopedAuditResult.error ? (
+                                    <span className="v3-act__note">{scopedAuditResult.error}</span>
+                                ) : (
+                                    <ul className="v3-audit-list">
+                                        {(scopedAuditResult.results ?? []).map((r, i) => (
+                                            <li key={i} className={`v3-audit-list__item v3-audit-list__item--${r.verdict === "OK" ? "ok" : r.verdict === "BROKEN" ? "broken" : "ambiguous"}`}>
+                                                <code>{r.expr}</code>
+                                                <span>{r.verdict === "OK" ? (r.fragile ? "✓ Khớp (kém ổn định)" : "✓ Khớp") : r.verdict === "BROKEN" ? "✕ Gãy" : `⚠ Mơ hồ (${r.count} phần tử)`}</span>
+                                            </li>
+                                        ))}
+                                        {(scopedAuditResult.results ?? []).length === 0 && <li className="v3-act__note">Không có bước nào để rà (spec không có hành động nào).</li>}
+                                    </ul>
+                                )}
+                                {(scopedAuditResult.results ?? []).some(r => r.verdict === "BROKEN") && (
+                                    <p className="v3-act__note">💡 Có locator gãy — quay lại Ghi màn hình để cập nhật locator mới rồi Sinh lại automation, không tự sửa tay file spec.</p>
+                                )}
+                            </div>
                         ) : null}
                     </div>
                 ) : (
@@ -499,7 +546,6 @@ export default function V3ReviewDrawer({ workspaceId, testCase, initialTab = "ac
                     />
                 )}
             </div>
-
         </div>
     );
 }

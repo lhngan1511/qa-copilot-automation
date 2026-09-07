@@ -40,7 +40,8 @@ const ARRAY_FIELDS = [
     "assertions",
     "requirementReferences",
     "coveredRules",
-    "businessRuleIds"
+    "businessRuleIds",
+    "sourceReferences"
 ];
 
 export default class PublicTestCaseReviewMapper {

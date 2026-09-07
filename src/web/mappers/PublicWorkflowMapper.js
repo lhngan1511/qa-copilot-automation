@@ -57,7 +57,8 @@ export default class PublicWorkflowMapper {
                 createdAt: source.createdAt ?? source.startedAt ?? null,
                 updatedAt: source.updatedAt ?? source.completedAt ?? null
             },
-            revision: Number.isFinite(source.revision) ? source.revision : null
+            revision: Number.isFinite(source.revision) ? source.revision : null,
+            origin: source.origin ?? source.data?.origin ?? null
         });
     }
 

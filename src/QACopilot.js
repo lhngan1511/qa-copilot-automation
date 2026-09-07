@@ -23,6 +23,7 @@ import { presentTestCases } from "./intelligence/TestCaseIntent.js";
 import RequirementKnowledgeMerger from "./intelligence/RequirementKnowledgeMerger.js";
 import RequirementKnowledgeMapper from "./mappers/RequirementKnowledgeMapper.js";
 import CoreTestCaseCoverageValidator from "./validators/CoreTestCaseCoverageValidator.js";
+import MinimumTestCaseCountValidator from "./validators/MinimumTestCaseCountValidator.js";
 import TestCaseReviewValidator from "./validators/TestCaseReviewValidator.js";
 import ProductionTestCaseQualityGate from "./quality/ProductionTestCaseQualityGate.js";
 
@@ -92,6 +93,7 @@ class QACopilot {
         );
         this.semanticTestCaseOverlapResolver = new SemanticTestCaseOverlapResolver();
         this.coreTestCaseCoverageValidator = new CoreTestCaseCoverageValidator();
+        this.minimumTestCaseCountValidator = new MinimumTestCaseCountValidator();
         this.testCaseReviewValidator = new TestCaseReviewValidator();
         this.productionTestCaseQualityGate = new ProductionTestCaseQualityGate();
 
@@ -196,7 +198,7 @@ class QACopilot {
 
         this.mergeAIKnowledge(knowledge, aiResult, requirement);
 
-        knowledge.questions = this.normalizeClarificationItems(knowledge.questions);
+        knowledge.questions = this.normalizeClarificationItems([knowledge.questions], { requirement });
 
         /*
         =====================================================
@@ -204,7 +206,7 @@ class QACopilot {
         =====================================================
         */
 
-        const clarificationQuestions = this.buildClarificationQuestions(knowledge, aiResult);
+        const clarificationQuestions = this.buildClarificationQuestions(knowledge, aiResult, requirement);
 
         const clarificationReview = workflowContext.getStage("clarificationReview");
 
@@ -970,7 +972,9 @@ class QACopilot {
                 : [];
         } else {
             console.log("\n[7/8] Generating TestCases...");
-            const ruleTestCases = this.testCaseGenerator.generate(approvedScenarios);
+            const ruleTestCases = this.testCaseGenerator.generate(approvedScenarios, {
+                clarificationMeta: knowledge?.knowledgeSources?.clarificationMeta ?? {}
+            });
             const testCaseInput = this.testCaseIntelligenceInputMapper.map({
                 scenarios: approvedScenarios,
                 moduleArtifact: approvedModuleArtifact,
@@ -1294,8 +1298,28 @@ class QACopilot {
             );
         }
 
+        if (!analysisArtifact.requirement || typeof analysisArtifact.requirement !== "object") {
+            throw new Error(
+                "Approved AI Analysis Review does not contain its reviewed requirement."
+            );
+        }
+
+        // Câu trả lời clarification xác nhận NỘI DUNG THÔNG BÁO (vd "Thông báo chính xác khi xóa
+        // thành công là gì?") phải THAY THẾ expectedResults mẫu chung của feature — không sinh thêm
+        // 1 testcase CONFIRMED_FACT riêng mô tả lại CÙNG sự kiện bằng câu chữ khác. Bug thật đã gặp
+        // (2026-09-04): TC005 (positive, văn bản mẫu chung "Xóa DM đợt nhập học thành công") và TC006
+        // (CONFIRMED_FACT, câu trả lời thật "DM đợt nhập học: Đã xóa thành công thông tin") gần như
+        // trùng lặp — Ngân chốt: hợp nhất thành 1 testcase duy nhất, dùng ĐÚNG văn bản tester xác
+        // nhận. Phải chạy TRƯỚC requirementKnowledgeMapper.map() — mergeApprovedClarifications() bên
+        // trong đó tự phát hiện câu hỏi nào đã được áp dụng ở đây (khớp answer với 1
+        // feature.expectedResults) để không sinh trùng confirmedFacts (xem ghi chú ở đó).
+        const confirmedRequirement = this.applyOracleConfirmationAnswers(
+            analysisArtifact.requirement,
+            analysisArtifact
+        );
+
         knowledge = this.requirementKnowledgeMapper.map({
-            approvedArtifact: analysisArtifact,
+            approvedArtifact: { ...analysisArtifact, requirement: confirmedRequirement },
             clarificationQuestions: analysisArtifact.questions,
             clarificationAnswers: analysisArtifact.questions.filter(question =>
                 this.isAnsweredClarificationQuestion(question)
@@ -1310,13 +1334,6 @@ class QACopilot {
         if (!knowledge.isApproved()) {
             throw new Error(
                 "Approved RequirementKnowledge is required before core testcase generation."
-            );
-        }
-
-        const confirmedRequirement = analysisArtifact.requirement;
-        if (!confirmedRequirement || typeof confirmedRequirement !== "object") {
-            throw new Error(
-                "Approved AI Analysis Review does not contain its reviewed requirement."
             );
         }
 
@@ -1355,7 +1372,9 @@ class QACopilot {
                 ? existingTestCaseArtifact.testCases.map(item => ({ ...item }))
                 : [];
         } else {
-            const generatedTestCases = this.testCaseGenerator.generate(scenarios);
+            const generatedTestCases = this.testCaseGenerator.generate(scenarios, {
+                clarificationMeta: knowledge?.knowledgeSources?.clarificationMeta ?? {}
+            });
             const overlapResolved = this.semanticTestCaseOverlapResolver.resolve(generatedTestCases, {
                 approvedFunctions: knowledge.functions
             });
@@ -1365,6 +1384,16 @@ class QACopilot {
             });
             testCases = qualityResult.testCases;
             productionQualitySummary = qualityResult.summary;
+            // Chẩn đoán thật đã cần (2026-09-04): tester báo "hỏi 10 câu được 3 testcase" — không có
+            // cách nào biết testcase nào bị ProductionTestCaseQualityGate loại (và vì sao) nếu không
+            // xem log này. In ra CẢ generated/final count lẫn danh sách excluded (mã lỗi + lý do) để
+            // chẩn đoán được ngay từ console server, không phải đoán mò qua screenshot UI.
+            if (productionQualitySummary.excludedCount > 0) {
+                console.warn(
+                    `[ProductionTestCaseQualityGate] sinh ${productionQualitySummary.generatedCount}, giữ lại ${productionQualitySummary.finalCount}, loại ${productionQualitySummary.excludedCount}:`,
+                    JSON.stringify(productionQualitySummary.excluded)
+                );
+            }
         }
         testCases = this.testCaseReviewValidator.normalizeBatch(testCases, {
             defaultStatus:
@@ -1373,6 +1402,18 @@ class QACopilot {
         testCases = presentTestCases(testCases);
         this.testCaseReviewValidator.validateBatch(testCases);
         const coverageSummary = this.coreTestCaseCoverageValidator.validate(knowledge, testCases);
+        const minimumCountSummary = this.minimumTestCaseCountValidator.validate(knowledge, testCases);
+        if (!minimumCountSummary.valid) {
+            console.warn(
+                `[MinimumTestCaseCount] ${minimumCountSummary.deficits.length} function(s) dưới ngưỡng tối thiểu:`,
+                JSON.stringify(minimumCountSummary.deficits.map(d => ({
+                    function: d.function,
+                    operation: d.operation,
+                    expected: d.expectedMinimum,
+                    actual: d.actualCount
+                })))
+            );
+        }
 
         console.log(`✓ ${scenarios.length} core scenarios generated`);
         console.log(`✓ ${testCases.length} core testcases generated`);
@@ -1391,6 +1432,7 @@ class QACopilot {
                     overlapResolution: this.semanticTestCaseOverlapResolver.lastSummary,
                     productionQuality: productionQualitySummary,
                     coverage: coverageSummary,
+                    minimumCount: minimumCountSummary,
                     finalCount: testCases.length
                 },
                 references: {
@@ -1634,8 +1676,239 @@ class QACopilot {
         });
     }
 
-    buildClarificationQuestions(knowledge, aiResult) {
-        return this.normalizeClarificationItems(knowledge?.questions, aiResult?.questions).map(
+    /** Câu hỏi dạng "Thông báo/Kết quả (mong đợi) chính xác khi ... là gì?" (xin văn bản thật, mở)
+     *  HOẶC "Xác nhận kết quả/thông báo ... là 'A' thay vì 'B'" (so sánh 2 phương án hiển thị, đóng —
+     *  bug thật đã gặp 2026-09-04: assertion ghi được bị cắt ngắn "Đã xóa thành công các đợt nhậ", AI
+     *  hỏi xác nhận bản đầy đủ) — cả 2 đều XIN/XÁC NHẬN văn bản THẬT của thông báo, khác các câu hỏi
+     *  Business Rule/Validation/Permission khác. Câu trả lời của loại này PHẢI thay thế trực tiếp
+     *  expectedResults của feature, không phải một "fact" đứng riêng (xem extractOracleConfirmationText). */
+    isOracleConfirmationQuestion(question) {
+        const asked = String(question?.question ?? question?.content ?? "");
+        if (/(thông báo|kết quả|nội dung)[^?]*là gì/i.test(asked)) return true;
+        return /xác nhận\s+(kết quả|thông báo|nội dung)/i.test(asked) && /thay vì|hay là|\bhay\b/i.test(asked);
+    }
+
+    /** Trích văn bản THẬT được xác nhận từ 1 câu hỏi oracle-confirmation — với câu hỏi dạng "Xác
+     *  nhận X là 'A' thay vì 'B'", trả lời "Có" nghĩa là A (phương án ĐẦU TIÊN trong ngoặc kép) đúng,
+     *  KHÔNG PHẢI literal "Có" — nếu dùng thẳng question.answer sẽ nhét chữ "Có" vào expectedResults
+     *  (bug thật đã gặp 2026-09-04 lúc mới thêm oracle-confirmation, phát hiện khi review kỹ trước
+     *  khi merge). Với câu hỏi mở "... là gì?" (trả lời tự do), answer CHÍNH LÀ văn bản cần dùng. */
+    extractOracleConfirmationText(question) {
+        const answer = String(question?.answer ?? "").trim();
+        const asked = String(question?.question ?? question?.content ?? "");
+        const isYes = /^(có|yes|true|đúng)$/i.test(answer);
+        if (isYes && /thay vì|hay là|\bhay\b/i.test(asked)) {
+            const quoted = [...asked.matchAll(/["']([^"']+)["']/g)].map(m => m[1].trim()).filter(Boolean);
+            if (quoted.length >= 2) return quoted[0];
+        }
+        return answer;
+    }
+
+    /** Tìm ĐÚNG 1 feature mà câu hỏi xác nhận oracle đang nói tới — ưu tiên requirementReferences
+     *  (câu hỏi tự sinh bởi synthesizePlaceholderOracleQuestions luôn gắn feature.id chính xác ở
+     *  đây), fallback sang khớp từ khoá operation trong câu hỏi (dùng cho câu hỏi AI tự đặt, không
+     *  có requirementReferences) — CHỈ áp dụng khi khớp ĐÚNG 1 feature, mơ hồ thì bỏ qua (không đoán
+     *  bừa, để câu trả lời rơi về CONFIRMED_FACT đứng riêng như trước, không mất dữ liệu). */
+    findOracleConfirmationTargetFeature(question, features) {
+        const list = Array.isArray(features) ? features : [];
+        const refs = Array.isArray(question?.requirementReferences)
+            ? question.requirementReferences.map(String)
+            : [];
+        const byReference = list.find(feature => refs.includes(String(feature?.id ?? "")));
+        if (byReference) return byReference;
+
+        const OPERATION_KEYWORDS = {
+            CREATE: /thêm mới|tạo mới|thêm\b/i,
+            UPDATE: /sửa|cập nhật/i,
+            DELETE: /xóa|xoá/i,
+            SEARCH: /tìm kiếm|tra cứu/i
+        };
+        const asked = String(question?.question ?? question?.content ?? "");
+        const matchedOperations = Object.entries(OPERATION_KEYWORDS)
+            .filter(([, keyword]) => keyword.test(asked))
+            .map(([operation]) => operation);
+        if (matchedOperations.length !== 1) return null;
+        const candidates = list.filter(
+            feature => String(feature?.automation?.operation ?? "").toUpperCase() === matchedOperations[0]
+        );
+        return candidates.length === 1 ? candidates[0] : null;
+    }
+
+    /** Ngân chốt 2026-09-04 (sau khi báo TC005/TC006 gần như trùng lặp): câu trả lời clarification
+     *  xác nhận NỘI DUNG THÔNG BÁO cho 1 operation phải THAY THẾ expectedResults mẫu chung của
+     *  testcase "thành công" chuẩn (catalog/native) cho operation đó — KHÔNG sinh thêm 1 testcase
+     *  CONFIRMED_FACT riêng mô tả lại cùng sự kiện bằng câu chữ khác. Trả về BẢN SAO requirement đã
+     *  cập nhật (không mutate object gốc — artifact/requirement có thể được tham chiếu ở nơi khác
+     *  trong cùng lượt chạy). mergeApprovedClarifications() (RequirementKnowledgeMapper) tự phát
+     *  hiện câu hỏi nào đã được áp dụng ở đây (khớp answer với 1 feature.expectedResults) để không
+     *  sinh trùng confirmedFacts — xem ghi chú ở đó.*/
+    applyOracleConfirmationAnswers(requirement, artifact) {
+        if (
+            !this.isPlainObject(artifact) ||
+            artifact.approvalStatus !== "approved" ||
+            !Array.isArray(artifact.questions) ||
+            !Array.isArray(requirement?.features)
+        ) {
+            return requirement;
+        }
+
+        const updated = this.cloneValue(requirement);
+        for (const question of artifact.questions) {
+            if (!this.isPlainObject(question) || question.status !== "answered") continue;
+            if (!this.isOracleConfirmationQuestion(question)) continue;
+            const confirmedText = this.extractOracleConfirmationText(question);
+            if (!confirmedText) continue;
+            const target = this.findOracleConfirmationTargetFeature(question, requirement.features);
+            if (!target) continue;
+            const updatedFeature = updated.features.find(
+                feature => String(feature?.id ?? "") === String(target.id ?? "")
+            );
+            if (updatedFeature) updatedFeature.expectedResults = [confirmedText];
+        }
+        return updated;
+    }
+
+    /** Bug thật đã gặp (2026-09-04): placeholder "Chưa xác định — cần tester xác nhận kết quả mong
+     *  đợi cụ thể..." (CodeGenRequirementDocumentBuilder tự chèn khi 1 nhóm thao tác không có
+     *  assertion nào) lọt THẲNG ra testcase vì AI (Gemini/rule fallback) không CHẮC CHẮN bắt được
+     *  MỌI feature thiếu oracle thành câu hỏi clarification — quan sát thật: feature Xóa được AI hỏi
+     *  đúng (CL003), feature Sửa (cùng loại thiếu sót) bị bỏ sót, không đoán trước được feature nào
+     *  bị rơi. Tăng ngưỡng số câu hỏi tối đa (maxClarificationQuestions) chỉ giải quyết được trường
+     *  hợp AI có ý định hỏi nhưng bị cắt do cap — KHÔNG giải quyết được việc AI vốn dĩ không nhận ra
+     *  đây là 1 điểm cần hỏi. Ngân chốt 2026-09-04: bắt buộc quét TẤT CẢ feature còn placeholder
+     *  bằng RULE CỐ ĐỊNH (không phụ thuộc AI có nhận ra hay không) và tự sinh câu hỏi nếu AI chưa hỏi
+     *  — "không phải tùy chọn nữa". */
+    synthesizePlaceholderOracleQuestions(requirement, existingQuestions) {
+        const OPERATION_KEYWORDS = {
+            CREATE: /thêm mới|tạo mới|thêm\b/i,
+            UPDATE: /sửa|cập nhật/i,
+            DELETE: /xóa|xoá/i,
+            SEARCH: /tìm kiếm|tra cứu/i
+        };
+        const features = Array.isArray(requirement?.features) ? requirement.features : [];
+        const existing = Array.isArray(existingQuestions) ? existingQuestions : [];
+
+        const isAlreadyCovered = feature => {
+            const keyword = OPERATION_KEYWORDS[feature?.automation?.operation];
+            // Không xác định được operation -> KHÔNG dám coi là đã được AI hỏi (thà hỏi dư còn hơn
+            // bỏ sót — đúng nguyên tắc "gán sai/bỏ sót âm thầm nguy hiểm hơn hỏi thêm" đã áp dụng
+            // xuyên suốt cho RequirementKnowledgeMapper).
+            if (!keyword) return false;
+            return existing.some(question => {
+                const text = `${question?.question ?? question?.content ?? ""} ${question?.targetField ?? ""}`;
+                return keyword.test(text) && /thông báo|kết quả|oracle|expected/i.test(text);
+            });
+        };
+
+        return features
+            // "OTHER" (vd nhóm đăng nhập/setup do CodeGenRequirementDocumentBuilder tự tách ra —
+            // xem OPERATION_GUESS) không phải 1 nghiệp vụ thật cần xác nhận oracle, chỉ là bước điều
+            // hướng/tiền đề — bỏ qua để không hỏi lặp lại "kết quả mong đợi khi đăng nhập là gì?" ở
+            // MỌI bản ghi CodeGen (spam câu hỏi vô nghĩa với tester).
+            .filter(feature => String(feature?.automation?.operation ?? "").toUpperCase() !== "OTHER")
+            .filter(feature => {
+                const expectedResults = Array.isArray(feature?.expectedResults)
+                    ? feature.expectedResults
+                    : [];
+                return expectedResults.some(value => /chưa xác định/i.test(String(value ?? "")));
+            })
+            .filter(feature => !isAlreadyCovered(feature))
+            .map(feature => ({
+                category: "Exception",
+                question: `Kết quả mong đợi chính xác khi thực hiện "${feature.name}" là gì? (bản ghi/requirement hiện chưa có bước kiểm tra kết quả nào cho thao tác này)`,
+                reason:
+                    "Bản ghi/requirement không có bước kiểm tra kết quả (assertion) cho thao tác này — nếu không xác nhận, testcase sinh ra sẽ không có kết quả mong đợi (oracle) để kiểm tra.",
+                targetField: "",
+                requirementReferences: feature.id ? [String(feature.id)] : []
+            }));
+    }
+
+    /** Bug thật đã gặp (2026-09-04): module "DM đợt nhập học" chỉ có 3 câu hỏi thật (mã trùng/thông
+     *  báo xóa/ngày tháng) — KHÔNG câu nào hỏi "trường X có bắt buộc nhập không?" cho Thêm mới/Cập
+     *  nhật, nên KHÔNG field nào có input.required = true, dẫn đến CoreCatalogScenarioBuilder/công
+     *  thức chuẩn (1+N+M) không sinh được testcase "Thêm/Cập nhật KHÔNG THÀNH CÔNG" nào — Ngân báo:
+     *  "TC thêm không thành công ở đâu? Cập nhật không thành công ở đâu". Field CodeGen-derived luôn
+     *  bắt đầu ở trạng thái CHƯA XÁC ĐỊNH bắt buộc hay không (description "Chưa xác định" sau khi
+     *  parse markdown — required tự mặc định về false, KHÔNG phân biệt được với "tester đã xác nhận
+     *  KHÔNG bắt buộc") — cùng nguyên nhân gốc với placeholder oracle: AI không CHẮC CHẮN hỏi hết mọi
+     *  field. Quét TẤT CẢ field CREATE/UPDATE còn ở trạng thái này bằng RULE CỐ ĐỊNH, không phụ thuộc
+     *  AI có nhận ra hay không — cùng triết lý với synthesizePlaceholderOracleQuestions().
+     *
+     *  CHỈ áp dụng cho field đến từ CodeGen (description đúng NGUYÊN VĂN "Chưa xác định") — requirement
+     *  .md tải tay có thể ghi required=false CÓ CHỦ ĐÍCH (field thật sự tùy chọn theo tài liệu), lúc
+     *  đó description mang nội dung thật, KHÔNG được hỏi lại (sẽ spam câu hỏi vô nghĩa cho field vốn
+     *  đã xác định rõ). */
+    synthesizeRequiredFieldQuestions(requirement, existingQuestions) {
+        const RELEVANT_OPERATIONS = new Set(["CREATE", "UPDATE"]);
+        const features = Array.isArray(requirement?.features) ? requirement.features : [];
+        const existing = Array.isArray(existingQuestions) ? existingQuestions : [];
+
+        const alreadyAsked = inputName =>
+            existing.some(
+                question =>
+                    this.requirementKnowledgeMapper.isRequiredFieldQuestion(question) &&
+                    this.requirementKnowledgeMapper.matchInputsByName([{ name: inputName }], question)
+                        .length > 0
+            );
+
+        const synthesized = [];
+        features.forEach(feature => {
+            const operation = String(feature?.automation?.operation ?? "").toUpperCase();
+            if (!RELEVANT_OPERATIONS.has(operation)) return;
+            const inputs = Array.isArray(feature?.inputs) ? feature.inputs : [];
+            inputs.forEach(input => {
+                const name = String(input?.name ?? input?.inputName ?? input?.fieldName ?? "").trim();
+                if (!name) return;
+                if (input?.required === true) return;
+                if (String(input?.description ?? "").trim() !== "Chưa xác định") return;
+                if (alreadyAsked(name)) return;
+                synthesized.push({
+                    category: "Validation",
+                    // Bug thật đã gặp (2026-09-04): thiếu type/options khiến UI hiển thị câu hỏi này
+                    // thành Ô NHẬP TỰ DO thay vì nút chọn Có/Không — tester trả lời tự nhiên bằng
+                    // chữ ("bắt buộc"/"không bắt buộc") thay vì đúng "Có"/"Không". isYes()/isNo() so
+                    // khớp CHÍNH XÁC (RequirementKnowledgeMapper.js) không nhận ra được các câu trả
+                    // lời này -> required KHÔNG BAO GIỜ được set -> mất trắng toàn bộ N+M testcase âm
+                    // tính. Câu hỏi Yes/No THẬT của Gemini (CL001-CL004 trong log thật) luôn có
+                    // type/options này — đồng bộ để hành vi giống hệt, ép tester chọn nút thay vì gõ
+                    // tự do (xem thêm RequirementKnowledgeMapper#normalizeRequiredFieldAnswer — chuẩn
+                    // hoá thêm các từ đồng nghĩa phổ biến để cứu dữ liệu những phiên ĐÃ trả lời tự do
+                    // trước bản vá này).
+                    type: "YES_NO",
+                    options: ["Có", "Không"],
+                    question: `Trường "${name}" có bắt buộc phải nhập khi thực hiện "${feature.name}" không?`,
+                    targetField: name,
+                    reason:
+                        "Bản ghi/requirement chưa xác định trường này có bắt buộc hay không — nếu không xác nhận, sẽ không sinh được testcase kiểm tra bỏ trống trường bắt buộc.",
+                    requirementReferences: feature.id ? [String(feature.id)] : []
+                });
+            });
+        });
+        return synthesized;
+    }
+
+    buildClarificationQuestions(knowledge, aiResult, requirement = null) {
+        const existingQuestions = [
+            ...(Array.isArray(knowledge?.questions) ? knowledge.questions : []),
+            ...(Array.isArray(aiResult?.questions) ? aiResult.questions : [])
+        ];
+        const synthesizedOracleQuestions = this.synthesizePlaceholderOracleQuestions(
+            requirement,
+            existingQuestions
+        );
+        const synthesizedRequiredFieldQuestions = this.synthesizeRequiredFieldQuestions(requirement, [
+            ...existingQuestions,
+            ...synthesizedOracleQuestions
+        ]);
+        return this.normalizeClarificationItems(
+            [
+                knowledge?.questions,
+                aiResult?.questions,
+                synthesizedOracleQuestions,
+                synthesizedRequiredFieldQuestions
+            ],
+            { requirement }
+        ).map(
             item => ({
                 questionId: item.id,
 
@@ -2103,10 +2376,12 @@ class QACopilot {
             }
 
             riskAreasAdded = this.mergeAITextItems(riskAreas, aiResult.riskAreas, riskKeys);
-            const normalizedExistingQuestions = this.normalizeClarificationItems(existingQuestions);
+            const normalizedExistingQuestions = this.normalizeClarificationItems([existingQuestions], {
+                requirement
+            });
             const questions = this.normalizeClarificationItems(
-                normalizedExistingQuestions,
-                aiResult.questions
+                [normalizedExistingQuestions, aiResult.questions],
+                { requirement }
             );
             questionsAdded = Math.max(0, questions.length - normalizedExistingQuestions.length);
 
@@ -2123,7 +2398,24 @@ class QACopilot {
         }
     }
 
-    normalizeClarificationItems(...collections) {
+    /** Ngưỡng số câu hỏi làm rõ tối đa cho CẢ requirement — trước đây CỐ ĐỊNH 5 bất kể module có
+     *  bao nhiêu operation/field (bug thật đã gặp 2026-09-04: module 4 operation Thêm/Sửa/Xóa/Tìm dễ
+     *  có nhiều hơn 5 điểm cần làm rõ, khiến AI phải bỏ sót — không đoán trước được điểm nào bị rơi,
+     *  vd flow Sửa mất câu hỏi về placeholder "Chưa xác định" trong khi flow Xóa lại lọt qua may rủi).
+     *  Ngân chốt 2026-09-04: TĂNG ngưỡng theo số lượng function thay vì giữ số cố định — không giảm
+     *  ngưỡng dưới 5 (giữ hành vi cũ cho requirement nhỏ), cho phép nhiều hơn khi module có nhiều
+     *  function/operation hơn. */
+    maxClarificationQuestions(requirement) {
+        const functionCount = Array.isArray(requirement?.features)
+            ? requirement.features.length
+            : Array.isArray(requirement?.functions)
+              ? requirement.functions.length
+              : 0;
+        return Math.max(5, functionCount * 3);
+    }
+
+    normalizeClarificationItems(collections = [], { requirement = null } = {}) {
+        const maxQuestions = this.maxClarificationQuestions(requirement);
         const questions = [];
         const comparisonKeys = new Set();
         const usedIds = new Set();
@@ -2146,7 +2438,7 @@ class QACopilot {
             }
 
             for (const item of collection) {
-                if (questions.length >= 5) {
+                if (questions.length >= maxQuestions) {
                     return questions;
                 }
 

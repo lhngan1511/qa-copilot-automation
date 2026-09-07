@@ -471,7 +471,7 @@ function RunTab({ testCase, baseUrl, baseUrlSource, auto, ready, envValid, runMo
     const enabled = isRunEnabled({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
     const blocker = runBlocker({ generated: auto.generated, dataReady: ready, environmentValid: envValid });
     const detail = failDetail(exec);
-    const guidance = guidanceFor(detail.errorCode);
+    const guidance = guidanceFor(detail.errorCode, detail.failedLocator);
     const visible = visibleFailFields(detail);
     const running = String(exec.status ?? "").toUpperCase() === "RUNNING";
 

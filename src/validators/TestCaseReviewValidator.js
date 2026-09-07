@@ -92,9 +92,19 @@ export default class TestCaseReviewValidator {
             ["module", testCase.module],
             ["feature", testCase.feature ?? testCase.function],
             ["scenario", testCase.scenario ?? testCase.testScenario],
-            ["type", testCase.type],
-            ["expectedResult", testCase.expectedResult]
+            ["type", testCase.type]
         ];
+        // expectedResult chỉ bắt buộc khi testcase đã APPROVED — bug thật đã gặp (2026-09-04):
+        // validateBatch() chạy trên MỌI lần lưu/gộp (kể cả merge "+ Tạo testcase từ CodeGen" vào
+        // session đang mở), nên 1 testcase PENDING còn thiếu oracle (thường do requirement/bản ghi
+        // chưa có bước kiểm tra kết quả — xem hasMissingOracle() ở web-ui) chặn đứng CẢ BATCH, kể cả
+        // các testcase khác hoàn toàn hợp lệ — tester mất trắng, "Thử lại" lặp lại lỗi y hệt vì
+        // nguyên nhân không đổi. Ý định ban đầu (xem web-ui/src/utils/testCaseReview.js#hasMissingOracle
+        // + TestCaseList "⚠ Chưa có oracle") là CHO PHÉP lưu/hiển thị testcase thiếu oracle kèm cảnh
+        // báo, chỉ CHẶN lúc DUYỆT (reviewStatus APPROVED) — không chặn lúc lưu/gộp.
+        if (testCase.reviewStatus === "APPROVED") {
+            required.push(["expectedResult", testCase.expectedResult]);
+        }
         const missing = required
             .filter(([, value]) => !String(value ?? "").trim())
             .map(([name]) => name);

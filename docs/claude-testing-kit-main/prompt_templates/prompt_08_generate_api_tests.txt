@@ -1,0 +1,25 @@
+/generate_api_tests_from_swagger
+
+# CONTEXT
+- Base URL: [Ví dụ: https://api.anhtester.com/v1]
+- Authentication: [Bearer Token / Basic Auth / API Key / OAuth2]
+- Swagger URL (nếu có): [URL Swagger]
+- Mode: [SPEC (chỉ test cases) / FULL (test cases + automation scripts)]
+
+# API CẦN TEST
+[DÁN MÔ TẢ API VÀO ĐÂY — bỏ qua nếu đã có Swagger URL. Ví dụ:
+
+POST /api/customers
+- Request body: { name, email, phone }
+- Response 201: { id, name, email, phone, createdAt }
+- Response 400: { error: "Validation failed" }
+- Response 401: { error: "Unauthorized" }
+
+GET /api/customers/{id}
+- Response 200: { id, name, email, phone }
+- Response 404: { error: "Not found" }
+]
+
+# TÙY CHỌN
+- Phạm vi endpoints: [Toàn bộ Swagger / Chỉ các endpoints: ...]
+- Tài khoản test để lấy dynamic token: [EMAIL] / [PASSWORD]

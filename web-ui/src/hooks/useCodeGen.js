@@ -15,7 +15,9 @@ import {
     getApprovedTestcases,
     getCodeGenStatus,
     focusCodeGenBrowser,
-    setRecordingContext
+    setRecordingContext,
+    startRemoteCodeGen,
+    stopRemoteCodeGen
 } from "../api/codeGenApi.js";
 
 const recordingsKey = ["codegen", "recordings"];
@@ -48,11 +50,15 @@ export function useCodeGenRecordings() {
     });
 }
 
-export function useRecording(recordingId) {
+export function useRecording(recordingId, { poll = false } = {}) {
     return useQuery({
         queryKey: ["codegen", "recording", recordingId],
         queryFn: ({ signal }) => getRecording(recordingId, { signal }),
-        enabled: Boolean(recordingId)
+        enabled: Boolean(recordingId),
+        // Ghi từ xa (Ngân yêu cầu 2026-09-07) — CodeGenPage.jsx poll 1 recording cụ thể trong lúc
+        // đang QUEUED_START/RECORDING/STOPPING, thay vì GET /codegen/status (phiên GLOBAL cục bộ,
+        // không áp dụng cho recording từ xa — xem RemoteCodeGenService.js).
+        refetchInterval: poll ? 1500 : false
     });
 }
 
@@ -69,6 +75,8 @@ export function useCodeGenActions() {
 
     const start = useMutation({ mutationFn: input => startCodeGen(input), onSuccess: refresh });
     const stop = useMutation({ mutationFn: input => stopCodeGen(input), onSuccess: refresh });
+    const startRemote = useMutation({ mutationFn: input => startRemoteCodeGen(input), onSuccess: refresh });
+    const stopRemote = useMutation({ mutationFn: input => stopRemoteCodeGen(input.recordingId), onSuccess: refresh });
     const rename = useMutation({ mutationFn: input => renameRecording(input.recordingId, input), onSuccess: refresh });
     const setScript = useMutation({ mutationFn: input => setRecordingScript(input.recordingId, input), onSuccess: refresh });
     const link = useMutation({ mutationFn: input => linkTestcases(input.recordingId, input), onSuccess: refresh });
@@ -80,5 +88,5 @@ export function useCodeGenActions() {
     const focus = useMutation({ mutationFn: input => focusCodeGenBrowser(input) });
     const setContext = useMutation({ mutationFn: input => setRecordingContext(input.recordingId, input), onSuccess: refresh });
 
-    return { start, stop, rename, setScript, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus, setContext };
+    return { start, stop, startRemote, stopRemote, rename, setScript, link, save, run, openFolder: openFolderMut, openReport: openReportMut, remove, focus, setContext };
 }

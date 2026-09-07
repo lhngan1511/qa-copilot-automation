@@ -8,6 +8,7 @@ import QACopilotController from "../controllers/QACopilotController.js";
 import createWorkflowRoutes from "../routes/workflowRoutes.js";
 import createAutomationWorkspaceRoutes from "../routes/automationWorkspaceRoutes.js";
 import createCodeGenRoutes from "../routes/codeGenRoutes.js";
+import createTemplateTestCaseRoutes from "../routes/templateTestCaseRoutes.js";
 import CodeGenSessionManager from "../codegen/CodeGenSessionManager.js";
 import CodeGenRecordingStore from "../codegen/CodeGenRecordingStore.js";
 import AutomationWorkspace from "../codegen/AutomationWorkspace.js";
@@ -15,13 +16,17 @@ import CurrentRecordingSession from "../codegen/CurrentRecordingSession.js";
 import GenerateService from "../codegen/GenerateService.js";
 import AutomationWorkspaceApplicationService from "../services/AutomationWorkspaceApplicationService.js";
 import ActionLibrary from "../codegen/ActionLibrary.js";
+import BoundaryEntryStore from "../codegen/BoundaryEntryStore.js";
+import BoundaryTestingService from "../services/BoundaryTestingService.js";
 import PlaywrightRunner from "../automation/PlaywrightRunner.js";
 import createAutomationV3Routes from "../routes/automationV3Routes.js";
+import createBoundaryTestingRoutes from "../routes/boundaryTestingRoutes.js";
 import createProjectRoutes from "../routes/projectRoutes.js";
 import createRunnerAgentRoutes from "../routes/runnerAgentRoutes.js";
 import RunnerAgentService from "../services/RunnerAgentService.js";
 import MinimalAuthService from "../services/MinimalAuthService.js";
 import RunnerDeviceService from "../services/RunnerDeviceService.js";
+import RemoteCodeGenService from "../services/RemoteCodeGenService.js";
 import createAuthRoutes, { attachPrincipal } from "../routes/authRoutes.js";
 import createRunnerDeviceRoutes from "../routes/runnerDeviceRoutes.js";
 import errorHandler from "../middleware/errorHandler.js";
@@ -74,7 +79,6 @@ export default function createApp({
             }
         }
     });
-
     const resolvedPublicDirectory = path.resolve(publicDir);
     const indexFile = path.join(resolvedPublicDirectory, "index.html");
 
@@ -111,6 +115,12 @@ export default function createApp({
         express.json({ limit: "45mb" }),
         createImageRequirementRoutes({ service: imageRequirementService })
     );
+
+    // Kết quả job RUN_BOUNDARY (Kiểm thử biên chạy từ xa, Ngân yêu cầu 2026-09-07) kèm ảnh chụp
+    // màn hình dạng base64 chụp trên máy tester — vượt xa giới hạn JSON toàn cục 2mb bên dưới, cần
+    // đăng ký limit riêng cao hơn TRƯỚC middleware toàn cục (cùng vị trí/lý do route ảnh requirement
+    // ở trên) — nếu đặt sau dòng 2mb thì middleware toàn cục đã chặn request trước khi tới đây.
+    app.use("/api/runner-agents", express.json({ limit: "20mb" }));
 
     app.use(express.json({ limit: "2mb" }));
     const authService = new MinimalAuthService({ dataDir: path.resolve(dataDir ?? path.join(projectDirectory, "data")) });
@@ -152,7 +162,13 @@ export default function createApp({
             scriptsDir: path.join(projectDirectory, "outputs", "codegen")
         })
     });
-    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager, actionLibrary: v3ActionLibrary, usageFn: () => v3ApplicationService?.countLibraryUsage() ?? new Map() }));
+    // Ghi CodeGen từ xa qua Runner Agent (Ngân yêu cầu 2026-09-07) — runnerAgentService chưa tồn
+    // tại tới đây (khởi tạo bên dưới), gán sau bằng property mutation giống hệt cách
+    // v3ApplicationService.runnerAgentService được gán, để KHÔNG phải dời chỗ mount /api/codegen.
+    const remoteCodeGenService = new RemoteCodeGenService({ manager: codeGenManager });
+    app.use("/api/codegen", createCodeGenRoutes({ rootDir: projectDirectory, manager: codeGenManager, actionLibrary: v3ActionLibrary, usageFn: () => v3ApplicationService?.countLibraryUsage() ?? new Map(), unbindAllFn: blockId => v3ApplicationService?.unbindBlockEverywhere(blockId), remoteCodeGenService }));
+
+    app.use("/api/template-testcases", createTemplateTestCaseRoutes());
 
     // ---- Architecture V3 (Record by Testcase) — Route → Application Service → Domain/Store/GenerateService → Renderer ----
     const v3Workspace = new AutomationWorkspace({
@@ -169,6 +185,7 @@ export default function createApp({
         outputDir: v3OutputDir ?? path.join(projectDirectory, "outputs", "generated-tests"),
         actionLibrary: v3ActionLibrary
     });
+    const sharedPlaywrightRunner = new PlaywrightRunner({ rootDir: projectDirectory });
     const v3ApplicationService = new AutomationWorkspaceApplicationService({
         workspace: v3Workspace,
         store: v3Store,
@@ -176,14 +193,42 @@ export default function createApp({
         generateService: v3GenerateService,
         actionLibrary: v3ActionLibrary,
         // P0-C - runner de chay thu testcase dang mo (reuse PlaywrightRunner).
-        runner: new PlaywrightRunner({ rootDir: projectDirectory })
+        runner: sharedPlaywrightRunner
     });
     const runnerDeviceService = new RunnerDeviceService({ dataDir: codeGenDataDir });
     const runnerAgentService = new RunnerAgentService({ deviceService: runnerDeviceService });
     v3ApplicationService.runnerAgentService = runnerAgentService;
-    app.use("/api/runner-devices", createRunnerDeviceRoutes({ service: runnerDeviceService }));
-    app.use("/api/runner-agents", createRunnerAgentRoutes({ service: runnerAgentService, applicationService: v3ApplicationService }));
+    remoteCodeGenService.runnerAgentService = runnerAgentService;
+
+    // Kiểm thử biên — namespace route riêng, service riêng, KHÔNG đọc testDataBindings/testcase
+    // nào. Tạo entry bằng cách dán script tay hoặc chọn 1 Bản ghi đã lưu (CodeGen) — KHÔNG còn qua
+    // Thư viện thao tác (Ngân yêu cầu 2026-09-07: chọn từ Bản ghi đã lưu thay vì Thư viện thao tác).
+    // Khởi tạo ở ĐÂY (trước khi mount /api/runner-agents) vì completion callback RUN_BOUNDARY cần
+    // truyền boundaryTestingService thẳng vào createRunnerAgentRoutes — khác RemoteCodeGenService
+    // (không thể gán runnerAgentService sau khi đã mount route như CodeGen, vì đây là closure biến
+    // service, không phải property trên object đã có).
+    const boundaryEntryStore = new BoundaryEntryStore({
+        metadataFile: path.join(codeGenDataDir, "boundary-entries.json")
+    });
+    const boundaryOutputDir = path.join(projectDirectory, "outputs", "generated-tests", "boundary");
+    const boundaryTestingService = new BoundaryTestingService({
+        store: boundaryEntryStore,
+        runner: sharedPlaywrightRunner,
+        outputDir: boundaryOutputDir,
+        runnerAgentService
+    });
+
+    app.use("/api/runner-devices", createRunnerDeviceRoutes({ service: runnerDeviceService, runnerSourceDir: path.join(projectDirectory, "tools", "runner") }));
+    // Limit JSON 20mb cho namespace này đã đăng ký SỚM hơn (gần đầu file, trước middleware 2mb toàn
+    // cục) — xem comment ở đó để hiểu vì sao không đặt limit ngay tại đây được.
+    app.use("/api/runner-agents", createRunnerAgentRoutes({ service: runnerAgentService, applicationService: v3ApplicationService, remoteCodeGenService, boundaryTestingService }));
     app.use("/api/automation-v3", createAutomationV3Routes({ applicationService: v3ApplicationService }));
+
+    // Ảnh chụp màn hình sau mỗi lần chạy kiểm thử biên (xem playwright.boundary.config.js) — cần
+    // mở được trực tiếp từ trình duyệt (screenshotPath trả về là URL dạng
+    // /api/boundary-testing/screenshots/<file>, không phải đường dẫn hệ thống).
+    app.use("/api/boundary-testing/screenshots", express.static(path.join(boundaryOutputDir, "screenshots"), { index: false }));
+    app.use("/api/boundary-testing", createBoundaryTestingRoutes({ service: boundaryTestingService }));
 
     app.use(express.static(resolvedPublicDirectory, { index: false }));
 
@@ -211,6 +256,7 @@ export default function createApp({
         controller: resolvedController,
         requirementUploadService,
         codeGenManager,
+        remoteCodeGenService,
         v3ApplicationService,
         runnerAgentService,
         authService,

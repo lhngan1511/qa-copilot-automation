@@ -9,7 +9,7 @@ function respondError(res, error) {
     });
 }
 
-export default function createRunnerAgentRoutes({ service, applicationService = null } = {}) {
+export default function createRunnerAgentRoutes({ service, applicationService = null, remoteCodeGenService = null, boundaryTestingService = null } = {}) {
     const router = Router();
     const execute = handler => async (req, res) => {
         try { return res.json(await handler(req)); } catch (error) { return respondError(res, error); }
@@ -23,6 +23,12 @@ export default function createRunnerAgentRoutes({ service, applicationService = 
         const completed = service.complete({ agentId: req.params.agentId, jobId: req.params.jobId, token: req.body?.token, result: req.body?.result });
         if (completed.job.type === "RUN_TESTCASE" && applicationService) {
             applicationService.completeRemoteRun({ job: completed.job, result: completed.job.result });
+        } else if (completed.job.type === "START_CODEGEN" && remoteCodeGenService) {
+            remoteCodeGenService.completeStartJob({ job: completed.job, result: completed.job.result });
+        } else if (completed.job.type === "STOP_CODEGEN" && remoteCodeGenService) {
+            remoteCodeGenService.completeStopJob({ job: completed.job, result: completed.job.result });
+        } else if (completed.job.type === "RUN_BOUNDARY" && boundaryTestingService) {
+            boundaryTestingService.completeRemoteRun({ job: completed.job, result: completed.job.result });
         }
         return { success: true, data: service.publicJob(completed.job), error: null };
     }));

@@ -93,6 +93,10 @@ export function semanticStepText(step) {
             return `Chọn giá trị ${atPosition(ctl, target)}`;
         case "HOVER":
             return `Di chuột ${atPosition(ctl, target, "vào")}`;
+        case "DIALOG": {
+            const willAccept = String(value ?? "").toUpperCase() === "ACCEPT";
+            return willAccept ? "Xác nhận hộp thoại (Đồng ý)" : "Xác nhận hộp thoại (Hủy)";
+        }
         default:
             // Fallback an toàn — không invent control type.
             return `${ACTION_LABEL[type] ?? type ?? ""} ${target}`.trim();

@@ -29,7 +29,10 @@ export default class PublicWorkflowDto {
                 createdAt: data.timestamps?.createdAt ?? null,
                 updatedAt: data.timestamps?.updatedAt ?? null
             },
-            revision: data.revision ?? null
+            revision: data.revision ?? null,
+            // Phần 4 — "AI Test Design" lối tắt Nhập nhanh testcase: đánh dấu session bypass
+            // (bỏ qua Requirement/Module/Scenario Review) để frontend biết KHÔNG gọi resumeSession().
+            origin: data.origin ?? null
         };
     }
 }

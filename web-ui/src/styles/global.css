@@ -322,6 +322,17 @@ a {
     font-weight: 700;
 }
 
+.app-header__runner-select {
+    width: 100%;
+    margin: 0 0 6px;
+    padding: 7px 8px;
+    border: 1px solid #dce4ef;
+    border-radius: 7px;
+    color: #334155;
+    background: #f8fafc;
+    font-size: 12px;
+}
+
 .app-header__runner-device {
     display: flex;
     align-items: center;
@@ -360,6 +371,60 @@ a {
 }
 
 .app-header__user-popover button:hover { background: #f1f5f9; }
+
+.account-modal-overlay {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 32, 49, .46);
+}
+
+.account-modal {
+  width: min(480px, 100%);
+  max-height: min(560px, calc(100vh - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+.account-modal__header { display: flex; align-items: center; justify-content: space-between; }
+.account-modal__header b { font-size: 16px; color: var(--heading); }
+
+.account-modal__search { width: 100%; }
+
+.account-modal__empty { margin: 0; padding: 20px 0; text-align: center; color: var(--text-subtle); font-size: 13px; }
+
+.account-modal__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+  scrollbar-color: #aab4c3 transparent;
+  scrollbar-width: thin;
+}
+
+.account-modal__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.account-modal__row:last-child { border-bottom: 0; }
+
+.account-modal__row-name { display: grid; gap: 1px; min-width: 0; }
+.account-modal__row-name b { font-size: 13px; color: var(--text); }
+.account-modal__row-name small { font-size: 12px; color: var(--text-subtle); }
 
 .app-sidebar {
     position: sticky;
@@ -2224,7 +2289,85 @@ textarea:disabled {
 .testcase-summary-card--warning { border-top: 3px solid var(--warning); }
 .testcase-summary-card--danger { border-top: 3px solid var(--danger); }
 .testcase-summary-card--neutral { border-top: 3px solid var(--primary); }
+
 .testcase-review-card { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+
+/* "Tạo testcase nhanh theo khuôn mẫu" — wizard nhiều bước (rule-based, không AI). */
+/* "Tạo testcase nhanh theo khuôn mẫu" — chỉ các lớp KHÔNG có sẵn tương đương (Bước 1 chọn thao tác
+   nhiều cột, radio nút lưu, dòng tiêu chí có checkbox "bắt buộc") — phần còn lại (form/button) TÁI
+   DÙNG nguyên .testcase-detail-form/.button để đúng font/style chung của app (Ngân yêu cầu
+   2026-09-04). Section "Trường bắt buộc/tùy chọn/Nút lưu/Tiêu chí..." dùng khung riêng
+   .template-wizard__section (KHÔNG dùng lại .testcase-list-editor của TestCaseEditor.jsx) vì Ngân
+   yêu cầu tiêu đề section không đè lên border kiểu fieldset/legend mặc định — đổi chung
+   .testcase-list-editor sẽ ảnh hưởng cả TestCaseEditor.jsx, ngoài phạm vi yêu cầu (2026-09-07). */
+.template-wizard__operations { margin: 0; padding: 0; border: 0; }
+/* Bug thật đã gặp (2026-09-04): checkbox render TÁCH DÒNG khỏi label khi <fieldset> chính nó là
+   grid container — <legend> trở thành 1 grid item, phá layout của các label còn lại. Bọc riêng 1
+   <div> LÀM grid container (fieldset chỉ còn legend + div này), tránh lặp lại lỗi đó. */
+.template-wizard__operations-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; clear: both; }
+.template-wizard__operation-card { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.template-wizard__operation-card:hover { border-color: #b7c6dc; }
+.template-wizard__operation-card.is-checked { border-color: var(--primary); background: #eff6ff; }
+/* Selector lồng .testcase-detail-form để thắng specificity + thứ tự so với rule input chung (min-
+   height 42px, padding 10px 12px) — nếu không checkbox bị phồng to ~40px thay vì 18px (bug thật đã
+   gặp 2026-09-07, áp dụng luôn cho checkbox "Bắt buộc" ở dòng tiêu chí báo cáo — cùng nằm trong
+   .testcase-detail-form nên dính chung lỗi). Custom appearance để tự vẽ dấu check trắng nhỏ, không
+   phụ thuộc UI checkbox mặc định trình duyệt. */
+.testcase-detail-form .template-wizard__operation-card input[type="checkbox"],
+.testcase-detail-form .template-wizard__checkbox input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 4px;
+    background: var(--surface);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+.testcase-detail-form .template-wizard__operation-card input[type="checkbox"]:checked,
+.testcase-detail-form .template-wizard__checkbox input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+.testcase-detail-form .template-wizard__operation-card input[type="checkbox"]:checked::after,
+.testcase-detail-form .template-wizard__checkbox input[type="checkbox"]:checked::after { content: "✓"; color: #fff; font-size: 12px; font-weight: 700; line-height: 1; }
+.template-wizard__operation-card span { font-size: .8rem; font-weight: 500; color: var(--text); }
+
+/* Khung section dùng chung cho mọi tiêu đề con của wizard (Trường bắt buộc/tùy chọn, Nút lưu, Tiêu
+   chí báo cáo, Trường tìm kiếm, Trường hợp xóa...) — 1 kiểu container/tiêu đề duy nhất, tiêu đề nằm
+   TRÊN nội dung (không đè lên border) — thay fieldset/legend mặc định (Ngân yêu cầu 2026-09-07).
+   legend { float:left; width:100% } là kỹ thuật chuẩn để tắt hành vi "khoét border" mặc định của
+   trình duyệt cho <legend> mà vẫn giữ ngữ nghĩa fieldset/legend nhóm control. */
+.template-wizard__section { margin: 0; padding: 16px; border: 1px solid #d9e2ec; border-radius: 10px; background: #fbfcfe; }
+.template-wizard__section-title { float: left; width: 100%; margin: 0 0 12px; padding: 0; border: 0; color: #34475e; font-size: 13px; font-weight: 600; }
+.template-wizard__section-body { display: grid; gap: 12px; clear: both; }
+.template-wizard__section-body input { margin-top: 0; }
+.template-wizard__section-body > div:not(.template-wizard__criteria-row) { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+
+.testcase-detail-form .template-wizard__radio-group { display: flex; gap: 16px; align-items: center; clear: both; }
+.testcase-detail-form .template-wizard__radio-group label { display: flex; align-items: center; gap: 6px; min-height: 0; font-size: 13px; font-weight: 500; color: #42546b; }
+.testcase-detail-form .template-wizard__radio-group input[type="radio"] { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--primary); }
+
+.template-wizard__criteria-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+.template-wizard__checkbox { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--text); white-space: nowrap; }
+.template-wizard__required-mark { color: var(--danger); font-weight: 700; }
+
+/* Step-indicator có đánh số + tick — thay progress bar đơn (Ngân yêu cầu 2026-09-04). */
+.template-wizard__steps { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 4px 0 0; padding: 0; }
+.template-wizard__step { display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 5px; border-radius: 999px; background: #f2f4f7; color: var(--muted); font-size: .74rem; font-weight: 600; }
+.template-wizard__step-index { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #cbd5e1; color: #fff; font-size: .68rem; font-weight: 700; }
+.template-wizard__step--current { background: #eff6ff; color: var(--primary); }
+.template-wizard__step--current .template-wizard__step-index { background: var(--primary); }
+.template-wizard__step--done { background: #f0fdf4; color: #15803d; }
+.template-wizard__step--done .template-wizard__step-index { background: #15803d; }
+
+/* Trang hẹp hơn Requirement Review (900px) — form khuôn mẫu ít trường hơn nhiều so với bảng câu hỏi
+   AI, để rộng 900px làm bước đơn giản (Xóa/In ấn...) trông trống trải. */
+.requirement-review-page.template-wizard-page { width: min(680px, 100%); }
 .testcase-review-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .testcase-review-tabs { display: flex; min-width: 0; gap: 4px; overflow-x: auto; }
 .testcase-review-tabs button { min-width: max-content; padding: 7px 10px; border: 0; border-radius: 7px; color: #475467; background: transparent; cursor: pointer; font-size: .7rem; font-weight: 700; }
@@ -2283,6 +2426,8 @@ textarea:disabled {
 .testcase-review-status--needs_changes { color: var(--warning); background: var(--warning-soft); }
 .testcase-review-status--removed { color: var(--danger); background: var(--danger-soft); }
 .testcase-table-truncate { display: block; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.testcase-oracle-warning { display: inline-flex; margin-bottom: 3px; padding: 2px 6px; border-radius: 999px; color: #b42318; background: #fef3f2; font-size: .6rem; font-weight: 750; white-space: nowrap; }
+.testcase-conflict-warning { display: inline-flex; margin-bottom: 3px; margin-left: 4px; padding: 2px 6px; border-radius: 999px; color: #93370d; background: #fffaeb; font-size: .6rem; font-weight: 750; white-space: nowrap; }
 .testcase-row-actions { display: flex; gap: 5px; }
 .testcase-review-empty { margin: 0; padding: 36px; color: var(--muted); text-align: center; }
 .testcase-review-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 13px; border-top: 1px solid var(--border); }
@@ -2305,6 +2450,10 @@ textarea:disabled {
 .testcase-detail-section dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
 .testcase-detail-section dt { color: var(--muted); font-size: .68rem; }
 .testcase-detail-section dd { margin: 0; text-align: right; }
+.testcase-provenance-list { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.testcase-provenance-list li { padding: 8px 10px; border: 1px solid #eaecf0; border-radius: 7px; background: #f9fafb; }
+.testcase-provenance-list li > div:first-child { color: #344054; font-weight: 700; font-size: .68rem; }
+.testcase-provenance-list p { margin-top: 4px; }
 .testcase-detail-panel__actions, .testcase-detail-form__actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 17px; }
 .testcase-detail-form label { display: grid; gap: 6px; color: #344054; font-size: .68rem; font-weight: 700; }
 .testcase-detail-form input, .testcase-detail-form textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 7px; color: var(--text); background: var(--surface); font: inherit; font-size: .72rem; }
@@ -4437,9 +4586,76 @@ samp { line-height: 1.55; }
     padding: 24px;
 }
 
-.login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--background); }
-.login-card { width: min(100%, 360px); display: grid; gap: 14px; padding: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-raised); }
-.login-card h1 { margin: 0; color: var(--heading); font-size: 24px; }.login-card label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }.login-card input { min-height: 38px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; }.login-card button { min-height: 40px; border: 0; border-radius: 8px; color: #fff; background: var(--primary); font-weight: 700; cursor: pointer; }.login-error { margin: 0; color: var(--danger); font-size: 13px; }
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(720px 480px at 12% -8%, var(--primary-soft), transparent),
+    radial-gradient(720px 480px at 108% 108%, var(--ai-soft), transparent),
+    var(--background);
+}
+
+.login-card {
+  width: min(100%, 380px);
+  display: grid;
+  gap: 18px;
+  padding: 36px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+.login-card__logo { width: 84px; height: auto; object-fit: contain; margin: 0 auto 4px; }
+
+.login-field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+.login-field input {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.login-field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.login-remember { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; }
+.login-remember input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+.login-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.login-submit {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  background: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s ease, opacity .15s ease;
+}
+.login-submit:hover:not(:disabled) { background: var(--primary-dark); }
+.login-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+@media (max-width: 420px) {
+  .login-card { padding: 28px 20px; }
+}
 
 /* Review detail uses the Automation Workspace split-pane pattern on desktop.
    The existing mobile drawer fallback remains below this breakpoint. */
@@ -4700,16 +4916,6 @@ samp { line-height: 1.55; }
   gap: 1px;
 }
 
-.app-header__brand .app-header__brand-kicker {
-  margin: 0;
-  color: var(--ai-accent);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
 .app-header__brand strong {
   font-size: 16px;
   font-weight: 600;
@@ -4942,7 +5148,6 @@ samp { line-height: 1.55; }
 
 @media (max-width: 620px) {
   .app-header__brand::after { display: none; }
-  .app-header__brand .app-header__brand-kicker,
   .app-header__brand .app-header__brand-subtitle { display: none; }
   .main-content::before { height: 132px; }
 }
@@ -4964,8 +5169,6 @@ samp { line-height: 1.55; }
 }
 
 .app-header__brand strong { color: #fff; }
-
-.app-header__brand .app-header__brand-kicker { color: #64d6d4; }
 
 .app-header__brand .app-header__brand-subtitle { color: #9fb0c6; }
 
@@ -5036,8 +5239,6 @@ samp { line-height: 1.55; }
 .app-header__brand::after { display: none; }
 
 .app-header__brand strong { color: var(--heading); }
-
-.app-header__brand .app-header__brand-kicker { color: #317d82; }
 
 .app-header__brand .app-header__brand-subtitle { color: #718096; }
 

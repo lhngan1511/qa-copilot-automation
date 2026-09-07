@@ -22,14 +22,14 @@ class TestCaseGenerator {
         this.expectedResultBuilder = expectedResultBuilder;
     }
 
-    generate(scenarios = []) {
+    generate(scenarios = [], { clarificationMeta = {} } = {}) {
         if (!Array.isArray(scenarios)) {
             return [];
         }
 
         this.counter = 1;
 
-        return scenarios.flatMap(scenario =>
+        const testCases = scenarios.flatMap(scenario =>
             this.expandScenario(scenario).map(atomicScenario => {
                 const scenario = atomicScenario;
                 const testCase = new TestCase();
@@ -101,7 +101,9 @@ class TestCaseGenerator {
                     scenario.sourceItem === undefined ? null : this.cloneValue(scenario.sourceItem);
 
                 testCase.sourceReferences = Array.isArray(scenario.sourceReferences)
-                    ? this.cloneValue(scenario.sourceReferences)
+                    ? this.cloneValue(scenario.sourceReferences).map(reference =>
+                          this.enrichSourceReference(reference, clarificationMeta)
+                      )
                     : [];
 
                 testCase.ruleClassification = scenario.ruleClassification ?? "";
@@ -236,6 +238,84 @@ class TestCaseGenerator {
                 return testCase;
             })
         );
+
+        return this.dedupeIdenticalContentTestCases(testCases);
+    }
+
+    /** Câu trả lời làm rõ theo OPERATION_MATCH được gắn vào TẤT CẢ function cùng operation (Ngân chốt
+     *  2026-09-04: chấp nhận nội dung trùng nhau giữa nhiều function, KHÔNG chặn ở tầng correlate —
+     *  chặn ở đó từng gây bug bỏ sót câu trả lời hợp lệ). Testcase phát sinh từ đó có thể trùng HỆT
+     *  title + expectedResult giữa các function khác nhau cùng module (vd fact quyền hạn không nêu
+     *  tên function cụ thể) — dedupe ở ĐÂY, tầng hiển thị cuối cùng trước khi trả cho Review UI/Export:
+     *  giữ lại 1 testcase, gộp function/feature liên quan + sourceReferences, không rơi mất testcase
+     *  nào ở tầng correlate lẫn không hiển thị trùng lặp vô nghĩa cho tester. */
+    dedupeIdenticalContentTestCases(testCases) {
+        const groups = new Map();
+        testCases.forEach(testCase => {
+            const key = this.contentDedupeKey(testCase);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(testCase);
+        });
+
+        const result = [];
+        for (const group of groups.values()) {
+            if (group.length === 1) {
+                result.push(group[0]);
+                continue;
+            }
+            const [primary] = group;
+            primary.function = [...new Set(group.map(item => item.function).filter(Boolean))].join(", ");
+            primary.feature = [...new Set(group.map(item => item.feature).filter(Boolean))].join(", ");
+            primary.sourceReferences = this.mergeSourceReferenceLists(
+                group.map(item => item.sourceReferences)
+            );
+            result.push(primary);
+        }
+        return result;
+    }
+
+    contentDedupeKey(testCase) {
+        return [testCase.module, testCase.type, testCase.title, testCase.expectedResult]
+            .map(value => String(value ?? "").trim().toLowerCase())
+            .join("|");
+    }
+
+    mergeSourceReferenceLists(lists) {
+        const merged = [];
+        (Array.isArray(lists) ? lists : []).forEach(list => {
+            (Array.isArray(list) ? list : []).forEach(reference => {
+                if (
+                    reference &&
+                    !merged.some(
+                        existing =>
+                            existing.sourceType === reference.sourceType &&
+                            existing.sourceId === reference.sourceId
+                    )
+                ) {
+                    merged.push(reference);
+                }
+            });
+        });
+        return merged;
+    }
+
+    /** Gắn thêm method/confidence/question/answer (từ RequirementKnowledgeMapper#correlateClarificationAnswers,
+     *  đã lưu ở knowledge.knowledgeSources.clarificationMeta) vào ĐÚNG reference CLARIFICATION theo
+     *  sourceId — để UI chi tiết testcase hiển thị nguồn gốc + độ tin cậy (Ngân yêu cầu 2026-09-04,
+     *  tự kiểm tra được mà không cần đợi bug lộ ra sau nhiều vòng). Không đổi field cũ, chỉ bổ sung. */
+    enrichSourceReference(reference, clarificationMeta) {
+        if (!reference || typeof reference !== "object" || reference.sourceType !== "CLARIFICATION") {
+            return reference;
+        }
+        const meta = clarificationMeta?.[reference.sourceId];
+        if (!meta) return reference;
+        return {
+            ...reference,
+            method: meta.method,
+            ...(typeof meta.confidence === "number" ? { confidence: meta.confidence } : {}),
+            question: meta.question,
+            answer: meta.answer
+        };
     }
 
     expandScenario(scenario) {

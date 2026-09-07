@@ -36,6 +36,13 @@ export const navigationGroups = [
                 icon: "recording"
             },
             {
+                label: "Kiểm thử biên",
+                description: "Kiểm thử giá trị biên cho từng trường dữ liệu",
+                to: "/boundary-testing",
+                activePrefix: "/boundary-testing",
+                icon: "boundary"
+            },
+            {
                 label: "Reports",
                 description: "Báo cáo và thống kê",
                 icon: "reports",

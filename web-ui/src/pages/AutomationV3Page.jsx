@@ -18,14 +18,15 @@ import {
     setAutomationDecision,
     generateTestcase,
     runTestcase,
+    auditLocators,
     listWorkspaces,
     deleteWorkspace,
     removeTestCaseFromWorkspace,
     listAvailableTestcases,
-    addTestCaseToWorkspace,
-    listRunnerAgents
+    addTestCaseToWorkspace
 } from "../api/automationV3Api.js";
-import { createRunnerDevice } from "../api/runnerDeviceApi.js";
+import { createRunnerDevice, downloadRunnerPackage } from "../api/runnerDeviceApi.js";
+import { useRunner } from "../contexts/RunnerContext.jsx";
 
 /*
  AutomationV3Page — Automation Workspace (bước 5A + 5B).
@@ -41,8 +42,6 @@ const STORAGE_KEY = "qa-copilot.automation.workspaceId";
 const DISPLAY_KEY = "qa-copilot.automation.display";
 // P0 lifecycle — danh sách workspace gần đây (tối đa 5) để quay lại; không xây manager lớn.
 const RECENT_KEY = "qa-copilot.automation.recentWorkspaces";
-const RUNNER_AGENT_KEY = "qa-copilot.automation.runnerAgentId";
-const RUNNER_SLOWMO_KEY = "qa-copilot.automation.runnerSlowMo";
 const RUN_BASE_URL_KEY = "qa-copilot.automation.runBaseUrl";
 
 function readDisplayMap() {
@@ -114,20 +113,20 @@ export default function AutomationV3Page() {
     // Response tức thời luôn được gắn testCaseId; canonical history nằm trong workspace item.
     const [drawerGenerateResult, setDrawerGenerateResult] = useState(null);
     const [drawerRunResult, setDrawerRunResult] = useState(null);
+    const [drawerAuditResult, setDrawerAuditResult] = useState(null);
     const [confirm, setConfirm] = useState(null); // {kind, title, message, testCase}
     // 5C-0 — Record Mapping: panel gán đoạn (mở sau khi dán xong bản ghi / bấm "Xem và gán đoạn").
     const [mappingPanel, setMappingPanel] = useState(null); // { recordingId, initialTestCaseId }
     const [pendingTestCaseId, setPendingTestCaseId] = useState(null);
-    const [runnerAgents, setRunnerAgents] = useState([]);
-    const [runnerAgentId, setRunnerAgentId] = useState(() => window.localStorage.getItem(RUNNER_AGENT_KEY) || "");
-    const [runnerSlowMo, setRunnerSlowMo] = useState(() => {
-        const value = Number(window.localStorage.getItem(RUNNER_SLOWMO_KEY) ?? 1000);
-        return [0, 500, 1000].includes(value) ? value : 1000;
-    });
+    // Chọn Runner 1 lần, dùng chung cho CodeGen/Kiểm thử biên/Automation V3 (Ngân yêu cầu
+    // 2026-09-07) — xem RunnerContext.jsx. Không còn state/localStorage riêng ở trang này.
+    const { runnerAgentId, setRunnerAgentId, runnerAgents, runnerSlowMo, setRunnerSlowMo } = useRunner();
     const [runBaseUrl, setRunBaseUrl] = useState(() => window.localStorage.getItem(RUN_BASE_URL_KEY) || "");
     const [runnerRegistration, setRunnerRegistration] = useState(null);
     const [runnerMachineName, setRunnerMachineName] = useState("");
     const [runnerRegistrationBusy, setRunnerRegistrationBusy] = useState(false);
+    // Tải gói cài đặt 1-click (Ngân yêu cầu 2026-09-07) — .zip đã điền sẵn config + script cài.
+    const [runnerPackageBusy, setRunnerPackageBusy] = useState(false);
 
     /** P0-D (C) — tải danh sách workspace (newest first). */
     const refreshWorkspaceList = async () => {
@@ -154,6 +153,7 @@ export default function AutomationV3Page() {
             setMappingPanel(null);
             setDrawerGenerateResult(null);
             setDrawerRunResult(null);
+            setDrawerAuditResult(null);
             setWsPopoverOpen(false);
             setWsManagerOpen(false);
             setWsMenuId(null);
@@ -190,21 +190,6 @@ export default function AutomationV3Page() {
         loadProjectWorkspace();
         return () => { cancelled = true; };
     }, [projectId]);
-
-    useEffect(() => {
-        let cancelled = false;
-        const refreshAgents = async () => {
-            try {
-                const list = await listRunnerAgents();
-                if (!cancelled) setRunnerAgents(Array.isArray(list) ? list : []);
-            } catch {
-                if (!cancelled) setRunnerAgents([]);
-            }
-        };
-        refreshAgents();
-        const timer = window.setInterval(refreshAgents, 5000);
-        return () => { cancelled = true; window.clearInterval(timer); };
-    }, []);
 
     // Đăng ký máy là action trong menu tài khoản. Trang Automation chỉ nhận tín hiệu
     // để mở lại đúng dialog hiện có, không tạo thêm state/flow đăng ký song song.
@@ -263,6 +248,7 @@ export default function AutomationV3Page() {
             setMappingPanel(null);
             setDrawerGenerateResult(null);
             setDrawerRunResult(null);
+            setDrawerAuditResult(null);
             setWsMenuId(null);
             setWsPopoverOpen(false);
             setWsManagerOpen(false);
@@ -457,6 +443,23 @@ export default function AutomationV3Page() {
             await refreshWorkspace();
         } catch (e) {
             setDrawerRunResult({ testCaseId: testCase.testCaseId, ok: false, error: e?.message ?? "Không chạy được." });
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** Rà locator (proactive audit) — chạy THẬT file .spec.js đã Generate, báo cáo tình trạng
+     *  từng locator. Không mutate runStatus/lastRun của testcase, nên không cần refreshWorkspace. */
+    const handleAuditLocators = async testCase => {
+        if (!testCase || busy) return;
+        setError("");
+        setBusy(true);
+        try {
+            const env = runBaseUrl.trim() ? { BASE_URL: runBaseUrl.trim() } : {};
+            const res = await auditLocators(workspace.workspaceId, testCase.testCaseId, env);
+            setDrawerAuditResult({ testCaseId: testCase.testCaseId, ok: true, ...res });
+        } catch (e) {
+            setDrawerAuditResult({ testCaseId: testCase.testCaseId, ok: false, error: e?.message ?? "Không rà được locator." });
         } finally {
             setBusy(false);
         }
@@ -734,7 +737,33 @@ export default function AutomationV3Page() {
             ) : null}
             {runnerRegistration ? <div className="v3-modal-backdrop"><section className="v3-modal" aria-label="Đăng ký Runner">
                 <h3>Đăng ký máy chạy Automation</h3>
-                {runnerRegistration.token ? <><p>Sao chép thông tin này ngay; token sẽ không hiển thị lại.</p><label>Runner ID<input readOnly value={runnerRegistration.runnerId} /></label><label>Token<input readOnly value={runnerRegistration.token} /></label><button type="button" className="v3-btn v3-btn--primary" onClick={() => setRunnerRegistration(null)}>Đã sao chép</button></> : <form onSubmit={async event => { event.preventDefault(); if (runnerRegistrationBusy) return; setRunnerRegistrationBusy(true); try { const created = await createRunnerDevice(runnerMachineName); setRunnerRegistration({ ...created.device, token: created.token }); setRunnerMachineName(""); } catch (e) { setError(e.message); } finally { setRunnerRegistrationBusy(false); } }}><label>Tên máy<input required disabled={runnerRegistrationBusy} value={runnerMachineName} onChange={event => setRunnerMachineName(event.target.value)} placeholder="Máy Tester của tôi" /></label><div className="v3-modal__actions"><button type="button" className="v3-btn" disabled={runnerRegistrationBusy} onClick={() => setRunnerRegistration(null)}>Hủy</button><button className="v3-btn v3-btn--primary" disabled={runnerRegistrationBusy}>{runnerRegistrationBusy ? "Đang tạo…" : "Tạo Runner"}</button></div></form>}
+                {runnerRegistration.token ? (
+                    <>
+                        <p>Tải gói cài đặt bên dưới để tự động điền thông tin này — hoặc sao chép tay ngay; token sẽ không hiển thị lại.</p>
+                        <label>Runner ID<input readOnly value={runnerRegistration.runnerId} /></label>
+                        <label>Token<input readOnly value={runnerRegistration.token} /></label>
+                        <div className="v3-modal__actions">
+                            <button
+                                type="button"
+                                className="v3-btn v3-btn--primary"
+                                disabled={runnerPackageBusy}
+                                onClick={async () => {
+                                    setRunnerPackageBusy(true);
+                                    try {
+                                        await downloadRunnerPackage(runnerRegistration.runnerId, runnerRegistration.token);
+                                    } catch (e) {
+                                        setError(e.message);
+                                    } finally {
+                                        setRunnerPackageBusy(false);
+                                    }
+                                }}
+                            >
+                                {runnerPackageBusy ? "Đang tải…" : "Tải gói cài đặt (.zip)"}
+                            </button>
+                            <button type="button" className="v3-btn" onClick={() => setRunnerRegistration(null)}>Đã sao chép</button>
+                        </div>
+                    </>
+                ) : <form onSubmit={async event => { event.preventDefault(); if (runnerRegistrationBusy) return; setRunnerRegistrationBusy(true); try { const created = await createRunnerDevice(runnerMachineName); setRunnerRegistration({ ...created.device, token: created.token }); setRunnerMachineName(""); } catch (e) { setError(e.message); } finally { setRunnerRegistrationBusy(false); } }}><label>Tên máy<input required disabled={runnerRegistrationBusy} value={runnerMachineName} onChange={event => setRunnerMachineName(event.target.value)} placeholder="Máy Tester của tôi" /></label><div className="v3-modal__actions"><button type="button" className="v3-btn" disabled={runnerRegistrationBusy} onClick={() => setRunnerRegistration(null)}>Hủy</button><button className="v3-btn v3-btn--primary" disabled={runnerRegistrationBusy}>{runnerRegistrationBusy ? "Đang tạo…" : "Tạo Runner"}</button></div></form>}
             </section></div> : null}
 
             {mappingPanel ? (
@@ -832,27 +861,23 @@ export default function AutomationV3Page() {
                     workspaceId={workspace.workspaceId}
                     testCase={drawerTestcase}
                     initialTab={drawerTab}
-                    onClose={() => { setDrawerTestCaseId(null); setDrawerGenerateResult(null); setDrawerRunResult(null); }}
+                    onClose={() => { setDrawerTestCaseId(null); setDrawerGenerateResult(null); setDrawerRunResult(null); setDrawerAuditResult(null); }}
                     onGenerate={handleGenerate}
                     onRun={handleRun}
                     runnerAgents={runnerAgents}
                     runnerAgentId={runnerAgentId}
                     runnerSlowMo={runnerSlowMo}
                     runBaseUrl={runBaseUrl}
-                    onRunnerChange={next => {
-                        setRunnerAgentId(next);
-                        window.localStorage.setItem(RUNNER_AGENT_KEY, next);
-                    }}
-                    onRunnerSlowMoChange={next => {
-                        setRunnerSlowMo(next);
-                        window.localStorage.setItem(RUNNER_SLOWMO_KEY, String(next));
-                    }}
+                    onRunnerChange={setRunnerAgentId}
+                    onRunnerSlowMoChange={setRunnerSlowMo}
                     onRunBaseUrlChange={next => {
                         setRunBaseUrl(next);
                         window.localStorage.setItem(RUN_BASE_URL_KEY, next);
                     }}
                     generateResult={drawerGenerateResult}
                     runResult={drawerRunResult}
+                    onAuditLocators={handleAuditLocators}
+                    auditResult={drawerAuditResult}
                     onChanged={refreshWorkspace}
                 />
             ) : null}

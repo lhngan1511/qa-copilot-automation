@@ -297,7 +297,11 @@ export default class TestDesignContentNormalizer {
 
     lowerFirst(value) {
         const text = this.cleanText(value);
-        return text ? text.charAt(0).toLocaleLowerCase("vi") + text.slice(1) : "";
+        if (!text) return "";
+        // Chữ viết tắt ở đầu (vd "DM đợt nhập học" = Danh Mục) -> KHÔNG hạ chữ cái đầu (bug thật đã
+        // gặp 2026-09-04: "dM đợt nhập học" sai chính tả). Nhận diện bằng 2+ chữ IN HOA liên tiếp.
+        if (/^[A-ZĐ]{2,}/.test(text)) return text;
+        return text.charAt(0).toLocaleLowerCase("vi") + text.slice(1);
     }
 
     capitalize(value) {

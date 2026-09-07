@@ -37,6 +37,13 @@ const iconPaths = {
             <circle cx="12" cy="12" r="8" />
             <path d="M12 4V2m0 20v-2" />
         </>
+    ),
+    boundary: (
+        <>
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="5" />
+            <circle cx="12" cy="12" r="1" />
+        </>
     )
 };
 

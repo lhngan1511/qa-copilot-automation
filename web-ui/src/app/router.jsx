@@ -3,8 +3,10 @@ import MainLayout from "../layouts/MainLayout.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import NewWorkflowPage from "../pages/NewWorkflowPage.jsx";
 import WorkflowDetailPage from "../pages/WorkflowDetailPage.jsx";
+import TemplateTestCaseWizardPage from "../pages/TemplateTestCaseWizardPage.jsx";
 import AutomationWorkspacePage from "../pages/AutomationWorkspacePage.jsx";
 import AutomationV3Page from "../pages/AutomationV3Page.jsx";
+import BoundaryTestingPage from "../pages/BoundaryTestingPage.jsx";
 import CodeGenPage from "../pages/CodeGenPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 
@@ -26,12 +28,20 @@ export const router = createBrowserRouter([
                 element: <WorkflowDetailPage />
             },
             {
+                path: "workflows/:workflowId/template-testcases",
+                element: <TemplateTestCaseWizardPage />
+            },
+            {
                 path: "automation/workspaces/new",
                 element: <AutomationWorkspacePage />
             },
             {
                 path: "automation",
                 element: <AutomationV3Page />
+            },
+            {
+                path: "boundary-testing",
+                element: <BoundaryTestingPage />
             },
             {
                 path: "codegen",

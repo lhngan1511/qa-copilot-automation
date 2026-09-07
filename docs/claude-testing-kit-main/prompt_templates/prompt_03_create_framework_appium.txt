@@ -1,0 +1,16 @@
+/generate_automation_framework
+
+# CONTEXT
+Tôi cần xây dựng Mobile Automation Framework từ đầu.
+- Công nghệ: Appium + Java + TestNG
+
+# ỨNG DỤNG
+- Platform: [Android / iOS / Cả hai]
+- File app: [Đường dẫn .apk / .ipa]
+- App package / Bundle ID: [com.example.app]
+- Thiết bị test: [Tên emulator/simulator hoặc real device]
+- Tài khoản test: [EMAIL] / [PASSWORD]
+
+# TÙY CHỌN
+- Appium server: [http://127.0.0.1:4723 / URL khác]
+- CI/CD: [GitHub Actions / GitLab CI / Jenkins / Không cần]

@@ -108,4 +108,11 @@ assert.equal(fd.errorCode, "BASE_URL_MISSING");
 assert.equal(fd.output, "log");
 assert.match(guidanceFor("BASE_URL_MISSING"), /BASE_URL/);
 
+// 16. Self-healing locator — gợi ý theo đúng loại locator bị fail, luôn trỏ về Ghi màn hình.
+assert.match(guidanceFor("LOCATOR_NOT_FOUND", "page.getByRole('button', { name: 'x' })"), /vai trò \(role\)/);
+assert.match(guidanceFor("LOCATOR_NOT_FOUND", "page.getByLabel('Email')"), /nhãn trường/);
+assert.match(guidanceFor("LOCATOR_NOT_FOUND", "css=.btn-login"), /CSS\/class/);
+assert.match(guidanceFor("LOCATOR_NOT_FOUND", "//div[3]/button"), /XPath/);
+assert.match(guidanceFor("LOCATOR_NOT_FOUND", null), /Ghi màn hình/);
+
 console.log("Automation Run Diagnose test: PASS");

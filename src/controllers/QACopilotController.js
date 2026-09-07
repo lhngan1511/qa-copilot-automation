@@ -48,6 +48,46 @@ export default class QACopilotController {
         }
     }
 
+    /** Phần 4 — "AI Test Design" lối tắt Nhập nhanh testcase. mapPublicResponse mặc định true
+     *  (giống start()) để data.workflow.id có sẵn cho frontend điều hướng, cùng convention
+     *  extractWorkflowId() đã dùng ở createWorkflow()/resumeWorkflow(). */
+    async createDirectTestCaseDesign(input = {}) {
+        try {
+            const result = this.applicationService.createDirectTestCaseDesignSession({
+                projectId: input.projectId ?? null
+            });
+
+            return this.successResponse({
+                statusCode: 201,
+                message: "Direct testcase design session started.",
+                result
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
+    /** Phần 4 — hoàn tất session bypass sau khi đã duyệt. Kết quả không phải shape "workflow"
+     *  (chỉ {sessionId, artifactId, testCases, outputs}) — mapPublicResponse:false như
+     *  getWorkflowState(). */
+    async finalizeDirectTestCaseDesign(input = {}) {
+        try {
+            const result = this.applicationService.finalizeDirectTestCaseSession({
+                sessionId: input.sessionId,
+                artifactId: input.artifactId
+            });
+
+            return this.successResponse({
+                statusCode: 200,
+                message: "Direct testcase design finalized.",
+                result,
+                mapPublicResponse: false
+            });
+        } catch (error) {
+            return this.errorResponse(error);
+        }
+    }
+
     async resume(input = {}) {
         const normalizedInput = this.normalizeInput(input);
 

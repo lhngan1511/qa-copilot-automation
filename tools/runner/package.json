@@ -1,0 +1,13 @@
+{
+  "name": "qa-copilot-runner-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Máy chạy Playwright cho QA Copilot Automation — chạy trên máy tester, tự đăng ký với server và nhận job Chạy thử. Không cần checkout repo qa-copilot-automation, chỉ cần thư mục này.",
+  "scripts": {
+    "start": "node agent.mjs runner-agent.config.json"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

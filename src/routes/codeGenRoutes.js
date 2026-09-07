@@ -9,7 +9,9 @@ export default function createCodeGenRoutes({
     manager = null,
     testcaseLoader = null,
     actionLibrary = null,
-    usageFn = null
+    usageFn = null,
+    unbindAllFn = null,
+    remoteCodeGenService = null
 } = {}) {
     const resolvedManager =
         manager ??
@@ -18,7 +20,7 @@ export default function createCodeGenRoutes({
             store: new CodeGenRecordingStore({ scriptsDir: `${rootDir}/outputs/codegen` })
         });
     const resolvedLoader = testcaseLoader ?? new ApprovedTestcaseLoader({ searchRoot: rootDir });
-    const controller = new CodeGenController({ manager: resolvedManager, testcaseLoader: resolvedLoader, actionLibrary, usageFn });
+    const controller = new CodeGenController({ manager: resolvedManager, testcaseLoader: resolvedLoader, actionLibrary, usageFn, unbindAllFn, remoteCodeGenService });
     const router = Router();
 
     router.get("/library", (req, res) => controller.listLibrary(req, res));
@@ -29,6 +31,11 @@ export default function createCodeGenRoutes({
     router.patch("/library/:blockId", (req, res) => controller.updateLibraryAction(req, res));
     router.post("/analyze", (req, res) => controller.analyzeRecording(req, res));
     router.post("/recordings", (req, res) => controller.createRecording(req, res));
+    // Ghi từ xa qua Runner Agent đã ghép đôi (Ngân yêu cầu 2026-09-07) — route riêng, không đụng
+    // /start /stop (2 route đó thao tác trên phiên GLOBAL của CodeGenSessionManager, không phải
+    // theo recordingId — xem RemoteCodeGenService.js).
+    router.post("/recordings/start-remote", (req, res) => controller.startRemote(req, res));
+    router.post("/recordings/:recordingId/stop-remote", (req, res) => controller.stopRemote(req, res));
     router.get("/status", (req, res) => controller.status(req, res));
     router.get("/recordings", (req, res) => controller.list(req, res));
     router.get("/recordings/:recordingId", (req, res) => controller.get(req, res));

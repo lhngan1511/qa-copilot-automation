@@ -89,6 +89,13 @@ export default class CodeGenRecordingStore {
         return this.recordings.filter(item => item.testCaseId === testCaseId).length;
     }
 
+    /*
+     status: RECORDING | STOPPED | SAVED | ERROR | INTERRUPTED (luồng ghi cục bộ, xem
+     CodeGenSessionManager.js) — ghi từ xa qua Runner Agent (RemoteCodeGenService.js, Ngân yêu cầu
+     2026-09-07) TÁI DÙNG các giá trị này (setScript() tự quyết định SAVED/STOPPED), chỉ thêm 2 giá
+     trị TẠM THỜI: QUEUED_START (đã gửi job bắt đầu, agent chưa xác nhận) và STOPPING (đã gửi job
+     dừng, agent chưa xác nhận). remoteAgentId (nếu có) = agentId của Runner đã ghi bản ghi này.
+    */
     create({ mode = "FULL_FLOW", url = "", browser = "chrome", context = null, workspaceId = null, testCaseId = null, type = "TESTCASE", projectId = null } = {}) {
         const recording = {
             recordingId: newRecordingId(),
@@ -106,6 +113,13 @@ export default class CodeGenRecordingStore {
             storageMode: "TEMP",
             serverFilePath: null,
             downloadFileName: this.suggestFileName(url),
+            // Tên hiển thị tester tự đặt (giữ nguyên dấu tiếng Việt) — KHÁC downloadFileName (đã
+            // qua safeSpecName để an toàn làm tên file .spec.js, mất hết dấu). null = chưa đặt tên,
+            // nơi hiển thị fallback về downloadFileName.
+            label: null,
+            // Tester đặt tên + lưu (rename()) mới bật cờ này — phân biệt bản ghi thật với bản ghi
+            // tự động tạo lúc parse draft (xem CodeGenSessionManager.rename).
+            savedByUser: false,
             testcaseIds: testCaseId ? [testCaseId] : [],
             // V3 — steps/assertions/recordedValues (điền khi stop recording / parse script).
             steps: [],

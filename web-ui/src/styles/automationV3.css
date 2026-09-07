@@ -93,6 +93,12 @@
     color: var(--success);
 }
 
+.v3-banner--warning {
+    background: var(--warning-soft);
+    border: 1px solid #fde3b0;
+    color: var(--warning);
+}
+
 /* ---- Upload ---- */
 .v3-upload {
     display: grid;
@@ -1119,6 +1125,13 @@
 .v3-run-result--fail { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
 .v3-run-result--pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
 .v3-run-result__output { max-height: 180px; margin: 0; overflow: auto; white-space: pre-wrap; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.v3-audit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 220px; overflow: auto; }
+.v3-audit-list__item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px; border-radius: 6px; font-size: 12px; }
+.v3-audit-list__item code { font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v3-audit-list__item--ok { background: #f0fdf4; color: #047857; }
+.v3-audit-list__item--broken { background: #fef2f2; color: #b91c1c; }
+.v3-audit-list__item--ambiguous { background: #fffbeb; color: #b45309; }
 .v3-modal-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 42, .35); }.v3-modal { width: min(100%, 460px); display: grid; gap: 14px; padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 20px 45px rgba(15,23,42,.22); }.v3-modal h3,.v3-modal p { margin: 0; }.v3-modal label { display: grid; gap: 6px; font-size: 13px; }.v3-modal input { min-height: 36px; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; }.v3-modal form { display: grid; gap: 14px; }.v3-modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* P0-A — DỮ LIỆU KIỂM THỬ (info tab drawer). */
@@ -1193,7 +1206,8 @@
 .v3-lib-step__type { font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v3-lib-step__desc { color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .v3-lib-step__val { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: #0f766e; background: #ecfdf5; border-radius: 4px; padding: 2px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.v3-lib-step__tech { min-width: 0; }
+.v3-lib-step__tech { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.v3-lib-step__tech .v3-lib-sequence__controls { gap: 4px; }
 .v3-lib-modal__step .v3-act__tech summary { cursor: pointer; color: #2563eb; font-size: 12px; }
 @media (max-width: 1100px) {
   .v3-lib-modal__steps-head, .v3-lib-modal__step { grid-template-columns: 36px 70px minmax(0, 1fr) 120px 100px; gap: 6px; }
@@ -1302,6 +1316,19 @@
 /* P0 — utility recording (Sao chép mã / Lưu bản ghi Playwright) — secondary, compact. */
 .v3-rec-utils { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .v3-rec-utils__notice { font-size: 12px; color: #047857; font-weight: 600; }
+
+.v3-rec-save-dialog { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.v3-rec-save-dialog .v3-input { max-width: 260px; }
+
+.v3-rec-run-result {
+    margin-top: 4px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+.v3-rec-run-result p { margin: 4px 0 0; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+.v3-rec-run-result--pass { background: var(--success-soft, #ecfdf3); color: var(--success, #067647); }
+.v3-rec-run-result--fail { background: var(--danger-soft, #fef3f2); color: var(--danger, #b42318); }
 /* P0-3.1 — raw source sau parse: collapse secondary 'Xem mã Playwright ▾'. */
 .v3-act__raw summary {
   font-size: 12px;
@@ -2783,3 +2810,235 @@
     margin-right: auto;
   }
 }
+
+/* Thư viện thao tác — bộ lọc trạng thái/sử dụng cạnh ô tìm kiếm (P0-UI cải tiến quy mô lớn). */
+.v3-lib-modal__search .v3-lib-modal__filter {
+  flex: none;
+  width: auto;
+  max-width: 180px;
+}
+
+@media (max-width: 640px) {
+  .v3-lib-modal__search { flex-wrap: wrap; }
+  .v3-lib-modal__search .v3-lib-modal__filter { flex: 1 1 auto; max-width: none; }
+}
+
+/* ===== Kiểm thử biên (Phase 5) — trang riêng, KHÔNG dùng .v3-lib-modal__body (grid 340px cố
+   định của modal Thư viện — dùng nhầm chỗ từng làm vỡ layout khi nhét vào popup cũ). ===== */
+
+.v3-boundary-page { max-width: 1280px; }
+
+.v3-boundary-page__env {
+    display: grid;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+.v3-boundary-page__env label { display: flex; align-items: center; gap: 10px; }
+.v3-boundary-page__env label span { flex-shrink: 0; font-weight: 500; }
+.v3-boundary-page__env input { max-width: 320px; }
+
+.v3-boundary-page__body {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .v3-boundary-page__body { grid-template-columns: 1fr; }
+}
+
+.v3-boundary-page__list {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.v3-boundary-group { display: grid; gap: 4px; }
+.v3-boundary-group__head { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; padding: 6px 8px 2px; }
+
+.v3-boundary-group__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+.v3-boundary-group__item:hover { background: var(--surface-hover, rgba(0,0,0,.03)); }
+.v3-boundary-group__item--active { border-color: var(--primary); background: var(--primary-tint, rgba(37,99,235,.08)); }
+
+.v3-boundary-group__item-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+}
+.v3-boundary-group__item-main span:first-child { font-weight: 500; }
+
+.v3-boundary-page__detail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    min-height: 320px;
+}
+
+.v3-boundary-detail { display: grid; gap: 16px; }
+.v3-boundary-detail__head h3 { margin: 0 0 4px; font-size: 17px; }
+.v3-boundary-detail__head { display: grid; gap: 4px; }
+.v3-boundary-ai-status { color: var(--ai-accent, var(--muted)); }
+.v3-boundary-detail__rows { display: grid; gap: 10px; }
+.v3-boundary-detail__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.v3-boundary-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.v3-boundary-row .v3-input { max-width: 220px; flex: 1 1 160px; }
+
+.v3-boundary-row__error {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--danger, #b42318);
+    background: var(--danger-tint, rgba(180,35,24,.06));
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.v3-boundary-run__row { display: grid; gap: 4px; }
+.v3-boundary-run__result { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ---- Thẻ 1 giá trị biên: gọn, phân khu rõ ràng (giá trị / nguồn / kết quả) thay vì 1 hàng
+   dài nhồi hết input+badge+checkbox+ghi chú như trước. ---- */
+.v3-boundary-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-subtle);
+}
+.v3-boundary-card__top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.v3-boundary-card__value { flex: 1 1 220px; min-width: 160px; background: var(--surface); }
+.v3-boundary-card__remove { margin-left: auto; }
+
+.v3-boundary-badge {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.v3-boundary-badge--ai { color: var(--ai-accent, #0f8f91); background: var(--ai-soft, #eafafa); }
+.v3-boundary-badge--rule { color: var(--muted); background: var(--border, #e1e7ef); }
+.v3-boundary-badge--tester { color: var(--primary-dark); background: var(--primary-soft); }
+
+.v3-boundary-status {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.v3-boundary-status--pass { color: var(--success, #067647); background: var(--success-soft, #ecfdf3); }
+.v3-boundary-status--fail { color: var(--danger, #b42318); background: var(--danger-soft, #fef3f2); }
+.v3-boundary-status--pending { color: var(--muted); background: var(--border, #e1e7ef); }
+
+.v3-boundary-card__result {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+.v3-boundary-card__no-shot { margin: 0; flex: 1 1 auto; }
+.v3-boundary-card__review { display: grid; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.v3-boundary-card__review .v3-input { max-width: 360px; }
+
+.v3-boundary-shot {
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+    cursor: zoom-in;
+    line-height: 0;
+}
+.v3-boundary-shot img { display: block; width: 96px; height: 72px; object-fit: cover; object-position: top; }
+.v3-boundary-shot--mini img { width: 56px; height: 42px; }
+
+.v3-boundary-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: rgba(16, 24, 40, 0.72);
+    cursor: zoom-out;
+}
+.v3-boundary-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+    box-shadow: var(--shadow-raised);
+}
+
+.v3-boundary-history { border-top: 1px solid var(--border); padding-top: 12px; display: grid; gap: 8px; }
+.v3-boundary-run { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.v3-boundary-run summary { cursor: pointer; font-size: 13px; }
+.v3-boundary-run__rows { margin-top: 8px; display: grid; gap: 4px; }
+
+.v3-boundary-create {
+    display: grid;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+}
+.v3-boundary-create__script { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 13px; resize: vertical; }
+
+.v3-boundary-steps { display: grid; gap: 6px; }
+.v3-boundary-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.v3-boundary-step__n { flex-shrink: 0; color: var(--muted); font-size: 12px; min-width: 18px; }
+.v3-boundary-step__act { flex-shrink: 0; font-weight: 500; min-width: 60px; }
+.v3-boundary-step__target { flex: 1 1 auto; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -56,6 +56,18 @@ export default function createWorkflowRoutes({
         );
     });
 
+    // Phần 4 — "AI Test Design" lối tắt Nhập nhanh testcase (bỏ qua Requirement/Module/Scenario Review).
+    router.post("/direct-testcase-design", async (req, res) => {
+        send(res, await controller.createDirectTestCaseDesign({ projectId: req.get("x-project-id") || null }));
+    });
+
+    router.post("/:sessionId/finalize-direct", async (req, res) => {
+        send(res, await controller.finalizeDirectTestCaseDesign({
+            sessionId: req.params.sessionId,
+            artifactId: req.body?.artifactId
+        }));
+    });
+
     router.get("/:sessionId", async (req, res) => {
         send(res, await controller.getWorkflow({ sessionId: req.params.sessionId }));
     });

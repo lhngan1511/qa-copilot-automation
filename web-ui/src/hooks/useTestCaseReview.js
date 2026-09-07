@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     approveTestCaseReview,
+    finalizeDirectTestCaseDesign,
     getTestCaseReview,
     resumeWorkflow,
     updateTestCaseReview
@@ -48,6 +49,17 @@ export function useResumeTestCaseWorkflow(workflowId) {
     const refresh = useRefresh(workflowId);
     return useMutation({
         mutationFn: () => resumeWorkflow(workflowId),
+        onSuccess: refresh,
+        onError: refresh
+    });
+}
+
+/** Phần 4 — hoàn tất session bypass "Nhập nhanh testcase" (thay cho resumeWorkflow, vốn hard-assert
+ *  Requirement/Clarification đã duyệt mà session bypass không có). */
+export function useFinalizeDirectTestCaseDesign(workflowId) {
+    const refresh = useRefresh(workflowId);
+    return useMutation({
+        mutationFn: ({ artifactId }) => finalizeDirectTestCaseDesign({ workflowId, artifactId }),
         onSuccess: refresh,
         onError: refresh
     });

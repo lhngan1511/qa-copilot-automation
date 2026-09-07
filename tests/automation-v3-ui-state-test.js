@@ -124,7 +124,7 @@ assert.deepEqual(drawerDraftForTestCase({ "Dữ liệu A": { value: "A", intent:
 assert.equal(drawerResultForTestCase(null, "TC-B"), null, "R10 CASE 3: testcase chưa automation không có run artifact");
 assert.equal(displayedRunResultForTestCase(noAutomationB, failedA), null, "R10 CASE 5: FAIL A không rò sang B");
 assert.equal(drawerResultForTestCase(generatedA, "TC-B"), null, "R10 CASE 6: Generate response A không rò sang B chưa generate");
-assert.deepEqual(displayedRunResultForTestCase(canonicalPassedA, null), { ok: true, runStatus: "PASSED", passed: true, error: null, durationMs: 8700, exitCode: null, stdout: null, stderr: null }, "R10 CASE 4: mở lại A dùng canonical PASS");
+assert.deepEqual(displayedRunResultForTestCase(canonicalPassedA, null), { ok: true, runStatus: "PASSED", passed: true, error: null, errorCode: null, failedLocator: null, durationMs: 8700, exitCode: null, stdout: null, stderr: null }, "R10 CASE 4: mở lại A dùng canonical PASS");
 
 // ===== R11 — Remote QUEUED là pending, completion canonical mới là kết quả cuối =====
 const queuedRemote = { testCaseId: "TC-A", ok: true, runStatus: "QUEUED", jobId: "JOB-1", agentId: "TESTER-PC-01" };

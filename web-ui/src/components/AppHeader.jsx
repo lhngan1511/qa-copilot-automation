@@ -3,13 +3,20 @@ import { useNavigate } from "react-router-dom";
 import cuscSoftwareLogo from "../assets/cusc-software-logo.png";
 import ProjectSwitcher from "./ProjectSwitcher.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { useRunner } from "../contexts/RunnerContext.jsx";
 import { listRunnerDevices, revokeRunnerDevice } from "../api/runnerDeviceApi.js";
+import AccountManagerModal from "./AccountManagerModal.jsx";
 
 export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
     const { user, logout } = useAuth();
+    const isAdmin = user?.role === "ADMIN";
     const navigate = useNavigate();
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [runnerDevices, setRunnerDevices] = useState([]);
+    const [accountManagerOpen, setAccountManagerOpen] = useState(false);
+    // Chọn Runner 1 lần, dùng chung cho CodeGen/Kiểm thử biên/Automation V3 (Ngân yêu cầu
+    // 2026-09-07) — xem RunnerContext.jsx.
+    const { runnerAgentId, setRunnerAgentId, runnerAgents } = useRunner();
 
     useEffect(() => {
         let cancelled = false;
@@ -42,7 +49,6 @@ export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
             <div className="app-header__brand">
                 <img className="product-logo" src={cuscSoftwareLogo} alt="CUSC Software" />
                 <span className="app-header__brand-copy">
-                    <small className="app-header__brand-kicker">QC Intelligence</small>
                     <strong>QA Copilot</strong>
                     <small className="app-header__brand-subtitle">Testing &amp; Automation Workspace</small>
                 </span>
@@ -96,6 +102,22 @@ export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
                     </button>
                     {userMenuOpen ? (
                         <div className="app-header__user-popover" role="menu">
+                            <span className="app-header__user-menu-title">Runner đang dùng</span>
+                            <select
+                                className="app-header__runner-select"
+                                value={runnerAgentId}
+                                onChange={event => setRunnerAgentId(event.target.value)}
+                                onClick={event => event.stopPropagation()}
+                                aria-label="Chọn máy Runner áp dụng cho CodeGen/Kiểm thử biên/Automation"
+                            >
+                                <option value="">Chạy trên máy chủ</option>
+                                {runnerAgents.filter(agent => agent.status === "ONLINE" || agent.status === "BUSY").map(agent => (
+                                    <option value={agent.agentId} key={agent.agentId} disabled={agent.status !== "ONLINE"}>
+                                        {agent.machineName} · {agent.status === "ONLINE" ? "Online" : "Đang chạy"}{agent.runnerVersion ? ` · v${agent.runnerVersion}` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="app-header__user-menu-divider" />
                             <span className="app-header__user-menu-title">Máy chạy Automation</span>
                             {runnerDevices.filter(device => device.status !== "REVOKED").length > 0 ? runnerDevices.filter(device => device.status !== "REVOKED").map(device => (
                                 <div className="app-header__runner-device" key={device.runnerId}>
@@ -105,11 +127,16 @@ export default function AppHeader({ onToggleSidebar, sidebarExpanded }) {
                             )) : <span className="app-header__runner-device">Chưa đăng ký máy chạy</span>}
                             <div className="app-header__user-menu-divider" />
                             <button type="button" role="menuitem" onClick={openRunnerRegistration}>Kết nối máy chạy này</button>
+                            {isAdmin ? (
+                                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setAccountManagerOpen(true); }}>Quản lý tài khoản</button>
+                            ) : null}
+                            <div className="app-header__user-menu-divider" />
                             <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); logout(); }}>Đăng xuất</button>
                         </div>
                     ) : null}
                 </div>
             </div>
+            {accountManagerOpen ? <AccountManagerModal onClose={() => setAccountManagerOpen(false)} /> : null}
         </header>
     );
 }

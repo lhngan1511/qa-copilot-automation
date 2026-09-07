@@ -1,4 +1,4 @@
-import { formatTestData, testCaseDisplayId, testCaseId } from "../utils/testCaseReview.js";
+import { formatTestData, hasMissingOracle, testCaseDisplayId, testCaseId } from "../utils/testCaseReview.js";
 
 const statusLabels = {
     PENDING: "Chờ duyệt",
@@ -19,6 +19,7 @@ export default function TestCaseList({
     allVisibleSelected,
     disabled,
     reviewDisabled = disabled,
+    expectedResultConflicts = new Map(),
     onSelect,
     onToggle,
     onToggleAll,
@@ -118,6 +119,25 @@ export default function TestCaseList({
                                     </span>
                                 </td>
                                 <td data-label="Kết quả mong đợi" title={testCase.expectedResult}>
+                                    {hasMissingOracle(testCase) && (
+                                        <span
+                                            className="testcase-oracle-warning"
+                                            title="Kết quả mong đợi chưa xác định — cần tester xác nhận trước khi duyệt"
+                                        >
+                                            ⚠ Chưa có oracle
+                                        </span>
+                                    )}
+                                    {expectedResultConflicts.has(id) && (
+                                        <span
+                                            className="testcase-conflict-warning"
+                                            title={`Xung đột với: ${expectedResultConflicts
+                                                .get(id)
+                                                .map(item => `${item.withId} ("${item.expectedResult}")`)
+                                                .join(", ")}`}
+                                        >
+                                            ⚠ Xung đột kết quả
+                                        </span>
+                                    )}
                                     <span className="testcase-table-truncate">
                                         {compact(testCase.expectedResult)}
                                     </span>

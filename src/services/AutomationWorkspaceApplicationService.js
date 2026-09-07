@@ -1148,6 +1148,22 @@ export default class AutomationWorkspaceApplicationService {
         return this.bindingDto(workspaceId, testCaseId, binding);
     }
 
+    /** Xóa Action khỏi Library dù đang được dùng — gỡ khỏi MỌI testcase/workspace tham chiếu trước
+     *  (testcase liên quan rơi về "chưa có thao tác", tester tự chọn lại — không chặn cứng xóa). */
+    unbindBlockEverywhere(blockId) {
+        let affectedTestCases = 0;
+        for (const w of this.workspace?.list?.() ?? []) {
+            const ws = this.workspace.get(w.workspaceId);
+            for (const entry of ws?.selectedTestCases ?? []) {
+                const hasRef = (entry.binding?.sequence ?? []).some(ref => ref.blockId === blockId);
+                if (!hasRef) continue;
+                this.workspace.unbindBlockFromTestCase(w.workspaceId, entry.testCaseId, blockId, null);
+                affectedTestCases += 1;
+            }
+        }
+        return { blockId, affectedTestCases };
+    }
+
     /** Đếm usage cho từng block Library (derive từ bindings mọi workspace — KHÔNG lưu source of truth). */
     countLibraryUsage() {
         const map = new Map();
@@ -1653,6 +1669,8 @@ export default class AutomationWorkspaceApplicationService {
                 status,
                 passed,
                 error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
+                errorCode: result?.errorCode ?? null,
+                failedLocator: result?.failedLocator ?? null,
                 durationMs: result?.durationMs ?? null
             }
         });
@@ -1661,8 +1679,37 @@ export default class AutomationWorkspaceApplicationService {
             runStatus: status,
             passed,
             error: result?.errorMessage ?? result?.diagnostic ?? result?.error ?? null,
+            errorCode: result?.errorCode ?? null,
+            failedLocator: result?.failedLocator ?? null,
             durationMs: result?.durationMs ?? null,
             filePath: entry.generatedFile
+        };
+    }
+
+    /** Rà locator (proactive audit) — chạy ĐÚNG file .spec.js đã Generate, báo cáo tình trạng
+     *  từng locator (còn khớp giao diện hiện tại hay không) thay vì đợi Chạy thử fail giữa chừng
+     *  mới biết. Cùng điều kiện tiên quyết với runTestcase (đã Generate, chưa STALE, có runner).
+     *  v1 CHỈ chạy local — không hỗ trợ agentId/Runner Agent từ xa, giống quyết định phạm vi đã
+     *  áp dụng cho Boundary Testing (LOCAL ONLY). Không mutate trạng thái Generate/Run của testcase. */
+    async auditLocators({ workspaceId, testCaseId, env = {} }) {
+        this.ensureTestCase(workspaceId, testCaseId);
+        this.normalizeBindingRoles(workspaceId, testCaseId);
+        this.autoBindTestData(workspaceId, testCaseId);
+        const entry = this.workspace.getTestCase(workspaceId, testCaseId);
+        if (entry.generateStatus !== "GENERATED" || !entry.generatedFile) {
+            fail(V3_ERRORS.NOT_GENERATED, "Chưa có script. Hãy Sinh Playwright trước khi rà locator.");
+        }
+        const current = this.generateService?.buildFingerprint?.({ workspaceId, testCaseId }) ?? null;
+        if (current && entry.generatedFingerprint && current !== entry.generatedFingerprint) {
+            fail(V3_ERRORS.STALE_GENERATED, "Testcase/action/data/điều kiện đã thay đổi sau lần Generate. Hãy Sinh lại rồi rà locator.");
+        }
+        if (!this.runner) fail(V3_ERRORS.RUNNER_NOT_AVAILABLE, "Runner chưa sẵn sàng trong môi trường này.");
+        const result = await this.runner.runLocatorAudit(entry.generatedFile, { env });
+        return {
+            testCaseId,
+            auditedAt: new Date().toISOString(),
+            results: result?.results ?? [],
+            error: result?.ok ? null : (result?.error ?? "Rà locator thất bại.")
         };
     }
 
@@ -1818,6 +1865,10 @@ export default class AutomationWorkspaceApplicationService {
             runStatus: entry.runStatus,
             generatedFile: entry.generatedFile ?? null,
             generatedFingerprint: entry.generatedFingerprint ?? null,
+            // P0-UI — spec đã sinh có còn khớp thao tác/data/điều kiện hiện tại không (so fingerprint
+            // như lúc Run làm, nhưng lộ ra sớm ở đây để tab "Thao tác" hiện badge, không đợi tới lúc chạy).
+            automationStale: entry.generateStatus === "GENERATED" && Boolean(entry.generatedFingerprint) &&
+                (this.generateService?.buildFingerprint?.({ workspaceId, testCaseId: entry.testCaseId }) ?? null) !== entry.generatedFingerprint,
             lastRun: entry.lastRun ?? null
         };
     }

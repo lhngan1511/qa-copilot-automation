@@ -552,6 +552,86 @@ export default class QACopilotApplicationService {
         return result;
     }
 
+    /** Phần 4 — "AI Test Design" lối tắt Nhập nhanh testcase: tạo thẳng 1 session ở
+     *  TEST_CASE_REVIEW, bỏ qua Requirement/Module/Scenario Review. Dùng ĐÚNG cơ chế
+     *  workflowCoordinator.startTestCaseReview() mà QACopilot.js#runCoreProductionWorkflow đã tự
+     *  dùng nội bộ (xem QACopilot.js dòng ~1062-1117) — không phải state machine mới. `origin:
+     *  "DIRECT_TESTCASE_DESIGN"` đánh dấu session bypass để finalizeDirectTestCaseSession() (và
+     *  TestCaseReviewPanel.jsx phía frontend) biết KHÔNG được gọi resumeSession()/qaCopilot.run()
+     *  — 2 hàm đó hard-assert phải có Requirement/Clarification đã duyệt, sẽ throw với session này. */
+    createDirectTestCaseDesignSession({ projectId = null } = {}) {
+        const timestamp = this.qaCopilot.fileNameGenerator.getTimestamp();
+        const sessionId = `SESSION-TESTCASE-${timestamp}`;
+        const artifactId = `TESTCASE-${timestamp}`;
+        const testCaseReviewArtifact = {
+            artifactId,
+            artifactType: "TEST_CASE_REVIEW",
+            testCases: [],
+            notes: null,
+            confidence: null,
+            source: "MANUAL_TESTER",
+            qualitySummary: {},
+            summary: this.qaCopilot.buildTestCaseReviewSummary([]),
+            references: {},
+            requirementReference: null,
+            approvalStatus: "pending"
+        };
+        this.qaCopilot.workflowCoordinator.startTestCaseReview({ sessionId, artifactId, testCase: testCaseReviewArtifact });
+
+        const context = new WorkflowExecutionContext();
+        context.setStage("testCaseReview", { sessionId, artifactId });
+
+        const session = this.qaCopilot.workflowCoordinator.findSession(sessionId);
+        this.qaCopilot.workflowCoordinator.runtime.saveSession({
+            ...session,
+            projectId,
+            origin: "DIRECT_TESTCASE_DESIGN",
+            workflowContext: context.toJSON(),
+            pipelineStatus: PipelineStatuses.AWAITING_TEST_CASE_REVIEW,
+            currentStage: "testCaseReview",
+            currentArtifactId: artifactId,
+            outputs: {}
+        });
+
+        return this.getWorkflow({ sessionId });
+    }
+
+    /** Phần 4 — hoàn tất session bypass sau khi tester đã duyệt (approveReview đã chạy bình
+     *  thường — KHÔNG cần thay đổi gì ở đó, hoạt động độc lập với stage trước). Mirror đúng đoạn
+     *  export cuối trong QACopilot.js#runCoreProductionWorkflow (~dòng 1211-1246): map + export +
+     *  ghi outputs vào artifact — KHÔNG gọi qaCopilot.run()/resumeSession() (2 hàm đó hard-assert
+     *  Requirement/Clarification đã duyệt, session bypass không có nên sẽ throw). */
+    finalizeDirectTestCaseSession({ sessionId, artifactId } = {}) {
+        const session = this.requireSession(sessionId);
+        if (session.origin !== "DIRECT_TESTCASE_DESIGN") {
+            throw this.applicationError("NOT_DIRECT_SESSION", "Session này không phải lối tắt Nhập nhanh testcase.", 409);
+        }
+        const artifact = this.requireArtifact(artifactId);
+        this.requireArtifactOwnership(artifact, sessionId);
+        if (artifact.approvalStatus !== "approved") {
+            throw this.applicationError("NOT_APPROVED", "Testcase chưa được duyệt.", 409);
+        }
+        if (!this.qaCopilot.workflowCoordinator.isCompleted(sessionId)) {
+            throw this.applicationError("REVIEW_NOT_COMPLETED", "Phiên duyệt testcase chưa hoàn tất.", 409);
+        }
+
+        const testCases = this.qaCopilot.approvedTestCaseMapper.map(artifact);
+        if (artifact.outputs && typeof artifact.outputs === "object" && Object.keys(artifact.outputs).length > 0) {
+            return { sessionId, artifactId, testCases, outputs: { ...artifact.outputs } };
+        }
+
+        const outputs = this.qaCopilot.testCaseOutputService.export({
+            requirement: {},
+            testCases,
+            outputRoot: "./outputs/production",
+            outputFilePrefix: ""
+        });
+        this.qaCopilot.workflowCoordinator.saveArtifact({ ...artifact, outputs: { ...outputs } });
+        this.qaCopilot.workflowCoordinator.runtime.saveSession({ ...session, pipelineStatus: PipelineStatuses.COMPLETED, outputs: { ...outputs } });
+
+        return { sessionId, artifactId, testCases, outputs };
+    }
+
     async resumeSession({ sessionId } = {}) {
         const requestedSession = this.requireSession(sessionId);
         const session = this.findCanonicalWorkflowSession(requestedSession);

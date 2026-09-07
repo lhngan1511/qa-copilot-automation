@@ -1,0 +1,16 @@
+/generate_manual_testcases_rbt
+
+# CONTEXT
+- Module: [Tên module cần test]
+- URL (nếu có): [URL hệ thống]
+
+# REQUIREMENT
+[DÁN NỘI DUNG REQUIREMENT / USER STORIES VÀO ĐÂY]
+
+# TÙY CHỌN
+- Format file output: [Markdown / CSV (mở bằng Excel / sync Google Sheets, Jira Xray)]
+- Prefix TC ID: [VD: CRM_LOGIN — để trống nếu muốn agent tự đặt]
+
+# GHI CHÚ
+- Command này chạy theo quy trình AI-RBT 6 bước (FULL RBT mode) — agent sẽ dừng ở checkpoint chờ bạn xác nhận
+- Nếu chỉ cần sinh TC nhanh không qua 6 bước → dùng /generate_testcases_from_requirements

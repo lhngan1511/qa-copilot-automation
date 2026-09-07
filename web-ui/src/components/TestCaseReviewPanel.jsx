@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getWorkflowOutputUrl } from "../api/workflowApi.js";
 import {
     useApproveTestCaseReview,
+    useFinalizeDirectTestCaseDesign,
     useResumeTestCaseWorkflow,
     useTestCaseReview,
     useUpdateTestCaseReview
@@ -13,6 +14,8 @@ import {
     canApproveTestCaseBatch,
     createBlankManualTestCase,
     filterTestCases,
+    findExpectedResultConflicts,
+    hasMissingOracle,
     reviewCompletionMessage,
     summarizeReview,
     testCaseDisplayId,
@@ -54,6 +57,7 @@ export default function TestCaseReviewPanel({ workflow }) {
     const update = useUpdateTestCaseReview(workflowId);
     const approve = useApproveTestCaseReview(workflowId);
     const resume = useResumeTestCaseWorkflow(workflowId);
+    const finalizeDirect = useFinalizeDirectTestCaseDesign(workflowId);
     const [draft, setDraft] = useState([]);
     const [selectedId, setSelectedId] = useState("");
     const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -100,12 +104,16 @@ export default function TestCaseReviewPanel({ workflow }) {
     const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     const summary = useMemo(() => summarizeReview(draft), [draft]);
+    // Xung đột expected result giữa 2 testcase cùng module/cùng sự kiện (Ngân yêu cầu 2026-09-04) —
+    // tính trên TOÀN BỘ draft (không chỉ trang/bộ lọc đang xem), vì 2 testcase xung đột có thể rơi ở
+    // 2 trang khác nhau sau khi lọc/phân trang.
+    const expectedResultConflicts = useMemo(() => findExpectedResultConflicts(draft), [draft]);
     const availableTypes = new Set(draft.map(testCaseType));
     const tabs = [
         ...baseTabs,
         ...(availableTypes.has("BOUNDARY") ? [["BOUNDARY", "Boundary"]] : [])
     ];
-    const pending = update.isPending || approve.isPending || resume.isPending;
+    const pending = update.isPending || approve.isPending || resume.isPending || finalizeDirect.isPending;
     const isCompleted = workflow?.status === "COMPLETED";
     const canEdit = query.data?.allowedActions?.includes("UPDATE_TEST_CASES") === true;
     const canReviewDecisions = canEdit && !isCompleted;
@@ -235,18 +243,44 @@ export default function TestCaseReviewPanel({ workflow }) {
         }
     };
 
+    // "Đủ điều kiện" loại trừ testcase CHƯA CÓ ORACLE (kết quả mong đợi còn placeholder "Chưa xác
+    // định") — bug thật đã gặp (2026-09-04): AI Analysis bỏ sót không bắt placeholder này thành câu
+    // hỏi clarification, để lọt thẳng ra testcase; nếu bulk-approve vẫn duyệt cả testcase này, tester
+    // dễ vô tình chấp nhận 1 testcase không biết kết quả đúng là gì. Cũng loại trừ testcase đang XUNG
+    // ĐỘT expected result với 1 testcase khác cùng sự kiện (Ngân yêu cầu 2026-09-04: không được để
+    // cả 2 cùng "Chờ duyệt" như không có gì bất thường) — tester vẫn có thể tự Duyệt tay từng cái này
+    // qua "Chi tiết" sau khi đã xác định cái nào đúng.
     const approveAllEligible = () =>
         applyDecision(
             draft
-                .filter(testCase => testCase.reviewStatus !== "REMOVED")
+                .filter(
+                    testCase =>
+                        testCase.reviewStatus !== "REMOVED" &&
+                        !hasMissingOracle(testCase) &&
+                        !expectedResultConflicts.has(testCaseId(testCase))
+                )
                 .map(testCase => testCaseId(testCase)),
             "APPROVED"
         );
 
+    // Phần 4 — session bypass "Nhập nhanh testcase" KHÔNG có Requirement/Clarification để
+    // resume() — resumeWorkflow() sẽ throw (bị nuốt lỗi âm thầm ở catch bên dưới, màn hình đứng
+    // im không rõ lý do). Dùng finalizeDirect thay resume cho đúng luồng.
+    const isDirect = workflow?.origin === "DIRECT_TESTCASE_DESIGN";
+    const alreadyApproved = query.data?.approvalStatus === "approved";
+
     const confirmAndContinue = async () => {
-        if ((!canApprove && !canResume) || pending) return;
+        if ((!canApprove && !canResume && !(isDirect && alreadyApproved)) || pending) return;
         setNotice("");
         try {
+            if (isDirect) {
+                if (!alreadyApproved) {
+                    await approve.mutateAsync({ artifactId: query.data.artifactId, approvedBy: "user" });
+                }
+                await finalizeDirect.mutateAsync({ artifactId: query.data.artifactId });
+                navigate("/automation", { replace: true });
+                return;
+            }
             if (!canResume) {
                 await approve.mutateAsync({
                     artifactId: query.data.artifactId,
@@ -260,7 +294,7 @@ export default function TestCaseReviewPanel({ workflow }) {
         }
     };
 
-    const error = update.error || approve.error || resume.error;
+    const error = update.error || approve.error || resume.error || finalizeDirect.error;
 
     return (
         <section
@@ -282,6 +316,14 @@ export default function TestCaseReviewPanel({ workflow }) {
                         onClick={startCreate}
                     >
                         + Thêm testcase
+                    </button>
+                    <button
+                        className="button button--secondary"
+                        type="button"
+                        disabled={!canReviewDecisions || pending}
+                        onClick={() => navigate(`/workflows/${encodeURIComponent(workflowId)}/template-testcases`)}
+                    >
+                        + Tạo testcase nhanh theo khuôn mẫu
                     </button>
                     <button
                         className="button button--secondary"
@@ -392,6 +434,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                             allVisibleSelected={allFilteredSelected}
                             disabled={pending}
                             reviewDisabled={!canReviewDecisions || pending}
+                            expectedResultConflicts={expectedResultConflicts}
                             onSelect={id => {
                                 setSelectedId(id);
                                 setEditing(false);
@@ -450,6 +493,9 @@ export default function TestCaseReviewPanel({ workflow }) {
                             testCase={selected ?? editDraft}
                             editing={editing}
                             editDraft={editDraft}
+                            expectedResultConflicts={
+                                selected ? (expectedResultConflicts.get(testCaseId(selected)) ?? []) : []
+                            }
                             disabled={!canEdit || pending}
                             saving={update.isPending}
                             onClose={resetEditor}
@@ -492,7 +538,7 @@ export default function TestCaseReviewPanel({ workflow }) {
                 <button
                     className="button button--primary"
                     type="button"
-                    disabled={(!canApprove && !canResume) || pending}
+                    disabled={(!canApprove && !canResume && !(isDirect && alreadyApproved)) || pending}
                     onClick={confirmAndContinue}
                 >
                     {pending ? "Đang xử lý..." : "Xác nhận & Tiếp tục"}

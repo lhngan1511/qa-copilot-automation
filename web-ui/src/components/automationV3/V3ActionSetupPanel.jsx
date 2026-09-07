@@ -76,6 +76,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
     const [selectedLibRoles, setSelectedLibRoles] = useState({}); // tester-owned role before bind
     // P0-B — picker group-first: null = đang chọn Chức năng; string = đang xem group đó.
     const [pickerGroup, setPickerGroup] = useState(null);
+    const [pickerSearch, setPickerSearch] = useState("");
 
     // Lưu vào thư viện (Boundary — shared asset)
     const [savingReuseId, setSavingReuseId] = useState(null);
@@ -137,6 +138,11 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         return () => { cancelled = true; };
     }, [refreshBinding, refreshLibrary]);
 
+    // P0-UI — luôn nạp Library mới nhất khi mở testcase (kể cả binding không rỗng) để phát hiện
+    // thao tác đã bị sửa steps sau khi bind (badge "Đã đổi — cần Sinh lại"). Tách riêng khỏi effect
+    // trên để không đụng logic race-sensitive redirect-to-library ở trên.
+    useEffect(() => { refreshLibrary(); }, [refreshLibrary]);
+
     /* ---------- Điều hướng nguồn thao tác ---------- */
 
     const openFallbackPaste = (mode2 = "append") => {
@@ -159,6 +165,7 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
         setSelectedLib([]);
         setSelectedLibRoles({});
         setPickerGroup(null);
+        setPickerSearch("");
         setScreen("library");
         setLibraryLoading(true);
         await refreshLibrary();
@@ -432,6 +439,11 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
             {screen === "list" ? (
                 <div className="v3-act__list">
                     <h4 className="v3-map__h">Thao tác sẽ chạy</h4>
+                    {testCase?.automationStale ? (
+                        <div className="v3-banner v3-banner--warning" role="status">
+                            ⚠ Thao tác/dữ liệu đã đổi kể từ lần Sinh automation gần nhất — kết quả cũ có thể không còn đúng. Hãy Sinh lại ở tab "Kết quả mong đợi".
+                        </div>
+                    ) : null}
                     {binding.length === 0 ? (
                         <p className="v3-act__note">Testcase này chưa có thao tác automation.</p>
                     ) : (
@@ -555,7 +567,18 @@ export default function V3ActionSetupPanel({ workspaceId, testCase, onChanged, o
                                 </div>
                                 <div className="v3-lib-browser__actions">
                                     <h5>{groupDisplayName(activePickerGroup)}</h5>
-                                    {library.filter(b => (b.groupName ?? "") === activePickerGroup).map(b => {
+                                    <input
+                                        className="v3-input v3-lib-browser__search"
+                                        type="text"
+                                        value={pickerSearch}
+                                        onChange={e => setPickerSearch(e.target.value)}
+                                        placeholder="Tìm thao tác trong chức năng này…"
+                                        aria-label="Tìm thao tác"
+                                    />
+                                    {library
+                                        .filter(b => (b.groupName ?? "") === activePickerGroup)
+                                        .filter(b => !pickerSearch.trim() || b.label.toLowerCase().includes(pickerSearch.trim().toLowerCase()))
+                                        .map(b => {
                                         const inUse = binding.filter(i => i.blockId === b.blockId).length;
                                         return (
                                             <label className="v3-lib-option" key={b.blockId}>
